@@ -1,3 +1,4 @@
+// Source: games/space-typing@survival-s0 src/feedback/quads.ts (kit copy; log fixes in shared/game-kit/DRIFT.md)
 import * as THREE from "three";
 
 /**

@@ -1,28 +1,30 @@
+// Source: games/space-typing@survival-s0 src/feedback/numbers.ts (kit copy: windows, colours and label from the profile; log fixes in shared/game-kit/DRIFT.md)
 /**
- * Damage numbers (SURVIVAL_MODE_PLAN.md 5.4), drawn by WebGL from a digit
- * atlas painted on a canvas at load (no DOM per number).
+ * Damage numbers (SURVIVAL_MODE_PLAN.md 5.4; dragon-hold 05 §5), drawn by
+ * WebGL from a digit atlas painted on a canvas at load (no DOM per number).
  *
  * NumberField is the rule part, testable without a GPU: blows on one target
- * within 150 ms roll up into one number that pops again; ticks (a beam's
- * pulses) roll up over 0.3 s and show "×N"; a number flies along its blow;
+ * within the profile's mergeS (150 ms) roll up into one number that pops
+ * again; ticks (a beam's pulses, a trap's burn) roll up over tickMergeS
+ * (0.3 s) and show "×N"; a number flies along its blow;
  * over the cap the smallest goes first, never one of T3 or above; and no
  * number may cover a protected rectangle (the learning frame, the gun slots,
- * the health bar, published by the HUD in screen pixels): it is moved above
- * it or dropped, and one that drifts into one is dropped (its box counts its
- * pop). A number landing on a young one of the same style below T3 is taken
- * into it (a crowd's hits read as one growing number, not a tower); else it
- * moves beside it, and only then above.
+ * the health bar, the word tags, published by the HUD in screen pixels): it
+ * is moved above it or dropped, and one that drifts into one is dropped (its
+ * box counts its pop). A number landing on a young one of the same style
+ * below T3 is taken into it (a crowd's hits read as one growing number, not a
+ * tower); else it moves beside it, and only then above. Live numbers never
+ * overlap for more than a frame (settle()).
  * NumberSprites draws the field in one instanced draw call.
  */
 import * as THREE from "three";
+import { SHIP, type FeedbackProfile } from "./profiles";
 import { instancedQuads, uploadQuads } from "./quads";
+import { TIERS, tier, type TierProfile } from "./tiers";
 
 export type Rect = { x: number; y: number; w: number; h: number };
+/** A number's look: normal, crit (a strong blow; dragon-hold has no random crits), perfect (Flash, Perfect: with the label), tick. */
 export const STYLE = { normal: 0, crit: 1, perfect: 2, tick: 3 } as const;
-const MERGE_S = 0.15;
-const TICK_MERGE_S = 0.3;
-/** A number another lands on within this age takes it in. */
-const CROWD_MERGE_S = 0.3;
 const MAX = 200;
 /** Glyph advance and height as shares of the font size. */
 const ADVANCE = 0.58;
@@ -53,6 +55,8 @@ export class NumberField {
 
   private readonly labels: string[] = new Array<string>(MAX).fill("");
 
+  constructor(readonly profile: FeedbackProfile = SHIP) {}
+
   /** Text shown for number i (digits, then "×N" for rolled-up ticks), kept until it changes. */
   text(i: number): string {
     return this.labels[i]!;
@@ -65,7 +69,7 @@ export class NumberField {
 
   /** The number's box in screen px, centred on (x, y), as drawn now (its pop included). */
   box(i: number, out: Rect, x = this.x[i]!, y = this.y[i]!): Rect {
-    const px = this.fontPx * this.size[i]! * popScale(this.tier[i]!, this.pop[i]!);
+    const px = this.fontPx * this.size[i]! * popScale(this.tier[i]!, this.pop[i]!, this.profile.tiers);
     const glyphs = this.text(i).length;
     out.w = glyphs * ADVANCE * px;
     out.h = px * (this.style[i] === STYLE.perfect ? 1 + LABEL : 1);
@@ -90,7 +94,7 @@ export class NumberField {
     const tick = style === STYLE.tick;
     for (let i = 0; i < MAX; i += 1) {
       if (this.alive[i] === 0 || this.key[i] !== key || (this.style[i] === STYLE.tick) !== tick) continue;
-      if (now - this.born[i]! > (tick ? TICK_MERGE_S : MERGE_S)) continue;
+      if (now - this.born[i]! > (tick ? this.profile.numbers.tickMergeS : this.profile.numbers.mergeS)) continue;
       this.value[i] = this.value[i]! + value;
       this.count[i] = this.count[i]! + 1;
       this.style[i] = Math.max(this.style[i]!, style);
@@ -172,9 +176,9 @@ export class NumberField {
     return -1;
   }
 
-  /** `slot` (just born) may be taken into `other`: same style, both below T3, `other` still young. */
+  /** `slot` (just born) may be taken into `other`: same style, both below T3, `other` younger than the profile's crowdMergeS. */
   private mergeable(other: number, slot: number, now: number): boolean {
-    return this.style[other] === this.style[slot] && this.tier[other]! < 3 && this.tier[slot]! < 3 && now - this.born[other]! <= CROWD_MERGE_S;
+    return this.style[other] === this.style[slot] && this.tier[other]! < 3 && this.tier[slot]! < 3 && now - this.born[other]! <= this.profile.numbers.crowdMergeS;
   }
 
   /** Adds number `slot` into `other` and frees `slot`; returns `other` (or −1 if it now covers a protected rectangle). */
@@ -225,9 +229,9 @@ export class NumberField {
   /**
    * Numbers that grew (a longer label) or drifted onto each other: the
    * younger merges into the older (same style, both below T3), else it moves
-   * above it. Live numbers never overlap for more than a frame.
+   * above it. update() runs it every frame; call it after moving numbers by hand.
    */
-  private settle(): void {
+  settle(): void {
     for (let i = 0; i < MAX; i += 1) {
       if (this.alive[i] === 0) continue;
       for (let j = i + 1; j < MAX && this.alive[i] === 1; j += 1) {
@@ -262,8 +266,6 @@ const GLYPHS = "0123456789×";
 const CELL_W = 48;
 const CELL_H = 64;
 const FONT = 52;
-const COLORS = [new THREE.Color("#fff4e2"), new THREE.Color("#ffc93a"), new THREE.Color("#d9fffb"), new THREE.Color("#ffd9a8")];
-const LABEL_COLOR = new THREE.Color("#5ff5e6");
 
 const VERTEX = /* glsl */ `
 attribute vec4 iRect;
@@ -298,8 +300,13 @@ export class NumberSprites {
   private readonly capacity = MAX * 8;
   private readonly atlasWidth: number;
   private readonly labelWidth: number;
+  private readonly colors: THREE.Color[];
+  private readonly labelColor: THREE.Color;
 
-  constructor() {
+  constructor(readonly profile: FeedbackProfile = SHIP) {
+    const { colors, label, labelColor } = profile.numbers;
+    this.colors = colors.map((color) => new THREE.Color(color));
+    this.labelColor = new THREE.Color(labelColor);
     const canvas = document.createElement("canvas");
     this.atlasWidth = 1024;
     canvas.width = this.atlasWidth;
@@ -321,8 +328,8 @@ export class NumberSprites {
       };
       [...GLYPHS].forEach((char, index) => glyph(char, index * CELL_W + CELL_W / 2, CELL_H / 2 + 2, 9));
       paint.font = '800 40px "Be Vietnam Pro", "Exo 2", system-ui, sans-serif';
-      this.labelWidth = Math.min(this.atlasWidth - 8, Math.ceil(paint.measureText("HOÀN HẢO").width) + 16);
-      glyph("HOÀN HẢO", this.labelWidth / 2, CELL_H * 1.5, 8);
+      this.labelWidth = Math.min(this.atlasWidth - 8, Math.ceil(paint.measureText(label).width) + 16);
+      glyph(label, this.labelWidth / 2, CELL_H * 1.5, 8);
     }
     const atlas = new THREE.CanvasTexture(canvas);
     atlas.colorSpace = THREE.SRGBColorSpace;
@@ -370,8 +377,9 @@ export class NumberSprites {
       const style = field.style[i]!;
       const k = field.age[i]! / field.life[i]!;
       const alpha = Math.min(1, (1 - k) * 3.5);
-      const px = field.fontPx * field.size[i]! * popScale(field.tier[i]!, field.pop[i]!);
-      const color = COLORS[style] ?? COLORS[0]!;
+      // The field's tiers, so the drawn size is the size its box() counts.
+      const px = field.fontPx * field.size[i]! * popScale(field.tier[i]!, field.pop[i]!, field.profile.tiers);
+      const color = this.colors[style] ?? this.colors[0]!;
       const advance = px * ADVANCE;
       let x = field.x[i]! - (text.length * advance) / 2;
       const y = field.y[i]! - px / 2;
@@ -385,7 +393,7 @@ export class NumberSprites {
       if (style === STYLE.perfect) {
         const lh = px * LABEL;
         const lw = lh * (this.labelWidth / (CELL_H * 0.75));
-        n = this.quad(n, field.x[i]! - lw / 2, y - lh * 1.05, lw, lh * 1.3, 0, CELL_H / H, this.labelWidth / W, 1, LABEL_COLOR, alpha);
+        n = this.quad(n, field.x[i]! - lw / 2, y - lh * 1.05, lw, lh * 1.3, 0, CELL_H / H, this.labelWidth / W, 1, this.labelColor, alpha);
       }
     }
     uploadQuads(this.mesh.geometry, n);
@@ -398,13 +406,15 @@ export class NumberSprites {
     renderer.render(this.scene, this.camera);
     renderer.autoClear = clear;
   }
+
+  dispose(): void {
+    this.mesh.geometry.dispose();
+    (this.mesh.material.uniforms.uAtlas!.value as THREE.Texture).dispose();
+    this.mesh.material.dispose();
+  }
 }
 
-function tierPop(tierId: number): number {
-  return [1, 1.12, 1.25, 1.35, 1.4, 1.5][tierId] ?? 1.2;
-}
-
-/** The scale a number of tier `tierId` is drawn at while popping (`pop` 1 → 0). */
-export function popScale(tierId: number, pop: number): number {
-  return 1 + (tierPop(tierId) - 1) * pop;
+/** The scale a number of tier `tierId` is drawn at while popping (`pop` 1 → 0), from `table`'s pop. */
+export function popScale(tierId: number, pop: number, table: readonly TierProfile[] = TIERS): number {
+  return 1 + ((tier(tierId, table).number?.pop ?? 1) - 1) * pop;
 }

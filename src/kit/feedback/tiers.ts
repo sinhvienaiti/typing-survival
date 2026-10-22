@@ -1,8 +1,9 @@
+// Source: games/space-typing@survival-s0 src/feedback/tiers.ts (kit copy; log fixes in shared/game-kit/DRIFT.md)
 /**
- * Impact tiers T0–T5 (docs/SURVIVAL_MODE_PLAN.md 5.2): what one blow
- * is worth in shake, hit stop, number, particles and sound. A mode maps its
- * events to a tier; every feedback module reads the same row, so a blow's
- * layers always agree. Shared by the 3D modes (none but Sinh Tồn yet).
+ * Impact tiers T0–T5 (docs/survival/SURVIVAL_MODE_PLAN.md 5.2; dragon-hold
+ * 05 §5): what one blow is worth in shake, hit stop, number, particles and
+ * sound. A game maps its events to a tier; every feedback module reads the
+ * same row of its profile (profiles.ts), so a blow's layers always agree.
  */
 export type TierId = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -11,7 +12,7 @@ export type TierProfile = {
   trauma: number;
   /** Hit stop asked for, ms (0: none). */
   stopMs: number;
-  /** A per-tier spacing between this tier's stops (ms), on top of the global 150 ms. */
+  /** A per-tier spacing between this tier's stops (ms), on top of the global gap. */
   stopGapMs: number;
   /** Damage number: size (× the base), seconds shown, pop (scale on arrival); null: none. */
   number: { size: number; life: number; pop: number } | null;
@@ -28,6 +29,7 @@ export type TierProfile = {
   tail: boolean;
 };
 
+/** Sinh Tồn S0's table: the "ship" profile, and the base of the others. */
 export const TIERS: readonly TierProfile[] = [
   { trauma: 0, stopMs: 0, stopGapMs: 0, number: null, flashFrames: 0, recoil: 0, sparks: 3, rays: 0, ring: false, debris: 0, bass: false, tail: false },
   { trauma: 0.03, stopMs: 0, stopGapMs: 0, number: { size: 1, life: 0.45, pop: 1.12 }, flashFrames: 1, recoil: 0.18, sparks: 4, rays: 4, ring: false, debris: 0, bass: false, tail: false },
@@ -38,9 +40,11 @@ export const TIERS: readonly TierProfile[] = [
 ];
 
 /** A sweep: this many kills inside the window earns one short stop, then a cool-down. */
-export const SWEEP = { kills: 30, windowMs: 500, stopMs: 25, cooldownMs: 1500 } as const;
+export type SweepRules = { readonly kills: number; readonly windowMs: number; readonly stopMs: number; readonly cooldownMs: number };
+export const SWEEP: SweepRules = { kills: 30, windowMs: 500, stopMs: 25, cooldownMs: 1500 };
 
 /** The global spacing between two hit stops. */
 export const STOP_GAP_MS = 150;
 
-export const tier = (id: number): TierProfile => TIERS[Math.max(0, Math.min(5, id | 0))]!;
+/** Row `id` (clamped to 0–5) of `table`. */
+export const tier = (id: number, table: readonly TierProfile[] = TIERS): TierProfile => table[Math.max(0, Math.min(5, id | 0))]!;

@@ -13,7 +13,8 @@ guns that hold a corridor against a horde. It was split out of Space Typing
 - Layout: `src/sim`, `src/content` (deterministic rules: no DOM, clock,
   `Math.random`, locale or trigonometry; same seed and log give the same
   hash in Node and Chrome), `src/view` (three.js), `src/app` (page, input,
-  session), `src/feedback` (combat feedback), `docs/` (design and build notes).
+  session), `docs/` (design and build notes). Combat feedback is the kit's
+  `src/kit/feedback` ("ship" profile); there is no local copy.
 - `src/kit/` is copied from the parent repo's `shared/game-kit` by
   `node scripts/sync-game-kit.mjs --target games/typing-survival` (run in the
   parent repo). Never edit it by hand; `pnpm check` verifies its sha256.

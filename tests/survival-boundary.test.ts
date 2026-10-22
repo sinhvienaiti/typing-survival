@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { hostProblems, importTargets, purityProblems, read, ROOT, type Source } from "./survival/scan";
@@ -8,8 +8,9 @@ import { hostProblems, importTargets, purityProblems, read, ROOT, type Source } 
  * src/app/main.ts; the rules (sim/, content/) are deterministic TypeScript
  * that loads only itself and the kit's platform/rng, with no DOM, clock,
  * Math.random, locale or trigonometry, so a replay steps to the same hash in
- * Node and in Chrome. src/feedback loads no game code: only itself, three
- * and the kit's speech event. tests/boundary.test.ts holds the repo's edges.
+ * Node and in Chrome. Combat feedback is the kit's (src/kit/feedback, "ship"
+ * profile), with no local copy; it loads no game code, only itself and three.
+ * tests/boundary.test.ts holds the repo's edges.
  */
 function sources(dir: string): Source[] {
   return readdirSync(join(ROOT, dir)).flatMap((name) => {
@@ -21,7 +22,8 @@ function sources(dir: string): Source[] {
 
 const RNG = "src/kit/platform/rng";
 const rules = [...sources("src/sim"), ...sources("src/content")];
-const feedback = sources("src/feedback");
+const feedback = sources("src/kit/feedback");
+const view = [...sources("src/view"), ...sources("src/app")];
 
 describe("Sinh Tồn boundary", () => {
   it("index.html boots src/app/main.ts", () => {
@@ -44,13 +46,17 @@ describe("Sinh Tồn boundary", () => {
     expect(hostProblems([...rules, read(RNG + ".ts")])).toEqual([]);
   });
 
-  it("src/feedback loads no game code, only itself, three and the kit's speech", () => {
+  it("combat feedback comes from the kit: no local src/feedback, the kit's loads only itself and three", () => {
+    expect(existsSync(join(ROOT, "src/feedback"))).toBe(false);
+    expect(feedback.length).toBeGreaterThanOrEqual(10);
     const crossing = feedback.flatMap((source) =>
       importTargets(source)
-        .filter((target) => !(target.startsWith("src/feedback/") || target === "three" || target === "src/kit/speech"))
+        .filter((target) => !(target.startsWith("src/kit/feedback/") || target === "three"))
         .map((target) => source.path + " → " + target),
     );
     expect(crossing).toEqual([]);
+    const local = view.flatMap((source) => importTargets(source).filter((target) => target.startsWith("src/feedback")).map((target) => source.path + " → " + target));
+    expect(local).toEqual([]);
   });
 
   it("the checks find what they must", () => {

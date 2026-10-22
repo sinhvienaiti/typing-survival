@@ -1,10 +1,12 @@
+// Source: games/space-typing@survival-s0 src/feedback/reaction.ts (kit copy: tiers from the profile; log fixes in shared/game-kit/DRIFT.md)
 /**
- * How a struck foe reacts (SURVIVAL_MODE_PLAN.md 5.5), as numbers a crowd
- * writes into its instances (no extra draw call): a white-hot flash for 1–4
- * frames by tier, a fake knock-back along the blow that springs home (the
- * simulated position never moves), and a squash 0.91 / stretch 1.07 over
- * 120 ms. One record per crowd slot; a reused slot (new id) starts clean.
+ * How a struck foe reacts (SURVIVAL_MODE_PLAN.md 5.5; dragon-hold 05 §5), as
+ * numbers a crowd writes into its instances (no extra draw call): a white-hot
+ * flash for 1–4 frames by tier, a fake knock-back along the blow that springs
+ * home (the simulated position never moves), and a squash 0.91 / stretch 1.07
+ * over 120 ms. One record per crowd slot; a reused slot (new id) starts clean.
  */
+import { SHIP, type FeedbackProfile } from "./profiles";
 import { tier } from "./tiers";
 
 export class Reactions {
@@ -14,7 +16,7 @@ export class Reactions {
   private readonly dirX: Float32Array;
   private readonly dirZ: Float32Array;
 
-  constructor(capacity: number) {
+  constructor(capacity: number, readonly profile: FeedbackProfile = SHIP) {
     this.at = new Float64Array(capacity).fill(-1e9);
     this.id = new Int32Array(capacity);
     this.tierOf = new Uint8Array(capacity);
@@ -47,12 +49,12 @@ export class Reactions {
     if (this.id[slot] !== id) return out;
     const age = now - this.at[slot]!;
     if (age < 0 || age > 0.25) return out;
-    const profile = tier(this.tierOf[slot]!);
-    const hot = profile.flashFrames / 60;
+    const row = tier(this.tierOf[slot]!, this.profile.tiers);
+    const hot = row.flashFrames / 60;
     out[0] = age <= hot ? 1 : Math.max(0, 1 - (age - hot) / 0.05);
     // A kick that peaks at 30 ms and settles by ~150 ms.
     const k = age / 0.03;
-    const push = profile.recoil * k * Math.exp(1 - k);
+    const push = row.recoil * k * Math.exp(1 - k);
     out[1] = this.dirX[slot]! * push;
     out[2] = this.dirZ[slot]! * push;
     const squash = squashAt(age);

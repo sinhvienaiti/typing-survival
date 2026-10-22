@@ -6,7 +6,7 @@
  * bar), the ship's health, the time left and the kills of the last 3 s.
  * It publishes the rectangles damage numbers must not cover.
  */
-import type { Rect } from "../feedback/numbers";
+import type { Rect } from "../kit/feedback";
 import { MAG_MAX, TIA, WEAPON, XUNG } from "../content/rules";
 import { spanAt } from "../content/stage-s0";
 import type { World } from "../sim/world";

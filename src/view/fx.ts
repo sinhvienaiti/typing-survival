@@ -7,7 +7,7 @@
  * `Column`, the Tia column burning on the floor.
  */
 import * as THREE from "three";
-import { instancedQuads, uploadQuads } from "../feedback/quads";
+import { instancedQuads, uploadQuads } from "../kit/feedback";
 
 export const CELL = { soft: 0, star4: 1, star8: 2, star12: 3, ring: 4, flare: 5, core: 6 } as const;
 /** Add to a cell to lay it flat on the floor. */

@@ -3,14 +3,14 @@
  * Defense's crowd. The models (rainbow mine and scout) have only an idle
  * clip, so walking is done here: they face the ship, lean into their speed,
  * bob and sway; a hit flashes them white, knocks them back a little and
- * squashes them (src/feedback/reaction.ts), all per-instance numbers with no
+ * squashes them (src/kit/feedback/reaction.ts), all per-instance numbers with no
  * extra draw call. A missing model (a clean clone has no local GLBs) is
  * replaced by a shape made in code. Soft dark spots under each foe keep the
  * crowd readable on the glass.
  */
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { Reactions } from "../feedback/reaction";
+import { Reactions } from "../kit/feedback";
 import { loadModel, pickModelTier, textures } from "../kit/three";
 import { models } from "./models";
 import { FIELD, FOES, KIND, STORE } from "../content/rules";

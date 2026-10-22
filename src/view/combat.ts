@@ -1,18 +1,13 @@
 /**
  * Reads the sim's event ring once a frame and turns it into the layers of a
- * blow (SURVIVAL_MODE_PLAN.md 5): tiers (src/feedback/tiers.ts) decide the
+ * blow (SURVIVAL_MODE_PLAN.md 5): tiers (src/kit/feedback/tiers.ts) decide the
  * flash, knock-back, sparks, star, ring, debris, number, sound, shake and
  * hit stop; kills in one place in one frame merge into one burst of size
  * √N; the Tia column, Xung rounds and scout shots are drawn from the sim's
  * state each frame. Nothing is allocated per event.
  */
 import * as THREE from "three";
-import { AudioCues } from "../feedback/audio-cues";
-import { Debris } from "../feedback/debris";
-import { HitStop } from "../feedback/hitstop";
-import { NumberField, NumberSprites, STYLE, type Rect } from "../feedback/numbers";
-import { STOP_GAP_MS, tier } from "../feedback/tiers";
-import { Trauma } from "../feedback/trauma";
+import { AudioCues, Debris, HitStop, NumberField, NumberSprites, STOP_GAP_MS, STYLE, Trauma, tier, type Rect } from "../kit/feedback";
 import { ParticlePool, textures } from "../kit/three";
 import { FIELD, TIA, type Tier } from "../content/rules";
 import { EV, FLAG } from "../sim/events";
@@ -91,7 +86,7 @@ export class Combat {
     this.debris = new Debris(spec.debris);
     this.numbers.limit = spec.numbers;
     this.column = new Column(this.beam, TIA.length, 3.6, FIELD.muzzleZ);
-    this.audio = new AudioCues(volume);
+    this.audio = new AudioCues({ volume });
     stage.scene.add(this.column.mesh, this.debris.mesh, this.strips.mesh, this.glows.mesh, this.sparks.points);
   }
 
@@ -214,7 +209,7 @@ export class Combat {
           this.audio.key(kind === EV.keyOk, R.ref[i]!);
           break;
         case EV.load:
-          this.audio.load((flags & FLAG.perfect) !== 0, R.slot[i]!);
+          this.audio.word((flags & FLAG.perfect) !== 0, R.slot[i] === 0 ? -0.35 : 0.35);
           break;
         case EV.word:
           this.hooks.wordDone(R.slot[i]!, R.ref[i]!, (flags & FLAG.perfect) !== 0);
