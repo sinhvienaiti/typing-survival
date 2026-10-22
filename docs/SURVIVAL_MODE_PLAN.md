@@ -11,7 +11,7 @@
 
 ## 0. Tóm tắt
 
-1. **Chế độ mới "Sinh Tồn"** (`survival.html`): tàu (hoặc Draconis) giữ cửa một hành lang không gian. Quái của 8 họ sẵn có tràn xuống theo đợt. Sống càng lâu càng tốt, lên cấp chọn nâng cấp.
+1. **Chế độ mới "Sinh Tồn"** (`survival.html`): tàu (hoặc Draconis) giữ cửa một hành lang không gian, quái của 8 họ sẵn có tràn xuống. Chơi theo **chuyến bay nhiều ải** kiểu roguelite như Hades (mục 4.0): mỗi phòng 1,5–2 phút, xong phòng thì chọn thưởng và chọn cửa kế tiếp, càng đi sâu càng khó nhưng bộ súng và nâng cấp càng mạnh. Chết là hết chuyến, nhưng tiền vĩnh viễn kiếm từ việc học vẫn giữ.
 2. **Súng gắn với từ vựng:** mỗi ô súng mang một **từ đang học**. Gõ đúng từ thì súng bắn, rồi ô lấy từ mới. Đây là chỗ học chính, không phải chữ dán lên quái.
 3. **"Tri thức thành năng lượng":** mỗi chữ cái gõ đúng thành tia năng lượng bay vào lò của tàu. Gõ xong từ là xả đòn. Gõ chuẩn thì đòn mạnh và sạch.
 4. **Cảm giác chiến đấu nhiều lớp:** số sát thương, lóe trúng, giật lùi, dừng hình ngắn, rung camera có hướng, mảnh vỡ, tiếng va chạm nhiều lớp. Tất cả đi qua **một bộ phản hồi chung** để dùng lại cho Campaign 3D, Defense, TD.
@@ -93,6 +93,77 @@
 
 ## 4. Luật chơi Sinh Tồn
 
+### 4.0 Cấu trúc: chuyến bay nhiều ải (roguelite)
+
+Chủ dự án chốt (23/10): không làm một ải 15 phút. Làm **vượt ải dài**: càng về sau càng khó, nhưng trang bị, kỹ năng ngày càng đa dạng và mạnh; sau mỗi ải có nhiều lựa chọn (nâng cấp, súng mới, mua máu…), như Hades.
+
+```text
+TRẠM MẸ (ngoài chuyến) ──▶ CHUYẾN BAY: Vùng 1 ─▶ Vùng 2 ─▶ Vùng 3 ─▶ Vùng 4 ─▶ Lõi Hố Đen (boss cuối)
+                                          │
+                     Vùng = 6 phòng + Trạm Nghỉ + Boss vùng (khoảng 12–15 phút)
+                     Phòng = 1 trận 90–120 s ─▶ nhận thưởng ─▶ chọn 1 trong 2–3 cửa kế tiếp
+```
+
+| Tầng | Là gì | Dài |
+|---|---|---|
+| **Chuyến bay** | 4 Vùng + boss cuối. Chết là hết chuyến | 50–60 phút nếu đi hết |
+| **Vùng** | Một họ quái (màu, nền, model). Mỗi chuyến chọn ngẫu nhiên 4 trong 8 họ, xếp theo độ khó | 12–15 phút |
+| **Phòng** | Một trận: sống qua các đợt tới hết giờ, hoặc hạ đủ số quái | 90–120 s |
+| **Trạm Nghỉ** | Giữa vùng: hồi máu **hoặc** rèn súng, không đánh | — |
+| **Boss vùng** | Boss bộ phận gắn từ (mục 4.6) | 2–3 phút |
+
+**Chọn cửa.** Xong phòng, hiện 2–3 cửa. Mỗi cửa có biểu tượng **loại thưởng** của phòng sau, nên người chơi lên kế hoạch được:
+
+| Cửa | Thưởng khi xong phòng đó |
+|---|---|
+| Súng mới | Chọn 1 trong 3 súng (thêm vào ô trống, hoặc thay súng cũ) |
+| Ấn | Chọn 1 trong 3 **Ấn** của một Nguồn (mục dưới) |
+| Rèn | +1 cấp cho một súng; cấp 5 + Ấn đúng thì **tiến hóa** |
+| Vàng | Vàng để mua ở Chợ |
+| Lõi | +máu tối đa |
+| Sửa | Hồi 30 % máu |
+| Chợ | Không đánh. Mua súng, Ấn, máu, bùa dùng một lần, đổi lại lựa chọn |
+| Tinh nhuệ | Phòng khó hơn, thưởng 2 lần |
+| Thử Thách Chữ | Không có quái. Sự kiện học: nghe và gõ, nhìn nghĩa gõ từ, ghép cụm từ. Thưởng theo số câu đúng |
+
+**Ấn (nâng cấp trong chuyến).**
+- Có 5 **Nguồn**, mỗi nguồn một kiểu chơi:
+  - Lửa: cháy, nổ.
+  - Băng: chậm, đóng băng.
+  - Ion: sét lan, phá giáp.
+  - Hư Không: hút quái, xuyên.
+  - Ánh Sáng: hồi máu, khiên, chí mạng khi gõ chuẩn.
+- Mỗi Ấn có bậc hiếm (thường, hiếm, sử thi). Hai Nguồn có thể mở **Song Ấn** (đòn kết hợp riêng).
+- **Relic theo từ gõ** có sẵn (12 cái) trở thành Ấn, ví dụ từ hoàn hảo bắn sét 3 quái.
+
+**Giữ gì, mất gì.**
+
+| | Trong chuyến (qua phòng, qua vùng) | Khi chết |
+|---|---|---|
+| Súng, cấp súng, Ấn, bùa | **Giữ** | Mất |
+| Vàng | Giữ | Mất |
+| Máu | Giữ (không tự hồi giữa phòng) | — |
+| **Tri Thức** (tiền vĩnh viễn) | Tích lũy | **Giữ** |
+| **Mảnh Sao** (rơi từ boss) | Tích lũy | **Giữ** |
+
+**Tiền vĩnh viễn gắn với học:**
+- **Tri Thức** đến chủ yếu từ việc học: gõ đúng từ mới, gõ đúng từ cần ôn, Thử Thách Chữ, tổng kết cuối chuyến.
+- **Mảnh Sao** đến từ boss.
+- Vì vậy học tốt là cách chắc nhất để mạnh lên lâu dài.
+
+**Trạm Mẹ (ngoài chuyến).**
+- Cây nâng cấp vĩnh viễn, trả bằng Tri Thức: máu gốc, số ô súng đầu chuyến, thêm một lần chọn lại, hồi sinh một lần.
+- Mở súng, Ấn, tàu mới vào kho rơi, trả bằng Mảnh Sao.
+- Chọn tàu: 12 tàu và Draconis; mỗi tàu một súng khởi đầu và một nội tại.
+- **Độ Sâu Hố Đen:** người chơi tự bật điều kiện khó (quái nhanh hơn, ít máu hơn…) để có thưởng cao hơn khi đã quen.
+- **Thư Viện Từ:** xem lại các từ đã gặp, nghe phát âm, ôn nhanh.
+
+**Độ khó tăng dần.** Mỗi phòng: máu và số quái +4 %. Mỗi vùng: hành vi quái mới, tinh nhuệ dày hơn, boss mạnh hơn. Bù lại: mỗi phòng có một thưởng, nên tới Vùng 3–4 người chơi có 5–6 súng, nhiều Ấn và Song Ấn.
+
+**Lưu giữa phòng.** Thoát lúc chọn cửa thì lần sau tiếp tục đúng chỗ.
+
+**Ô súng.** Đầu chuyến có 2 ô (súng của tàu + 1 súng chọn). Tối đa 6 ô, mở bằng thưởng hoặc Trạm Mẹ.
+
 ### 4.1 Sân và góc nhìn
 
 - **Hành lang không gian** rộng khoảng 24 m, dài 60 m, nhìn từ trên xuống nghiêng 55°. Quái vào ở đầu trên. Tàu người chơi ở đáy, đứng yên, xoay nòng.
@@ -101,7 +172,7 @@
 
 ### 4.2 Bến súng
 
-- Hai bên đáy có **bến súng**: đầu trận 4 ô, lên cấp mở tới 8 ô.
+- Hai bên đáy có **bến súng**: đầu chuyến 2 ô, mở dần tới 6 ô (mục 4.0).
 - Mỗi ô: **tên súng** (nhỏ), **từ đang học** (to), **nghĩa tiếng Việt** (nhỏ, theo luật mục 6.3), **thanh hồi**.
 - Ô sẵn sàng thì từ sáng. Đang hồi thì từ mờ, không gõ được.
 - Chữ đầu của các ô sáng **không trùng nhau**, dùng lại `scene3d/words.ts`.
@@ -124,7 +195,7 @@
 
 - Gõ xong một từ thì mở **cửa sổ chuỗi 1,2 s**. Gõ xong từ kế tiếp trong cửa sổ thì Chuỗi +1 và cửa sổ mở lại.
 - Chuỗi tăng **sức đòn** (+6 % mỗi bậc, trần +60 %) và **độ hoành tráng** theo bậc (mục 5.7).
-- **Ô nguyên tố** (mở từ thẻ lên cấp): Băng, Lửa, Ion, Hư Không. Gõ từ của ô nguyên tố rồi gõ ngay từ của một súng thì súng đó mang nguyên tố (làm chậm, cháy, phá giáp, hút quái). Đây là bản Space Typing của "FLAME TURRET".
+- **Ô nguyên tố** (mở bằng Ấn của một Nguồn): Băng, Lửa, Ion, Hư Không. Gõ từ của ô nguyên tố rồi gõ ngay từ của một súng thì súng đó mang nguyên tố (làm chậm, cháy, phá giáp, hút quái). Đây là bản Space Typing của "FLAME TURRET".
 - Gõ sai một phím không làm đứt chuỗi; chỉ hết cửa sổ mới đứt.
 
 ### 4.4 Lò năng lượng và Nova ("Tri thức thành năng lượng")
@@ -156,21 +227,25 @@ Dùng lại 14 hành vi của bản 2D (`src/enemies/kinds.ts`), model 3D của 
 - **Boss** (27 model có clip): mỗi 5 đợt. Boss có 2–4 **bộ phận gắn từ** (khiên, nòng, lõi). Gõ phá từng bộ phận rồi lõi lộ ra. Dùng lại cơ chế gõ boss của 2D: ngắt nạp, khiên theo thứ tự, điểm yếu.
 - Boss báo đòn lớn trước 3 s: vạch đỏ trên sân và một **từ chặn**. Gõ kịp thì chặn đòn.
 
-### 4.7 Kinh nghiệm, lên cấp, thua
+### 4.7 Trong phòng, sau phòng, thua
 
-- Quái chết rơi **hạt EXP**, tự bay về tàu.
-- Lên cấp: game tạm dừng mềm (thế giới chậm ×0,1), hiện **3 thẻ**. Mỗi thẻ có một **từ khóa tiếng Anh** liên quan tới tác dụng ("pierce", "shield", "storm", "magnet"). Chọn bằng cách **gõ từ khóa**, hoặc phím 1/2/3 (trợ năng). Đổi thẻ: gõ "reroll", tốn tiền trong trận.
-- Thẻ gồm:
-  - súng mới, nâng cấp súng;
-  - ô nguyên tố;
-  - nâng chỉ số (máu, hút EXP, chí mạng);
-  - **relic theo từ gõ** (12 relic có sẵn, ví dụ từ hoàn hảo bắn sét 3 quái);
+- **Trong phòng không có màn chọn thẻ**, để không cắt ngang trận và không che khung học. Trong phòng chỉ nhặt vàng, hạt máu nhỏ, và nạp lò Nova.
+- **Sau phòng:** hiện thưởng của phòng (đã biết từ lúc chọn cửa), rồi các cửa kế tiếp. Thế giới đã dừng nên đọc thoải mái.
+- **Chọn thẻ bằng gõ từ khóa tiếng Anh** của thẻ ("pierce", "shield", "storm", "magnet"…), hoặc phím 1/2/3 (trợ năng). Chọn lại: gõ "reroll", dùng lượt chọn lại (mở ở Trạm Mẹ) hoặc vàng.
+- Loại thẻ:
+  - súng mới, rèn súng, tiến hóa;
+  - Ấn (theo Nguồn), Song Ấn;
+  - chỉ số (máu, hút vật phẩm, chí mạng);
   - **thẻ rủi ro** (sát thương +100 %, gõ sai mất 3 máu).
-- Thua khi tàu hết máu. Kết thúc hiện: thời gian sống, điểm, **từ đã gõ, từ mới học, từ cần ôn** (bấm nghe phát âm).
+- Thua khi tàu hết máu. Màn kết thúc hiện:
+  - vùng và phòng đã tới, thời gian, điểm;
+  - **từ đã gõ, từ mới học, từ cần ôn** (bấm nghe phát âm);
+  - Tri Thức và Mảnh Sao mang về Trạm Mẹ.
 
-### 4.8 Nghỉ giữa đợt
+### 4.8 Học giữa các phòng
 
-- Sau mỗi boss có **10 s nghỉ** (thế giới dừng). Có **"Nghe và gõ"** không bắt buộc: game đọc 3 từ vừa gõ sai, người chơi gõ lại theo tai. Thưởng EXP. Bỏ qua được bằng Enter.
+- Cửa **Thử Thách Chữ** (mục 4.0) là chỗ học sâu: nghe và gõ, nhìn nghĩa gõ từ, ghép cụm từ, ôn từ vừa gõ sai. Không có quái, không bị thời gian ép.
+- **Trạm Nghỉ** giữa vùng có thêm "Nghe và gõ" không bắt buộc: game đọc 3 từ vừa gõ sai, người chơi gõ lại theo tai, thưởng Tri Thức. Bỏ qua được bằng Enter.
 
 ---
 
@@ -386,10 +461,12 @@ Mỗi giai đoạn: làm, phản biện độc lập, sửa; có test và kịch
 | Giai đoạn | Làm gì | Xong khi |
 |---|---|---|
 | **S0 Bản thử dọc** | `survival.html`; sim cố định 60 Hz (tất định); 1 tàu, súng Xung, quái `scout`; `src/feedback/` bản đầu: bậc, trauma, dừng hình, số WebGL, phản ứng quái, mảnh vỡ, đầu nòng, tiếng nhiều lớp; khung học không rung | Một phát bắn cảm thấy "nặng" rõ rệt; chủ dự án xem video quay màn hình và duyệt |
-| **S1 Vòng Sinh Tồn** | Sân, đợt, 4 ô súng (Xung, Tán, Ray, Pháo Sao), 5 hành vi quái, EXP, lên cấp gõ từ khóa, máu, thua, tổng kết | Chơi được 10 phút; bot gõ 35 WPM sống 6–8 phút |
+| **S1 Phòng và chuyến** | Phòng 90–120 s, đợt trong phòng; 4 súng (Xung, Tán, Ray, Pháo Sao); 5 hành vi quái; thưởng sau phòng, chọn cửa (Súng, Rèn, Vàng, Lõi, Sửa); 1 Vùng đầy đủ có boss; máu, thua, tổng kết; lưu giữa phòng | Đi hết 1 Vùng (12–15 phút); bot gõ 35 WPM qua Vùng 1 khoảng 60 % số lần |
+| **S1b Ấn và Chợ** | 5 Nguồn Ấn, bậc hiếm, Song Ấn; Chợ; Tinh nhuệ; Thử Thách Chữ; tiến hóa súng | Mỗi chuyến có ít nhất 3 kiểu build khác nhau |
 | **S2 Gõ thành năng lượng** | Mảnh chữ, lò, Nova cụm từ, Chuỗi, ô nguyên tố, Hoàn hảo | Gõ thấy rõ là nạp sức |
 | **S3 Học** | Kế hoạch từ 60/25/15, hiện nghĩa theo độ thuộc, phát âm có nhường tiếng, gửi sự kiện học, Nghe và gõ, tổng kết từ | Từ luôn rõ nhất; kịch bản đo 0 lần số đè khung học |
-| **S4 Quái và boss** | 14 hành vi, quái gắn từ, tinh nhuệ, boss bộ phận gắn từ, báo đòn | 3 họ chơi được, 2 boss |
+| **S4 Quái và boss** | 14 hành vi, quái gắn từ, tinh nhuệ, boss bộ phận gắn từ, báo đòn; đủ 4 Vùng và boss cuối | Đi hết một chuyến; 8 họ đều chơi được |
+| **S4b Trạm Mẹ** | Tri Thức, Mảnh Sao, cây nâng cấp vĩnh viễn, mở súng và tàu, Độ Sâu Hố Đen, Thư Viện Từ | Chuyến thứ 5 mạnh hơn chuyến đầu rõ rệt; học nhiều thì mạnh nhanh hơn |
 | **S5 Âm và nhạc** | Bus, nhường tiếng, 3 stem, tiếng theo bậc, xác nhận hạ | Tai người duyệt |
 | **S6 Hiệu năng, trợ năng** | 4 bậc chất lượng 3D, trần, giảm chuyển động, thanh trượt | 350 quái + bão hiệu ứng: p95 ≤ 12 ms; mọi công tắc có tác dụng |
 | **S7 Dùng chung** | Campaign 3D và Defense chuyển sang `src/feedback/` | Không mất cảm giác cũ; test cũ xanh |
@@ -405,7 +482,9 @@ Mỗi giai đoạn: làm, phản biện độc lập, sửa; có test và kịch
 
 ## 12. Câu hỏi cho chủ dự án (đã có mặc định)
 
-1. Sinh Tồn chơi bằng **tàu và Draconis** như Campaign 3D? Mặc định: có, chọn ở màn đầu.
-2. Một trận dài bao lâu? Mặc định: không giới hạn, mốc thắng ở 15 phút.
-3. Có tiến trình ngoài trận (mở súng, tàu) không? Mặc định: chưa, để sau S4.
+1. Sinh Tồn chơi bằng **tàu và Draconis** như Campaign 3D? Mặc định: có, chọn ở Trạm Mẹ.
+2. ~~Một trận dài bao lâu?~~ Đã chốt (23/10): chuyến bay nhiều ải, mục 4.0.
+3. ~~Có tiến trình ngoài trận không?~~ Đã chốt (23/10): có, Trạm Mẹ (S4b).
 4. Thứ tự với TD: Sinh Tồn làm **sau** khi TD 1A.6 xong R2, R3? Mặc định: có, để không chạy hai việc lớn cùng lúc.
+5. Có **Chế độ vô tận** sau khi thắng boss cuối (vùng lặp, khó dần mãi)? Mặc định: có, mở sau lần thắng đầu.
+6. Có cho chơi lại **một Vùng** riêng để luyện (không tính tiến trình)? Mặc định: chưa.
