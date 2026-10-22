@@ -83,9 +83,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #02030a; col
 .sv-card { width: min(92vw, calc(620px * var(--ui))); max-height: 86vh; overflow: auto; padding: calc(24px * var(--ui)) calc(28px * var(--ui)); text-align: center; }
 .sv-card h1 { margin: 0 0 6px; font: 800 italic calc(40px * var(--ui)) "Exo 2", sans-serif; letter-spacing: 0.08em; }
 .sv-card p { margin: 6px 0; font: 500 calc(16px * var(--ui)) "Be Vietnam Pro", sans-serif; color: var(--soft); }
-.sv-card .sv-key { display: inline-block; margin-top: 14px; padding: 6px 16px; border-radius: 8px; border: 1px solid var(--line); font: 700 15px "Be Vietnam Pro", sans-serif; }
+.sv-card .sv-key { display: inline-block; margin-top: 14px; padding: calc(6px * var(--ui)) calc(16px * var(--ui)); border-radius: 8px; border: 1px solid var(--line); font: 700 calc(15px * var(--ui)) "Be Vietnam Pro", sans-serif; }
 .sv-choices { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0 2px; }
-.sv-choices a { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--line); color: var(--soft); text-decoration: none; font: 600 14px "Be Vietnam Pro", sans-serif; }
+.sv-choices a { padding: calc(6px * var(--ui)) calc(14px * var(--ui)); border-radius: 8px; border: 1px solid var(--line); color: var(--soft); text-decoration: none; font: 600 calc(14px * var(--ui)) "Be Vietnam Pro", sans-serif; }
 .sv-choices a.is-on { border-color: var(--xung); color: #fff; background: rgba(95, 232, 255, 0.14); }
 .sv-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
 .sv-stats div { padding: 10px 6px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); }

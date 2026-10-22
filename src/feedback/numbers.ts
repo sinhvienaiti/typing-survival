@@ -12,6 +12,7 @@
  * NumberSprites draws the field in one instanced draw call.
  */
 import * as THREE from "three";
+import { instancedQuads, uploadQuads } from "./quads";
 
 export type Rect = { x: number; y: number; w: number; h: number };
 export const STYLE = { normal: 0, crit: 1, perfect: 2, tick: 3 } as const;
@@ -187,11 +188,6 @@ export class NumberField {
     for (let i = 0; i < MAX; i += 1) if (this.alive[i] === 1 && this.covers(this.box(i, SCRATCH)) !== null) count += 1;
     return count;
   }
-
-  clear(): void {
-    this.alive.fill(0);
-    this.live = 0;
-  }
 }
 
 const SCRATCH: Rect = { x: 0, y: 0, w: 0, h: 0 };
@@ -250,42 +246,28 @@ export class NumberSprites {
       paint.textBaseline = "middle";
       paint.lineJoin = "round";
       paint.font = "italic 800 " + FONT + 'px "Exo 2", "Be Vietnam Pro", system-ui, sans-serif';
-      [...GLYPHS].forEach((glyph, index) => {
-        const x = index * CELL_W + CELL_W / 2;
-        paint.lineWidth = 9;
-        paint.strokeStyle = "rgba(8,6,20,0.92)";
-        paint.strokeText(glyph, x, CELL_H / 2 + 2);
+      // White glyphs in a dark outline (the outline stays dark under any tint).
+      const glyph = (text: string, x: number, y: number, outline: number) => {
+        paint.lineWidth = outline;
+        paint.strokeStyle = "rgba(6,8,22,0.93)";
+        paint.strokeText(text, x, y);
         paint.fillStyle = "#ffffff";
-        paint.fillText(glyph, x, CELL_H / 2 + 2);
-      });
+        paint.fillText(text, x, y);
+      };
+      [...GLYPHS].forEach((char, index) => glyph(char, index * CELL_W + CELL_W / 2, CELL_H / 2 + 2, 9));
       paint.font = '800 40px "Be Vietnam Pro", "Exo 2", system-ui, sans-serif';
-      const text = "HOÀN HẢO";
-      this.labelWidth = Math.min(this.atlasWidth - 8, Math.ceil(paint.measureText(text).width) + 16);
-      paint.lineWidth = 8;
-      paint.strokeStyle = "rgba(4,16,20,0.95)";
-      paint.strokeText(text, this.labelWidth / 2, CELL_H * 1.5);
-      paint.fillStyle = "#ffffff";
-      paint.fillText(text, this.labelWidth / 2, CELL_H * 1.5);
+      this.labelWidth = Math.min(this.atlasWidth - 8, Math.ceil(paint.measureText("HOÀN HẢO").width) + 16);
+      glyph("HOÀN HẢO", this.labelWidth / 2, CELL_H * 1.5, 8);
     }
     const atlas = new THREE.CanvasTexture(canvas);
     atlas.colorSpace = THREE.SRGBColorSpace;
     // Canvas rows top down (v 0 at the top), as the quads are laid out on screen.
     atlas.flipY = false;
-    atlas.generateMipmaps = true;
     atlas.minFilter = THREE.LinearMipmapLinearFilter;
-    const base = new THREE.PlaneGeometry(1, 1);
-    base.translate(0.5, 0.5, 0);
-    const geometry = new THREE.InstancedBufferGeometry();
-    geometry.index = base.index;
-    geometry.setAttribute("position", base.getAttribute("position"));
-    geometry.setAttribute("uv", base.getAttribute("uv"));
     this.rect = new Float32Array(this.capacity * 4);
     this.uv = new Float32Array(this.capacity * 4);
     this.color = new Float32Array(this.capacity * 4);
-    geometry.setAttribute("iRect", new THREE.InstancedBufferAttribute(this.rect, 4).setUsage(THREE.DynamicDrawUsage));
-    geometry.setAttribute("iUv", new THREE.InstancedBufferAttribute(this.uv, 4).setUsage(THREE.DynamicDrawUsage));
-    geometry.setAttribute("iColor", new THREE.InstancedBufferAttribute(this.color, 4).setUsage(THREE.DynamicDrawUsage));
-    geometry.instanceCount = 0;
+    const geometry = instancedQuads({ iRect: [this.rect, 4], iUv: [this.uv, 4], iColor: [this.color, 4] }, true);
     const material = new THREE.ShaderMaterial({
       uniforms: { uAtlas: { value: atlas }, uScreen: { value: new THREE.Vector2(1, 1) } },
       vertexShader: VERTEX,
@@ -305,18 +287,9 @@ export class NumberSprites {
     if (n >= this.capacity) return n;
     const o = n * 4;
     const { rect, uv, color: rgba } = this;
-    rect[o] = x;
-    rect[o + 1] = y;
-    rect[o + 2] = w;
-    rect[o + 3] = h;
-    uv[o] = u0;
-    uv[o + 1] = v0;
-    uv[o + 2] = u1;
-    uv[o + 3] = v1;
-    rgba[o] = color.r;
-    rgba[o + 1] = color.g;
-    rgba[o + 2] = color.b;
-    rgba[o + 3] = alpha;
+    rect[o] = x; rect[o + 1] = y; rect[o + 2] = w; rect[o + 3] = h;
+    uv[o] = u0; uv[o + 1] = v0; uv[o + 2] = u1; uv[o + 3] = v1;
+    rgba[o] = color.r; rgba[o + 1] = color.g; rgba[o + 2] = color.b; rgba[o + 3] = alpha;
     return n + 1;
   }
 
@@ -351,11 +324,7 @@ export class NumberSprites {
         n = this.quad(n, field.x[i]! - lw / 2, y - lh * 1.05, lw, lh * 1.3, 0, CELL_H / H, this.labelWidth / W, 1, LABEL_COLOR, alpha);
       }
     }
-    const geometry = this.mesh.geometry;
-    geometry.instanceCount = n;
-    geometry.getAttribute("iRect").needsUpdate = true;
-    geometry.getAttribute("iUv").needsUpdate = true;
-    geometry.getAttribute("iColor").needsUpdate = true;
+    uploadQuads(this.mesh.geometry, n);
   }
 
   render(renderer: THREE.WebGLRenderer): void {

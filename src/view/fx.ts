@@ -4,9 +4,10 @@
  * (soft glow, 4/8/12-ray stars, ring, flare) for muzzles, impacts, kill
  * bursts and scout shots; `Strips`, camera-facing streaks between two points
  * for Xung rounds, the Tia column's light and its feed from the ship;
- * `Marks`, glow left on the floor where the Tia column burned.
+ * `Column`, the Tia column burning on the floor.
  */
 import * as THREE from "three";
+import { instancedQuads, uploadQuads } from "../../feedback/quads";
 
 export const CELL = { soft: 0, star4: 1, star8: 2, star12: 3, ring: 4, flare: 5, core: 6 } as const;
 /** Add to a cell to lay it flat on the floor. */
@@ -117,19 +118,11 @@ export class Glows {
 
   constructor(readonly capacity: number) {
     this.limit = capacity;
-    const base = new THREE.PlaneGeometry(1, 1);
-    const geometry = new THREE.InstancedBufferGeometry();
-    geometry.index = base.index;
-    geometry.setAttribute("position", base.getAttribute("position"));
-    geometry.setAttribute("uv", base.getAttribute("uv"));
     const total = capacity * 2;
     this.pos = new Float32Array(total * 4);
     this.color = new Float32Array(total * 4);
     this.size = new Float32Array(total * 2);
-    geometry.setAttribute("iPos", new THREE.InstancedBufferAttribute(this.pos, 4).setUsage(THREE.DynamicDrawUsage));
-    geometry.setAttribute("iColor", new THREE.InstancedBufferAttribute(this.color, 4).setUsage(THREE.DynamicDrawUsage));
-    geometry.setAttribute("iSize", new THREE.InstancedBufferAttribute(this.size, 2).setUsage(THREE.DynamicDrawUsage));
-    geometry.instanceCount = 0;
+    const geometry = instancedQuads({ iPos: [this.pos, 4], iColor: [this.color, 4], iSize: [this.size, 2] });
     this.mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({ uniforms: { uMap: { value: atlas() } }, vertexShader: GLOW_VERTEX, fragmentShader: ADD_FRAGMENT, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 8;
@@ -193,11 +186,7 @@ export class Glows {
 
   /** Uploads this frame's bursts and stamps. */
   flush(): void {
-    const geometry = this.mesh.geometry;
-    geometry.instanceCount = this.live + this.stamps;
-    geometry.getAttribute("iPos").needsUpdate = true;
-    geometry.getAttribute("iColor").needsUpdate = true;
-    geometry.getAttribute("iSize").needsUpdate = true;
+    uploadQuads(this.mesh.geometry, this.live + this.stamps);
   }
 
   get count(): number {
@@ -246,21 +235,11 @@ export class Strips {
   private n = 0;
 
   constructor(readonly capacity: number) {
-    const base = new THREE.PlaneGeometry(1, 1);
-    base.translate(0.5, 0.5, 0);
-    const geometry = new THREE.InstancedBufferGeometry();
-    geometry.index = base.index;
-    geometry.setAttribute("position", base.getAttribute("position"));
-    geometry.setAttribute("uv", base.getAttribute("uv"));
     this.from = new Float32Array(capacity * 3);
     this.to = new Float32Array(capacity * 3);
     this.color = new Float32Array(capacity * 4);
     this.width = new Float32Array(capacity);
-    geometry.setAttribute("iFrom", new THREE.InstancedBufferAttribute(this.from, 3).setUsage(THREE.DynamicDrawUsage));
-    geometry.setAttribute("iTo", new THREE.InstancedBufferAttribute(this.to, 3).setUsage(THREE.DynamicDrawUsage));
-    geometry.setAttribute("iColor", new THREE.InstancedBufferAttribute(this.color, 4).setUsage(THREE.DynamicDrawUsage));
-    geometry.setAttribute("iWidth", new THREE.InstancedBufferAttribute(this.width, 1).setUsage(THREE.DynamicDrawUsage));
-    geometry.instanceCount = 0;
+    const geometry = instancedQuads({ iFrom: [this.from, 3], iTo: [this.to, 3], iColor: [this.color, 4], iWidth: [this.width, 1] }, true);
     this.mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({ uniforms: { uTime: { value: 0 } }, vertexShader: STRIP_VERTEX, fragmentShader: STRIP_FRAGMENT, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 7;
@@ -282,9 +261,7 @@ export class Strips {
   }
 
   end(): void {
-    const geometry = this.mesh.geometry;
-    geometry.instanceCount = this.n;
-    for (const name of ["iFrom", "iTo", "iColor", "iWidth"]) geometry.getAttribute(name).needsUpdate = true;
+    uploadQuads(this.mesh.geometry, this.n);
   }
 }
 
@@ -328,51 +305,5 @@ export class Column {
 
   get power(): number {
     return this.uniforms.uPower.value;
-  }
-}
-
-/** Glow left on the floor (where the column burned): one InstancedMesh of soft quads, a ring pool. */
-export class Marks {
-  readonly mesh: THREE.InstancedMesh;
-  private readonly age: Float32Array;
-  private readonly x: Float32Array;
-  private readonly z: Float32Array;
-  private readonly w: Float32Array;
-  private cursor = 0;
-  private readonly matrix = new THREE.Matrix4();
-  private readonly tint = new THREE.Color();
-
-  constructor(readonly capacity: number, map: THREE.Texture, private readonly color: THREE.Color, private readonly life = 2.4) {
-    this.mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }), capacity);
-    this.mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3);
-    this.mesh.frustumCulled = false;
-    this.mesh.renderOrder = 3;
-    this.age = new Float32Array(capacity).fill(life);
-    this.x = new Float32Array(capacity);
-    this.z = new Float32Array(capacity);
-    this.w = new Float32Array(capacity);
-  }
-
-  add(x: number, z: number, width: number): void {
-    const i = this.cursor;
-    this.cursor = (this.cursor + 1) % this.capacity;
-    this.age[i] = 0;
-    this.x[i] = x;
-    this.z[i] = z;
-    this.w[i] = width;
-  }
-
-  update(dt: number): void {
-    for (let i = 0; i < this.capacity; i += 1) {
-      const age = Math.min(this.life, this.age[i]! + dt);
-      this.age[i] = age;
-      const k = 1 - age / this.life;
-      this.matrix.makeScale(this.w[i]! * (k > 0 ? 1 : 0), 1, this.w[i]! * 2.4 * (k > 0 ? 1 : 0));
-      this.matrix.setPosition(this.x[i]!, 0.05, -this.z[i]!);
-      this.mesh.setMatrixAt(i, this.matrix);
-      this.mesh.setColorAt(i, this.tint.copy(this.color).multiplyScalar(k * k * 0.9));
-    }
-    this.mesh.instanceMatrix.needsUpdate = true;
-    if (this.mesh.instanceColor !== null) this.mesh.instanceColor.needsUpdate = true;
   }
 }

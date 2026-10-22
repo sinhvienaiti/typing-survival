@@ -131,10 +131,4 @@ export class Debris {
     this.mesh.count = top;
     this.mesh.instanceMatrix.needsUpdate = true;
   }
-
-  clear(): void {
-    this.alive.fill(0);
-    this.live = 0;
-    this.mesh.count = 0;
-  }
 }

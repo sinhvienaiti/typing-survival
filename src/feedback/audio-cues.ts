@@ -30,7 +30,6 @@ export class AudioCues {
   private pending = { count: 0, tier: 0, pan: 0, at: 0 };
   private chain = { step: 0, last: -1e9 };
   private readonly bursts: number[] = [];
-  private ducked = false;
 
   constructor(volume: number) {
     this.volume = Math.max(0, Math.min(1, volume));
@@ -66,7 +65,6 @@ export class AudioCues {
 
   /** Guns and hits 6 dB down while a word is spoken. */
   duck(active: boolean): void {
-    this.ducked = active;
     if (this.ctx === null) return;
     const t = this.ctx.currentTime;
     for (const bus of ["guns", "hits"] as const) {
@@ -75,10 +73,6 @@ export class AudioCues {
       gain.setValueAtTime(gain.value, t);
       gain.linearRampToValueAtTime(BUS_GAIN[bus] * (active ? DUCK.gain : 1), t + (active ? DUCK.downS : DUCK.upS));
     }
-  }
-
-  get isDucked(): boolean {
-    return this.ducked;
   }
 
   private out(bus: Bus, pan: number): AudioNode {

@@ -51,16 +51,9 @@ if (params.has("q")) safeLocalStorage.setItem(QUALITY_KEY, tier);
 if (params.has("pilot")) safeLocalStorage.setItem(PILOT_KEY, pilot);
 const seed = Number(params.get("seed") ?? "") >>> 0 || (Math.floor(Math.random() * 0x7fffffff) >>> 0) || 1;
 const saved = (safeLocalStorage.readJson(SETTINGS_KEY) ?? {}) as Partial<GameSettings>;
-const settings: GameSettings = {
-  sfxVolume: Number.isFinite(saved.sfxVolume) ? saved.sfxVolume! : 0.7,
-  musicVolume: Number.isFinite(saved.musicVolume) ? saved.musicVolume! : 0.5,
-  ambientVolume: Number.isFinite(saved.ambientVolume) ? saved.ambientVolume! : 0.4,
-  screenShake: saved.screenShake ?? true,
-  visualQuality: saved.visualQuality ?? "high",
-  pronunciationEnabled: saved.pronunciationEnabled ?? true,
-  pronunciationRate: Number.isFinite(saved.pronunciationRate) ? saved.pronunciationRate! : 0.9,
-  pronunciationVolume: Number.isFinite(saved.pronunciationVolume) ? saved.pronunciationVolume! : 1,
-};
+const DEFAULTS: GameSettings = { sfxVolume: 0.7, musicVolume: 0.5, ambientVolume: 0.4, screenShake: true, visualQuality: "high", pronunciationEnabled: true, pronunciationRate: 0.9, pronunciationVolume: 1 };
+const settings: GameSettings = { ...DEFAULTS, ...saved };
+if (!Number.isFinite(settings.sfxVolume)) settings.sfxVolume = DEFAULTS.sfxVolume;
 
 const hudRoot = byId("svHud");
 let stage: Stage;

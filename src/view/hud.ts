@@ -26,7 +26,7 @@ function el<T extends HTMLElement>(tag: string, className: string, parent: HTMLE
   return node;
 }
 
-type Slot = { root: HTMLElement; typed: HTMLElement; rest: HTMLElement; mean: HTMLElement; mags: HTMLElement[]; word: string; typedCount: number; flash: number };
+type Slot = { root: HTMLElement; typed: HTMLElement; rest: HTMLElement; mean: HTMLElement; mags: HTMLElement[]; word: string; typedCount: number };
 
 export class Hud {
   readonly root: HTMLElement;
@@ -85,7 +85,6 @@ export class Hud {
         mags: Array.from({ length: MAG_MAX }, () => el("i", "", mags)),
         word: "",
         typedCount: -1,
-        flash: 0,
       });
     };
     slot(GUNS[0]);
@@ -110,7 +109,6 @@ export class Hud {
   finished(slot: number, index: number, perfect: boolean, now: number): void {
     const word = this.words(index);
     this.done = { text: word.en + " · " + word.vi + " ✓", until: now + DONE_MS };
-    this.slots[slot]!.flash = now;
     this.slots[slot]!.root.classList.toggle("is-perfect", perfect);
     this.slots[slot]!.root.classList.remove("is-loaded");
     void this.slots[slot]!.root.offsetWidth;

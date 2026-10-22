@@ -18,7 +18,11 @@ import type { World } from "../sim/world";
 
 type Layer = { mesh: THREE.InstancedMesh; state: Float32Array; attribute: THREE.InstancedBufferAttribute; size: number; lift: number; count: number };
 
-/** Drawn size (m, longest side) and height above the floor per kind: a little larger than the body, so a horde reads as a mass. */
+/**
+ * Drawn size (m, longest side) and height above the floor per kind: a little
+ * larger than the body, so a horde reads as a mass; far foes are drawn up to
+ * 1.4× larger still, against the perspective.
+ */
 const LOOK = [
   { size: 1.55, lift: 0.75, model: ["rainbow-mine-3d", "rainbow-mine-lod"] },
   { size: 2.3, lift: 1.0, model: ["rainbow-scout-3d", "rainbow-scout-lod"] },
@@ -193,7 +197,7 @@ export class Crowd {
       const yaw = speed > 0.2 ? Math.atan2(vx, -vz) : 0;
       this.euler.set(0.22 + Math.min(0.25, speed * 0.06) + Math.sin(now * 3 + phase) * 0.06, yaw * 0.6, -vx * 0.18 + Math.sin(now * 2.1 + phase) * 0.08);
       this.quat.setFromEuler(this.euler);
-      const base = layer.size * (kind === KIND.mine ? 0.92 + (F.phase[s]! % 0.17) : 1);
+      const base = layer.size * (kind === KIND.mine ? 0.92 + (F.phase[s]! % 0.17) : 1) * (1 + 0.4 * Math.min(1, Math.max(0, F.z[s]! / 60)));
       this.scale.set(base * r[4]!, base * r[3]!, base * r[4]!);
       const bob = Math.sin(now * (kind === KIND.mine ? 5.2 : 2.6) + phase) * 0.12;
       const x = F.x[s]! + vx * lead;

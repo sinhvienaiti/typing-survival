@@ -3,7 +3,8 @@
  * magazine (two at most, the firing one included) with the word's quality,
  * and the gun empties it by itself. Xung streams rounds at the foe nearest
  * the bottom in a 50° cone round its aim (a scout shot near the ship first);
- * Tia burns a 1.4 m column from the densest cluster, sweeping toward the next.
+ * Tia burns a 1.4 m column from the densest cluster, sweeping toward the next;
+ * with nothing in its reach it goes out and keeps the rest of its time.
  */
 import { CRIT_MULT, FIELD, MAG_MAX, QUALITY, SCOUT, TIA, WEAPON, XUNG } from "../content/rules";
 import { EV, FLAG } from "./events";
@@ -202,6 +203,13 @@ function fireTia(w: World, dt: number): void {
   G.beamPulse -= dt;
   while (G.beamPulse <= 0) {
     G.beamPulse += TIA.pulse / G.rate[2]!;
+    // Nothing left in reach: the column goes out and keeps its time for the next foes.
+    const any = densest(w, 0, -1);
+    if (any !== any) {
+      G.beamOn = 0;
+      w.events.push(w.tick, EV.beamEnd, WEAPON.tia, 0, G.beamX, FIELD.gateZ / 2, 0, 0, 0, 0);
+      return;
+    }
     pulse(w, gap >= 0 ? 1 : -1);
   }
   G.beamLeft -= dt;

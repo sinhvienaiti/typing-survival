@@ -42,11 +42,4 @@ export class HitStop {
     this.last = now;
     return SWEEP.stopMs;
   }
-
-  /** Kills inside the window before `now`. */
-  recentKills(now: number, windowMs: number): number {
-    let count = 0;
-    for (let index = 0; index < KILL_RING; index += 1) if (now - this.kills[index]! <= windowMs) count += 1;
-    return count;
-  }
 }

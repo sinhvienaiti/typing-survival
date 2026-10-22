@@ -19,7 +19,7 @@ import { FIELD, TIA, type Tier } from "../content/rules";
 import { EV, FLAG } from "../sim/events";
 import type { World } from "../sim/world";
 import type { Crowd } from "./crowd";
-import { CELL, Column, FLAT, Glows, Marks, Strips } from "./fx";
+import { CELL, Column, FLAT, Glows, Strips } from "./fx";
 import type { Stage } from "./scene";
 import { VIEW_TIERS } from "./scene";
 import { PILOT_COLORS, type Pilot, type Ship } from "./ship";
@@ -33,10 +33,12 @@ const C = {
   perfect: new THREE.Color("#9ffff2"),
   red: new THREE.Color("#ff3b4e"),
   ember: new THREE.Color("#ff7a32"),
-  shard: new THREE.Color("#ff8ad8"),
-  shard2: new THREE.Color("#7fe8ff"),
+  shard: new THREE.Color("#bff6ff"),
+  shard2: new THREE.Color("#ff9be0"),
 };
 const MAX_CLUSTERS = 48;
+/** Far blows draw larger (up to 1.5× at the gate), so the fight at the edge of range still reads. */
+export const far = (z: number): number => 1 + 0.5 * Math.min(1, Math.max(0, z / 60));
 const KILL_RING = 2048;
 
 export type CombatHooks = {
@@ -57,7 +59,6 @@ export class Combat {
   readonly hitstop = new HitStop();
   readonly audio: AudioCues;
   private readonly column: Column;
-  private readonly marks: Marks;
   private cursor = 0;
   private readonly kills = new Float64Array(KILL_RING).fill(-1e9);
   private killCount = 0;
@@ -67,6 +68,7 @@ export class Combat {
   private readonly at = new THREE.Vector3();
   private readonly screen = new THREE.Vector3();
   private readonly shot: THREE.Color;
+  private readonly fire: boolean;
   private readonly beam: THREE.Color;
   private shots = 0;
   private tiaHits = 0;
@@ -78,6 +80,7 @@ export class Combat {
   constructor(private readonly stage: Stage, private readonly crowd: Crowd, private readonly ship: Ship, pilot: Pilot, tierName: Tier, volume: number, private readonly hooks: CombatHooks) {
     const spec = VIEW_TIERS[tierName];
     this.shot = PILOT_COLORS[pilot].shot;
+    this.fire = pilot === "draconis";
     this.beam = PILOT_COLORS[pilot].beam;
     this.glows = new Glows(spec.bursts);
     this.strips = new Strips(2100);
@@ -85,9 +88,8 @@ export class Combat {
     this.debris = new Debris(spec.debris);
     this.numbers.limit = spec.numbers;
     this.column = new Column(this.beam, TIA.length, 3.6, FIELD.muzzleZ);
-    this.marks = new Marks(180, textures().soft, this.beam);
     this.audio = new AudioCues(volume);
-    stage.scene.add(this.column.mesh, this.marks.mesh, this.debris.mesh, this.strips.mesh, this.glows.mesh, this.sparks.points);
+    stage.scene.add(this.column.mesh, this.debris.mesh, this.strips.mesh, this.glows.mesh, this.sparks.points);
   }
 
   /** Point sprites are sized in world units: px per unit at distance 1. */
@@ -153,15 +155,16 @@ export class Combat {
           const perfect = (flags & FLAG.perfect) !== 0;
           const t = tia ? (crit ? 2 : 1) : crit ? (perfect ? 3 : 2) : 1;
           const profile = tier(t);
-          this.crowd.reactions.hit(R.slot[i]!, R.ref[i]!, t, dx, -dz, seconds);
+          this.crowd.reactions.hit(R.slot[i]!, R.ref[i]!, t, dx, dz, seconds);
           const y = 0.9;
+          const k = far(z);
           if (tia) {
             this.tiaHits += 1;
-            this.glows.burst(CELL.star4, x, y, -z, 0.4, 0.95, 0.08, this.beam, 1.2);
+            this.glows.burst(CELL.star4, x, y, -z, 0.4 * k, 0.95 * k, 0.08, this.beam, 1.2);
             if ((this.tiaHits & 1) === 0) this.spark(x, y, z, dx, dz, 2, 5, this.beam, 0.22, 0.35);
           } else {
             const color = t >= 3 ? C.perfect : t === 2 ? C.gold : this.shot;
-            this.glows.burst(profile.rays === 12 ? CELL.star12 : profile.rays === 8 ? CELL.star8 : CELL.star4, x, y, -z, 0.5 * t, 1.1 + t * 0.55, 0.1 + t * 0.03, color, 2.6);
+            this.glows.burst(profile.rays === 12 ? CELL.star12 : profile.rays === 8 ? CELL.star8 : CELL.star4, x, y, -z, 0.5 * t * k, (1.1 + t * 0.55) * k, 0.1 + t * 0.03, color, 2.6);
             if (profile.ring) this.glows.burst(CELL.ring, x, y, -z, 0.4, 3.2, 0.3, C.perfect, 2);
             this.spark(x, y, z, -dx, -dz, profile.sparks, 6 + t * 2, color, 0.24, 0.4);
             if (profile.debris > 0) this.debris.burst(x, y, -z, dx, -dz, profile.debris >> 1, 4, C.shard, C.white);
@@ -221,7 +224,8 @@ export class Combat {
           this.audio.beam(false, x / FIELD.halfW);
           break;
         case EV.beamPulse:
-          for (let k = 0; k < 3; k += 1) this.marks.add(x + (Math.random() - 0.5) * 0.6, FIELD.muzzleZ + Math.random() * TIA.length * 0.9, 1.1);
+          // Burn left on the floor along the column.
+          for (let k = 0; k < 3; k += 1) this.glows.burst(CELL.soft + FLAT, x + (Math.random() - 0.5) * 0.6, 0.06, -(FIELD.muzzleZ + Math.random() * TIA.length * 0.9), 1.5, 1.8, 2.4, this.beam, 0.85);
           break;
         case EV.spawn:
           this.glows.burst(CELL.soft, x, 1.5, -FIELD.gateZ, 6, 11, 0.5, C.pink, 1.2);
@@ -284,15 +288,17 @@ export class Combat {
     const dx = K.dx[c]! / length;
     const dz = K.dz[c]! / length;
     const scout = K.scout[c] === 1;
-    const size = Math.sqrt(n) * (scout ? 1.5 : 1);
+    const size = Math.sqrt(n) * (scout ? 1.5 : 1) * far(z);
     const tint = scout ? C.gold : C.pink;
     this.glows.burst(CELL.core, x, 1, -z, 1 * size, 2.4 * size, 0.12, C.hot, 2.4);
     this.glows.burst(scout ? CELL.star12 : CELL.star8, x, 1.1, -z, 1.3 * size, 3.8 * size, 0.18, tint, 2.2, 0, 0, 0, (Math.random() - 0.5) * 3);
     this.glows.burst(CELL.soft, x, 1, -z, 1.8 * size, 3.6 * size, 0.32, tint, 0.8);
+    // A wide streak of light for a scout or a heap of kills: the big moments read from far off.
+    if (scout || n >= 3) this.glows.burst(CELL.flare, x, 1.2, -z, 3 * size, 8 * size, 0.18, scout ? C.gold : C.cyan, 2.2);
     this.glows.burst(CELL.ring + FLAT, x, 0.08, -z, 0.6, 4.2 * size, 0.42, scout ? C.gold : C.cyan, 1.8);
     this.glows.burst(CELL.soft + FLAT, x, 0.07, -z, 2 * size, 2.6 * size, 1.2, C.pink, 0.35);
-    this.spark(x, 1, z, dx, dz, Math.min(40, 10 + n * 4), 10 + size * 2.5, C.pink, 0.34, 0.6);
-    this.spark(x, 1, z, dx, dz, Math.min(20, 5 + n * 2), 6, C.cyan, 0.24, 0.85);
+    this.spark(x, 1, z, dx, dz, Math.min(40, 10 + n * 4), 10 + size * 2.5, C.hot, 0.34, 0.55);
+    this.spark(x, 1, z, dx, dz, Math.min(20, 5 + n * 2), 6, C.cyan, 0.26, 0.85);
     this.debris.burst(x, 0.9, -z, dx, -dz, Math.min(40, (scout ? 9 : 5) + n * 3), 5.5 + size, C.shard, C.shard2);
     this.audio.kill(n, x / FIELD.halfW, scout, now);
     this.trauma.add(Math.min(0.2, (scout ? 0.1 : 0.025) * Math.sqrt(n)));
@@ -312,7 +318,11 @@ export class Combat {
       const flags = B.flags[b]!;
       const crit = (flags & FLAG.crit) !== 0;
       const color = crit && (flags & FLAG.perfect) !== 0 ? C.perfect : crit ? C.gold : this.shot;
-      this.strips.add(x - B.vx[b]! * 0.05, 0.95, -(z - B.vz[b]! * 0.05), x, 0.95, -z, crit ? 0.42 : 0.3, color, 2.4, 0.9);
+      if (this.fire) {
+        // Draconis: fireballs, a hot head trailing flame.
+        this.strips.add(x - B.vx[b]! * 0.07, 0.95, -(z - B.vz[b]! * 0.07), x, 0.95, -z, crit ? 0.7 : 0.55, color, 2, 0.7);
+        this.glows.stamp(CELL.soft, x, 0.95, -z, crit ? 1.6 : 1.2, 0, color, 1.6);
+      } else this.strips.add(x - B.vx[b]! * 0.05, 0.95, -(z - B.vz[b]! * 0.05), x, 0.95, -z, crit ? 0.42 : 0.3, color, 2.4, 0.9);
     }
     const S = w.shots;
     for (let s = 0; s < S.top; s += 1) {
@@ -346,13 +356,7 @@ export class Combat {
     this.glows.flush();
     this.sparks.update(dt, 0);
     this.debris.update(dt);
-    this.marks.update(dt);
     this.numbers.update(dt);
     this.sprites.write(this.numbers, this.stage.width, this.stage.height);
-  }
-
-  clear(): void {
-    this.numbers.clear();
-    this.debris.clear();
   }
 }

@@ -193,7 +193,7 @@ export class Stage {
     // Walls: energy rails and pylons every 3 m.
     const posts = Math.floor(length / 3);
     const pylon = new THREE.InstancedMesh(new THREE.BoxGeometry(0.42, 1.5, 0.42), new THREE.MeshStandardMaterial({ color: "#1b2045", roughness: 0.35, metalness: 0.85 }), posts * 2);
-    const caps = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.3, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.95, 0.45, 1.25) }), posts * 2);
+    const caps = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.3, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.3, 0.45, 1.75) }), posts * 2);
     const matrix = new THREE.Matrix4();
     for (let i = 0; i < posts; i += 1) {
       for (const side of [-1, 1]) {
