@@ -277,7 +277,11 @@ Dùng lại 14 hành vi của bản 2D (`src/enemies/kinds.ts`), model 3D của 
 - Mỗi chương chọn **một họ** chính (màu, nền, model); Luật Ải trộn 3–5 hành vi.
 - **Kiểu tràn:** dòng chảy liên tục, sóng lớn (tràn cả bề ngang), đội hình (khối, nêm, xoắn), phục kích hai bên. Mỗi ải có 2–4 **đỉnh tràn** để có lúc "cháy máy".
 - **Quái dễ nổ** (`volatile`) nổ dây chuyền khi chết sát nhau. Đó là khoảnh khắc "domino" sướng nhất.
-- **Số quái sống cùng lúc (trần):** Ultra 1.000, High 700, Medium 400, Low 200. Đầu game (chương 1–5) đỉnh khoảng 150, cuối game đỉnh chạm trần.
+- **Quái ra đều, không ném cả đống một lúc** (chủ dự án, 23/10). Quái có **máu thật**, phải bị bắn chết từng con, nên số trên màn hình là do **tích lũy** khi người chơi chưa kịp dọn:
+  - Nhịp ra: đầu game 1–3 con mỗi giây, giữa game 3–6, cuối game 5–10. Đỉnh tràn kéo dài 5–10 s, nhịp cao hơn khoảng 1,5 lần.
+  - Số trên màn hình (mục tiêu thiết kế): đầu game 20–60, giữa game 60–150, cuối game 150–300 lúc đỉnh tràn.
+  - Đội hình ra theo từng nhóm 4–12 con có hình dạng (khối, nêm, hàng), không rơi lộn xộn.
+- **Trần kỹ thuật** (Ultra 1.000, High 700, Medium 400, Low 200) chỉ là **mức an toàn** cho máy khi người chơi để quái dồn lại, không phải mục tiêu thiết kế.
 
 ### 4.6 Quái gắn từ và boss
 
@@ -548,7 +552,7 @@ Mỗi giai đoạn: làm, phản biện độc lập, sửa; có test và kịch
 
 | Giai đoạn | Làm gì | Xong khi |
 |---|---|---|
-| **S0 Bản thử dọc** | `survival.html`; sim cố định 60 Hz (tất định); 1 tàu, súng Xung và Tia (băng đạn), quái bầy `mine` **300 con** + vài `scout`; đám đông instanced, trường hướng, lưới va chạm; `src/feedback/` bản đầu: bậc, trauma, dừng hình, số WebGL, phản ứng quái, mảnh vỡ, đầu nòng, tiếng nhiều lớp; khung học không rung | Một phát bắn cảm thấy "nặng" rõ rệt; chủ dự án xem video quay màn hình và duyệt |
+| **S0 Bản thử dọc** | `survival.html`; sim cố định 60 Hz (tất định); 1 tàu, súng Xung và Tia (băng đạn), quái bầy `mine` ra đều theo nhóm tới khoảng 150 con trên màn hình + vài `scout`; đám đông instanced, trường hướng, lưới va chạm; `src/feedback/` bản đầu: bậc, trauma, dừng hình, số WebGL, phản ứng quái, mảnh vỡ, đầu nòng, tiếng nhiều lớp; khung học không rung | Một phát bắn cảm thấy "nặng" rõ rệt; chủ dự án xem video quay màn hình và duyệt |
 | **S1 Ải và chương** | Bộ sinh Luật Ải bản đầu (4 Mục tiêu, 4 Hiểm họa, 3 Luật học); 4 súng (Xung, Tán, Ray, Pháo Sao); 5 hành vi quái; thưởng sau ải, chọn cửa (Súng, Rèn, Vàng, Lõi, Sửa); **Chương 1–3** đầy đủ có Mốc và boss; sao; thua, tổng kết; lưu giữa ải | Đi hết 3 chương; không hai ải giống nhau; bot 35 WPM qua mỗi ải thường ≥ 55 % |
 | **S1b Ấn và Chợ** | 5 Nguồn Ấn, bậc hiếm, Song Ấn; Chợ; Tinh nhuệ; Thử Thách Chữ; tiến hóa súng | Mỗi chương có ít nhất 3 kiểu build khác nhau |
 | **S2 Gõ thành năng lượng** | Mảnh chữ, lò, Nova cụm từ, Chuỗi, ô nguyên tố, Hoàn hảo | Gõ thấy rõ là nạp sức |
@@ -558,6 +562,7 @@ Mỗi giai đoạn: làm, phản biện độc lập, sửa; có test và kịch
 | **S5 Âm và nhạc** | Bus, nhường tiếng, 3 stem, tiếng theo bậc, xác nhận hạ | Tai người duyệt |
 | **S6 Hiệu năng, trợ năng** | 4 bậc chất lượng 3D, trần, giảm chuyển động, thanh trượt | 700 quái + 2.000 đạn + bão hiệu ứng ở High: p95 ≤ 12 ms; mọi công tắc có tác dụng |
 | **S7 Dùng chung** | Campaign 3D và Defense chuyển sang `src/feedback/` | Không mất cảm giác cũ; test cũ xanh |
+| **S8 PvP (Duel)** | Chủ dự án chốt (23/10): áp dụng bố cục bến súng và cơ chế băng đạn cho **Duel** của Space Typing. Hai người, mỗi người một bến súng gắn từ; quái là của đối thủ gửi sang (gõ từ đặc biệt để gửi đợt quái), hoặc bắn thẳng vào tàu đối thủ; giữ luật công bằng mạng của Duel (máy chủ ws có sẵn) | Hai máy chơi được qua mạng; độ trễ, công bằng chữ, đồng bộ đã kiểm |
 
 **Kiểm (mọi giai đoạn):**
 - Gõ: chậm (20 WPM), vừa, rất nhanh (120 WPM); sai nhiều; chuỗi hoàn hảo; bộ gõ tiếng Việt đang bật.
