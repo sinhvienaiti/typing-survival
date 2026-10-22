@@ -1,12 +1,12 @@
 /**
- * The HUD (docs/survival/BUILD_S0.md §7), DOM outside the shaking canvas:
+ * The HUD (docs/BUILD_S0.md §7), DOM outside the shaking canvas:
  * the learning frame at the bottom centre (the word being typed, its IPA
  * and meaning; "word · meaning ✓" for 0.6 s when done), the two gun slots
  * either side (gun name, word ≥ 26 px at 1280×720, meaning, two-magazine
  * bar), the ship's health, the time left and the kills of the last 3 s.
  * It publishes the rectangles damage numbers must not cover.
  */
-import type { Rect } from "../../feedback/numbers";
+import type { Rect } from "../feedback/numbers";
 import { MAG_MAX, TIA, WEAPON, XUNG } from "../content/rules";
 import { spanAt } from "../content/stage-s0";
 import type { World } from "../sim/world";

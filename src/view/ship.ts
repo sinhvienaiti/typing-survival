@@ -1,13 +1,13 @@
 /**
- * The player's ship at the bottom of the corridor (docs/survival/BUILD_S0.md
+ * The player's ship at the bottom of the corridor (docs/BUILD_S0.md
  * §3): Vanguard by default, or Draconis; the model rides in Campaign 3D's
  * Hero rig (banking, knock-back, engine ribbons). It turns toward Xung's aim
  * and kicks back on each round. Without its model a small hull made in code
  * stands in, so the page always plays.
  */
 import * as THREE from "three";
-import { loadModel, modelEntry, pickModelTier } from "../../render3d/model-loader";
-import { Hero } from "../../scene3d/hero";
+import { Hero, loadModel, pickModelTier } from "../kit/three";
+import { models } from "./models";
 import { FIELD } from "../content/rules";
 
 export type Pilot = "vanguard" | "draconis";
@@ -46,7 +46,7 @@ export class Ship {
   async load(scene: THREE.Scene): Promise<void> {
     const kind = this.pilot === "vanguard" ? "ships" : "heroes";
     for (const id of this.pilot === "vanguard" ? ["vanguard"] : ["draconis-v3", "draconis-v2", "draconis"]) {
-      const entry = await modelEntry(kind, id);
+      const entry = await models.entry(kind, id);
       const url = entry === null ? null : pickModelTier(entry, "high");
       if (url === null) continue;
       try {

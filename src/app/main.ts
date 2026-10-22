@@ -1,15 +1,13 @@
-// First: the game's Interface motion setting answers prefers-reduced-motion.
-import { motionReduced } from "../../ui/motion-preference";
+// First: the motion setting decides reduced motion before anything reads it.
+import { motionReduced } from "./motion";
 import "@fontsource/exo-2/800.css";
 import "@fontsource/exo-2/800-italic.css";
 import "@fontsource/be-vietnam-pro/500.css";
 import "@fontsource/be-vietnam-pro/600.css";
 import "@fontsource/be-vietnam-pro/800.css";
 import "../view/survival.css";
-import { runFrameLoop } from "../../platform/frame-loop";
-import { safeLocalStorage } from "../../platform/safe-storage";
-import { speakEnglish } from "../../speech";
-import type { GameSettings } from "../../types";
+import { runFrameLoop, safeLocalStorage } from "../kit/platform";
+import { speakEnglish } from "../kit/speech";
 import { FIELD, FOE_CAP, TIA, type Tier } from "../content/rules";
 import { STAGE_S0 } from "../content/stage-s0";
 import { hashHex } from "../sim/hash";
@@ -20,20 +18,22 @@ import { Stage } from "../view/scene";
 import { Ship, type Pilot } from "../view/ship";
 import { installDevHandle } from "./dev";
 import { ImeNotice, installAutoPause, installKeys } from "./input";
+import { reportWord } from "./learning";
 import { Session } from "./session";
 import { loadVocab, type Word } from "./vocab";
 
 /**
- * Sinh Tồn (survival.html), stage S0 "Bản thử dọc" (docs/survival/BUILD_S0.md):
+ * Sinh Tồn (index.html), stage S0 "Bản thử dọc" (docs/BUILD_S0.md):
  * the vocabulary loads, the world steps at 60 Hz in a session, the 3D stage
  * draws it, the combat view turns its events into feedback, the DOM HUD
  * shows the words; window.__survival lets the browser scenarios drive it.
  * Storage: only survival.* keys (the quality and pilot choices); the game's
  * own settings (volume, screen shake, pronunciation) are read, never written.
+ * Each typed word goes to the portal's learning record as "typing-survival".
  */
 const QUALITY_KEY = "survival.quality";
 const PILOT_KEY = "survival.pilot";
-const SETTINGS_KEY = "spaceTypingSettingsV1";
+const SETTINGS_KEY = "survival.settings";
 const SPEAK_GAP_MS = 3000;
 const TIERS = Object.keys(FOE_CAP) as Tier[];
 
@@ -50,9 +50,11 @@ const pilot: Pilot = pick(params.get("pilot"), ["vanguard", "draconis"] as const
 if (params.has("q")) safeLocalStorage.setItem(QUALITY_KEY, tier);
 if (params.has("pilot")) safeLocalStorage.setItem(PILOT_KEY, pilot);
 const seed = Number(params.get("seed") ?? "") >>> 0 || (Math.floor(Math.random() * 0x7fffffff) >>> 0) || 1;
-const saved = (safeLocalStorage.readJson(SETTINGS_KEY) ?? {}) as Partial<GameSettings>;
-const DEFAULTS: GameSettings = { sfxVolume: 0.7, musicVolume: 0.5, ambientVolume: 0.4, screenShake: true, visualQuality: "high", pronunciationEnabled: true, pronunciationRate: 0.9, pronunciationVolume: 1 };
-const settings: GameSettings = { ...DEFAULTS, ...saved };
+type Settings = { sfxVolume: number; screenShake: boolean; pronunciationEnabled: boolean; pronunciationRate: number; pronunciationVolume: number };
+const saved = (safeLocalStorage.readJson(SETTINGS_KEY) ?? {}) as Partial<Settings>;
+const DEFAULTS: Settings = { sfxVolume: 0.7, screenShake: true, pronunciationEnabled: true, pronunciationRate: 0.9, pronunciationVolume: 1 };
+const settings: Settings = { ...DEFAULTS, ...saved };
+const speech = { enabled: settings.pronunciationEnabled, rate: settings.pronunciationRate, volume: settings.pronunciationVolume };
 if (!Number.isFinite(settings.sfxVolume)) settings.sfxVolume = DEFAULTS.sfxVolume;
 
 const hudRoot = byId("svHud");
@@ -86,11 +88,12 @@ const combat = new Combat(stage, crowd, ship, pilot, tier, settings.sfxVolume, {
   wordDone(slot, index, perfect) {
     hud.finished(slot, index, perfect, clock);
     const word = wordOf(index);
+    if (vocab.source === "vocabulary") reportWord(word, perfect);
     // Said the first time it is typed in this run, at most once every 3 s.
     if (settings.pronunciationEnabled && !spoken.has(word.en) && clock - lastSpeak >= SPEAK_GAP_MS) {
       spoken.add(word.en);
       lastSpeak = clock;
-      speakEnglish(word.en, settings);
+      speakEnglish(word.en, speech);
     }
   },
   hurt: () => hud.hurt(),
@@ -158,7 +161,7 @@ function act(action: "pause" | "enter" | "repeat"): void {
   } else if (action === "pause") {
     if (mode === "play") setMode("paused");
     else if (mode === "paused") setMode("play");
-  } else if (action === "repeat" && world.typing.lock >= 0) speakEnglish(wordOf(world.typing.word[world.typing.lock]!).en, settings);
+  } else if (action === "repeat" && world.typing.lock >= 0) speakEnglish(wordOf(world.typing.word[world.typing.lock]!).en, speech);
 }
 
 for (const type of ["pointerdown", "keydown"]) window.addEventListener(type, () => combat.audio.resume());
@@ -272,7 +275,7 @@ installDevHandle({
   send: (command: Parameters<Session["send"]>[0]) => session.send(command),
   flood: (n: number) => session.send({ t: "flood", n }),
   hash: () => hashHex(world),
-  /** The run so far, read at one instant: what a Node replay needs (scripts/survival/replay.ts). */
+  /** The run so far, read at one instant: what a Node replay needs (scripts/replay.ts). */
   snapshot: () => ({ seed: world.seed, tier, deck: vocab.hash, vocabulary: vocab.source, expected: world.expected, tick: world.tick, hash: hashHex(world), log: session.log.slice() }),
   state: () => ({
     tick: world.tick, time: world.time, phase: world.phase, hp: world.hp, foes: world.foes.count, onScreen: onScreen(), bullets: world.bullets.count, shots: world.shots.count,

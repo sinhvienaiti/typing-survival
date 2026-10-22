@@ -1,5 +1,5 @@
 /**
- * The two gun slots' words (docs/survival/BUILD_S0.md §5). Each slot shows
+ * The two gun slots' words (docs/BUILD_S0.md §5). Each slot shows
  * one word; the first key whose letter starts a slot's word locks it (the
  * two first letters always differ), further keys type it, a wrong key is an
  * error (the word stays), Backspace takes a letter back and frees the lock

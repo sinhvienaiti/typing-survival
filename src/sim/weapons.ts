@@ -1,5 +1,5 @@
 /**
- * The two guns (docs/survival/BUILD_S0.md §5): a finished word loads one
+ * The two guns (docs/BUILD_S0.md §5): a finished word loads one
  * magazine (two at most, the firing one included) with the word's quality,
  * and the gun empties it by itself. Xung streams rounds at the foe nearest
  * the bottom in a 50° cone round its aim (a scout shot near the ship first);

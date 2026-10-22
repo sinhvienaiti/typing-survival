@@ -7,14 +7,13 @@
  * state each frame. Nothing is allocated per event.
  */
 import * as THREE from "three";
-import { AudioCues } from "../../feedback/audio-cues";
-import { Debris } from "../../feedback/debris";
-import { HitStop } from "../../feedback/hitstop";
-import { NumberField, NumberSprites, STYLE, type Rect } from "../../feedback/numbers";
-import { STOP_GAP_MS, tier } from "../../feedback/tiers";
-import { Trauma } from "../../feedback/trauma";
-import { ParticlePool } from "../../scene3d/particles";
-import { textures } from "../../scene3d/textures";
+import { AudioCues } from "../feedback/audio-cues";
+import { Debris } from "../feedback/debris";
+import { HitStop } from "../feedback/hitstop";
+import { NumberField, NumberSprites, STYLE, type Rect } from "../feedback/numbers";
+import { STOP_GAP_MS, tier } from "../feedback/tiers";
+import { Trauma } from "../feedback/trauma";
+import { ParticlePool, textures } from "../kit/three";
 import { FIELD, TIA, type Tier } from "../content/rules";
 import { EV, FLAG } from "../sim/events";
 import { beamEnd } from "../sim/weapons";

@@ -4,7 +4,7 @@
  * and command log match tick by tick, on Node and in Chrome. Events are
  * output, not state, and stay out.
  */
-import { rngState } from "../../platform/rng";
+import { rngState } from "../kit/platform/rng";
 import type { World } from "./world";
 
 const PRIME = 0x01000193;

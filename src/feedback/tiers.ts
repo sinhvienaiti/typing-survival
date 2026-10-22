@@ -1,5 +1,5 @@
 /**
- * Impact tiers T0–T5 (docs/survival/SURVIVAL_MODE_PLAN.md 5.2): what one blow
+ * Impact tiers T0–T5 (docs/SURVIVAL_MODE_PLAN.md 5.2): what one blow
  * is worth in shake, hit stop, number, particles and sound. A mode maps its
  * events to a tier; every feedback module reads the same row, so a blow's
  * layers always agree. Shared by the 3D modes (none but Sinh Tồn yet).

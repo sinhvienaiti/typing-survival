@@ -1,5 +1,5 @@
 /**
- * Steady grouped spawns (docs/survival/BUILD_S0.md §4): the stage's rate
+ * Steady grouped spawns (docs/BUILD_S0.md §4): the stage's rate
  * accrues foes owed; once a whole group (4–12, drawn ahead) is owed it walks
  * in above the gate as a block, wedge or line, scouts in its back rows. A
  * group that would pass the tier's crowd cap waits at the gate: never lost.

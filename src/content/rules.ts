@@ -1,8 +1,8 @@
 /**
- * Every rule number of Sinh Tồn S0 (docs/survival/BUILD_S0.md §3–§5). Metres,
+ * Every rule number of Sinh Tồn S0 (docs/BUILD_S0.md §3–§5). Metres,
  * seconds, hit points. The corridor runs along +z from the ship (z = 0) to
  * the gate (z = 40; BUILD_S0 had 60, shortened in the S0 review so the camera
- * comes closer and foes read bigger: docs/survival/BUILD_NOTES.md §7); x is
+ * comes closer and foes read bigger: docs/BUILD_NOTES.md §7); x is
  * across, −12 … 12.
  */
 export const TICK_HZ = 60;
@@ -48,7 +48,7 @@ export const WEAPON = { xung: 0, tia: 1 } as const;
 export const MAG_MAX = 2;
 /**
  * Xung: 24 rounds in 2.4 s at the foe nearest the bottom in a 50° cone (cos 25°).
- * Range and spread are not in §5: tuned with the bots (scripts/survival/balance.ts)
+ * Range and spread are not in §5: tuned with the bots (scripts/balance.ts)
  * so a 35 WPM typist sees 40–80 foes, 120–160 at the surges, and the crowd
  * presses into the ship's half of the field before it dies (BUILD_NOTES.md §7;
  * 42 m at first, which killed everything at the gate). The range is a depth:

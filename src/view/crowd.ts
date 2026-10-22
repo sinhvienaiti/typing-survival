@@ -1,5 +1,5 @@
 /**
- * The horde (docs/survival/BUILD_S0.md §4): one InstancedMesh per kind, as
+ * The horde (docs/BUILD_S0.md §4): one InstancedMesh per kind, as
  * Defense's crowd. The models (rainbow mine and scout) have only an idle
  * clip, so walking is done here: they face the ship, lean into their speed,
  * bob and sway; a hit flashes them white, knocks them back a little and
@@ -10,9 +10,9 @@
  */
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { Reactions } from "../../feedback/reaction";
-import { loadModel, modelEntry, pickModelTier } from "../../render3d/model-loader";
-import { textures } from "../../scene3d/textures";
+import { Reactions } from "../feedback/reaction";
+import { loadModel, pickModelTier, textures } from "../kit/three";
+import { models } from "./models";
 import { FIELD, FOES, KIND, STORE } from "../content/rules";
 import type { World } from "../sim/world";
 
@@ -69,7 +69,7 @@ function placeholder(kind: number): THREE.BufferGeometry {
 
 async function modelGeometry(ids: readonly string[]): Promise<{ geometry: THREE.BufferGeometry; material: THREE.MeshStandardMaterial } | null> {
   for (const id of ids) {
-    const entry = await modelEntry("enemies", id);
+    const entry = await models.entry("enemies", id);
     const url = entry === null ? null : pickModelTier(entry, "high");
     if (url === null) continue;
     try {

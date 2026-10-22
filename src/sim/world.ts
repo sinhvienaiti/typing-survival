@@ -1,5 +1,5 @@
 /**
- * The Sinh Tồn world and its fixed 60 Hz step (docs/survival/BUILD_S0.md §1).
+ * The Sinh Tồn world and its fixed 60 Hz step (docs/BUILD_S0.md §1).
  * Pure TypeScript: no clock, no DOM, randomness only from the seeded streams
  * of src/platform/rng. The same seed, deck, options and command log give the
  * same world, tick by tick, in Node and in every browser.
@@ -9,7 +9,7 @@
  * HITSTOP_SCALE for a few ticks and the guns hold their fire: keys are never
  * slowed or dropped, and the rounds of a word finished meanwhile wait.
  */
-import { createRng, type Rng } from "../../platform/rng";
+import { createRng, type Rng } from "../kit/platform/rng";
 import { BULLET_CAP, DT, EXPECTED_WPM, FOE_CAP, HITSTOP_SCALE, SHIP, STORE, type Tier } from "../content/rules";
 import { STAGE_S0 } from "../content/stage-s0";
 import { Ring, EV } from "./events";

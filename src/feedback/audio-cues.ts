@@ -7,9 +7,10 @@
  * - kills confirm with a crisp "core crack", and kills close together climb
  *   a pentatonic scale instead of piling up; at most 4 bursts in 120 ms;
  * - keys: 5 click variants, ±3 % pitch; a wrong key is a small dull thud;
- * - while a word is pronounced (src/speech.ts's event) guns and hits duck
+ * - while a word is pronounced (the kit speech's PRONUNCIATION_EVENT) guns and hits duck
  *   6 dB (80 ms down, 400 ms back).
  */
+import { PRONUNCIATION_EVENT } from "../kit/speech";
 import { tier } from "./tiers";
 
 const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28];
@@ -33,7 +34,7 @@ export class AudioCues {
 
   constructor(volume: number) {
     this.volume = Math.max(0, Math.min(1, volume));
-    window.addEventListener("space-typing:pronunciation", (event) => this.duck((event as CustomEvent<{ active: boolean }>).detail?.active === true));
+    window.addEventListener(PRONUNCIATION_EVENT, (event) => this.duck((event as CustomEvent<{ active: boolean }>).detail?.active === true));
   }
 
   /** Browsers start audio only after a gesture: call on the first key or click. */

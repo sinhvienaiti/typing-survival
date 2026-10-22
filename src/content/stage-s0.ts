@@ -1,5 +1,5 @@
 /**
- * The one S0 stage (docs/survival/BUILD_S0.md §3–§4): 180 s, the rainbow
+ * The one S0 stage (docs/BUILD_S0.md §3–§4): 180 s, the rainbow
  * family, steady grouped spawns. Rates are foes per second over [from, to);
  * peaks are the two surges.
  */
@@ -10,7 +10,7 @@ export type RateSpan = { from: number; to: number; rate: number; peak: 0 | 1 | 2
  * §7): with its rates no typist ever saw the 120–160 foes of a surge (at
  * most 108 even with no shot fired), so the calm stretches run ~1.3× and the
  * surges are real floods (15 and 11 a second). Tuned with the typing bots
- * (scripts/survival/balance.ts): a 35 WPM typist sees 40–80 foes in the calm
+ * (scripts/balance.ts): a 35 WPM typist sees 40–80 foes in the calm
  * and 120–160 at the surges, and wins.
  */
 export const STAGE_S0 = {

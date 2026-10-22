@@ -1,4 +1,4 @@
-/* Sinh Tồn S0 HUD (docs/survival/BUILD_S0.md §7): DOM over the canvas, never shaken. */
+/* Sinh Tồn S0 HUD (docs/BUILD_S0.md §7): DOM over the canvas, never shaken. */
 :root {
   --ui: 1;
   --xung: #5fe8ff;
@@ -96,9 +96,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #02030a; col
 .sv-words li { font: 500 14px "Be Vietnam Pro", sans-serif; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sv-words b { color: #fff; margin-right: 6px; }
 
-/* Reduced motion (the game's Interface motion setting): no scaling bumps; the banner only fades. */
-@media (prefers-reduced-motion: reduce) {
-  .sv-kills b.is-bump { animation: none; }
-  .sv-banner.is-on { animation: sv-banner-fade 2.2s ease-out forwards; }
-}
+/* Reduced motion (the game's motion setting, src/app/motion.ts): no scaling bumps; the banner only fades. */
+[data-motion="reduced"] .sv-kills b.is-bump { animation: none; }
+[data-motion="reduced"] .sv-banner.is-on { animation: sv-banner-fade 2.2s ease-out forwards; }
 @keyframes sv-banner-fade { 0% { opacity: 0; transform: translate(-50%, 0); } 10% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 0); } }

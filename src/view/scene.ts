@@ -1,5 +1,5 @@
 /**
- * The S0 stage (docs/survival/BUILD_S0.md §3): a 24 m × 60 m corridor of dark
+ * The S0 stage (docs/BUILD_S0.md §3): a 24 m × 60 m corridor of dark
  * glass over deep space, seen from above at a fixed 55° tilt; rows of energy
  * pylons for walls, a portal gate at the far end, the red bottom line before
  * the ship. Everything is made in code (shaders, primitives). The camera only

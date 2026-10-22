@@ -1,5 +1,5 @@
 /**
- * The keyboard (docs/survival/BUILD_S0.md §1): a letter types (a `key`
+ * The keyboard (docs/BUILD_S0.md §1): a letter types (a `key`
  * command), Backspace takes one back; command keys are never letters
  * (Escape pauses, Enter starts or restarts, Tab says the word again).
  * Composing presses of a Vietnamese input method, held keys, Ctrl/Alt/Meta
@@ -9,7 +9,7 @@
  * that loses focus pauses the fight (installAutoPause): keys cannot reach
  * it there, and the horde would not wait.
  */
-import { isComposingKey, typedLetter, vietnameseInputSign } from "../../scene3d/keys";
+import { isComposingKey, typedLetter, vietnameseInputSign } from "../kit/input";
 import type { CommandBody } from "../sim/world";
 
 export type KeyHandlers = { send(command: CommandBody): void; act(action: "pause" | "enter" | "repeat"): void; onVietnamese(): void; allowUntrusted: boolean };

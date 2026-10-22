@@ -1,10 +1,10 @@
 /**
- * The words of S0 (docs/survival/BUILD_S0.md §5): levels 1–3 of the shared
+ * The words of S0 (docs/BUILD_S0.md §5): levels 1–3 of the shared
  * vocabulary, as a deck of single a–z words (content/deck.ts) with each
  * word's meaning and IPA for the slots and the learning frame. Without the
  * shared files a short built-in list keeps the page playable.
  */
-import { loadVocabularyIndex, loadVocabularyLevel } from "../../vocabulary";
+import { loadVocabularyIndex, loadVocabularyLevel } from "../kit/vocab";
 import { buildDeck } from "../content/deck";
 
 export type Word = { en: string; vi: string; ipa: string };
