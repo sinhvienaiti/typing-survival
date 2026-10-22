@@ -11,7 +11,7 @@
 
 ## 0. Tóm tắt
 
-1. **Chế độ mới "Sinh Tồn"** (`survival.html`): tàu (hoặc Draconis) giữ cửa một hành lang không gian, quái của 8 họ sẵn có tràn xuống. Chơi theo **chuyến bay nhiều ải** kiểu roguelite như Hades (mục 4.0): mỗi phòng 1,5–2 phút, xong phòng thì chọn thưởng và chọn cửa kế tiếp, càng đi sâu càng khó nhưng bộ súng và nâng cấp càng mạnh. Chết là hết chuyến, nhưng tiền vĩnh viễn kiếm từ việc học vẫn giữ.
+1. **Chế độ mới "Sinh Tồn"** (`survival.html`): tàu (hoặc Draconis) giữ cửa một hành lang không gian, quái của 8 họ sẵn có tràn xuống. **Hành Trình 600 ải**, chia 60 chương (mục 4.0). Mỗi ải 2–3 phút, có **Luật Ải** riêng (mục tiêu, hiểm họa, luật học, đội quái, biến cố). Trong một chương, bộ súng và nâng cấp được giữ và chọn thêm sau mỗi ải như Hades; ngoài chương, Kho Vũ Khí và Trạm Mẹ làm người chơi mạnh dần qua 600 ải.
 2. **Súng gắn với từ vựng:** mỗi ô súng mang một **từ đang học**. Gõ đúng từ thì súng bắn, rồi ô lấy từ mới. Đây là chỗ học chính, không phải chữ dán lên quái.
 3. **"Tri thức thành năng lượng":** mỗi chữ cái gõ đúng thành tia năng lượng bay vào lò của tàu. Gõ xong từ là xả đòn. Gõ chuẩn thì đòn mạnh và sạch.
 4. **Cảm giác chiến đấu nhiều lớp:** số sát thương, lóe trúng, giật lùi, dừng hình ngắn, rung camera có hướng, mảnh vỡ, tiếng va chạm nhiều lớp. Tất cả đi qua **một bộ phản hồi chung** để dùng lại cho Campaign 3D, Defense, TD.
@@ -93,28 +93,79 @@
 
 ## 4. Luật chơi Sinh Tồn
 
-### 4.0 Cấu trúc: chuyến bay nhiều ải (roguelite)
+### 4.0 Cấu trúc: Hành Trình 600 ải, chia chương (roguelite trong chương)
 
-Chủ dự án chốt (23/10): không làm một ải 15 phút. Làm **vượt ải dài**: càng về sau càng khó, nhưng trang bị, kỹ năng ngày càng đa dạng và mạnh; sau mỗi ải có nhiều lựa chọn (nâng cấp, súng mới, mua máu…), như Hades.
+Chủ dự án chốt (23/10):
+- Không làm một ải 15 phút.
+- Làm **vượt ải dài, ít nhất 500 ải**, vì kho từ lớn (18.000 từ).
+- Độ khó tăng dần.
+- **Mỗi ải một cơ chế riêng**, không phải chỉ tăng tốc gõ.
+- Sau mỗi ải có nhiều lựa chọn (nâng cấp, súng mới, mua máu…), như Hades.
 
 ```text
-TRẠM MẸ (ngoài chuyến) ──▶ CHUYẾN BAY: Vùng 1 ─▶ Vùng 2 ─▶ Vùng 3 ─▶ Vùng 4 ─▶ Lõi Hố Đen (boss cuối)
-                                          │
-                     Vùng = 6 phòng + Trạm Nghỉ + Boss vùng (khoảng 12–15 phút)
-                     Phòng = 1 trận 90–120 s ─▶ nhận thưởng ─▶ chọn 1 trong 2–3 cửa kế tiếp
+TRẠM MẸ ──▶ HÀNH TRÌNH: Chương 1 … Chương 60  (600 ải, mở rộng thêm được)
+                         │
+           Chương = 10 ải liền nhau, chung một bộ súng và Ấn (roguelite)
+             ải 1–4 ─▶ ải 5 (Mốc: điểm lưu) ─▶ ải 6–9 ─▶ ải 10 (Boss chương)
+           Ải = 1 trận 2–3 phút ─▶ nhận thưởng ─▶ chọn 1 trong 2–3 cửa cho ải kế tiếp
 ```
 
 | Tầng | Là gì | Dài |
 |---|---|---|
-| **Chuyến bay** | 4 Vùng + boss cuối. Chết là hết chuyến | 50–60 phút nếu đi hết |
-| **Vùng** | Một họ quái (màu, nền, model). Mỗi chuyến chọn ngẫu nhiên 4 trong 8 họ, xếp theo độ khó | 12–15 phút |
-| **Phòng** | Một trận: sống qua các đợt tới hết giờ, hoặc hạ đủ số quái | 90–120 s |
-| **Trạm Nghỉ** | Giữa vùng: hồi máu **hoặc** rèn súng, không đánh | — |
-| **Boss vùng** | Boss bộ phận gắn từ (mục 4.6) | 2–3 phút |
+| **Hành Trình** | 60 chương, 600 ải, mở dần. Thêm chương bằng dữ liệu, không cần sửa mã | 25–30 giờ đường chính |
+| **Chương** | 10 ải, một chủ đề từ vựng, một họ quái chính, một boss. Bộ súng và Ấn **giữ suốt chương** | 25–30 phút |
+| **Ải** | Một trận theo **Luật Ải** riêng (mục 4.0b) | 2–3 phút |
+| **Mốc (ải 5)** | Điểm lưu giữa chương: chết sau mốc thì chơi lại từ ải 5 với bộ đồ lúc qua mốc (chế độ Thử thách: không có mốc) | — |
+| **Boss chương (ải 10)** | Boss bộ phận gắn từ (mục 4.6), mỗi chương một kịch bản pha | 3–4 phút |
 
-**Chọn cửa.** Xong phòng, hiện 2–3 cửa. Mỗi cửa có biểu tượng **loại thưởng** của phòng sau, nên người chơi lên kế hoạch được:
+- **Chết trong chương:** mất bộ súng và Ấn của chương, chơi lại chương (hoặc từ Mốc). Không mất chương đã qua.
+- **Qua chương:** mở chương sau. Bộ súng của chương **không mang sang** chương mới; sức mạnh lâu dài đến từ **Kho Vũ Khí** và **Trạm Mẹ** (mục dưới). Nhờ vậy chương nào cũng có lại cảm giác dựng bộ đồ từ đầu như Hades, mà người chơi vẫn mạnh dần qua 600 ải.
+- **Sao ải:** mỗi ải 1–3 sao (máu còn lại, độ chuẩn, thời gian). Chơi lại ải đã qua để lấy sao, ôn từ, kiếm Tri Thức.
 
-| Cửa | Thưởng khi xong phòng đó |
+#### 4.0a Từ vựng theo ải
+
+- Chương đi theo **chủ đề từ vựng** (101 chủ đề trong `shared/vocabulary/topics`) và cấp từ (100 cấp). Hai cấp từ cho mỗi khoảng 3 chương.
+- **Mỗi ải: 8–12 từ mới** và phần còn lại là từ ôn đến hạn hoặc từ yếu. Không nhồi 30 từ mới mỗi ải: 2–3 phút không đủ để học nhiều như vậy.
+- 600 ải × 10 từ mới ≈ 6.000 từ (cấp 1–35). Phần còn lại của kho 18.000 từ là các chương thêm sau (mùa mới), cùng bộ máy, chỉ thêm dữ liệu.
+- Người đã giỏi có thể **nhảy cấp**: làm một bài kiểm tra ngắn để bắt đầu ở chương cao hơn. Từ đã thuộc (độ thuộc ≥ 70) không tính là từ mới.
+
+#### 4.0b Luật Ải: mỗi ải một cơ chế
+
+Không thể tự tay thiết kế 600 ải. Mỗi ải là **một tổ hợp** từ 5 thư viện, sinh bằng script, có ràng buộc và có bot kiểm. Mỗi chương có thêm 1 ải dựng tay (ải 5 hoặc ải 10).
+
+| Thư viện | Ví dụ (khởi điểm, thêm dần) | Số lượng |
+|---|---|---|
+| **Mục tiêu** | Sống qua giờ; giữ trạm; hộ tống đoàn tàu; săn tinh nhuệ; phá tổ đẻ quái; nhặt tinh thể dưới hỏa lực; gỡ bom bằng từ; chặn hai đầu; đua với thủy triều quái; boss mini | 12 |
+| **Hiểm họa sân** | Mưa thiên thạch; bão ion làm tê một ô súng; sương tinh vân che tầm nhìn; giếng hấp dẫn kéo đạn; lóa mặt trời theo nhịp; bãi mìn; tường di động; hai làn đổi chỗ; vết nứt không gian | 14 |
+| **Luật học** | Chuẩn (từ + nghĩa); **Nghe** (ô súng chỉ phát âm, gõ theo tai); **Nghĩa** (ô hiện tiếng Việt, gõ tiếng Anh); **Thiếu chữ** (che 1–2 chữ cái); **Cụm từ** (collocation); **Từ loại** (chỉ động từ nạp lò…); **Chủ đề** (từ cùng chủ đề cho thưởng) | 8 |
+| **Đội quái** | 8 họ × 14 hành vi; mỗi ải trộn 3–5 hành vi; tinh nhuệ theo biến thể | — |
+| **Biến cố** | Quái đặc biệt gắn từ; cơn mưa vàng; tàu buôn ghé qua; trùm phụ xuất hiện giữa ải; đồng minh tạm thời | 10 |
+
+**Ràng buộc khi sinh:**
+- Trong 20 ải liền nhau không có hai ải cùng (Mục tiêu, Hiểm họa, Luật học).
+- Chương 1–6 **dạy dần**: mỗi 2–3 ải mở một thứ mới (một hiểm họa, một hành vi quái, một luật học). Chưa dạy thì chưa dùng.
+- Sau chương 6: trộn tự do, nhưng mỗi chương phải có ít nhất 1 thứ người chơi **chưa gặp**.
+- Luật học khó (Nghe, Nghĩa, Thiếu chữ) không đi chung với hiểm họa nặng trong cùng một ải.
+- Có ít nhất 12 × 14 × 8 = 1.344 bộ ba, chưa kể đội quái và biến cố, nên đủ cho hơn 600 ải không trùng.
+
+#### 4.0c Độ khó tăng dần (không chỉ tăng tốc gõ)
+
+- **Hình răng cưa:** độ khó tăng trong chương, đỉnh ở boss; đầu chương sau dễ hơn đỉnh chương trước một chút, nhưng cao hơn đầu chương trước.
+- Độ khó đến từ: số quái và máu quái, hành vi khó (nhiều hành vi cùng lúc), hiểm họa chồng nhau, luật học khó hơn, boss nhiều pha.
+- **Tốc gõ không phải đòn bẩy chính:** độ dài và tuổi của từ đi theo tốc thật của người chơi (E đo được), như TD. Người gõ chậm vẫn đi hết 600 ải được nếu chơi khéo.
+- **Bot kiểm từng ải:** bot gõ 25, 35, 60 WPM chơi mỗi ải. Ải bị loại khi khó vượt đường cong mục tiêu quá 15 %, hoặc khi bot 35 WPM với bộ đồ trung bình thắng dưới 55 % (trừ ải boss).
+
+#### 4.0d Mạnh lên qua 600 ải
+
+- **Kho Vũ Khí (vĩnh viễn):** súng và tàu mở được giữ mãi. Mỗi súng có **cấp vĩnh viễn** (nâng bằng Mảnh Sao) làm sức gốc khi súng xuất hiện trong chương.
+- **Trang bị trước chương:** chọn tàu, 2 súng khởi đầu, và 1–3 **bùa vĩnh viễn** (từ relic, trang bị có sẵn), số ô bùa mở dần theo chương.
+- **Trạm Mẹ:** cây nâng cấp vĩnh viễn (mục dưới).
+- **Trong chương:** súng mới, Ấn, rèn, tiến hóa, như Hades.
+- Kết quả: chương 50 khó hơn chương 5 rất nhiều, nhưng người chơi ở chương 50 có kho súng lớn, súng cấp cao, nhiều bùa, nhiều lựa chọn hơn.
+
+**Chọn cửa.** Xong ải, hiện 2–3 cửa. Mỗi cửa có biểu tượng **loại thưởng** của ải sau, nên người chơi lên kế hoạch được:
+
+| Cửa | Thưởng khi xong ải đó |
 |---|---|
 | Súng mới | Chọn 1 trong 3 súng (thêm vào ô trống, hoặc thay súng cũ) |
 | Ấn | Chọn 1 trong 3 **Ấn** của một Nguồn (mục dưới) |
@@ -123,10 +174,10 @@ TRẠM MẸ (ngoài chuyến) ──▶ CHUYẾN BAY: Vùng 1 ─▶ Vùng 2 ─
 | Lõi | +máu tối đa |
 | Sửa | Hồi 30 % máu |
 | Chợ | Không đánh. Mua súng, Ấn, máu, bùa dùng một lần, đổi lại lựa chọn |
-| Tinh nhuệ | Phòng khó hơn, thưởng 2 lần |
+| Tinh nhuệ | Ải khó hơn, thưởng 2 lần |
 | Thử Thách Chữ | Không có quái. Sự kiện học: nghe và gõ, nhìn nghĩa gõ từ, ghép cụm từ. Thưởng theo số câu đúng |
 
-**Ấn (nâng cấp trong chuyến).**
+**Ấn (nâng cấp trong chương).**
 - Có 5 **Nguồn**, mỗi nguồn một kiểu chơi:
   - Lửa: cháy, nổ.
   - Băng: chậm, đóng băng.
@@ -138,41 +189,42 @@ TRẠM MẸ (ngoài chuyến) ──▶ CHUYẾN BAY: Vùng 1 ─▶ Vùng 2 ─
 
 **Giữ gì, mất gì.**
 
-| | Trong chuyến (qua phòng, qua vùng) | Khi chết |
+| | Trong chương (qua các ải) | Khi chết / khi qua chương |
 |---|---|---|
-| Súng, cấp súng, Ấn, bùa | **Giữ** | Mất |
+| Súng nhặt trong chương, cấp rèn, Ấn, bùa dùng một lần | **Giữ** | Mất (chết thì chơi lại chương hoặc từ Mốc; qua chương thì bắt đầu chương mới với bộ khởi đầu) |
 | Vàng | Giữ | Mất |
-| Máu | Giữ (không tự hồi giữa phòng) | — |
+| Kho Vũ Khí, cấp vĩnh viễn của súng, bùa vĩnh viễn (mục 4.0d) | — | **Giữ mãi** |
+| Máu | Giữ (không tự hồi giữa các ải) | — |
 | **Tri Thức** (tiền vĩnh viễn) | Tích lũy | **Giữ** |
 | **Mảnh Sao** (rơi từ boss) | Tích lũy | **Giữ** |
 
 **Tiền vĩnh viễn gắn với học:**
-- **Tri Thức** đến chủ yếu từ việc học: gõ đúng từ mới, gõ đúng từ cần ôn, Thử Thách Chữ, tổng kết cuối chuyến.
+- **Tri Thức** đến chủ yếu từ việc học: gõ đúng từ mới, gõ đúng từ cần ôn, Thử Thách Chữ, tổng kết cuối chương, sao của ải.
 - **Mảnh Sao** đến từ boss.
 - Vì vậy học tốt là cách chắc nhất để mạnh lên lâu dài.
 
-**Trạm Mẹ (ngoài chuyến).**
-- Cây nâng cấp vĩnh viễn, trả bằng Tri Thức: máu gốc, số ô súng đầu chuyến, thêm một lần chọn lại, hồi sinh một lần.
+**Trạm Mẹ (ngoài chương).**
+- Cây nâng cấp vĩnh viễn, trả bằng Tri Thức: máu gốc, số ô súng đầu chương, thêm một lần chọn lại, hồi sinh một lần, số ô bùa vĩnh viễn.
 - Mở súng, Ấn, tàu mới vào kho rơi, trả bằng Mảnh Sao.
 - Chọn tàu: 12 tàu và Draconis; mỗi tàu một súng khởi đầu và một nội tại.
 - **Độ Sâu Hố Đen:** người chơi tự bật điều kiện khó (quái nhanh hơn, ít máu hơn…) để có thưởng cao hơn khi đã quen.
 - **Thư Viện Từ:** xem lại các từ đã gặp, nghe phát âm, ôn nhanh.
 
-**Độ khó tăng dần.** Mỗi phòng: máu và số quái +4 %. Mỗi vùng: hành vi quái mới, tinh nhuệ dày hơn, boss mạnh hơn. Bù lại: mỗi phòng có một thưởng, nên tới Vùng 3–4 người chơi có 5–6 súng, nhiều Ấn và Song Ấn.
+**Độ khó:** xem mục 4.0c. Trong một chương, mỗi ải có một thưởng, nên tới ải 8–10 người chơi có 4–6 súng, nhiều Ấn và Song Ấn.
 
-**Lưu giữa phòng.** Thoát lúc chọn cửa thì lần sau tiếp tục đúng chỗ.
+**Lưu giữa ải.** Thoát lúc chọn cửa thì lần sau tiếp tục đúng chỗ.
 
-**Ô súng.** Đầu chuyến có 2 ô (súng của tàu + 1 súng chọn). Tối đa 6 ô, mở bằng thưởng hoặc Trạm Mẹ.
+**Ô súng.** Đầu chương có 2 ô (2 súng khởi đầu chọn từ Kho Vũ Khí). Tối đa 6 ô, mở bằng thưởng hoặc Trạm Mẹ.
 
 ### 4.1 Sân và góc nhìn
 
-- **Hành lang không gian** rộng khoảng 24 m, dài 60 m, nhìn từ trên xuống nghiêng 55°. Quái vào ở đầu trên. Tàu người chơi ở đáy, đứng yên, xoay nòng.
-- Bối cảnh theo họ quái của màn: tinh vân, vành đai thiên thạch, trạm vỡ. Dùng lại nền và màu của 8 họ.
+- **Hành lang không gian** (mặc định; một số Mục tiêu đổi sân: hai đầu, đoàn tàu đi ngang, trạm ở giữa) rộng khoảng 24 m, dài 60 m, nhìn từ trên xuống nghiêng 55°. Quái vào ở đầu trên. Tàu người chơi ở đáy, đứng yên, xoay nòng.
+- Bối cảnh theo họ quái của chương và hiểm họa của ải: tinh vân, vành đai thiên thạch, trạm vỡ. Dùng lại nền và màu của 8 họ.
 - Sân cố định, không cuộn. Camera chỉ rung, có xung nhẹ và zoom chậm khi có boss.
 
 ### 4.2 Bến súng
 
-- Hai bên đáy có **bến súng**: đầu chuyến 2 ô, mở dần tới 6 ô (mục 4.0).
+- Hai bên đáy có **bến súng**: đầu chương 2 ô, mở dần tới 6 ô (mục 4.0).
 - Mỗi ô: **tên súng** (nhỏ), **từ đang học** (to), **nghĩa tiếng Việt** (nhỏ, theo luật mục 6.3), **thanh hồi**.
 - Ô sẵn sàng thì từ sáng. Đang hồi thì từ mờ, không gõ được.
 - Chữ đầu của các ô sáng **không trùng nhau**, dùng lại `scene3d/words.ts`.
@@ -227,10 +279,10 @@ Dùng lại 14 hành vi của bản 2D (`src/enemies/kinds.ts`), model 3D của 
 - **Boss** (27 model có clip): mỗi 5 đợt. Boss có 2–4 **bộ phận gắn từ** (khiên, nòng, lõi). Gõ phá từng bộ phận rồi lõi lộ ra. Dùng lại cơ chế gõ boss của 2D: ngắt nạp, khiên theo thứ tự, điểm yếu.
 - Boss báo đòn lớn trước 3 s: vạch đỏ trên sân và một **từ chặn**. Gõ kịp thì chặn đòn.
 
-### 4.7 Trong phòng, sau phòng, thua
+### 4.7 Trong ải, sau ải, thua
 
-- **Trong phòng không có màn chọn thẻ**, để không cắt ngang trận và không che khung học. Trong phòng chỉ nhặt vàng, hạt máu nhỏ, và nạp lò Nova.
-- **Sau phòng:** hiện thưởng của phòng (đã biết từ lúc chọn cửa), rồi các cửa kế tiếp. Thế giới đã dừng nên đọc thoải mái.
+- **Trong ải không có màn chọn thẻ**, để không cắt ngang trận và không che khung học. Trong ải chỉ nhặt vàng, hạt máu nhỏ, và nạp lò Nova.
+- **Sau ải:** hiện thưởng của ải (đã biết từ lúc chọn cửa), rồi các cửa kế tiếp. Thế giới đã dừng nên đọc thoải mái.
 - **Chọn thẻ bằng gõ từ khóa tiếng Anh** của thẻ ("pierce", "shield", "storm", "magnet"…), hoặc phím 1/2/3 (trợ năng). Chọn lại: gõ "reroll", dùng lượt chọn lại (mở ở Trạm Mẹ) hoặc vàng.
 - Loại thẻ:
   - súng mới, rèn súng, tiến hóa;
@@ -238,11 +290,11 @@ Dùng lại 14 hành vi của bản 2D (`src/enemies/kinds.ts`), model 3D của 
   - chỉ số (máu, hút vật phẩm, chí mạng);
   - **thẻ rủi ro** (sát thương +100 %, gõ sai mất 3 máu).
 - Thua khi tàu hết máu. Màn kết thúc hiện:
-  - vùng và phòng đã tới, thời gian, điểm;
+  - chương và ải đã tới, sao, thời gian, điểm;
   - **từ đã gõ, từ mới học, từ cần ôn** (bấm nghe phát âm);
   - Tri Thức và Mảnh Sao mang về Trạm Mẹ.
 
-### 4.8 Học giữa các phòng
+### 4.8 Học giữa các ải
 
 - Cửa **Thử Thách Chữ** (mục 4.0) là chỗ học sâu: nghe và gõ, nhìn nghĩa gõ từ, ghép cụm từ, ôn từ vừa gõ sai. Không có quái, không bị thời gian ép.
 - **Trạm Nghỉ** giữa vùng có thêm "Nghe và gõ" không bắt buộc: game đọc 3 từ vừa gõ sai, người chơi gõ lại theo tai, thưởng Tri Thức. Bỏ qua được bằng Enter.
@@ -461,12 +513,12 @@ Mỗi giai đoạn: làm, phản biện độc lập, sửa; có test và kịch
 | Giai đoạn | Làm gì | Xong khi |
 |---|---|---|
 | **S0 Bản thử dọc** | `survival.html`; sim cố định 60 Hz (tất định); 1 tàu, súng Xung, quái `scout`; `src/feedback/` bản đầu: bậc, trauma, dừng hình, số WebGL, phản ứng quái, mảnh vỡ, đầu nòng, tiếng nhiều lớp; khung học không rung | Một phát bắn cảm thấy "nặng" rõ rệt; chủ dự án xem video quay màn hình và duyệt |
-| **S1 Phòng và chuyến** | Phòng 90–120 s, đợt trong phòng; 4 súng (Xung, Tán, Ray, Pháo Sao); 5 hành vi quái; thưởng sau phòng, chọn cửa (Súng, Rèn, Vàng, Lõi, Sửa); 1 Vùng đầy đủ có boss; máu, thua, tổng kết; lưu giữa phòng | Đi hết 1 Vùng (12–15 phút); bot gõ 35 WPM qua Vùng 1 khoảng 60 % số lần |
-| **S1b Ấn và Chợ** | 5 Nguồn Ấn, bậc hiếm, Song Ấn; Chợ; Tinh nhuệ; Thử Thách Chữ; tiến hóa súng | Mỗi chuyến có ít nhất 3 kiểu build khác nhau |
+| **S1 Ải và chương** | Bộ sinh Luật Ải bản đầu (4 Mục tiêu, 4 Hiểm họa, 3 Luật học); 4 súng (Xung, Tán, Ray, Pháo Sao); 5 hành vi quái; thưởng sau ải, chọn cửa (Súng, Rèn, Vàng, Lõi, Sửa); **Chương 1–3** đầy đủ có Mốc và boss; sao; thua, tổng kết; lưu giữa ải | Đi hết 3 chương; không hai ải giống nhau; bot 35 WPM qua mỗi ải thường ≥ 55 % |
+| **S1b Ấn và Chợ** | 5 Nguồn Ấn, bậc hiếm, Song Ấn; Chợ; Tinh nhuệ; Thử Thách Chữ; tiến hóa súng | Mỗi chương có ít nhất 3 kiểu build khác nhau |
 | **S2 Gõ thành năng lượng** | Mảnh chữ, lò, Nova cụm từ, Chuỗi, ô nguyên tố, Hoàn hảo | Gõ thấy rõ là nạp sức |
 | **S3 Học** | Kế hoạch từ 60/25/15, hiện nghĩa theo độ thuộc, phát âm có nhường tiếng, gửi sự kiện học, Nghe và gõ, tổng kết từ | Từ luôn rõ nhất; kịch bản đo 0 lần số đè khung học |
-| **S4 Quái và boss** | 14 hành vi, quái gắn từ, tinh nhuệ, boss bộ phận gắn từ, báo đòn; đủ 4 Vùng và boss cuối | Đi hết một chuyến; 8 họ đều chơi được |
-| **S4b Trạm Mẹ** | Tri Thức, Mảnh Sao, cây nâng cấp vĩnh viễn, mở súng và tàu, Độ Sâu Hố Đen, Thư Viện Từ | Chuyến thứ 5 mạnh hơn chuyến đầu rõ rệt; học nhiều thì mạnh nhanh hơn |
+| **S4 Quái, boss, đủ thư viện** | 14 hành vi, quái gắn từ, tinh nhuệ, boss bộ phận gắn từ, báo đòn; thư viện đủ 12 Mục tiêu, 14 Hiểm họa, 8 Luật học, 10 Biến cố; sinh đủ **600 ải**, bot kiểm từng ải; 60 boss chương (27 model × nhiều kịch bản pha) | Báo cáo đường cong độ khó 600 ải; mọi ải qua bot; chủ dự án duyệt mẫu mỗi 10 chương |
+| **S4b Trạm Mẹ và Kho Vũ Khí** | Tri Thức, Mảnh Sao, cây nâng cấp vĩnh viễn, Kho Vũ Khí và cấp vĩnh viễn của súng, bùa vĩnh viễn, mở tàu, Độ Sâu Hố Đen, Thư Viện Từ, kiểm tra nhảy cấp | Ở chương 30 người chơi mạnh hơn chương 3 rõ rệt; học nhiều thì mạnh nhanh hơn |
 | **S5 Âm và nhạc** | Bus, nhường tiếng, 3 stem, tiếng theo bậc, xác nhận hạ | Tai người duyệt |
 | **S6 Hiệu năng, trợ năng** | 4 bậc chất lượng 3D, trần, giảm chuyển động, thanh trượt | 350 quái + bão hiệu ứng: p95 ≤ 12 ms; mọi công tắc có tác dụng |
 | **S7 Dùng chung** | Campaign 3D và Defense chuyển sang `src/feedback/` | Không mất cảm giác cũ; test cũ xanh |
@@ -483,8 +535,8 @@ Mỗi giai đoạn: làm, phản biện độc lập, sửa; có test và kịch
 ## 12. Câu hỏi cho chủ dự án (đã có mặc định)
 
 1. Sinh Tồn chơi bằng **tàu và Draconis** như Campaign 3D? Mặc định: có, chọn ở Trạm Mẹ.
-2. ~~Một trận dài bao lâu?~~ Đã chốt (23/10): chuyến bay nhiều ải, mục 4.0.
+2. ~~Một trận dài bao lâu?~~ Đã chốt (23/10): Hành Trình 600 ải chia 60 chương, mục 4.0.
 3. ~~Có tiến trình ngoài trận không?~~ Đã chốt (23/10): có, Trạm Mẹ (S4b).
 4. Thứ tự với TD: Sinh Tồn làm **sau** khi TD 1A.6 xong R2, R3? Mặc định: có, để không chạy hai việc lớn cùng lúc.
 5. Có **Chế độ vô tận** sau khi thắng boss cuối (vùng lặp, khó dần mãi)? Mặc định: có, mở sau lần thắng đầu.
-6. Có cho chơi lại **một Vùng** riêng để luyện (không tính tiến trình)? Mặc định: chưa.
+6. Chơi lại **một ải đã qua** để lấy sao và ôn từ? Đã có trong mục 4.0 (mặc định: có).
