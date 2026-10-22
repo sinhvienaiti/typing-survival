@@ -66,12 +66,13 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #02030a; col
 @keyframes sv-perfect { 0% { background: rgba(120, 255, 240, 0.45); } 100% { background: var(--panel); } }
 
 .sv-learn { height: calc(118px * var(--ui)); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: calc(8px * var(--ui)) calc(14px * var(--ui)); }
-.sv-learn-word { font: 800 calc(42px * var(--ui)) "Be Vietnam Pro", sans-serif; line-height: 1.1; white-space: nowrap; }
+.sv-learn-word { --fit: 1; font: 800 calc(42px * var(--ui) * var(--fit)) "Be Vietnam Pro", sans-serif; line-height: 1.1; white-space: nowrap; max-width: 100%; }
 .sv-learn.sv-xung .sv-typed { color: var(--xung); }
 .sv-learn.sv-tia .sv-typed { color: var(--tia); }
 .sv-learn-ipa { font: 500 calc(19px * var(--ui)) "Be Vietnam Pro", "Segoe UI", sans-serif; color: #e6e9ff; min-height: 1.2em; }
-.sv-learn-mean { font: 600 calc(16px * var(--ui)) "Be Vietnam Pro", sans-serif; color: var(--soft); min-height: 1.2em; }
-.sv-learn.is-done .sv-learn-word { font-size: calc(30px * var(--ui)); color: #9dffcf; }
+.sv-learn-mean { font: 600 calc(16px * var(--ui)) "Be Vietnam Pro", sans-serif; color: var(--soft); min-height: 1.2em; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sv-learn.is-done .sv-learn-word { font-size: calc(30px * var(--ui) * var(--fit)); color: #9dffcf; }
+.sv-learn.is-done .sv-learn-ipa, .sv-learn.is-done .sv-learn-mean { display: none; }
 .sv-learn.is-idle .sv-learn-mean { color: #aab3d8; }
 
 .sv-vignette { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 20, 50, 0.55) 100%); }
@@ -94,3 +95,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #02030a; col
 .sv-words { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; text-align: left; max-height: 30vh; overflow: auto; }
 .sv-words li { font: 500 14px "Be Vietnam Pro", sans-serif; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sv-words b { color: #fff; margin-right: 6px; }
+
+/* Reduced motion (the game's Interface motion setting): no scaling bumps; the banner only fades. */
+@media (prefers-reduced-motion: reduce) {
+  .sv-kills b.is-bump { animation: none; }
+  .sv-banner.is-on { animation: sv-banner-fade 2.2s ease-out forwards; }
+}
+@keyframes sv-banner-fade { 0% { opacity: 0; transform: translate(-50%, 0); } 10% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 0); } }

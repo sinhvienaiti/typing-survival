@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NumberField, STYLE } from "../src/feedback/numbers";
+import { NumberField, STYLE, popScale } from "../src/feedback/numbers";
 
 /**
  * Damage numbers (docs/survival/BUILD_S0.md §6): blows on one target within
@@ -26,9 +26,9 @@ describe("rolling up", () => {
     expect(f.style[a]).toBe(STYLE.crit);
     expect(f.pop[a]).toBe(1);
     expect(f.live).toBe(1);
-    // After the window a new number starts; another target is another number.
+    // After the window a new number starts; another target elsewhere is another number.
     expect(f.spawn(7, 400, 300, 7, STYLE.normal, 1, 1, 0.45, 0, -1, 1.2)).not.toBe(a);
-    expect(f.spawn(8, 400, 300, 7, STYLE.normal, 1, 1, 0.45, 0, -1, 1.2)).not.toBe(a);
+    expect(f.spawn(8, 700, 300, 7, STYLE.normal, 1, 1, 0.45, 0, -1, 1.2)).not.toBe(a);
     expect(f.live).toBe(3);
   });
 
@@ -50,6 +50,74 @@ describe("rolling up", () => {
     expect(f.x[i]).toBeGreaterThan(x);
     f.update(0.5);
     expect(f.alive[i]).toBe(0);
+  });
+});
+
+describe("a crowd's numbers (S0 review: no towers)", () => {
+  const extent = (f: NumberField) => {
+    const boxes = live(f).map((i) => f.box(i, { x: 0, y: 0, w: 0, h: 0 }));
+    return { top: Math.min(...boxes.map((b) => b.y)), bottom: Math.max(...boxes.map((b) => b.y + b.h)) };
+  };
+
+  it("takes beam ticks from many stretches landing on one spot into one number, not a column", () => {
+    const f = field();
+    for (let k = 0; k < 10; k += 1) f.spawn(-1 - k, 640 + (k % 3) * 4, 300 - (k % 2) * 6, 6, STYLE.tick, 1, 1, 0.45, 1, 0, k * 0.02);
+    expect(f.live).toBeLessThanOrEqual(2);
+    expect(live(f).reduce((sum, i) => sum + f.value[i]!, 0)).toBe(60);
+    const { top, bottom } = extent(f);
+    expect(bottom - top).toBeLessThanOrEqual(f.fontPx * 2.6);
+  });
+
+  it("rounds on different foes at one spot roll up while young; a number of another style goes beside, not on top", () => {
+    const f = field();
+    const a = f.spawn(1, 640, 300, 7, STYLE.normal, 1, 1, 0.45, 0, -1, 0);
+    expect(f.spawn(2, 642, 302, 7, STYLE.normal, 1, 1, 0.45, 0, -1, 0.05)).toBe(a);
+    expect(f.value[a]).toBe(14);
+    const c = f.spawn(3, 640, 300, 16, STYLE.crit, 2, 1.3, 0.6, 1, 0, 0.06);
+    expect(c).not.toBe(a);
+    const boxA = f.box(a, { x: 0, y: 0, w: 0, h: 0 });
+    const boxC = f.box(c, { x: 0, y: 0, w: 0, h: 0 });
+    const overlap = boxA.x < boxC.x + boxC.w && boxA.x + boxA.w > boxC.x && boxA.y < boxC.y + boxC.h && boxA.y + boxA.h > boxC.y;
+    expect(overlap).toBe(false);
+    // Beside: about level with it, not stacked above.
+    expect(Math.abs(f.y[c]! - f.y[a]!)).toBeLessThan(f.fontPx);
+    // A T3 number never swallows (nor is swallowed by) the others.
+    const p = f.spawn(4, 640, 300, 30, STYLE.perfect, 3, 1.6, 0.8, 0, -1, 0.07);
+    expect([a, c]).not.toContain(p);
+  });
+
+  it("a number that grows onto its neighbour takes it in: live numbers never overlap after a frame", () => {
+    const f = field();
+    const a = f.spawn(-1, 600, 300, 6, STYLE.tick, 1, 1, 0.9, 0, -1, 0);
+    const width = f.box(a, { x: 0, y: 0, w: 0, h: 0 }).w;
+    const b = f.spawn(-2, 600 + width + 6, 300, 6, STYLE.tick, 1, 1, 0.9, 0, -1, 0.4);
+    expect(b).not.toBe(a);
+    // a's label grows ("6" → "48×8"): its box now reaches b.
+    for (let k = 1; k < 8; k += 1) f.spawn(-1, 600, 300, 6, STYLE.tick, 1, 1, 0.9, 0, -1, k * 0.03);
+    f.update(1 / 60);
+    const boxes = live(f).map((i) => f.box(i, { x: 0, y: 0, w: 0, h: 0 }));
+    for (let i = 0; i < boxes.length; i += 1) {
+      for (let j = i + 1; j < boxes.length; j += 1) {
+        const p = boxes[i]!;
+        const q = boxes[j]!;
+        expect(p.x < q.x + q.w && p.x + p.w > q.x && p.y < q.y + q.h && p.y + p.h > q.y).toBe(false);
+      }
+    }
+    expect(live(f).reduce((sum, i) => sum + f.value[i]!, 0)).toBe(54);
+  });
+
+  it("counts a number's pop in its box, so a popping number near the learning frame never spills onto it", () => {
+    const f = field();
+    expect(popScale(3, 1)).toBeCloseTo(1.35);
+    expect(popScale(3, 0)).toBe(1);
+    f.protected = [{ x: 400, y: 580, w: 480, h: 140 }];
+    // Just above the frame at rest size, over it while popping (1.35×).
+    const i = f.spawn(1, 640, 578, 30, STYLE.perfect, 3, 1.6, 0.8, 0, -1, 0);
+    expect(i).toBeGreaterThanOrEqual(0);
+    // Drawn size at its pop: the glyph height is the font size × pop.
+    const px = f.fontPx * f.size[i]! * popScale(f.tier[i]!, f.pop[i]!);
+    expect(f.y[i]! + px / 2).toBeLessThanOrEqual(580);
+    expect(f.overlaps()).toBe(0);
   });
 });
 

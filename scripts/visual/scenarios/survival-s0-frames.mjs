@@ -1,5 +1,6 @@
 // Sinh Tồn S0 (docs/survival/BUILD_S0.md §9): 12 frames 50 ms apart round one
-// Tia magazine fired into a dense cluster, to read the rhythm of the effects.
+// Tia magazine fired into a dense crowd pressing on the ship, to read the
+// rhythm of the effects.
 // The page's frame clock is held and stepped (window.__survival.hold/advance),
 // so the frames are exactly 50 ms apart however long a capture takes.
 //   URL=http://127.0.0.1:3120/ OUT_DIR=… node scripts/visual/cdp-run.mjs scripts/visual/scenarios/survival-s0-frames.mjs --width=1280 --height=720
@@ -9,9 +10,9 @@ import { open, sv, typeSlot } from "./survival-s0-lib.mjs";
 export default async function (page) {
   const size = page.width + "x" + page.height;
   const ready = await open(page);
-  // A dense crowd in the column's reach.
+  // A dense crowd walking into the ray's reach (it is flooded beyond it).
   await page.eval(sv("t.flood(220); return true;"));
-  await page.sleep(2600);
+  await page.sleep(3600);
   const word = await typeSlot(page, 1, 70);
   let beam = null;
   for (let wait = 0; wait < 40 && beam === null; wait += 1) {

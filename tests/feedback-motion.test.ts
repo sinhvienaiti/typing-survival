@@ -28,19 +28,43 @@ describe("trauma", () => {
     return max;
   };
 
+  /** Fixed noise phases: a test run is the same every time (Math.random phases made this flaky). */
+  const fixed = () => {
+    let k = 0;
+    return () => [0.17, 0.53, 0.89][k++ % 3]!;
+  };
+
   it("shakes trauma² (at most 14 px at 1080p) and calms down at 1.8 a second", () => {
-    const full = new Trauma();
+    const full = new Trauma(fixed());
     full.add(1);
-    expect(peak(full, 0.1)).toBeLessThanOrEqual(14 * 1.2);
+    expect(peak(full, 0.1)).toBeLessThanOrEqual(14 + 1e-9);
     expect(full.trauma).toBeCloseTo(1 - 1.8 * 0.1, 1);
-    const half = new Trauma();
+    const half = new Trauma(fixed());
     half.add(0.5);
     const a = peak(half, 0.05);
-    const strong = new Trauma();
+    const strong = new Trauma(fixed());
     strong.add(1);
     expect(a).toBeLessThan(peak(strong, 0.05));
     peak(full, 1);
     expect(full.trauma).toBe(0);
+  });
+
+  it("never passes 14 px at 1080p, even held at full trauma with any phases (both axes at their peak at once)", () => {
+    const real = Math.random;
+    for (const phase of [0, 0.123, 0.5, 0.999]) {
+      // Phases through Math.random too, as the constructor uses by default.
+      Math.random = () => phase;
+      const t = new Trauma();
+      Math.random = real;
+      let max = 0;
+      for (let k = 0; k < 60 * 20; k += 1) {
+        t.add(1);
+        t.update(1 / 60, 1080);
+        max = Math.max(max, Math.hypot(t.offsetX, t.offsetY));
+      }
+      expect(max, "phase " + phase).toBeLessThanOrEqual(14 + 1e-9);
+      expect(max).toBeGreaterThan(12);
+    }
   });
 
   it("scales with the player's screen-shake setting: none at 0, none with reduced motion", () => {

@@ -30,8 +30,8 @@ export type TierProfile = {
 
 export const TIERS: readonly TierProfile[] = [
   { trauma: 0, stopMs: 0, stopGapMs: 0, number: null, flashFrames: 0, recoil: 0, sparks: 3, rays: 0, ring: false, debris: 0, bass: false, tail: false },
-  { trauma: 0.03, stopMs: 0, stopGapMs: 0, number: { size: 1, life: 0.45, pop: 1.12 }, flashFrames: 1, recoil: 0.12, sparks: 4, rays: 4, ring: false, debris: 0, bass: false, tail: false },
-  { trauma: 0.08, stopMs: 12, stopGapMs: 300, number: { size: 1.3, life: 0.6, pop: 1.25 }, flashFrames: 2, recoil: 0.22, sparks: 8, rays: 8, ring: false, debris: 2, bass: true, tail: false },
+  { trauma: 0.03, stopMs: 0, stopGapMs: 0, number: { size: 1, life: 0.45, pop: 1.12 }, flashFrames: 1, recoil: 0.18, sparks: 4, rays: 4, ring: false, debris: 0, bass: false, tail: false },
+  { trauma: 0.08, stopMs: 12, stopGapMs: 300, number: { size: 1.3, life: 0.6, pop: 1.25 }, flashFrames: 2, recoil: 0.3, sparks: 8, rays: 8, ring: false, debris: 2, bass: true, tail: false },
   { trauma: 0.16, stopMs: 35, stopGapMs: 400, number: { size: 1.6, life: 0.8, pop: 1.35 }, flashFrames: 3, recoil: 0.32, sparks: 12, rays: 12, ring: true, debris: 4, bass: true, tail: false },
   { trauma: 0.3, stopMs: 45, stopGapMs: 400, number: { size: 1.8, life: 0.9, pop: 1.4 }, flashFrames: 4, recoil: 0.45, sparks: 18, rays: 12, ring: true, debris: 8, bass: true, tail: true },
   { trauma: 0.55, stopMs: 70, stopGapMs: 600, number: { size: 2.3, life: 1.1, pop: 1.5 }, flashFrames: 4, recoil: 0.6, sparks: 30, rays: 12, ring: true, debris: 14, bass: true, tail: true },

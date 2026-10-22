@@ -14,10 +14,11 @@ import { nextLetter, open, press, sv } from "./survival-s0-lib.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const WPM = Number(process.env.WPM ?? 45);
+// The surges end at 68 s and 160 s: the crowd on screen is at its thickest then.
 const PICTURES = [
   { name: "normal", at: 44 },
-  { name: "peak1", at: 66 },
-  { name: "peak2", at: 158 },
+  { name: "peak1", at: 68 },
+  { name: "peak2", at: 160 },
 ];
 
 export default async function (page) {
@@ -32,6 +33,8 @@ export default async function (page) {
   let learnHits = 0;
   let samples = 0;
   let maxFoes = 0;
+  let maxOnScreen = 0;
+  const onScreenAt = {};
   const foesAt = [];
   const shots = {};
   let state = null;
@@ -50,10 +53,14 @@ export default async function (page) {
     maxNumbers = Math.max(maxNumbers, look.live);
     maxDebris = Math.max(maxDebris, look.info.debris);
     maxFoes = Math.max(maxFoes, look.state.foes);
-    if (samples % 20 === 0) foesAt.push([Math.round(look.state.time), look.state.foes]);
+    maxOnScreen = Math.max(maxOnScreen, look.state.onScreen);
+    if (samples % 20 === 0) foesAt.push([Math.round(look.state.time), look.state.onScreen]);
     if (look.mode === "end" || look.state.phase !== "play") break;
     for (const picture of PICTURES) {
-      if (shots[picture.name] === undefined && look.state.time >= picture.at) shots[picture.name] = await page.shot(out("survival-s0-fight-" + picture.name + "-" + size + ".png"));
+      if (shots[picture.name] === undefined && look.state.time >= picture.at) {
+        shots[picture.name] = await page.shot(out("survival-s0-fight-" + picture.name + "-" + size + ".png"));
+        onScreenAt[picture.name] = look.state.onScreen;
+      }
     }
     await press(page, nextLetter(look.slots));
     keys += 1;
@@ -84,5 +91,5 @@ export default async function (page) {
   };
   const pass = Object.values(checks).every(Boolean);
   if (!pass) process.exitCode = 1;
-  return { pass, checks, models, keys, wpm: WPM, samples, maxNumbers, maxDebris, maxFoes, foesAt, final: state, replay, shots };
+  return { pass, checks, models, keys, wpm: WPM, samples, maxNumbers, maxDebris, maxFoes, maxOnScreen, onScreenAt, foesAt, final: state, replay, shots };
 }

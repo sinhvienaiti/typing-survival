@@ -1,11 +1,12 @@
 /**
  * The crowd's movement: a flow field over the grid's cells (straight down
  * the corridor, bending toward the ship as foes come near, away from the
- * walls), a slight sideways wobble, scouts holding a firing line, and a
+ * walls), the press (full stride far out, slowing as foes close on the
+ * ship), a slight sideways wobble, scouts holding a firing line, and a
  * push apart through the grid so a horde packs into a wall without
  * overlapping. A foe that reaches the bottom line hurts the ship and goes.
  */
-import { FIELD, FLOW, FOES, KIND, SCOUT } from "../content/rules";
+import { FIELD, FLOW, FOES, KIND, PRESS, SCOUT } from "../content/rules";
 import { EV, FLAG } from "./events";
 import { MAX_RADIUS, colOf, rowOf } from "./hits";
 import type { World } from "./world";
@@ -27,6 +28,13 @@ for (let row = 0; row < rows; row += 1) {
   }
 }
 export const RADIUS: readonly number[] = FOES.map((foe) => foe.radius);
+
+/** The share of its speed a foe walks at depth z (PRESS): `slow` near the ship, 1 far out, smooth between. */
+export function pressAt(z: number): number {
+  const t = (z - PRESS.near) / (PRESS.far - PRESS.near);
+  const k = t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+  return PRESS.slow + (1 - PRESS.slow) * k;
+}
 
 /** sin(2π p) without trigonometry (deterministic everywhere): Bhaskara's parabola pair. */
 export function wave(p: number): number {
@@ -56,8 +64,9 @@ export function moveFoes(w: World, dt: number): void {
     } else {
       const c = rowOf(z) * cols + colOf(x);
       const sway = wave(F.phase[s]! + w.time * spec.wobbleHz) * spec.wobble;
-      F.vx[s] = FIELD_X[c]! * spec.speed + sway;
-      F.vz[s] = FIELD_Z[c]! * spec.speed;
+      const speed = spec.speed * pressAt(z);
+      F.vx[s] = FIELD_X[c]! * speed + sway;
+      F.vz[s] = FIELD_Z[c]! * speed;
     }
     let nx = x + F.vx[s]! * dt;
     const r = spec.radius;

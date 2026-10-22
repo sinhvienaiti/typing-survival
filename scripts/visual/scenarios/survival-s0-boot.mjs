@@ -1,10 +1,13 @@
 // Sinh Tồn S0 (docs/survival/BUILD_S0.md §9): the page builds; the start card,
 // then Enter, the HUD with its health bar, clock and kill counter, and two gun
 // slots that each show a word (≥ 26 px at 1280×720, contrast ≥ 7 : 1 on the
-// panel) with its meaning; the learning frame; no console error.
+// panel) with its meaning; the learning frame; no console error. S0 review:
+// a window that loses focus pauses the fight (Esc goes on); with the screen
+// shake off (?shake=0) or reduced motion (the game's Interface setting) the
+// camera never shakes, however hard the hits.
 //   URL=http://127.0.0.1:3120/ OUT_DIR=… node scripts/visual/cdp-run.mjs scripts/visual/scenarios/survival-s0-boot.mjs --width=1280 --height=720
 import { DEV_URL, out } from "./common.mjs";
-import { sv } from "./survival-s0-lib.mjs";
+import { open, sv, typeSlot } from "./survival-s0-lib.mjs";
 
 export default async function (page) {
   const size = page.width + "x" + page.height;
@@ -42,6 +45,36 @@ export default async function (page) {
     };
   })()`);
   const shot = await page.shot(out("survival-s0-boot-" + size + ".png"));
+  // Focus lost: paused; Esc: on again.
+  await page.eval("window.dispatchEvent(new Event('blur')); true");
+  await page.sleep(100);
+  const blurred = await page.eval(sv("return t.mode();"));
+  await page.key("Escape", { code: "Escape" });
+  await page.sleep(100);
+  const resumed = await page.eval(sv("return t.mode();"));
+  // Screen shake off, then reduced motion: a crowd, two Xung magazines and the hits that follow; the camera stays still.
+  const still = async (query, setup) => {
+    await page.eval(setup + "; true");
+    const ready = await open(page, query);
+    await page.eval(sv("t.flood(120); return true;"));
+    await page.sleep(1200);
+    let worst = 0;
+    for (let word = 0; word < 2; word += 1) {
+      await typeSlot(page, 0, 40);
+      for (let k = 0; k < 10; k += 1) {
+        await page.sleep(80);
+        worst = Math.max(worst, (await page.eval(sv("return t.motion().offset;"))) ?? 1);
+      }
+    }
+    const motion = await page.eval(sv("return t.motion();"));
+    const hits = await page.eval(sv("return t.state().stats.kills;"));
+    return { ready, worst, hits, ...motion };
+  };
+  // The control: the same fight with the defaults does shake.
+  const shaking = await still("", "localStorage.removeItem('spaceTypingMotionV1')");
+  const shakeOff = await still("&shake=0", "localStorage.removeItem('spaceTypingMotionV1')");
+  const reduced = await still("", "localStorage.setItem('spaceTypingMotionV1', 'reduced')");
+  await page.eval("localStorage.removeItem('spaceTypingMotionV1'); true");
   const checks = {
     ready,
     startCardShown: startCard?.mode === "start" && /SINH TỒN/.test(startCard.card),
@@ -51,10 +84,14 @@ export default async function (page) {
     wordAtLeast26px: hud.slots.every((slot) => slot.px >= 26),
     contrastAtLeast7: hud.slots.every((slot) => slot.contrast >= 7),
     hudShown: hud.hp === "100" && /^\d:\d\d$/.test(hud.clock ?? "") && /^×\d+$/.test(hud.kills ?? "") && hud.learn && hud.rects === 4,
+    blurPauses: blurred === "paused" && resumed === "play",
+    controlShakes: shaking.ready && shaking.worst > 0,
+    shakeOffHonoured: shakeOff.ready && shakeOff.scale === 0 && shakeOff.worst === 0 && shakeOff.trauma === 0 && shakeOff.hits > 0,
+    reducedMotionHonoured: reduced.ready && reduced.reduced === true && reduced.worst === 0 && reduced.trauma === 0 && reduced.hits > 0,
     noConsoleErrors: page.logs.filter((line) => line.startsWith("error")).length === 0,
     noExceptions: page.exceptions.length === 0,
   };
   const pass = Object.values(checks).every(Boolean);
   if (!pass) process.exitCode = 1;
-  return { pass, checks, hud, shots: [start, shot] };
+  return { pass, checks, hud, focus: { blurred, resumed }, shaking, shakeOff, reduced, shots: [start, shot] };
 }

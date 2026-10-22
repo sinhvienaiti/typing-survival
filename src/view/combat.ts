@@ -17,6 +17,7 @@ import { ParticlePool } from "../../scene3d/particles";
 import { textures } from "../../scene3d/textures";
 import { FIELD, TIA, type Tier } from "../content/rules";
 import { EV, FLAG } from "../sim/events";
+import { beamEnd } from "../sim/weapons";
 import type { World } from "../sim/world";
 import type { Crowd } from "./crowd";
 import { CELL, Column, FLAT, Glows, Strips } from "./fx";
@@ -37,9 +38,10 @@ const C = {
   shard2: new THREE.Color("#ff9be0"),
 };
 const MAX_CLUSTERS = 48;
-/** Far blows draw larger (up to 1.5× at the gate), so the fight at the edge of range still reads. */
-export const far = (z: number): number => 1 + 0.5 * Math.min(1, Math.max(0, z / 60));
+/** Far blows draw larger (up to 1.3× at the gate), so the fight at the edge of range still reads. */
+export const far = (z: number): number => 1 + 0.3 * Math.min(1, Math.max(0, z / FIELD.gateZ));
 const KILL_RING = 2048;
+const PUNCH_MS = 220;
 
 export type CombatHooks = {
   stop(ms: number): void;
@@ -67,6 +69,7 @@ export class Combat {
   private readonly v = new THREE.Vector3();
   private readonly at = new THREE.Vector3();
   private readonly screen = new THREE.Vector3();
+  private readonly end = new Float64Array(2);
   private readonly shot: THREE.Color;
   private readonly fire: boolean;
   private readonly beam: THREE.Color;
@@ -76,6 +79,7 @@ export class Combat {
   forceStops = false;
   private forcedAt = -1e9;
   stopsAsked = 0;
+  private punchAt = -1e9;
 
   constructor(private readonly stage: Stage, private readonly crowd: Crowd, private readonly ship: Ship, pilot: Pilot, tierName: Tier, volume: number, private readonly hooks: CombatHooks) {
     const spec = VIEW_TIERS[tierName];
@@ -170,8 +174,8 @@ export class Combat {
             if (profile.debris > 0) this.debris.burst(x, y, -z, dx, -dz, profile.debris >> 1, 4, C.shard, C.white);
           }
           const style = tia ? STYLE.tick : perfect && crit ? STYLE.perfect : crit ? STYLE.crit : STYLE.normal;
-          // Beam ticks roll up per 3 m of the column, not per foe: a handful of numbers, not a stack.
-          this.number(tia ? -1 - Math.floor(z / 3) : R.ref[i]!, x, z, R.value[i]!, style, t, dx, dz, seconds);
+          // Beam ticks roll up per 4 m along the ray, not per foe: two or three numbers, not a stack.
+          this.number(tia ? -1 - Math.floor(Math.hypot(x, z - FIELD.muzzleZ) / 4) : R.ref[i]!, x, z, R.value[i]!, style, t, dx, dz, seconds);
           this.audio.hit(t, pan, now);
           this.trauma.add(tia ? 0.006 : profile.trauma);
           if (!tia && t >= 2) this.ask(this.hitstop.request(t, now));
@@ -216,16 +220,22 @@ export class Combat {
         case EV.word:
           this.hooks.wordDone(R.slot[i]!, R.ref[i]!, (flags & FLAG.perfect) !== 0);
           break;
-        case EV.beamStart:
+        case EV.beamStart: {
+          // x, z: the ray's far end.
           this.audio.beam(true, x / FIELD.halfW);
-          this.glows.burst(CELL.flare, x, 0.6, -FIELD.muzzleZ - 2, 4, 12, 0.3, this.beam, 2.5);
+          const k = 2 / TIA.length;
+          this.glows.burst(CELL.flare, x * k, 0.6, -(FIELD.muzzleZ + (z - FIELD.muzzleZ) * k), 3, 7, 0.25, this.beam, 2.2);
           break;
+        }
         case EV.beamEnd:
           this.audio.beam(false, x / FIELD.halfW);
           break;
         case EV.beamPulse:
-          // Burn left on the floor along the column.
-          for (let k = 0; k < 3; k += 1) this.glows.burst(CELL.soft + FLAT, x + (Math.random() - 0.5) * 0.6, 0.06, -(FIELD.muzzleZ + Math.random() * TIA.length * 0.9), 1.5, 1.8, 2.4, this.beam, 0.85);
+          // Burn left on the floor along the ray (x, z: its far end).
+          for (let k = 0; k < 3; k += 1) {
+            const t = 0.12 + Math.random() * 0.85;
+            this.glows.burst(CELL.soft + FLAT, x * t + (Math.random() - 0.5) * 0.6, 0.06, -(FIELD.muzzleZ + (z - FIELD.muzzleZ) * t), 1.5, 1.8, 2.4, this.beam, 0.85);
+          }
           break;
         case EV.spawn:
           this.glows.burst(CELL.soft, x, 1.5, -FIELD.gateZ, 6, 11, 0.5, C.pink, 1.2);
@@ -302,6 +312,11 @@ export class Combat {
     this.debris.burst(x, 0.9, -z, dx, -dz, Math.min(40, (scout ? 9 : 5) + n * 3), 5.5 + size, C.shard, C.shard2);
     this.audio.kill(n, x / FIELD.halfW, scout, now);
     this.trauma.add(Math.min(0.2, (scout ? 0.1 : 0.025) * Math.sqrt(n)));
+    // A heap of kills or a scout punches the view along the blow (at most every PUNCH_MS: a sweep is not a buzz).
+    if ((scout || n >= 4) && now - this.punchAt >= PUNCH_MS) {
+      this.punchAt = now;
+      this.trauma.kick(dx, -dz, Math.min(5, 2 + n * 0.4));
+    }
     if (scout) this.ask(this.hitstop.request(2, now));
     return n;
   }
@@ -336,20 +351,25 @@ export class Combat {
     const G = w.guns;
     const on = G.beamOn === 1;
     const power = on ? 1 + (G.perfect[2] === 1 ? 0.35 : 0) : 0;
-    this.column.update(on, G.beamX, power, time);
+    beamEnd(G.beamX, this.end);
+    const ex = this.end[0]!;
+    const ez = this.end[1]!;
+    this.column.update(on, ex / TIA.length, (ez - FIELD.muzzleZ) / TIA.length, power, time);
     if (this.column.power > 0.02) {
       const k = this.column.power;
-      const bx = G.beamX;
-      const near = FIELD.muzzleZ + 0.6;
-      this.strips.add(bx, 0.4, -near, bx, 0.4, -(FIELD.muzzleZ + TIA.length), 1 * k, this.beam, 0.8 * k, 0.8 * k);
       this.ship.muzzle(this.at);
-      this.strips.add(this.at.x, this.at.y, this.at.z, bx, 0.45, -near, 0.55 * k, this.beam, 2 * k, k);
-      this.glows.stamp(CELL.star8, bx, 0.6, -near, 2.6 * k, time * 3, this.beam, 2.4 * k);
-      this.glows.stamp(CELL.soft, this.at.x, this.at.y, this.at.z, 1.8 * k, 0, this.beam, 2 * k);
+      const mx = this.at.x;
+      const my = this.at.y;
+      const mz = this.at.z;
+      // The ray: a wide glow on the floor and a white-hot core from the muzzle to its far end.
+      this.strips.add(mx, 0.4, mz, ex, 0.4, -ez, 1.1 * k, this.beam, 0.8 * k, 0.8 * k);
+      this.strips.add(mx, my, mz, ex, 0.5, -ez, 0.55 * k, this.beam, 2 * k, k);
+      this.glows.stamp(CELL.star8, mx, my, mz, 2.6 * k, time * 3, this.beam, 2.4 * k);
+      this.glows.stamp(CELL.soft, ex, 0.6, -ez, 2.4 * k, 0, this.beam, 1.8 * k);
       if (on && Math.random() < dt * 40) {
-        const zz = FIELD.muzzleZ + Math.random() * TIA.length;
+        const t = Math.random();
         this.v.set((Math.random() - 0.5) * 2, 2 + Math.random() * 4, (Math.random() - 0.5) * 2);
-        this.sparks.spawn(this.at.set(bx + (Math.random() - 0.5) * 1.2, 0.3, -zz), this.v, this.beam, 0.25, 0.5, { drag: 2, gravity: 4 });
+        this.sparks.spawn(this.at.set(mx + (ex - mx) * t + (Math.random() - 0.5) * 1.2, 0.3, mz + (-ez - mz) * t), this.v, this.beam, 0.25, 0.5, { drag: 2, gravity: 4 });
       }
     }
     this.strips.end();

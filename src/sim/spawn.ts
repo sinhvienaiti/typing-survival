@@ -86,9 +86,10 @@ export function spawnStep(w: World, dt: number): void {
 export function flood(w: World, n: number): void {
   const rng = w.rng.spawn;
   const count = Math.max(0, Math.min(n, w.foeCap - w.foes.count));
+  const near = FIELD.gateZ / 3;
   for (let i = 0; i < count; i += 1) {
     const x = (rng.float() * 2 - 1) * (FIELD.halfW - FIELD.wall - 0.5);
-    const z = 22 + rng.float() * (FIELD.gateZ - 22);
+    const z = near + rng.float() * (FIELD.gateZ - near);
     w.foes.add(KIND.mine, x, z, FOES[KIND.mine].hp, rng.float());
   }
   w.spawn.spawned += count;

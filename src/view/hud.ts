@@ -38,7 +38,7 @@ export class Hud {
   private readonly banner: HTMLElement;
   private readonly notice: HTMLElement;
   private readonly learn: HTMLElement;
-  private readonly learnWord: { typed: HTMLElement; rest: HTMLElement };
+  private readonly learnWord: { line: HTMLElement; typed: HTMLElement; rest: HTMLElement };
   private readonly learnIpa: HTMLElement;
   private readonly learnMean: HTMLElement;
   private readonly hp: HTMLElement;
@@ -91,7 +91,7 @@ export class Hud {
     this.learn = el("section", "sv-learn sv-panel", bottom);
     slot(GUNS[1]);
     const learnWord = el("div", "sv-learn-word", this.learn);
-    this.learnWord = { typed: el("span", "sv-typed", learnWord), rest: el("span", "", learnWord) };
+    this.learnWord = { line: learnWord, typed: el("span", "sv-typed", learnWord), rest: el("span", "", learnWord) };
     this.learnIpa = el("div", "sv-learn-ipa", this.learn);
     this.learnMean = el("div", "sv-learn-mean", this.learn);
     this.overlay = el("div", "sv-overlay", root);
@@ -230,6 +230,17 @@ export class Hud {
         this.learn.className = "sv-learn sv-panel is-idle";
       }
     }
+    if (key !== this.last.learn) this.fitLearnWord();
     this.last.learn = key;
+  }
+
+  /** The frame's big line shrinks to fit its panel ("word · a long meaning ✓" never spills over the gun slots). */
+  private fitLearnWord(): void {
+    const line = this.learnWord.line;
+    line.style.setProperty("--fit", "1");
+    const style = getComputedStyle(this.learn);
+    const room = this.learn.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const need = line.scrollWidth;
+    if (room > 0 && need > room) line.style.setProperty("--fit", Math.max(0.5, room / need).toFixed(3));
   }
 }

@@ -10,7 +10,7 @@ import { runFrameLoop } from "../../platform/frame-loop";
 import { safeLocalStorage } from "../../platform/safe-storage";
 import { speakEnglish } from "../../speech";
 import type { GameSettings } from "../../types";
-import { FOE_CAP, type Tier } from "../content/rules";
+import { FIELD, FOE_CAP, TIA, type Tier } from "../content/rules";
 import { STAGE_S0 } from "../content/stage-s0";
 import { hashHex } from "../sim/hash";
 import { Combat } from "../view/combat";
@@ -19,7 +19,7 @@ import { Hud } from "../view/hud";
 import { Stage } from "../view/scene";
 import { Ship, type Pilot } from "../view/ship";
 import { installDevHandle } from "./dev";
-import { installKeys } from "./input";
+import { ImeNotice, installAutoPause, installKeys } from "./input";
 import { Session } from "./session";
 import { loadVocab, type Word } from "./vocab";
 
@@ -76,7 +76,7 @@ void loading.then(() => (loaded = true));
 
 type Mode = "start" | "play" | "paused" | "end";
 let mode: Mode = "start";
-let imeWarning = false;
+const imeNotice = new ImeNotice();
 const spoken = new Set<string>();
 let lastSpeak = -1e9;
 let clock = 0;
@@ -168,8 +168,11 @@ installKeys(window, {
     if (mode === "play") session.send(command);
   },
   act,
-  onVietnamese: () => (imeWarning = true),
+  onVietnamese: () => imeNotice.note(clock),
   allowUntrusted: params.get("untrusted") === "1",
+});
+installAutoPause(window, document, () => {
+  if (mode === "play") setMode("paused");
 });
 
 function resize(): void {
@@ -199,16 +202,18 @@ function update(now: number): void {
   session.frame(now);
   combat.read(world, now);
   hud.update(world, combat.killsWithin(now, 3000), now);
-  hud.setNotice(imeWarning ? "Tắt bộ gõ tiếng Việt để gõ" : vocab.source === "fallback" ? "Từ dự phòng (máy chủ không có từ vựng)" : "");
+  hud.setNotice(imeNotice.on(now) ? "Tắt bộ gõ tiếng Việt để gõ" : vocab.source === "fallback" ? "Từ dự phòng (máy chủ không có từ vựng)" : "");
+  // The floor glows red as the press reaches the ship (inside the guns' reach and closing).
   let near = 0;
-  for (let s = 0; s < world.foes.top; s += 1) if (world.foes.alive[s] === 1 && world.foes.z[s]! < 14) near += 1;
-  stage.threat = Math.min(1, near / 18);
+  for (let s = 0; s < world.foes.top; s += 1) if (world.foes.alive[s] === 1 && world.foes.z[s]! < 9) near += 1;
+  stage.threat = Math.min(1, near / 12);
   costs.update[costs.n % RING] = performance.now() - start;
 }
 
 function draw(now: number): void {
   const start = performance.now();
-  const dt = lastDraw < 0 ? 0 : Math.min(0.05, Math.max(0, (now - lastDraw) / 1000));
+  // Paused, the effects hold still with the world (the clock itself runs on for the HUD).
+  const dt = lastDraw < 0 || mode === "paused" ? 0 : Math.min(0.05, Math.max(0, (now - lastDraw) / 1000));
   lastDraw = now;
   const seconds = now / 1000;
   const trauma = combat.trauma;
@@ -217,7 +222,11 @@ function draw(now: number): void {
   stage.shakeY = trauma.offsetY;
   stage.roll = trauma.roll;
   const lead = mode === "play" ? session.lead() : 0;
-  ship.update(dt, seconds, world.guns.aimX, world.guns.aimZ, stage.camera.position);
+  // The ship turns with Xung, or with the Tia ray while Xung is empty.
+  const G = world.guns;
+  const ray = G.beamOn === 1 && G.mags[0] === 0;
+  const norm = ray ? Math.hypot(G.beamX, TIA.length) : 1;
+  ship.update(dt, seconds, ray ? G.beamX / norm : G.aimX, ray ? TIA.length / norm : G.aimZ, stage.camera.position);
   crowd.update(world, seconds, lead);
   combat.draw(world, dt, seconds, lead);
   stage.update(seconds);
@@ -247,6 +256,13 @@ runFrameLoop({
 
 setMode(params.get("autostart") === "1" ? "play" : "start");
 
+/** Foes the camera shows: on the field and the gate's queue just above it. */
+function onScreen(): number {
+  let n = 0;
+  for (let s = 0; s < world.foes.top; s += 1) if (world.foes.alive[s] === 1 && world.foes.z[s]! <= FIELD.gateZ + 4) n += 1;
+  return n;
+}
+
 installDevHandle({
   ready: () => painted && loaded,
   models: () => ({ mine: crowd.loaded[0], scout: crowd.loaded[1], ship: ship.loaded }),
@@ -259,7 +275,7 @@ installDevHandle({
   /** The run so far, read at one instant: what a Node replay needs (scripts/survival/replay.ts). */
   snapshot: () => ({ seed: world.seed, tier, deck: vocab.hash, vocabulary: vocab.source, expected: world.expected, tick: world.tick, hash: hashHex(world), log: session.log.slice() }),
   state: () => ({
-    tick: world.tick, time: world.time, phase: world.phase, hp: world.hp, foes: world.foes.count, bullets: world.bullets.count, shots: world.shots.count,
+    tick: world.tick, time: world.time, phase: world.phase, hp: world.hp, foes: world.foes.count, onScreen: onScreen(), bullets: world.bullets.count, shots: world.shots.count,
     mags: Array.from(world.guns.mags), beam: world.guns.beamOn === 1 ? world.guns.beamX : null, stats: { ...world.stats }, spawned: world.spawn.spawned, waiting: world.spawn.waiting,
   }),
   slots: () => [0, 1].map((s) => ({ text: world.deck[world.typing.word[s]!]!, typed: world.typing.lock === s ? world.typing.typed[s]! : 0, locked: world.typing.lock === s, mags: world.guns.mags[s]! })),
@@ -268,7 +284,7 @@ installDevHandle({
     const take = (list: Float32Array) => Array.from({ length: n }, (_, k) => list[(costs.n - n + k) % RING]!);
     return { update: take(costs.update), draw: take(costs.draw), interval: take(costs.interval) };
   },
-  info: () => ({ calls, triangles, drawn: crowd.drawn(), glows: combat.glows.count, sparks: combat.sparks.count, debris: combat.debris.live, numbers: combat.numbers.live, stops: combat.stopsAsked }),
+  info: () => ({ calls, triangles, geometries: stage.renderer.info.memory.geometries, textures: stage.renderer.info.memory.textures, drawn: crowd.drawn(), glows: combat.glows.count, sparks: combat.sparks.count, debris: combat.debris.live, numbers: combat.numbers.live, stops: combat.stopsAsked }),
   numbers: () => {
     const N = combat.numbers;
     const boxes: { x: number; y: number; w: number; h: number; text: string }[] = [];
@@ -276,6 +292,8 @@ installDevHandle({
     return { live: N.live, overlaps: N.overlaps(), dropped: N.dropped, rects: N.protected.slice(), boxes };
   },
   rects: () => hud.protectedRects(),
+  /** The shake settings and the camera's shake offset now (px). */
+  motion: () => ({ scale: combat.trauma.scale, reduced: combat.trauma.reduced, trauma: combat.trauma.trauma, offset: Math.hypot(stage.shakeX, stage.shakeY) }),
   hold: (on: boolean) => {
     held = on;
   },

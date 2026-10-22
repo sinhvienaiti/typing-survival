@@ -28,6 +28,8 @@ Model dùng: `rainbow-mine-3d`, `rainbow-scout-3d`, tàu `vanguard` hoặc `drac
 
 ## 2. Lệch so với BUILD_S0 và lý do
 
+> Review S0 (§7) thay các mục 1 (camera), 2 (tầm), 3 (đỉnh tràn), 7 (số Tia), 13 (Tia), 14 (vẽ to ở xa) và đổi nhịp ra quái của §4. Các mục dưới đây giữ nguyên để biết vì sao bản đầu làm vậy.
+
 1. **Góc camera.** "Nhìn từ trên xuống nghiêng 55°" được hiểu là nghiêng 55° so với phương thẳng đứng, tức camera nhìn xuống 35° dưới đường chân trời. Khi thử 55° dưới chân trời, cả hành lang 60 m chỉ thành một dải hẹp giữa màn hình (rộng khoảng 1/4 màn) và quái chỉ 12–15 px. Ở 35° hành lang gần tàu rộng gần hết màn hình, quái gần to, đám đông xa dồn thành "biển quái". Camera vẫn cố định, chỉ rung.
 2. **Tầm súng, độ tỏa đạn, chiều dài cột Tia** (BUILD_S0 không ghi): Xung bắn quái trong 42 m, lệch ngẫu nhiên ±0,08 rad; cột Tia dài 24 m từ tàu. Với số §5 mà không có tầm, mọi quái chết ngay khi qua cổng và sân chỉ có 10–25 quái. Chỉnh bằng bot cho tới khi người gõ 35 WPM thấy 40–80 quái lúc thường (bot 35 WPM, 90–150 s: trung vị khoảng 48).
 3. **Đỉnh tràn 120–160 quái không đạt được với bảng §4.** Quái bầy đi 3,2 m/s qua 60 m (18,75 s); ngay cả khi không giết con nào, sân chỉ có tối đa 108 quái (đo bằng sim không gõ). Bot 35 WPM: đỉnh tràn 2 khoảng 81–90. Muốn 120–160 thì phải tăng nhịp ra hoặc làm quái chậm hơn ở S1.
@@ -45,6 +47,8 @@ Model dùng: `rainbow-mine-3d`, `rainbow-scout-3d`, tàu `vanguard` hoặc `drac
 15. **Quái bầy vẽ to hơn thân** (1,55 m so với bán kính 0,5 m) để một bầy đọc như một khối.
 
 ## 3. Số đo
+
+> Số của bản đầu, trước review. Số sau review ở §7.3–§7.5.
 
 Máy: Apple M4, Chrome headless (ANGLE Metal), High, DPR 1.
 
@@ -104,17 +108,105 @@ Người gõ 45 WPM không lỗi qua CDP giết quái ngay ở mép tầm, nên 
 npx vite --config scripts/dev/vite.worktree.config.ts --host 127.0.0.1 --port 3120 --strictPort
 # http://127.0.0.1:3120/survival.html  (?q=low|medium|high|ultra, ?pilot=draconis, ?seed=1, ?autostart=1, ?shake=0)
 URL=http://127.0.0.1:3120/ OUT_DIR=… node scripts/visual/cdp-run.mjs scripts/visual/scenarios/survival-s0-fight.mjs --width=1280 --height=720
-node --import tsx scripts/survival/balance.ts 25 35 45 60
+node --import tsx scripts/survival/balance.ts 25 35 45 60 --seeds=24   # thắng, máu, quái trên màn lúc thường / đỉnh, nơi quái chết
+WPM=35 URL=… OUT_DIR=… node scripts/visual/cdp-run.mjs scripts/visual/scenarios/survival-s0-fight.mjs --width=1280 --height=720   # trận gõ 35 WPM
 node --import tsx scripts/survival/replay.ts <OUT_DIR>/survival-s0-fight-replay-1280x720.json
 ```
 
-`window.__survival` (chỉ để kịch bản dùng): `ready, models, start, mode, flags, send, flood, hash, snapshot, state, slots, costs, info, numbers, rects, hold, advance, forceStops`.
+`window.__survival` (chỉ để kịch bản dùng): `ready, models, start, mode, flags, send, flood, hash, snapshot, state` (có `onScreen`: quái trên sân và hàng chờ ngay trên cổng), `slots, costs, info` (có số geometry, texture của renderer), `numbers, rects, motion` (cài đặt rung, độ lệch rung lúc này), `hold, advance, forceStops`.
+
+Đừng sửa file trong `src/` khi kịch bản đang chạy: Vite tải lại trang và trận đang gõ bị cắt (review gặp một lần).
 
 ## 6. Còn lại, nên làm tiếp
 
-1. **Mật độ đỉnh tràn.** Bảng §4 chỉ cho tối đa 108 quái trên sân; muốn 120–160 thì ở S1 tăng nhịp đỉnh (khoảng 9–10 con/s) hoặc cho quái chậm lại khi dồn gần đáy. Người gõ nhanh (45 WPM không lỗi) giết quái ngay ở mép tầm 42 m nên nửa gần của sân thường trống: cân nhắc tầm Xung tăng theo Chuỗi, hoặc lính đứng gần hơn để Xung có tầm ngắn hơn.
+1. ~~**Mật độ đỉnh tràn.**~~ Đã làm ở review (§7): hành lang 40 m, quái chậm lại khi áp sát, tầm súng ngắn, đỉnh tràn 15 và 11 con/s.
 2. **Nghe thử âm thanh** bằng tai và chỉnh mức các bus; thêm nhạc nền (song engine sẵn có).
 3. **Model LOD** cho quái bầy khi đông (`rainbow-mine-lod`), và bậc Low dùng model nhẹ.
 4. **Học (S3):** gửi sự kiện học về repo cha, hiện nghĩa theo độ thuộc, kế hoạch từ mới / ôn; "Nhanh" đo theo E thật của người chơi thay vì 35 cố định.
 5. **Trợ năng:** thanh trượt rung 0–100 % (hiện đọc công tắc rung của game), cường độ lóe, chế độ số chỉ số lớn.
 6. **Mã:** 4.200 dòng TS (mục tiêu 4.000); phần GLSL nằm trong `scene.ts`, `fx.ts`, `crowd.ts` có thể tách thành module shader dùng chung khi Campaign 3D và Defense chuyển sang `src/feedback/` (S7).
+
+## 7. Review S0 (23/10/2026)
+
+Một AI khác (không làm bản đầu) phản biện, sửa và chỉnh cảm giác theo nhận xét khi xem ảnh của trưởng nhóm: (a) camera nhìn dọc một hành lang rất dài nên quái nhỏ và dồn ở cổng; (b) Xung tầm 42 m giết quái ngay ở mép xa, nửa sân gần tàu thường trống, đám đông không bao giờ ép tới tàu; (c) lúc đỉnh tràn bot 35 WPM chỉ thấy khoảng 90 quái, đích là 120–160.
+
+### 7.1 Chỉnh cảm giác (thay các mục 1, 2, 3, 7, 13, 14 của §2)
+
+| Gì | Trước | Sau | Vì sao |
+|---|---|---|---|
+| Hành lang | 24 × 60 m | **24 × 40 m** (`FIELD.gateZ`) | Camera tới gần đầu xa: quái ở cổng cao khoảng 25 px ở 720p (trước 15), quái gần tàu vẫn khoảng 52 px. Rộng 24 m giữ chỗ cho boss sau này |
+| Camera | nhìn xuống 35°, ống kính 56° | 36°, **ống kính 42°** | Cùng khung (tàu ở y −0,56, cổng ở 0,8 NDC), phối cảnh bớt "đường hầm" |
+| Vẽ to ở xa | quái 1,4×, đòn 1,5× ở cổng | quái 1,2×, đòn 1,3× | Camera gần nên bớt cần |
+| Tốc quái bầy | 3,2 m/s đều | 2,6 m/s, **chậm dần khi áp sát** (`PRESS`: 0,4× từ 6 m vào, đủ tốc từ 24 m ra, mượt ở giữa) | Đám đông dồn thành bức tường trước súng thay vì chảy qua |
+| Xung tầm | 42 m | **10 m** (theo chiều sâu, tới z 11,7 m) | Quái đi gần hết sân mới bị bắn; trận diễn ra ở nửa gần tàu |
+| Tia | cột thẳng đứng trên sàn dài 24 m, nối với tàu bằng một tia gãy chữ L | **tia thẳng từ nòng**, dài 12 m (với tới xa hơn Xung một chút), đầu xa quét 3 m/s (sim tính khoảng cách tới đoạn tia) | Khi ngắn lại, cột sàn + tia gãy nhìn sai; tia từ nòng quét như đèn pha đọc đúng là "cắt biển quái". Tia với xa hơn Xung nên gặp mép đám đông trước và cắt vào nó; khi Xung với xa hơn (thử 12 / 11 m) Tia hay ngồi chờ với 2 băng đầy |
+| Lính dừng ở | 30–40 m | **6–9 m** | Ngoài tầm súng mới, lính bắn tàu thoải mái (bot thua vì đạn lính) |
+| Nhịp ra (con/s) | 1,5 / 2,5 / **5** / 3 / 3,5 / **6,5** / 3,5 / 3 | 2 / 3,2 / **15** (60–68 s) / 3,8 / 4,2 / **11** (150–160 s) / 4,2 / 3,8 | Với bảng cũ không ai thấy 120–160 quái (tối đa 108 khi không giết con nào) |
+| Số Tia | gộp theo đoạn 3 m của cột, số mới bị đẩy lên khi đè số cũ (thành tháp số) | gộp theo đoạn 4 m dọc tia; **số rơi lên một số trẻ (≤ 0,3 s) cùng kiểu, dưới T3 thì nhập vào**, khác kiểu thì đặt cạnh, chỉ sau đó mới đẩy lên | Hết tháp số; một cụm đòn đọc thành một số lớn dần |
+| Đòn nặng hơn | giật lùi giả T1 0,12 m, T2 0,22 m | T1 0,18 m, T2 0,3 m; **cú đẩy camera** 2–5 px theo hướng đòn khi hạ ≥ 4 con trong một khung hoặc hạ lính (tối đa mỗi 220 ms) | Thấy được lực đòn ở nơi quái to |
+
+Đo bằng bot (`node --import tsx scripts/survival/balance.ts 25 35 45 60 --seeds=24`, lỗi 4 %, nghỉ 0,25 s giữa từ; "trên màn" = quái trên sân và hàng chờ ngay trên cổng, z ≤ cổng + 4 m):
+
+| WPM | Thắng (24 seed) | Máu còn | Lúc thường (90–150 s) | Đỉnh tràn 1 | Đỉnh tràn 2 | Độ sâu nơi quái chết (trung vị) | Chạm đáy |
+|---|---|---|---|---|---|---|---|
+| 25 trước → sau | 24 → **11** | 71 → 0 | 57 → 67 | 47 → 149 | 96 → 138 | 23,5 m / 60 → 10,6 m / 40 | 3 → 21 |
+| **35** trước → sau | 24 → **23** | 96 → **86** (thua 1 trận) | 49 → **60** | 45 → **145** (142–152) | 90 → **134** (128–142 ở các trận thắng) | 25,5 m / 60 (43 %) → **11,2 m / 40 (28 %)** | 0 → 4 |
+| 45 trước → sau | 24 → 24 | 100 → 100 | 42 → 58 | 44 → 145 | 83 → 130 | 29,8 → 11,3 m | 0 → 0 |
+| 60 trước → sau | 24 → 24 | 100 → 100 | 32 → 57 | 42 → 145 | 67 → 130 | 35,7 → 11,4 m | 0 → 0 |
+
+Trận thua của 35 WPM (seed 18) là trận bot gõ chậm hẳn (55 từ ở 100 s): 13 phát đạn lính trúng tàu (Xung hết đạn nên không bắn rơi) và 16 quái chạm đáy.
+
+Phân bố độ sâu lúc đỉnh tràn (bot 35 WPM, trung bình số quái mỗi dải 4 m): trước, không con nào gần hơn 16 m và một nửa đứng ở ≥ 44 m (sát cổng); sau, đám đông trải đều từ 8 m tới cổng (8–12 m: 4, 12–16 m: 12, rồi 13–18 mỗi dải). Tia giết khoảng 65 % số quái, Xung 35 %. Trên màn 1280×720, mép đám đông lúc đỉnh nằm khoảng giữa màn (y ≈ 300–330), trước kia ở 1/4 trên cùng.
+
+Mép đám đông luôn nằm ở tầm với của súng: thử tăng nhịp đỉnh (tới 24 con/s), cho quái đi nhanh hơn, hay cho Tia chỉ bật khi quái tới gần đều không kéo mép vào gần hơn; chỉ có tầm ngắn hơn. Muốn đám đông ép sát hơn nữa thì đặt Xung 9 m, Tia 10 m: bot 35 WPM vẫn thắng 16/16 (máu 75), nhưng 25 WPM chỉ thắng 1/16. Review chọn 10 / 12 m.
+
+Hệ quả có chủ ý: người gõ 25 WPM giờ thua hơn nửa số trận S0 (11/24 thắng). S0 được chỉnh cho 35 WPM; S1 nên co nhịp ra theo E của người chơi (§6).
+
+### 7.2 Lỗi tìm được và cách sửa
+
+| Mức | Lỗi | Sửa | Test (hỏng ở mã cũ) |
+|---|---|---|---|
+| Trung bình | **Test chập chờn:** `tests/feedback-motion.test.ts` "shakes trauma² (at most 14 px…)". Pha nhiễu rung lấy từ `Math.random`; hai trục đạt đỉnh cùng lúc thì độ rung tới √2 lần, quá mức 14 × 1,2 mà test cho phép. Đo 20.000 lần: hỏng 0,7 %. Đây cũng là lỗi thật: rung vượt trần 14 px ở 1080p của BUILD_S0 §6 (tới 17,5 px khi giữ trauma 1) | Nhiễu hai trục bị kẹp trong vòng tròn đơn vị; pha nhận hàm ngẫu nhiên từ ngoài (test cho pha cố định) | "never passes 14 px at 1080p, even held at full trauma…" (cũ: 16–17,5 px) |
+| Thấp | Test chi phí bước sim có thể hỏng khi máy bận (cả bộ test trên mọi nhân, thêm Chrome): bản đầu ghi một lần hỏng "test đo thời gian" | Đo tối đa ba lần, lấy lần tốt nhất (ngân sách 1,5 ms không đổi; khi bận đo được 0,47–0,63 ms) | — |
+| Trung bình | Hộp của số sát thương không tính độ nảy (1,12–1,5×): số T3 vừa nảy ngay trên khung học được vẽ đè lên khung khoảng 0,15 s mà phép kiểm (và kịch bản) vẫn báo 0 lần đè | `box()` tính cỡ đang vẽ (có nảy); `popScale` dùng chung cho hộp và hình | "counts a number's pop in its box…" |
+| Trung bình | Số chồng thành tháp: số mới đè số cũ bị đẩy lên tới 4 lần. Thêm nữa, một số dài ra khi gộp ("6" → "159×21") hoặc trôi theo hướng đòn thì đè lên số bên cạnh (thấy trong ảnh khung của review) | Lúc sinh: nhập vào số trẻ cùng kiểu, đặt cạnh, rồi mới đẩy lên (§7.1). Mỗi khung: hai số chạm nhau thì số trẻ nhập vào số già (cùng kiểu, dưới T3) hoặc lên trên nó | "takes beam ticks … into one number, not a column", "… goes beside, not on top", "a number that grows onto its neighbour takes it in" |
+| Trung bình | **Ẩn tab hoặc mất focus không dừng trận** (Campaign 3D dừng khi ẩn). Mất focus thì phím không tới trang mà quái vẫn ép tới | `installAutoPause`: ẩn tab hoặc `blur` thì tạm dừng; Esc chơi tiếp. Khi tạm dừng, hiệu ứng (mảnh vỡ, hạt, số) cũng đứng | "pauses when the tab is hidden or the window loses focus" + kịch bản `boot` |
+| Thấp | Thông báo "Tắt bộ gõ tiếng Việt" hiện mãi sau một lần thấy dấu hiệu, kể cả khi đã tắt bộ gõ | `ImeNotice`: tắt 7 s sau dấu hiệu cuối (như Campaign 3D) | "shows after a sign and goes again…" |
+| Thấp | Khung học: "từ · nghĩa ✓" với nghĩa dài tràn khỏi khung, đè lên hai ô súng (vd. "human · thuộc về con người ✓") | Dòng chữ to tự co cho vừa khung (`--fit`, tối thiểu 0,5×), nghĩa một dòng có "…", lúc "✓" ẩn dòng IPA và nghĩa trống để chữ nằm giữa | Xem ảnh |
+| Thấp | Phiên cấp phát một mảng mới mỗi tick (`splice(0)`), trái "không cấp phát trong trận" | Hai mảng đổi chỗ | Đo bộ nhớ (§7.4) |
+| Thấp | Giảm chuyển động: số hạ ở góc vẫn nảy to, biển "ĐỈNH TRÀN" vẫn phóng to | Khối CSS giảm chuyển động: chỉ mờ dần | Kịch bản `boot` (rung) |
+
+Phím (thêm `tests/survival-input.test.ts`): chữ hoa thường đều gõ, Backspace, Esc / Enter / Tab không bao giờ là chữ; phím đang ghép của bộ gõ (`isComposing`, `Process`, 229), Enter khi đang ghép, phím giữ, tổ hợp Ctrl và phím giả đều không gõ gì.
+
+Đã kiểm, không có lỗi:
+- **Tất định:** nhật ký lệnh của trang chạy lại trong Node ra cùng mã băm (`fight` hai cỡ, `keys` hai cỡ); sim mới vẫn chỉ dùng căn bậc hai (test ranh giới).
+- **Dừng hình không nuốt phím:** `keys` 120 WPM với dừng T3 liên tục: mọi phím vào nhật ký đúng thứ tự, có phím rơi trong lúc dừng, Node khớp.
+- **Băng đạn:** nạp, cộng dồn ≤ 2, Xung giữ đạn khi không có quái trong tầm (test mới), Tia tắt khi không còn gì trong tầm và giữ thời gian, nhân chất lượng. Gõ xong một từ khi súng đã đủ 2 băng thì từ đó không nạp (đúng §5, giữ nguyên; ô sáng viền "đầy").
+- **Bảng ra quái:** cửa sổ 1 s khớp bảng mới trong một nhóm; nhóm 4–12; trần thì chờ ở cổng.
+- **Vùng cấm:** 0 lần số đè vùng cấm hay khung học suốt trận ở hai cỡ (tính cả độ nảy).
+- **Trợ năng:** `?shake=0` và giảm chuyển động (cài đặt Interface của game): camera không rung (độ lệch 0 px qua hai băng Xung vào 120 quái); lần đối chứng mặc định có rung.
+
+### 7.3 Trình duyệt sau review
+
+Chrome headless (ANGLE Metal, M4), High, DPR 1, khóa vsync; cùng lúc máy còn chạy Chrome của một agent khác (các kịch bản TD), nên số khung cao hơn §3.3 một chút.
+
+| Kịch bản | 1280×720 | 1920×1080 |
+|---|---|---|
+| `boot` | Đạt: chữ ô súng 32 px, tương phản 14,6 : 1; `blur` → tạm dừng, Esc → chơi; rung tắt (`?shake=0`) và giảm chuyển động: độ lệch camera 0 px, trauma 0 qua hai băng Xung; đối chứng mặc định có rung | Đạt (chữ 48 px) |
+| `fight` 45 WPM | Thắng, 100 máu, 739 hạ, 146 từ; trên màn tối đa 143 (thường 43, đỉnh 1 143, đỉnh 2 126); 0 số đè vùng cấm hay khung học; Node khớp mã băm (`a9a872d5`, 820 lệnh) | Thắng, 100 máu, 737 hạ; tối đa 143 (136 / 125); Node khớp (`b2e9f8a1`) |
+| `fight` 35 WPM (`WPM=35`) | Thắng, 100 máu, 740 hạ, 112 từ; trên màn thường 43, đỉnh 1 136, đỉnh 2 124, tối đa 143; Node khớp (`bf20187a`) | Thắng, 81 máu, 723 hạ; 42 / 136 / 126; Node khớp (`a004342f`) |
+| `keys` 120 WPM, dừng T3 liên tục | 148/148 phím đúng thứ tự, 0 phím sai, 111 lần dừng, 33 phím rơi trong lúc dừng; Node khớp | 148/148, 112 lần dừng, 36 phím trong lúc dừng; Node khớp |
+| `frames` (chờ đám đông vào tầm rồi mới bắn Tia) | 17 quái chết trong 0,55 s, một số Tia lớn dần "35×6" → "297×40", không tháp số | 14 quái chết trong 0,55 s |
+| `perf` | Đỉnh ~154 quái: khung TB 1,5 ms, p95 2,6 ms; `flood(700)` (~671 quái): p95 2,7 ms; 34–35 draw call; 58–59 khung/giây | Đỉnh: TB 1,4 ms, p95 2,5 ms; flood p95 2,5 ms; 34–35 draw call |
+
+Ngân sách §8 (đỉnh TB ≤ 6 ms, p95 ≤ 10 ms; tải 700 p95 ≤ 14 ms; draw call ≤ 160; bước sim 700 quái + 2.000 đạn ≤ 1,5 ms: trung vị 0,4 ms lúc rảnh, 0,6–0,9 ms khi cả bộ test và Chrome cùng chạy) đều đạt. Không lỗi console, không ngoại lệ ở mọi kịch bản.
+
+### 7.4 Bộ nhớ trong một trận dài
+
+Trận 180 s (đồng hồ giữ, người gõ 35 WPM trong trang), đo heap sau GC mỗi 20 s: 6,45 MB ở 11 s, 7,00 ở 51 s, 7,19 ở 170 s, 7,16 ở 180 s. Phần tăng là nhật ký lệnh (~600 lệnh) và chuỗi nhãn số. Số geometry (25) và texture (29) của renderer không đổi suốt trận: các pool không rò.
+
+### 7.5 Kiểm
+
+- Hai cấu hình `tsc` sạch; `npx vitest run` ba lần liền: 413 file, 2.715 test đạt (1 bỏ qua có sẵn), không lần nào hỏng; `vite build` đạt (`survival.html`, khối CSS giảm chuyển động được viết lại thành `[data-motion=reduced]`).
+- Chạy các test mới trên `src/survival`, `src/feedback` của bản đầu: 10 test hỏng (rung giữ trauma 1 vượt 14 px: 16,1 px; bốn test số: gộp thành một, đặt cạnh, số dài ra đè số bên, nảy trong hộp; ba test sim: tia Tia, press, trận 35 WPM có đỉnh 120–160; hai test thông báo bộ gõ và tự dừng). Trên mã mới tất cả đạt.
+- Ảnh: `fight` (thường, đỉnh 1, đỉnh 2, màn kết) ở hai cỡ và hai tốc gõ, chuỗi 12 khung của `frames`.

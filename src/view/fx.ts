@@ -281,7 +281,7 @@ void main() {
   gl_FragColor = vec4(color, 1.0);
 }`;
 
-/** The Tia column on the floor: a burning strip `length` m from the ship, its glow `width` m wide. */
+/** The Tia ray on the floor: a burning strip `length` m from the muzzle along the ray, its glow `width` m wide. */
 export class Column {
   readonly mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
   private readonly uniforms = { uTime: { value: 0 }, uPower: { value: 0 }, uColor: { value: new THREE.Color() } };
@@ -296,11 +296,13 @@ export class Column {
     this.mesh.visible = false;
   }
 
-  update(on: boolean, x: number, power: number, time: number): void {
+  /** Along the ray's unit direction (ux, uz) in sim axes (x across, z toward the gate). */
+  update(on: boolean, ux: number, uz: number, power: number, time: number): void {
     this.mesh.visible = on || this.uniforms.uPower.value > 0.02;
     this.uniforms.uPower.value += ((on ? power : 0) - this.uniforms.uPower.value) * (on ? 0.5 : 0.25);
     this.uniforms.uTime.value = time;
-    this.mesh.position.set(x, 0, -this.start);
+    this.mesh.position.set(0, 0, -this.start);
+    this.mesh.rotation.y = Math.atan2(-ux, uz);
   }
 
   get power(): number {

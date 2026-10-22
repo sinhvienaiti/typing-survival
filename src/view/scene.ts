@@ -23,12 +23,14 @@ export const VIEW_TIERS: Record<Tier, { dpr: number; aa: boolean; bloom: boolean
 
 /**
  * "Nhìn từ trên xuống nghiêng 55°": the view is tilted 55° away from straight
- * down, so the camera looks down 35° below the horizon (BUILD_NOTES.md: at
- * 55° below the horizon the whole 60 m corridor fits only as a thin strip
- * with 15 px foes).
+ * down, so the camera looks down ~35° below the horizon (BUILD_NOTES.md: at
+ * 55° below the horizon the whole corridor fits only as a thin strip with
+ * 15 px foes). The S0 review shortened the corridor to 40 m and narrowed the
+ * lens (56° → 42°), so the camera sits closer to the far end: a foe at the
+ * gate is ~25 px tall at 720p (was 15), one at the bottom line as before.
  */
-const PITCH = THREE.MathUtils.degToRad(35);
-const FOV = 56;
+const PITCH = THREE.MathUtils.degToRad(36);
+const FOV = 42;
 /** Where the ship and the gate sit on screen (NDC y): the ship just above the HUD, the gate near the top. */
 const SHIP_Y = -0.56;
 const GATE_Y = 0.8;
@@ -55,8 +57,8 @@ void main() {
   float grid = line(x * 0.5, 0.035) * 0.35 + line(z * 0.5, 0.035) * 0.35 + line(x * 0.125, 0.012) * 0.6 + line(z * 0.125, 0.012) * 0.6;
   // Chevrons flowing toward the ship.
   float chevron = line((z + abs(x) * 0.35 + uTime * 3.2) * 0.2, 0.03) * smoothstep(1.0, 0.0, abs(x) / 9.0);
-  float far = smoothstep(62.0, 40.0, z);
-  vec3 base = mix(vec3(0.016, 0.022, 0.06), vec3(0.03, 0.025, 0.08), smoothstep(0.0, 60.0, z));
+  float far = smoothstep(${(FIELD.gateZ + 2).toFixed(1)}, ${(FIELD.gateZ - 20).toFixed(1)}, z);
+  vec3 base = mix(vec3(0.016, 0.022, 0.06), vec3(0.03, 0.025, 0.08), smoothstep(0.0, ${FIELD.gateZ.toFixed(1)}, z));
   vec3 color = base + vec3(0.12, 0.32, 0.55) * grid * 0.28 * far + vec3(0.25, 0.45, 0.9) * chevron * 0.07 * far;
   color += vec3(0.5, 0.25, 0.95) * edge * 0.55;
   // The bottom line and the danger glow that grows with the threat.

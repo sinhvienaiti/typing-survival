@@ -16,7 +16,9 @@ export class Session {
   readonly world: World;
   readonly log: Command[] = [];
   paused = false;
-  private readonly pending: CommandBody[] = [];
+  /** Commands for the next tick, and the array the last tick used (swapped: no array per tick). */
+  private pending: CommandBody[] = [];
+  private spare: CommandBody[] = [];
   private carry = 0;
   private last = -1;
 
@@ -56,8 +58,11 @@ export class Session {
   /** One step now, with every queued command stamped with this tick. */
   tick(): void {
     const tick = this.world.tick;
-    const commands = this.pending.splice(0);
+    const commands = this.pending;
+    this.pending = this.spare;
     for (const command of commands) this.log.push({ ...command, tick } as Command);
     step(this.world, commands);
+    commands.length = 0;
+    this.spare = commands;
   }
 }

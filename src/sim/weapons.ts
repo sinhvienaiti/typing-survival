@@ -3,8 +3,9 @@
  * magazine (two at most, the firing one included) with the word's quality,
  * and the gun empties it by itself. Xung streams rounds at the foe nearest
  * the bottom in a 50° cone round its aim (a scout shot near the ship first);
- * Tia burns a 1.4 m column from the densest cluster, sweeping toward the next;
- * with nothing in its reach it goes out and keeps the rest of its time.
+ * Tia burns a 1.4 m wide ray from the muzzle into the densest cluster,
+ * sweeping toward the next; with nothing in its reach it goes out and keeps
+ * the rest of its time.
  */
 import { CRIT_MULT, FIELD, MAG_MAX, QUALITY, SCOUT, TIA, WEAPON, XUNG } from "../content/rules";
 import { EV, FLAG } from "./events";
@@ -160,38 +161,65 @@ function shootXung(w: World): boolean {
   return true;
 }
 
-const STRIPS = Math.ceil((FIELD.halfW * 2) / TIA.strip);
+/**
+ * Tia is a ray from the muzzle, `length` m long, aimed at (beamX, muzzleZ +
+ * length): beamX, the aim on that far line, sweeps at `sweep` m/s. Foes are
+ * bucketed by the aim that would cross them (their x seen from the muzzle,
+ * on the far line), up to ±AIM_MAX (≈ 72° off the corridor's axis).
+ */
+const AIM_MAX = 3 * TIA.length;
+const STRIPS = Math.ceil((AIM_MAX * 2) / TIA.strip);
 const weight = new Float64Array(STRIPS);
 
-/** The centre of the densest strip (foes near the ship weigh more), at least `away` from `from`; NaN on an empty field. */
+/** The aim (far-line x) whose ray crosses (x, z), or NaN when the point is out of the ray's reach (`r`: its radius). */
+export function aimOf(x: number, z: number, r: number): number {
+  const dz = z - FIELD.muzzleZ;
+  const reach = TIA.length + r;
+  if (dz < 0.3 || x * x + dz * dz > reach * reach) return NaN;
+  const aim = (x * TIA.length) / dz;
+  return aim < -AIM_MAX ? -AIM_MAX : aim > AIM_MAX ? AIM_MAX : aim;
+}
+
+/** The far end of the ray aimed at `aim` (sim x, z), into `out`. */
+export function beamEnd(aim: number, out: Float64Array): Float64Array {
+  const length = Math.sqrt(aim * aim + TIA.length * TIA.length);
+  out[0] = (aim / length) * TIA.length;
+  out[1] = FIELD.muzzleZ + (TIA.length / length) * TIA.length;
+  return out;
+}
+
+/** The centre of the densest strip of aims (foes near the ship weigh more), at least `away` from `from`; NaN when no foe is in reach. */
 export function densest(w: World, from: number, away: number): number {
   const F = w.foes;
   weight.fill(0);
   for (let s = 0; s < F.top; s += 1) {
-    if (F.alive[s] === 0 || F.z[s]! > FIELD.muzzleZ + TIA.length) continue;
-    const strip = Math.min(STRIPS - 1, Math.max(0, Math.floor((F.x[s]! + FIELD.halfW) / TIA.strip)));
+    if (F.alive[s] === 0) continue;
+    const aim = aimOf(F.x[s]!, F.z[s]!, RADIUS[F.kind[s]!]!);
+    if (aim !== aim) continue;
+    const strip = Math.min(STRIPS - 1, Math.max(0, Math.floor((aim + AIM_MAX) / TIA.strip)));
     weight[strip] = weight[strip]! + 1 + (FIELD.gateZ - F.z[s]!) / 30;
   }
   let best = -1;
   for (let strip = 0; strip < STRIPS; strip += 1) {
-    const x = -FIELD.halfW + (strip + 0.5) * TIA.strip;
+    const x = -AIM_MAX + (strip + 0.5) * TIA.strip;
     if (weight[strip] === 0 || Math.abs(x - from) < away) continue;
     if (best < 0 || weight[strip]! > weight[best]!) best = strip;
   }
-  return best < 0 ? NaN : -FIELD.halfW + (best + 0.5) * TIA.strip;
+  return best < 0 ? NaN : -AIM_MAX + (best + 0.5) * TIA.strip;
 }
 
 function fireTia(w: World, dt: number): void {
   const G = w.guns;
   if (G.beamOn === 0) {
     const start = densest(w, 0, -1);
-    if (start !== start) return; // nothing on the field: the magazine waits
+    if (start !== start) return; // nobody in reach: the magazine waits
     G.beamOn = 1;
     G.beamX = start;
     const next = densest(w, start, TIA.away);
     G.beamTo = next === next ? next : start;
     G.beamPulse = 0;
-    w.events.push(w.tick, EV.beamStart, WEAPON.tia, 0, start, FIELD.gateZ / 2, 0, 0, 0, G.perfect[2] === 1 ? FLAG.perfect : 0);
+    beamEnd(start, END);
+    w.events.push(w.tick, EV.beamStart, WEAPON.tia, 0, END[0]!, END[1]!, 0, 0, start, G.perfect[2] === 1 ? FLAG.perfect : 0);
   }
   const gap = G.beamTo - G.beamX;
   const move = TIA.sweep * dt;
@@ -203,11 +231,12 @@ function fireTia(w: World, dt: number): void {
   G.beamPulse -= dt;
   while (G.beamPulse <= 0) {
     G.beamPulse += TIA.pulse / G.rate[2]!;
-    // Nothing left in reach: the column goes out and keeps its time for the next foes.
+    // Nothing left in reach: the ray goes out and keeps its time for the next foes.
     const any = densest(w, 0, -1);
     if (any !== any) {
       G.beamOn = 0;
-      w.events.push(w.tick, EV.beamEnd, WEAPON.tia, 0, G.beamX, FIELD.gateZ / 2, 0, 0, 0, 0);
+      beamEnd(G.beamX, END);
+      w.events.push(w.tick, EV.beamEnd, WEAPON.tia, 0, END[0]!, END[1]!, 0, 0, G.beamX, 0);
       return;
     }
     pulse(w, gap >= 0 ? 1 : -1);
@@ -218,35 +247,61 @@ function fireTia(w: World, dt: number): void {
     else {
       G.beamOn = 0;
       G.beamLeft = 0;
-      w.events.push(w.tick, EV.beamEnd, WEAPON.tia, 0, G.beamX, FIELD.gateZ / 2, 0, 0, 0, 0);
+      beamEnd(G.beamX, END);
+      w.events.push(w.tick, EV.beamEnd, WEAPON.tia, 0, END[0]!, END[1]!, 0, 0, G.beamX, 0);
     }
   }
 }
 
-/** One Tia pulse: every foe and scout shot in the column. */
+const END = new Float64Array(2);
+
+/** Along the ray (0 … length) and off it (signed, m) of point (x, z), into `out`. */
+function rayCoords(ux: number, uz: number, x: number, z: number, out: Float64Array): void {
+  const dz = z - FIELD.muzzleZ;
+  out[0] = x * ux + dz * uz;
+  out[1] = x * uz - dz * ux;
+}
+const RAY = new Float64Array(2);
+
+/** One Tia pulse: every foe and scout shot the ray crosses. */
 function pulse(w: World, side: number): void {
   const F = w.foes;
   const S = w.shots;
   const G = w.guns;
   const grid = w.grid;
   const half = TIA.width / 2;
-  const x = G.beamX;
+  const L = TIA.length;
+  const norm = Math.sqrt(G.beamX * G.beamX + L * L);
+  const ux = G.beamX / norm;
+  const uz = L / norm;
+  const ex = ux * L;
+  const ez = FIELD.muzzleZ + uz * L;
   const perfect = G.perfect[2] === 1 ? FLAG.perfect : 0;
-  w.events.push(w.tick, EV.beamPulse, WEAPON.tia, 0, x, FIELD.gateZ / 2, side, 0, 0, perfect);
-  const c0 = colOf(x - half - MAX_RADIUS);
-  const c1 = colOf(x + half + MAX_RADIUS);
-  const rows = rowOf(FIELD.muzzleZ + TIA.length + MAX_RADIUS);
-  for (let row = 0; row <= rows; row += 1) {
+  w.events.push(w.tick, EV.beamPulse, WEAPON.tia, 0, ex, ez, side, 0, G.beamX, perfect);
+  // The blow: along the ray and toward the sweep.
+  const bx = ux * 0.6 + uz * side * 0.8;
+  const bz = uz * 0.6 - ux * side * 0.8;
+  const pad = half + MAX_RADIUS;
+  const c0 = colOf((ex < 0 ? ex : 0) - pad);
+  const c1 = colOf((ex > 0 ? ex : 0) + pad);
+  const r0 = rowOf(FIELD.muzzleZ - pad);
+  const r1 = rowOf(ez + pad);
+  for (let row = r0; row <= r1; row += 1) {
     for (let col = c0; col <= c1; col += 1) {
       const cell = row * FIELD.cols + col;
       for (let s = grid.head[cell]!; s >= 0; s = grid.next[s]!) {
-        if (F.alive[s] === 0 || F.z[s]! > FIELD.muzzleZ + TIA.length || Math.abs(F.x[s]! - x) > half + RADIUS[F.kind[s]!]!) continue;
+        if (F.alive[s] === 0) continue;
+        const r = RADIUS[F.kind[s]!]!;
+        rayCoords(ux, uz, F.x[s]!, F.z[s]!, RAY);
+        if (RAY[0]! < 0 || RAY[0]! > L + r || Math.abs(RAY[1]!) > half + r) continue;
         const crit = w.rng.crit.chance(G.crit[2]!);
         const damage = TIA.damage * G.damage[2]! * (crit ? CRIT_MULT : 1);
-        damageFoe(w, s, damage, FLAG.tia | perfect | (crit ? FLAG.crit : 0), side * 0.8, 0.6);
+        damageFoe(w, s, damage, FLAG.tia | perfect | (crit ? FLAG.crit : 0), bx, bz);
       }
       for (let s = grid.shotHead[cell]!; s >= 0; s = grid.shotNext[s]!) {
-        if (S.alive[s] === 1 && Math.abs(S.x[s]! - x) <= half + SCOUT.shotRadius) shootDown(w, s, FLAG.tia);
+        if (S.alive[s] === 0) continue;
+        rayCoords(ux, uz, S.x[s]!, S.z[s]!, RAY);
+        if (RAY[0]! >= 0 && RAY[0]! <= L + SCOUT.shotRadius && Math.abs(RAY[1]!) <= half + SCOUT.shotRadius) shootDown(w, s, FLAG.tia);
       }
     }
   }

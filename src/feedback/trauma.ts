@@ -22,7 +22,12 @@ export class Trauma {
   private kickX = 0;
   private kickY = 0;
   private time = 0;
-  private readonly phase = [Math.random() * 100, Math.random() * 100, Math.random() * 100];
+  private readonly phase: [number, number, number];
+
+  /** `random` seeds the noise's phases (tests pass a fixed one). */
+  constructor(random: () => number = Math.random) {
+    this.phase = [random() * 100, random() * 100, random() * 100];
+  }
 
   get enabled(): boolean {
     return this.scale > 0 && !this.reduced;
@@ -55,10 +60,16 @@ export class Trauma {
     }
     const shake = this.trauma * this.trauma * MAX_PX_AT_1080 * (height / 1080) * this.scale;
     const t = this.time;
-    const [a, b, c] = this.phase as [number, number, number];
-    // Smooth noise: three detuned sines per axis.
-    const nx = (Math.sin(t * 37 + a) + Math.sin(t * 61 + b) * 0.6 + Math.sin(t * 97 + c) * 0.3) / 1.9;
-    const ny = (Math.sin(t * 41 + c) + Math.sin(t * 67 + a) * 0.6 + Math.sin(t * 89 + b) * 0.3) / 1.9;
+    const [a, b, c] = this.phase;
+    // Smooth noise: three detuned sines per axis, the pair kept inside the unit
+    // circle (each axis reaches 1, and both at once would be √2 × the cap).
+    let nx = (Math.sin(t * 37 + a) + Math.sin(t * 61 + b) * 0.6 + Math.sin(t * 97 + c) * 0.3) / 1.9;
+    let ny = (Math.sin(t * 41 + c) + Math.sin(t * 67 + a) * 0.6 + Math.sin(t * 89 + b) * 0.3) / 1.9;
+    const length = Math.hypot(nx, ny);
+    if (length > 1) {
+      nx /= length;
+      ny /= length;
+    }
     this.offsetX = nx * shake + this.kickX * this.scale;
     this.offsetY = ny * shake + this.kickY * this.scale;
     this.roll = Math.sin(t * 29 + b) * this.trauma * this.trauma * 0.012 * this.scale;

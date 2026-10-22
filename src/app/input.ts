@@ -4,7 +4,10 @@
  * (Escape pauses, Enter starts or restarts, Tab says the word again).
  * Composing presses of a Vietnamese input method, held keys, Ctrl/Alt/Meta
  * and synthetic presses (unless the dev flag allows them) type nothing;
- * a sign of an input method at work asks the player to switch it off.
+ * a sign of an input method at work asks the player to switch it off (for
+ * a few seconds after the last sign: ImeNotice). A hidden tab or a window
+ * that loses focus pauses the fight (installAutoPause): keys cannot reach
+ * it there, and the horde would not wait.
  */
 import { isComposingKey, typedLetter, vietnameseInputSign } from "../../scene3d/keys";
 import type { CommandBody } from "../sim/world";
@@ -36,4 +39,30 @@ export function installKeys(target: Window, keys: KeyHandlers): void {
       keys.act("repeat");
     }
   });
+}
+
+/** How long the "switch the Vietnamese input method off" notice stays after the last sign of one (ms). */
+export const IME_NOTICE_MS = 7000;
+
+/** The input-method notice: on for IME_NOTICE_MS after the last sign, so it goes once the player switched it off. */
+export class ImeNotice {
+  private until = -Infinity;
+
+  note(now: number): void {
+    this.until = now + IME_NOTICE_MS;
+  }
+
+  on(now: number): boolean {
+    return now < this.until;
+  }
+}
+
+type Listens = { addEventListener(type: string, listener: () => void): void };
+
+/** Calls `pause` when the document is hidden or the window loses focus. */
+export function installAutoPause(win: Listens, doc: Listens & { readonly hidden: boolean }, pause: () => void): void {
+  doc.addEventListener("visibilitychange", () => {
+    if (doc.hidden) pause();
+  });
+  win.addEventListener("blur", () => pause());
 }
