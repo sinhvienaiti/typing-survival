@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { IME_NOTICE_MS, ImeNotice, installAutoPause, installKeys } from "../src/survival/app/input";
-import type { CommandBody } from "../src/survival/sim/world";
+import { IME_NOTICE_MS, ImeNotice, installAutoPause, installKeys } from "../src/app/input";
+import type { CommandBody } from "../src/sim/world";
 
 /**
- * Sinh Tồn's keyboard and focus (docs/survival/BUILD_S0.md §1, S0 review):
+ * Sinh Tồn's keyboard and focus (docs/BUILD_S0.md §1, S0 review):
  * letters type, command keys are never letters, an input method's presses
  * type nothing and raise a notice that goes again, and a hidden tab or a
  * window that lost focus pauses the fight.

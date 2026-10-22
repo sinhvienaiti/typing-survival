@@ -1,13 +1,13 @@
 /**
  * Source checks for Sinh Tồn's boundary (tests/survival-boundary.test.ts),
- * the same rules Typing Defense's rules obey (tests/td-boundary.test.ts):
+ * the same rules Typing Defense's rules obey (its td-boundary test):
  * imports read without a parser, banned names found outside comments and
  * strings, and host globals found by compiling without the DOM and Node.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import ts from "typescript";
-import { blank } from "../td/source-scan";
+import { blank } from "./blank";
 
 export const ROOT = join(__dirname, "..", "..");
 export type Source = { path: string; text: string };

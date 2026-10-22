@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { FIELD, FOES, KIND, MAG_MAX, PRESS, QUALITY, STORE, TIA, TICK_HZ, XUNG } from "../src/survival/content/rules";
-import { STAGE_S0 } from "../src/survival/content/stage-s0";
-import { EV, FLAG } from "../src/survival/sim/events";
-import { hashHex } from "../src/survival/sim/hash";
-import { firstFoeHit, hitT, segmentHit } from "../src/survival/sim/hits";
-import { RADIUS, pressAt } from "../src/survival/sim/move";
-import { aimOf, densest, loadMagazine } from "../src/survival/sim/weapons";
-import { isFast } from "../src/survival/sim/words";
-import { createWorld, runLog, step, type Command, type CommandBody, type World } from "../src/survival/sim/world";
+import { FIELD, FOES, KIND, MAG_MAX, PRESS, QUALITY, STORE, TIA, TICK_HZ, XUNG } from "../src/content/rules";
+import { STAGE_S0 } from "../src/content/stage-s0";
+import { EV, FLAG } from "../src/sim/events";
+import { hashHex } from "../src/sim/hash";
+import { firstFoeHit, hitT, segmentHit } from "../src/sim/hits";
+import { RADIUS, pressAt } from "../src/sim/move";
+import { aimOf, densest, loadMagazine } from "../src/sim/weapons";
+import { isFast } from "../src/sim/words";
+import { createWorld, runLog, step, type Command, type CommandBody, type World } from "../src/sim/world";
 import { bot, botKeys, sharedDeck } from "./survival/bot";
 
 /**
- * The Sinh Tồn S0 rules (docs/survival/BUILD_S0.md §9): a deterministic
+ * The Sinh Tồn S0 rules (docs/BUILD_S0.md §9): a deterministic
  * fixed-step sim, spawns by the stage table, magazines, the grid against
  * pairwise tests, Tia toward the dense cluster, and keys that a hit stop
  * never drops.

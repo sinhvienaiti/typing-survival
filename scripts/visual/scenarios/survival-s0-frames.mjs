@@ -1,9 +1,9 @@
-// Sinh Tồn S0 (docs/survival/BUILD_S0.md §9): 12 frames 50 ms apart round one
+// Sinh Tồn S0 (docs/BUILD_S0.md §9): 12 frames 50 ms apart round one
 // Tia magazine fired into a dense crowd pressing on the ship, to read the
 // rhythm of the effects.
 // The page's frame clock is held and stepped (window.__survival.hold/advance),
 // so the frames are exactly 50 ms apart however long a capture takes.
-//   URL=http://127.0.0.1:3120/ OUT_DIR=… node scripts/visual/cdp-run.mjs scripts/visual/scenarios/survival-s0-frames.mjs --width=1280 --height=720
+//   URL=http://127.0.0.1:3007/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s0-frames.mjs --width=1280 --height=720
 import { out } from "./common.mjs";
 import { open, sv, typeSlot } from "./survival-s0-lib.mjs";
 

@@ -4,12 +4,12 @@
  * seeds: wins, ship HP left, foes on screen (on the field and the gate's
  * queue just above it) in the calm (90–150 s) and at the two surges, where
  * the kills land (median depth, m from the ship), breaches, and the step cost.
- *   node --import tsx scripts/survival/balance.ts [wpm…] [--seeds=12]
+ *   node --import tsx scripts/balance.ts [wpm…] [--seeds=12]
  */
-import { botKeys, bot, sharedDeck } from "../../tests/survival/bot";
-import { FIELD } from "../../src/survival/content/rules";
-import { EV } from "../../src/survival/sim/events";
-import { createWorld, step, type World } from "../../src/survival/sim/world";
+import { botKeys, bot, sharedDeck } from "../tests/survival/bot";
+import { FIELD } from "../src/content/rules";
+import { EV } from "../src/sim/events";
+import { createWorld, step, type World } from "../src/sim/world";
 
 const deck = sharedDeck();
 const seedsArg = process.argv.find((arg) => arg.startsWith("--seeds="));

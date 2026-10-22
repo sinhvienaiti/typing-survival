@@ -7,7 +7,7 @@ export const sv = (code) => "(() => { const t = window.__survival; if (!t) retur
 
 export async function open(page, query = "") {
   const base = DEV_URL.replace(/\/$/, "");
-  await page.goto(base + "/survival.html?seed=1&autostart=1" + query, { settle: 300 });
+  await page.goto(base + "/index.html?seed=1&autostart=1" + query, { settle: 300 });
   let ready = false;
   for (let wait = 0; wait < 120 && !ready; wait += 1) {
     ready = (await page.eval(sv("return t.ready();"))) === true;

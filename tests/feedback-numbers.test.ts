@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { NumberField, STYLE, popScale } from "../src/feedback/numbers";
 
 /**
- * Damage numbers (docs/survival/BUILD_S0.md §6): blows on one target within
+ * Damage numbers (docs/BUILD_S0.md §6): blows on one target within
  * 150 ms roll up, beam ticks over 0.3 s with "×N", the cap drops the
  * smallest first (never T3 and up), and no number covers a protected
  * rectangle (the learning frame, the gun slots, the health bar).

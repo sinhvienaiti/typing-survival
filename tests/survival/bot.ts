@@ -5,8 +5,8 @@
  * wrong letter at `errors` per key. Deterministic (its own LCG).
  */
 import { readFileSync } from "node:fs";
-import { buildDeck } from "../../src/survival/content/deck";
-import type { CommandBody, World } from "../../src/survival/sim/world";
+import { buildDeck } from "../../src/content/deck";
+import type { CommandBody, World } from "../../src/sim/world";
 
 export type Bot = { wpm: number; errors: number; pause: number; carry: number; wait: number; seed: number; sent: CommandBody[] };
 

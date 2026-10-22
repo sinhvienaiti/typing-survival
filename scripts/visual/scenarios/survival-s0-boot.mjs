@@ -1,17 +1,17 @@
-// Sinh Tồn S0 (docs/survival/BUILD_S0.md §9): the page builds; the start card,
+// Sinh Tồn S0 (docs/BUILD_S0.md §9): the page builds; the start card,
 // then Enter, the HUD with its health bar, clock and kill counter, and two gun
 // slots that each show a word (≥ 26 px at 1280×720, contrast ≥ 7 : 1 on the
 // panel) with its meaning; the learning frame; no console error. S0 review:
 // a window that loses focus pauses the fight (Esc goes on); with the screen
-// shake off (?shake=0) or reduced motion (the game's Interface setting) the
+// shake off (?shake=0) or reduced motion (survival.motion) the
 // camera never shakes, however hard the hits.
-//   URL=http://127.0.0.1:3120/ OUT_DIR=… node scripts/visual/cdp-run.mjs scripts/visual/scenarios/survival-s0-boot.mjs --width=1280 --height=720
+//   URL=http://127.0.0.1:3007/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s0-boot.mjs --width=1280 --height=720
 import { DEV_URL, out } from "./common.mjs";
 import { open, sv, typeSlot } from "./survival-s0-lib.mjs";
 
 export default async function (page) {
   const size = page.width + "x" + page.height;
-  await page.goto(DEV_URL.replace(/\/$/, "") + "/survival.html?seed=1", { settle: 300 });
+  await page.goto(DEV_URL.replace(/\/$/, "") + "/index.html?seed=1", { settle: 300 });
   let ready = false;
   for (let wait = 0; wait < 120 && !ready; wait += 1) {
     ready = (await page.eval(sv("return t.ready();"))) === true;
@@ -71,10 +71,10 @@ export default async function (page) {
     return { ready, worst, hits, ...motion };
   };
   // The control: the same fight with the defaults does shake.
-  const shaking = await still("", "localStorage.removeItem('spaceTypingMotionV1')");
-  const shakeOff = await still("&shake=0", "localStorage.removeItem('spaceTypingMotionV1')");
-  const reduced = await still("", "localStorage.setItem('spaceTypingMotionV1', 'reduced')");
-  await page.eval("localStorage.removeItem('spaceTypingMotionV1'); true");
+  const shaking = await still("", "localStorage.removeItem('survival.motion')");
+  const shakeOff = await still("&shake=0", "localStorage.removeItem('survival.motion')");
+  const reduced = await still("", "localStorage.setItem('survival.motion', 'reduced')");
+  await page.eval("localStorage.removeItem('survival.motion'); true");
   const checks = {
     ready,
     startCardShown: startCard?.mode === "start" && /SINH TỒN/.test(startCard.card),

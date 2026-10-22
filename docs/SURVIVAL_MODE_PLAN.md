@@ -11,7 +11,7 @@
 
 ## 0. Tóm tắt
 
-1. **Chế độ mới "Sinh Tồn"** (`survival.html`): tàu (hoặc Draconis) giữ cửa một hành lang không gian, quái của 8 họ sẵn có tràn xuống. **Hành Trình 600 ải**, chia 60 chương (mục 4.0). Mỗi ải 2–3 phút, có **Luật Ải** riêng (mục tiêu, hiểm họa, luật học, đội quái, biến cố). Trong một chương, bộ súng và nâng cấp được giữ và chọn thêm sau mỗi ải như Hades; ngoài chương, Kho Vũ Khí và Trạm Mẹ làm người chơi mạnh dần qua 600 ải.
+1. **Chế độ mới "Sinh Tồn"** (`index.html`): tàu (hoặc Draconis) giữ cửa một hành lang không gian, quái của 8 họ sẵn có tràn xuống. **Hành Trình 600 ải**, chia 60 chương (mục 4.0). Mỗi ải 2–3 phút, có **Luật Ải** riêng (mục tiêu, hiểm họa, luật học, đội quái, biến cố). Trong một chương, bộ súng và nâng cấp được giữ và chọn thêm sau mỗi ải như Hades; ngoài chương, Kho Vũ Khí và Trạm Mẹ làm người chơi mạnh dần qua 600 ải.
 2. **Súng gắn với từ vựng:** mỗi ô súng mang một **từ đang học**. Gõ đúng từ thì súng bắn, rồi ô lấy từ mới. Đây là chỗ học chính, không phải chữ dán lên quái.
 3. **"Tri thức thành năng lượng":** mỗi chữ cái gõ đúng thành tia năng lượng bay vào lò của tàu. Gõ xong từ là xả đòn. Gõ chuẩn thì đòn mạnh và sạch.
 4. **Cảm giác chiến đấu nhiều lớp:** số sát thương, lóe trúng, giật lùi, dừng hình ngắn, rung camera có hướng, mảnh vỡ, tiếng va chạm nhiều lớp. Tất cả đi qua **một bộ phản hồi chung** để dùng lại cho Campaign 3D, Defense, TD.
@@ -552,7 +552,7 @@ Mỗi giai đoạn: làm, phản biện độc lập, sửa; có test và kịch
 
 | Giai đoạn | Làm gì | Xong khi |
 |---|---|---|
-| **S0 Bản thử dọc** | `survival.html`; sim cố định 60 Hz (tất định); 1 tàu, súng Xung và Tia (băng đạn), quái bầy `mine` ra đều theo nhóm tới khoảng 150 con trên màn hình + vài `scout`; đám đông instanced, trường hướng, lưới va chạm; `src/feedback/` bản đầu: bậc, trauma, dừng hình, số WebGL, phản ứng quái, mảnh vỡ, đầu nòng, tiếng nhiều lớp; khung học không rung | Một phát bắn cảm thấy "nặng" rõ rệt; chủ dự án xem video quay màn hình và duyệt |
+| **S0 Bản thử dọc** | `index.html`; sim cố định 60 Hz (tất định); 1 tàu, súng Xung và Tia (băng đạn), quái bầy `mine` ra đều theo nhóm tới khoảng 150 con trên màn hình + vài `scout`; đám đông instanced, trường hướng, lưới va chạm; `src/feedback/` bản đầu: bậc, trauma, dừng hình, số WebGL, phản ứng quái, mảnh vỡ, đầu nòng, tiếng nhiều lớp; khung học không rung | Một phát bắn cảm thấy "nặng" rõ rệt; chủ dự án xem video quay màn hình và duyệt |
 | **S1 Ải và chương** | Bộ sinh Luật Ải bản đầu (4 Mục tiêu, 4 Hiểm họa, 3 Luật học); 4 súng (Xung, Tán, Ray, Pháo Sao); 5 hành vi quái; thưởng sau ải, chọn cửa (Súng, Rèn, Vàng, Lõi, Sửa); **Chương 1–3** đầy đủ có Mốc và boss; sao; thua, tổng kết; lưu giữa ải | Đi hết 3 chương; không hai ải giống nhau; bot 35 WPM qua mỗi ải thường ≥ 55 % |
 | **S1b Ấn và Chợ** | 5 Nguồn Ấn, bậc hiếm, Song Ấn; Chợ; Tinh nhuệ; Thử Thách Chữ; tiến hóa súng | Mỗi chương có ít nhất 3 kiểu build khác nhau |
 | **S2 Gõ thành năng lượng** | Mảnh chữ, lò, Nova cụm từ, Chuỗi, ô nguyên tố, Hoàn hảo | Gõ thấy rõ là nạp sức |

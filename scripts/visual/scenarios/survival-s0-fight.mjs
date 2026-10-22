@@ -1,10 +1,10 @@
-// Sinh Tồn S0 (docs/survival/BUILD_S0.md §9): a whole 180 s stage typed for
+// Sinh Tồn S0 (docs/BUILD_S0.md §9): a whole 180 s stage typed for
 // real at 45 WPM through CDP. Pictures: a calm stretch, the first surge, the
 // second surge, the end screen. Checks: foes die, damage numbers and debris
 // show, no number ever covers the learning frame (the page's own count and
 // the DOM rectangle of .sv-learn against every live number's box), no
 // console error; and the page's command log replays in Node to its hash.
-//   URL=http://127.0.0.1:3120/ OUT_DIR=… node scripts/visual/cdp-run.mjs scripts/visual/scenarios/survival-s0-fight.mjs --width=1280 --height=720
+//   URL=http://127.0.0.1:3007/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s0-fight.mjs --width=1280 --height=720
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -73,7 +73,7 @@ export default async function (page) {
   writeFileSync(replayFile, JSON.stringify(snapshot));
   let replay = null;
   try {
-    replay = JSON.parse(execFileSync(process.execPath, ["--import", "tsx", resolve(root, "scripts/survival/replay.ts"), replayFile], { cwd: root, encoding: "utf8" }));
+    replay = JSON.parse(execFileSync(process.execPath, ["--import", "tsx", resolve(root, "scripts/replay.ts"), replayFile], { cwd: root, encoding: "utf8" }));
   } catch (error) {
     replay = { match: false, error: String(error.stdout || error.message).trim() };
   }

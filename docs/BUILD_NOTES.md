@@ -8,21 +8,21 @@
 
 | BUILD_S0 | Ở đâu | Ghi chú |
 |---|---|---|
-| §2 Trang | `survival.html`, mục `survival` trong `vite.config.ts` | Thẻ mở đầu chọn tàu (Vanguard, Draconis) và bậc chất lượng; Enter bắt đầu, Esc tạm dừng, Enter chơi lại |
-| §1 Sim tất định | `src/survival/sim/` (world, spawn, move, weapons, projectiles, hits, words, stores, events, hash) | Bước cố định 60 Hz, mảng số (SoA) có ngăn rỗng, ngẫu nhiên chỉ từ `src/platform/rng.ts`, không lượng giác (lắc ngang bằng parabol Bhaskara). Mã băm như TD |
-| §3–§4 Ải | `src/survival/content/rules.ts`, `stage-s0.ts`, `deck.ts` | Mọi số ở `rules.ts`; bảng nhịp ra quái ở `stage-s0.ts` |
+| §2 Trang | `index.html`, mục `survival` trong `vite.config.ts` | Thẻ mở đầu chọn tàu (Vanguard, Draconis) và bậc chất lượng; Enter bắt đầu, Esc tạm dừng, Enter chơi lại |
+| §1 Sim tất định | `src/sim/` (world, spawn, move, weapons, projectiles, hits, words, stores, events, hash) | Bước cố định 60 Hz, mảng số (SoA) có ngăn rỗng, ngẫu nhiên chỉ từ `src/platform/rng.ts`, không lượng giác (lắc ngang bằng parabol Bhaskara). Mã băm như TD |
+| §3–§4 Ải | `src/content/rules.ts`, `stage-s0.ts`, `deck.ts` | Mọi số ở `rules.ts`; bảng nhịp ra quái ở `stage-s0.ts` |
 | §4 Quái | `sim/spawn.ts`, `sim/move.ts` | Nhóm 4–12 (khối, nêm, hàng), lính ở hàng sau; trường hướng trên lưới 2 m (thẳng xuống, cong dần về tàu khi gần, tránh tường) + đẩy nhau qua lưới; trần theo bậc, quái chờ ở cổng |
 | §5 Súng | `sim/weapons.ts`, `sim/words.ts` | Gõ xong từ nạp 1 băng (tối đa 2, kể cả băng đang bắn); Chuẩn, Nhanh, Hoàn hảo; Xung không bắn thừa vào quái coi như đã chết (đếm sát thương đang bay tới); Tia chờ khi không có gì trong tầm |
 | §6 `src/feedback/` | `tiers`, `trauma`, `hitstop`, `numbers`, `reaction`, `debris`, `audio-cues`, `quads` | Chưa chế độ cũ nào dùng. `quads.ts` là hàm dựng quad instanced dùng chung |
-| §6 Đầu nòng, va chạm, chết | `src/survival/view/combat.ts`, `fx.ts` | Đầu nòng lóe 60–80 ms + giật lùi tàu + xung 2 px; trúng: sao 4 tia (T1), 8 tia + vụn (T2), 12 tia + vòng (T3); chết: lóe, sao, sóng tròn trên sàn, mảnh vỡ, tia lửa; nhiều con chết cùng ô 3 m trong một khung thành một vụ nổ cỡ √N |
+| §6 Đầu nòng, va chạm, chết | `src/view/combat.ts`, `fx.ts` | Đầu nòng lóe 60–80 ms + giật lùi tàu + xung 2 px; trúng: sao 4 tia (T1), 8 tia + vụn (T2), 12 tia + vòng (T3); chết: lóe, sao, sóng tròn trên sàn, mảnh vỡ, tia lửa; nhiều con chết cùng ô 3 m trong một khung thành một vụ nổ cỡ √N |
 | §6 Đếm hạ | `view/hud.ts` | "×N" hạ trong 3 s, nảy khi tăng, vàng khi ≥ 15 |
 | §7 Khung học, HUD | `view/hud.ts`, `view/survival.css` | DOM ngoài canvas; canvas rung bằng `setViewOffset` của camera, HUD không bao giờ rung |
 | §7 Phát âm | `app/main.ts` | `speakEnglish` lần đầu mỗi từ trong trận, cách nhau ≥ 3 s; Tab đọc lại từ đang gõ; súng và va chạm −6 dB khi đọc (sự kiện `space-typing:pronunciation` của `src/speech.ts`) |
 | §8 Bậc chất lượng | `view/scene.ts` (`VIEW_TIERS`), `content/rules.ts` (`FOE_CAP`, `BULLET_CAP`) | Low / Medium / High / Ultra: trần quái 200/400/700/1.000, đạn, hạt, số, mảnh vỡ, tỉ lệ điểm ảnh, bloom từ High. Mặc định High |
 | §9 Test | `tests/survival-sim.test.ts`, `tests/survival-boundary.test.ts`, `tests/feedback-numbers.test.ts`, `tests/feedback-motion.test.ts`, `tests/mode-isolation.test.ts` | Mục 4 dưới đây |
 | §9 Kịch bản | `scripts/visual/scenarios/survival-s0-{boot,fight,perf,keys,frames}.mjs` (+ `survival-s0-lib.mjs`) | Đều đạt ở 1280×720 và 1920×1080 |
-| Phát lại | `scripts/survival/replay.ts` | Chạy lại nhật ký lệnh của trang trong Node, so mã băm |
-| Cân bằng | `scripts/survival/balance.ts`, `tests/survival/bot.ts` | Bot gõ 25/35/45/60 WPM, in số quái trên sân mỗi 15 s |
+| Phát lại | `scripts/replay.ts` | Chạy lại nhật ký lệnh của trang trong Node, so mã băm |
+| Cân bằng | `scripts/balance.ts`, `tests/survival/bot.ts` | Bot gõ 25/35/45/60 WPM, in số quái trên sân mỗi 15 s |
 
 Model dùng: `rainbow-mine-3d`, `rainbow-scout-3d`, tàu `vanguard` hoặc `draconis-v3` (qua manifest model). Thiếu file (bản clone sạch không có `rainbow-mine-3d`) thì quái là khối gai làm bằng mã, tàu là thân nón; đã thử bằng một máy chủ Vite không phục vụ model cục bộ: trang chạy, không lỗi console. Nền, sàn, tường, cổng, hạt, số, âm thanh đều làm bằng mã. Không thêm media vào Git.
 
@@ -57,7 +57,7 @@ Máy: Apple M4, Chrome headless (ANGLE Metal), High, DPR 1.
 - Một bước với 700 quái và khoảng 2.000 đạn: trung vị 0,33 ms, p95 0,35 ms (ngân sách 1,5 ms).
 - Trận 180 s với bot: khoảng 0,003 ms mỗi bước.
 
-### 3.2 Bot (`node --import tsx scripts/survival/balance.ts`, lỗi gõ 4 %, nghỉ 0,25 s giữa các từ)
+### 3.2 Bot (`node --import tsx scripts/balance.ts`, lỗi gõ 4 %, nghỉ 0,25 s giữa các từ)
 
 | WPM | Kết quả | Máu còn | Hạ | Đỉnh quái | Quái trên sân mỗi 15 s |
 |---|---|---|---|---|---|
@@ -98,7 +98,7 @@ Người gõ 45 WPM không lỗi qua CDP giết quái ngay ở mép tầm, nên 
 - `tests/survival-sim.test.ts`: tất định (cùng seed và nhật ký thì cùng mã băm; phát lại khớp; có dừng hình và lũ quái), nhịp ra quái theo bảng (đếm theo cửa sổ 1 s), nhóm 4–12, trần chờ ở cổng, băng đạn (nạp, cộng dồn ≤ 2, 24 viên trong 2,4 s, Tia 2,5 s, nhân chất lượng, Nhanh), gõ (khóa, lỗi giữ từ, Backspace nhả khóa), lưới so với từng cặp (12 seed × 300 truy vấn), Tia bắt đầu ở cụm dày và quét về cụm kế, dừng hình không mất phím và giữ đạn, bot 35 WPM thắng với 40–80 quái lúc thường, chi phí bước.
 - `tests/feedback-numbers.test.ts`: gộp 150 ms, Tia 0,3 s "×N", bay theo hướng đòn, trần (bỏ số nhỏ nhất, giữ T3), vùng cấm (dời lên hoặc bỏ; 600 số ngẫu nhiên không đè lần nào).
 - `tests/feedback-motion.test.ts`: bảng bậc, trauma² và giảm 1,8/s, nhân cài đặt rung (0 thì không rung), giảm chuyển động, xung 2–6 px về trong 120 ms, dừng hình (bậc, 150 ms, quét 30 con), phản ứng quái.
-- `tests/survival-boundary.test.ts`: `survival.html` và mục build; `sim/`, `content/` chỉ import nhau và `src/platform/rng`; không DOM, đồng hồ, `Math.random`, lượng giác, lũy thừa (quét mã và biên dịch không thư viện DOM); `src/feedback` không import chế độ nào.
+- `tests/survival-boundary.test.ts`: `index.html` và mục build; `sim/`, `content/` chỉ import nhau và `src/platform/rng`; không DOM, đồng hồ, `Math.random`, lượng giác, lũy thừa (quét mã và biên dịch không thư viện DOM); `src/feedback` không import chế độ nào.
 - `tests/mode-isolation.test.ts`: `survival/` được dùng `scene3d/`; không ai ngoài `survival/` import `survival/`; chỉ ghi khóa `survival.*` (và chỉ đọc `spaceTypingSettingsV1`) qua `safe-storage`.
 
 ## 5. Cách chạy
@@ -106,11 +106,11 @@ Người gõ 45 WPM không lỗi qua CDP giết quái ngay ở mép tầm, nên 
 ```bash
 # Worktree (node_modules là symlink): gọi thẳng, không qua pnpm.
 npx vite --config scripts/dev/vite.worktree.config.ts --host 127.0.0.1 --port 3120 --strictPort
-# http://127.0.0.1:3120/survival.html  (?q=low|medium|high|ultra, ?pilot=draconis, ?seed=1, ?autostart=1, ?shake=0)
+# http://127.0.0.1:3120/index.html  (?q=low|medium|high|ultra, ?pilot=draconis, ?seed=1, ?autostart=1, ?shake=0)
 URL=http://127.0.0.1:3120/ OUT_DIR=… node scripts/visual/cdp-run.mjs scripts/visual/scenarios/survival-s0-fight.mjs --width=1280 --height=720
-node --import tsx scripts/survival/balance.ts 25 35 45 60 --seeds=24   # thắng, máu, quái trên màn lúc thường / đỉnh, nơi quái chết
+node --import tsx scripts/balance.ts 25 35 45 60 --seeds=24   # thắng, máu, quái trên màn lúc thường / đỉnh, nơi quái chết
 WPM=35 URL=… OUT_DIR=… node scripts/visual/cdp-run.mjs scripts/visual/scenarios/survival-s0-fight.mjs --width=1280 --height=720   # trận gõ 35 WPM
-node --import tsx scripts/survival/replay.ts <OUT_DIR>/survival-s0-fight-replay-1280x720.json
+node --import tsx scripts/replay.ts <OUT_DIR>/survival-s0-fight-replay-1280x720.json
 ```
 
 `window.__survival` (chỉ để kịch bản dùng): `ready, models, start, mode, flags, send, flood, hash, snapshot, state` (có `onScreen`: quái trên sân và hàng chờ ngay trên cổng), `slots, costs, info` (có số geometry, texture của renderer), `numbers, rects, motion` (cài đặt rung, độ lệch rung lúc này), `hold, advance, forceStops`.
@@ -145,7 +145,7 @@ Một AI khác (không làm bản đầu) phản biện, sửa và chỉnh cảm
 | Số Tia | gộp theo đoạn 3 m của cột, số mới bị đẩy lên khi đè số cũ (thành tháp số) | gộp theo đoạn 4 m dọc tia; **số rơi lên một số trẻ (≤ 0,3 s) cùng kiểu, dưới T3 thì nhập vào**, khác kiểu thì đặt cạnh, chỉ sau đó mới đẩy lên | Hết tháp số; một cụm đòn đọc thành một số lớn dần |
 | Đòn nặng hơn | giật lùi giả T1 0,12 m, T2 0,22 m | T1 0,18 m, T2 0,3 m; **cú đẩy camera** 2–5 px theo hướng đòn khi hạ ≥ 4 con trong một khung hoặc hạ lính (tối đa mỗi 220 ms) | Thấy được lực đòn ở nơi quái to |
 
-Đo bằng bot (`node --import tsx scripts/survival/balance.ts 25 35 45 60 --seeds=24`, lỗi 4 %, nghỉ 0,25 s giữa từ; "trên màn" = quái trên sân và hàng chờ ngay trên cổng, z ≤ cổng + 4 m):
+Đo bằng bot (`node --import tsx scripts/balance.ts 25 35 45 60 --seeds=24`, lỗi 4 %, nghỉ 0,25 s giữa từ; "trên màn" = quái trên sân và hàng chờ ngay trên cổng, z ≤ cổng + 4 m):
 
 | WPM | Thắng (24 seed) | Máu còn | Lúc thường (90–150 s) | Đỉnh tràn 1 | Đỉnh tràn 2 | Độ sâu nơi quái chết (trung vị) | Chạm đáy |
 |---|---|---|---|---|---|---|---|
@@ -207,6 +207,6 @@ Trận 180 s (đồng hồ giữ, người gõ 35 WPM trong trang), đo heap sau
 
 ### 7.5 Kiểm
 
-- Hai cấu hình `tsc` sạch; `npx vitest run` ba lần liền: 413 file, 2.715 test đạt (1 bỏ qua có sẵn), không lần nào hỏng; `vite build` đạt (`survival.html`, khối CSS giảm chuyển động được viết lại thành `[data-motion=reduced]`).
+- Hai cấu hình `tsc` sạch; `npx vitest run` ba lần liền: 413 file, 2.715 test đạt (1 bỏ qua có sẵn), không lần nào hỏng; `vite build` đạt (`index.html`, khối CSS giảm chuyển động được viết lại thành `[data-motion=reduced]`).
 - Chạy các test mới trên `src/survival`, `src/feedback` của bản đầu: 10 test hỏng (rung giữ trauma 1 vượt 14 px: 16,1 px; bốn test số: gộp thành một, đặt cạnh, số dài ra đè số bên, nảy trong hộp; ba test sim: tia Tia, press, trận 35 WPM có đỉnh 120–160; hai test thông báo bộ gõ và tự dừng). Trên mã mới tất cả đạt.
 - Ảnh: `fight` (thường, đỉnh 1, đỉnh 2, màn kết) ở hai cỡ và hai tốc gõ, chuỗi 12 khung của `frames`.

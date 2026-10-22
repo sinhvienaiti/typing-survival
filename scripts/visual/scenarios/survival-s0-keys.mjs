@@ -1,10 +1,10 @@
-// Sinh Tồn S0 (docs/survival/BUILD_S0.md §9, SURVIVAL_MODE_PLAN.md 5.3): keys
+// Sinh Tồn S0 (docs/BUILD_S0.md §9, SURVIVAL_MODE_PLAN.md 5.3): keys
 // are never swallowed by a hit stop. A crowd is on the field, the page asks
 // for a T3 stop (35 ms) as often as the 150 ms spacing allows, and words are
 // typed for real at 120 WPM through CDP for ~15 s. Every key sent must be in
 // the run's command log, in order, and reach the typing (one right or wrong
 // key each); the stops must really have happened.
-//   URL=http://127.0.0.1:3120/ OUT_DIR=… node scripts/visual/cdp-run.mjs scripts/visual/scenarios/survival-s0-keys.mjs --width=1280 --height=720
+//   URL=http://127.0.0.1:3007/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s0-keys.mjs --width=1280 --height=720
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -51,7 +51,7 @@ export default async function (page) {
   writeFileSync(replayFile, JSON.stringify(await page.eval(sv("return t.snapshot();"))));
   let replay = null;
   try {
-    replay = JSON.parse(execFileSync(process.execPath, ["--import", "tsx", resolve(root, "scripts/survival/replay.ts"), replayFile], { cwd: root, encoding: "utf8" }));
+    replay = JSON.parse(execFileSync(process.execPath, ["--import", "tsx", resolve(root, "scripts/replay.ts"), replayFile], { cwd: root, encoding: "utf8" }));
   } catch (error) {
     replay = { match: false, error: String(error.stdout || error.message).trim() };
   }

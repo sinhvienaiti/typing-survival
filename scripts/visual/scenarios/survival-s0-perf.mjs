@@ -1,4 +1,4 @@
-// Sinh Tồn S0 (docs/survival/BUILD_S0.md §8): frame cost at a surge and under
+// Sinh Tồn S0 (docs/BUILD_S0.md §8): frame cost at a surge and under
 // the load test, typed for real at 70 WPM so both guns fire throughout.
 // A: ~160 foes (the second surge's count, held by topping up with the dev
 // flood) with rounds, the column, numbers, debris and sparks: the page's own
@@ -6,7 +6,7 @@
 // B: __survival.flood(700): p95 ≤ 14 ms. Also Chrome's main-thread time a
 // frame (CDP Performance.getMetrics), the frame rate, draw calls (≤ 160),
 // and the GPU the browser used.
-//   URL=http://127.0.0.1:3120/ OUT_DIR=… node scripts/visual/cdp-run.mjs scripts/visual/scenarios/survival-s0-perf.mjs --width=1280 --height=720
+//   URL=http://127.0.0.1:3007/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s0-perf.mjs --width=1280 --height=720
 import { out } from "./common.mjs";
 import { nextLetter, open, press, stats, sv } from "./survival-s0-lib.mjs";
 

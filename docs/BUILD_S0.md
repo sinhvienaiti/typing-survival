@@ -19,8 +19,8 @@ Một trận ngắn (một ải, 3 phút) đủ để trả lời: **gõ để n
 ## 2. Cấu trúc mã
 
 ```text
-survival.html                 trang mới, thêm vào vite.config.ts
-src/survival/
+index.html                 trang mới, thêm vào vite.config.ts
+src/
   sim/        world, step, spawn (dòng quái, nhóm đội hình), move (trường hướng + đẩy nhau bằng lưới),
               weapons (băng đạn), projectiles, hits (lưới không gian), ship (máu), words (ô súng)
   content/    rules.ts (mọi số), stage-s0.ts (một ải)
@@ -125,4 +125,4 @@ scripts/visual/scenarios/survival-s0-*.mjs
 2. Mọi kịch bản mục 9 đạt ở hai cỡ.
 3. Ngân sách mục 8 đạt.
 4. AI tự xem ảnh chụp và sửa chỗ xấu, khó đọc trước khi báo xong.
-5. Ghi `docs/survival/BUILD_NOTES.md` (đã làm gì, lệch và lý do, số đo), changelog `docs/changelog/2026-10-23-survival-s0.md` và một dòng trong `docs/changelog/README.md`.
+5. Ghi `docs/BUILD_NOTES.md` (đã làm gì, lệch và lý do, số đo), changelog `docs/changelog/2026-10-23-survival-s0.md` và một dòng trong `docs/changelog/README.md`.

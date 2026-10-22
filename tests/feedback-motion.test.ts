@@ -5,7 +5,7 @@ import { STOP_GAP_MS, SWEEP, TIERS } from "../src/feedback/tiers";
 import { Trauma } from "../src/feedback/trauma";
 
 /**
- * The shared feedback (docs/survival/BUILD_S0.md §6): the tier table, the
+ * The shared feedback (docs/BUILD_S0.md §6): the tier table, the
  * shake (trauma², ×the player's setting, off at 0 and under reduced motion),
  * hit stops (tiers, 150 ms apart, one per sweep) and a foe's reaction.
  */
