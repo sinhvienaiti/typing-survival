@@ -113,7 +113,7 @@ TRẠM MẸ ──▶ HÀNH TRÌNH: Chương 1 … Chương 60  (600 ải, mở 
 | Tầng | Là gì | Dài |
 |---|---|---|
 | **Hành Trình** | 60 chương, 600 ải, mở dần. Thêm chương bằng dữ liệu, không cần sửa mã | 25–30 giờ đường chính |
-| **Chương** | 10 ải, một chủ đề từ vựng, một họ quái chính, một boss. Bộ súng và Ấn **giữ suốt chương** | 25–30 phút |
+| **Chương** | **Một map** (như các map của Campaign Space Typing): 10 ải, một chủ đề từ vựng, một họ quái chính, một boss. Bộ súng và Ấn **giữ suốt chương** | 25–30 phút |
 | **Ải** | Một trận theo **Luật Ải** riêng (mục 4.0b) | 2–3 phút |
 | **Mốc (ải 5)** | Điểm lưu giữa chương: chết sau mốc thì chơi lại từ ải 5 với bộ đồ lúc qua mốc (chế độ Thử thách: không có mốc) | — |
 | **Boss chương (ải 10)** | Boss bộ phận gắn từ (mục 4.6), mỗi chương một kịch bản pha | 3–4 phút |
@@ -222,31 +222,36 @@ Không thể tự tay thiết kế 600 ải. Mỗi ải là **một tổ hợp**
 - Bối cảnh theo họ quái của chương và hiểm họa của ải: tinh vân, vành đai thiên thạch, trạm vỡ. Dùng lại nền và màu của 8 họ.
 - Sân cố định, không cuộn. Camera chỉ rung, có xung nhẹ và zoom chậm khi có boss.
 
-### 4.2 Bến súng
+### 4.2 Bến súng và hỏa lực: gõ là nạp đạn
+
+Chủ dự án chốt (23/10): game mạnh về đồ họa và chiến đấu, **quái phải đông, đánh phải đã tay**. Một từ chỉ ra một phát là không đủ để quét hàng trăm quái. Vì vậy: **gõ một từ là nạp một băng đạn**, súng tự xả băng vào đám đông trong vài giây.
 
 - Hai bên đáy có **bến súng**: đầu chương 2 ô, mở dần tới 6 ô (mục 4.0).
-- Mỗi ô: **tên súng** (nhỏ), **từ đang học** (to), **nghĩa tiếng Việt** (nhỏ, theo luật mục 6.3), **thanh hồi**.
-- Ô sẵn sàng thì từ sáng. Đang hồi thì từ mờ, không gõ được.
-- Chữ đầu của các ô sáng **không trùng nhau**, dùng lại `scene3d/words.ts`.
-- Gõ xong từ: súng bắn, ô lấy từ mới từ kế hoạch học, rồi hồi.
-- **Sức đòn** = sát thương gốc × độ dài từ (0,8–1,3) × chất lượng gõ. Chất lượng gõ: Chuẩn 70 %, Tốc 30 % so với tốc mong đợi E.
+- Mỗi ô: **tên súng** (nhỏ), **từ đang học** (to), **nghĩa tiếng Việt** (nhỏ, theo luật mục 6.3), **thanh đạn**.
+- **Gõ xong từ của ô = nạp đầy một băng** cho súng đó. Ô lập tức lấy từ mới, và từ mới gõ được ngay, kể cả khi súng còn đạn.
+- **Súng tự bắn** khi còn đạn, tự chọn mục tiêu theo kiểu của súng. Hết đạn thì súng im. Muốn súng nào bắn liên tục thì phải gõ đều từ của ô đó.
+- Nạp khi băng chưa hết: đạn cộng dồn, tối đa **2 băng** (chống gõ dồn một ô).
+- **Gõ chuẩn:** băng có sát thương và chí mạng cao hơn. **Gõ nhanh:** tốc bắn của băng cao hơn. **Chuỗi:** băng kế tiếp to hơn (mục 4.3).
+- Chữ đầu của các ô **không trùng nhau**, dùng lại `scene3d/words.ts`.
+- **Đồng hồ hỏa lực:** khi mọi súng đều đang bắn, viền bến súng sáng lên. Mục tiêu của người chơi là giữ được trạng thái này càng lâu càng tốt.
 
-| Súng (tên Space Typing) | Kiểu | Hồi | Chữ ký hình |
-|---|---|---|---|
-| **Xung** (Pulse) | 1 viên nhanh vào quái gần nhất | 0,6 s | Đạn của tàu đang chơi (model sẵn) |
-| **Tán** (Scatter) | Nón 5 viên tầm gần | 1,4 s | Quạt tia ngắn |
-| **Ray** (Rail) | Xuyên cả hàng, sát thương lớn | 2,5 s | Vệt thẳng mảnh, đầu nòng lóe dài |
-| **Tia** (Beam) | Cột sáng 1,2 s, sát thương nhiều nhịp | 3 s | Cột sáng có lõi trắng |
-| **Sét** (Arc) | Nhảy 4 quái | 2 s | Tia sét nhánh |
-| **Pháo Sao** (Flak) | Nổ vùng 3 m | 2,2 s | Quả nổ có sóng tròn |
-| **Nova** (tối thượng) | Quét cả hành lang | Theo lò năng lượng (mục 4.4) | Vòng chữ khổng lồ nổ từ lò |
+| Súng (tên Space Typing) | Một băng | Kiểu bắn | Vai trong đám đông | Chữ ký hình |
+|---|---|---|---|---|
+| **Xung** (Pulse) | 24 viên trong 2,4 s | Liên thanh vào quái gần nhất | Dọn quái bầy | Đạn của tàu đang chơi (model sẵn) |
+| **Tán** (Scatter) | 6 loạt × 7 viên trong 2 s | Nón rộng tầm gần | Chặn tràn sát đáy | Quạt tia ngắn, giật mạnh |
+| **Ray** (Rail) | 3 phát trong 2,4 s | Xuyên cả hàng | Xiên đội hình dọc, hạ tinh nhuệ | Vệt thẳng mảnh, đầu nòng lóe dài |
+| **Tia** (Beam) | 1 cột 2,5 s, quét ngang chậm | Sát thương nhiều nhịp | Cắt đôi biển quái | Cột sáng lõi trắng, vết cháy trên sàn |
+| **Sét** (Arc) | 8 lần phóng | Mỗi lần nhảy 5–8 quái | Lan trong đám đông dày | Tia sét nhánh, quái giật |
+| **Pháo Sao** (Flak) | 6 quả trong 3 s | Nổ vùng 3 m, rơi vào chỗ quái dày nhất | Đánh cụm | Quả nổ có sóng tròn, mảnh văng |
+| **Nova** (tối thượng) | 1 lần | Quét cả hành lang | Xóa màn | Vòng chữ khổng lồ nổ từ lò |
 
-- Draconis là "tàu" đặc biệt: Xung thành cầu lửa, Nova thành Mưa Lông Lửa (tái dùng cầu lửa có sẵn).
+- Số trên là khởi điểm. Bot cân sao cho người gõ 35 WPM giữ được 2–3 súng bắn cùng lúc, người gõ 70 WPM giữ được 5–6.
+- Draconis là "tàu" đặc biệt: Xung thành dòng cầu lửa, Tia thành hơi thở lửa, Nova thành Mưa Lông Lửa (tái dùng cầu lửa có sẵn).
 
 ### 4.3 Chuỗi kết hợp
 
 - Gõ xong một từ thì mở **cửa sổ chuỗi 1,2 s**. Gõ xong từ kế tiếp trong cửa sổ thì Chuỗi +1 và cửa sổ mở lại.
-- Chuỗi tăng **sức đòn** (+6 % mỗi bậc, trần +60 %) và **độ hoành tráng** theo bậc (mục 5.7).
+- Chuỗi làm **băng kế tiếp to hơn** (+6 % đạn và sát thương mỗi bậc, trần +60 %) và tăng **độ hoành tráng** theo bậc (mục 5.7).
 - **Ô nguyên tố** (mở bằng Ấn của một Nguồn): Băng, Lửa, Ion, Hư Không. Gõ từ của ô nguyên tố rồi gõ ngay từ của một súng thì súng đó mang nguyên tố (làm chậm, cháy, phá giáp, hút quái). Đây là bản Space Typing của "FLAME TURRET".
 - Gõ sai một phím không làm đứt chuỗi; chỉ hết cửa sổ mới đứt.
 
@@ -256,21 +261,23 @@ Không thể tự tay thiết kế 600 ải. Mỗi ải là **một tổ hợp**
 - Lò đầy (khoảng 120 chữ cái đúng): ô **Nova** sáng với một **cụm từ 2–3 từ** lấy từ dữ liệu học (collocation, cụm cố định), ví dụ "make a decision". Gõ xong là xả Nova.
 - Nova là thời điểm duy nhất trong trận có cụm từ dài: giá trị cao, đáng để tập trung vài giây.
 
-### 4.5 Quái
+### 4.5 Quái: đông, nhiều tầng
 
-Dùng lại 14 hành vi của bản 2D (`src/enemies/kinds.ts`), model 3D của 8 họ:
+Dùng lại 14 hành vi của bản 2D (`src/enemies/kinds.ts`), model 3D của 8 họ. Quái chia **tầng theo số lượng**: rất đông con yếu, ít con mạnh. Cảm giác đã tay đến từ việc quét sạch một biển quái.
 
-| Nhóm | Hành vi (kind) | Vai trong Sinh Tồn |
-|---|---|---|
-| Bầy | `mine` (lao nhanh), `scout` (bắn nhịp) | Lấp sân, rơi nhiều EXP |
-| Trâu | `tank`, `shield` (nhiều lớp) | Cần Ray, Tia, nguyên tố phá giáp |
-| Nguy hiểm | `destroyer`, `oppressor`, `sniper` | Bắn vào tàu; báo trước bằng vạch đỏ |
-| Hỗ trợ | `healer`, `commander` | **Quái gắn từ** (mục 4.6) |
-| Phiền | `carrier` (đẻ quái con), `splitter` (vỡ đôi), `cloaker` (ẩn), `jammer` (làm mờ một ô súng 3 s), `leech` (hút năng lượng lò) | Tạo tình huống |
+| Tầng | Hành vi (kind) | Máu (so với 1 viên Xung) | Tỉ lệ trên sân | Vai |
+|---|---|---|---|---|
+| **Bầy** | `mine` (lao), quái con của `carrier`, mảnh của `splitter` | 1–2 viên | 70–80 % | Biển quái; chết hàng loạt, nổ thành mảnh |
+| **Lính** | `scout` (bắn nhịp), `cloaker` (ẩn), `jammer` (làm mờ một ô súng 3 s), `leech` (hút lò) | 4–8 viên | 15–20 % | Gây áp lực, tạo tình huống |
+| **Trâu** | `tank`, `shield` (nhiều lớp) | 30–80 viên | 3–6 % | Cần Ray, Tia, nguyên tố phá giáp |
+| **Nguy hiểm** | `destroyer`, `oppressor`, `sniper` | 15–30 viên | 1–3 % | Bắn vào tàu; báo trước bằng vạch đỏ |
+| **Hỗ trợ** | `healer`, `commander` | 20–40 viên | 1–2 % | **Quái gắn từ** (mục 4.6) |
+| **Tinh nhuệ, boss** | Biến thể nhanh, giáp, cuồng, dễ nổ; boss | Lớn | Vài con | Điểm nhấn |
 
-- Mỗi màn chọn **một họ** chính (màu, nền, model), trộn hành vi theo bảng đợt.
-- Đợt mới mỗi khoảng 40 s. Tinh nhuệ dùng bộ biến thể có sẵn (nhanh, giáp, cuồng, dễ nổ).
-- **Trần:** tối đa 350 quái sống cùng lúc ở bậc High (đám đông của Defense đã chịu 442).
+- Mỗi chương chọn **một họ** chính (màu, nền, model); Luật Ải trộn 3–5 hành vi.
+- **Kiểu tràn:** dòng chảy liên tục, sóng lớn (tràn cả bề ngang), đội hình (khối, nêm, xoắn), phục kích hai bên. Mỗi ải có 2–4 **đỉnh tràn** để có lúc "cháy máy".
+- **Quái dễ nổ** (`volatile`) nổ dây chuyền khi chết sát nhau. Đó là khoảnh khắc "domino" sướng nhất.
+- **Số quái sống cùng lúc (trần):** Ultra 1.000, High 700, Medium 400, Low 200. Đầu game (chương 1–5) đỉnh khoảng 150, cuối game đỉnh chạm trần.
 
 ### 4.6 Quái gắn từ và boss
 
@@ -388,6 +395,27 @@ src/feedback/  (dùng chung mọi chế độ)
 
 ---
 
+### 5.9 Đám đông đã tay: cảm giác và kỹ thuật
+
+**Cảm giác (cái người chơi thấy):**
+- **Quét biển quái:** Tia cắt một đường, Sét lan qua cả cụm, Pháo Sao xé lỗ giữa đội hình. Quái bầy chết **hàng loạt**: lóe, vỡ mảnh, văng theo hướng đòn.
+- **Domino:** quái dễ nổ nổ dây chuyền, mỗi nổ cách nhau 40–70 ms, tiếng nổ dồn dần lên.
+- **Thảm mảnh vỡ:** sàn phủ mảnh tinh thể theo màu họ, cho thấy trận đã khốc liệt tới đâu; mờ dần sau 8 s.
+- **Đếm hạ liên tục:** góc trên có số hạ trong 3 s gần nhất ("×48"), to dần khi quét được nhiều. Tiếng xác nhận hạ **dồn thành chuỗi nốt đi lên** thay vì 48 tiếng chồng nhau.
+- **Áp lực thấy được:** khi biển quái tới gần đáy, viền sân đỏ dần, nhạc dồn trống. Quét xong thì sân "thở", nhạc lắng.
+- Dừng hình **không** dùng cho từng con bầy chết (sẽ thành giật). Chỉ dùng cho tinh nhuệ, trâu, boss, Nova, và cho lần quét **từ 30 con trở lên trong 0,5 s** (một lần, 25 ms).
+
+**Kỹ thuật (để đông mà vẫn mượt):**
+- **Sim tách khỏi hình:** sim cố định 60 Hz (tất định như TD), dữ liệu quái là mảng số (structure of arrays), không có đối tượng mỗi con.
+- **Di chuyển đám đông:** trường hướng (flow field) theo làn, cộng lực đẩy nhau bằng lưới không gian (spatial hash). Không tìm đường từng con.
+- **Va chạm đạn:** lưới không gian; tia và sét truy vấn theo ô lưới. Không so từng cặp.
+- **Vẽ quái:** `InstancedMesh` theo model, như đám đông của Defense (442 quái, 3,7 ms). Lóe, giật lùi, co giãn, màu cháy, đóng băng đều là **thuộc tính instanced**, không thêm draw call.
+- **Chuyển động quái bầy:** model chỉ có clip đứng yên, nên nhún, lắc, nghiêng làm bằng shader theo vận tốc (rẻ). Quái gần camera và tinh nhuệ dùng khung xương thật (tối đa 12).
+- **LOD:** quái xa hoặc rất đông dùng model LOD (10 model LOD có sẵn) hoặc billboard.
+- **Đạn:** pool 2.000 viên, một `InstancedMesh` mỗi loại đạn; vệt đạn là ribbon dùng chung.
+- **Chết hàng loạt:** gom theo khung: một vụ nổ cỡ √N cho N con chết cùng chỗ, mảnh vỡ chia đều, số sát thương gộp.
+- **Âm:** tiếng trúng gom theo 30–45 ms; tối đa 4 tiếng nổ trong 120 ms; tiếng hạ thành chuỗi nốt.
+
 ## 6. Học trong trận
 
 ### 6.1 Thứ tự ưu tiên trên màn hình
@@ -451,21 +479,29 @@ TỪ ĐANG GÕ  >  ô súng sẵn sàng  >  đòn nguy hiểm của quái  >  t�
 
 ## 8. Hiệu năng và trợ năng
 
-### 8.1 Ngân sách (High, Mac M4, 1080p)
+### 8.1 Ngân sách (Mac M4, 1080p)
 
-| Mục | Trần |
+| Mục | Low | Medium | High | Ultra |
+|---|---|---|---|---|
+| Quái sống | 200 | 400 | 700 | 1.000 |
+| Đạn sống | 500 | 1.000 | 2.000 | 2.000 |
+| Hạt chiến đấu | 600 | 1.500 | 3.000 | 4.500 |
+| Số sát thương | 50 | 100 | 160 | 200 |
+| Mảnh vỡ | 150 | 400 | 900 | 1.400 |
+| Đèn động | 0 | 2 | 4 | 6 |
+| Khung xương thật | 4 | 8 | 12 | 16 |
+| Draw call | ≤ 90 | ≤ 120 | ≤ 160 | ≤ 200 |
+
+| Đo | Đích |
 |---|---|
-| Quái sống | 350 |
-| Hạt chiến đấu | 2.400 (Medium 1.200, Low 500) |
-| Số sát thương | 160 / 100 / 50 |
-| Mảnh vỡ | 600 / 300 / 100 |
-| Đèn động | 4 / 2 / 0 |
-| Draw call | ≤ 150 |
-| Khung hình | trung bình ≤ 8 ms, p95 ≤ 12 ms |
-| Phím tới hình | ≤ 1 khung; phím tới đòn ≤ 50 ms (dừng hình ≤ 70 ms) |
+| Khung hình ở trần của bậc | trung bình ≤ 8 ms, p95 ≤ 12 ms (High trên M4) |
+| Một bước sim với 700 quái, 2.000 đạn | ≤ 1,5 ms |
+| Phím tới hình | ≤ 1 khung |
+| Phím tới đạn | ≤ 50 ms (≤ 70 ms khi đang dừng hình) |
 
-- Không cấp phát đối tượng trong trận (pool hết). Hiệu ứng ưu tiên cao thay hiệu ứng ưu tiên thấp khi chạm trần.
+- Không cấp phát đối tượng trong trận (pool hết). Chạm trần thì hiệu ứng ưu tiên cao thay hiệu ứng ưu tiên thấp; quái mới chờ ở cổng sân (không mất, không bỏ đợt).
 - **3D có 4 bậc:** Low, Medium, High, Ultra (hiện chỉ có 2). Bloom từ High; méo nhiệt và tách màu chỉ từ High.
+- Bậc chất lượng **chỉ đổi số quái hiện cùng lúc và độ dày hiệu ứng**, không đổi độ khó: quái chờ ở cổng ra sân dần.
 
 ### 8.2 Trợ năng
 
@@ -512,7 +548,7 @@ Mỗi giai đoạn: làm, phản biện độc lập, sửa; có test và kịch
 
 | Giai đoạn | Làm gì | Xong khi |
 |---|---|---|
-| **S0 Bản thử dọc** | `survival.html`; sim cố định 60 Hz (tất định); 1 tàu, súng Xung, quái `scout`; `src/feedback/` bản đầu: bậc, trauma, dừng hình, số WebGL, phản ứng quái, mảnh vỡ, đầu nòng, tiếng nhiều lớp; khung học không rung | Một phát bắn cảm thấy "nặng" rõ rệt; chủ dự án xem video quay màn hình và duyệt |
+| **S0 Bản thử dọc** | `survival.html`; sim cố định 60 Hz (tất định); 1 tàu, súng Xung và Tia (băng đạn), quái bầy `mine` **300 con** + vài `scout`; đám đông instanced, trường hướng, lưới va chạm; `src/feedback/` bản đầu: bậc, trauma, dừng hình, số WebGL, phản ứng quái, mảnh vỡ, đầu nòng, tiếng nhiều lớp; khung học không rung | Một phát bắn cảm thấy "nặng" rõ rệt; chủ dự án xem video quay màn hình và duyệt |
 | **S1 Ải và chương** | Bộ sinh Luật Ải bản đầu (4 Mục tiêu, 4 Hiểm họa, 3 Luật học); 4 súng (Xung, Tán, Ray, Pháo Sao); 5 hành vi quái; thưởng sau ải, chọn cửa (Súng, Rèn, Vàng, Lõi, Sửa); **Chương 1–3** đầy đủ có Mốc và boss; sao; thua, tổng kết; lưu giữa ải | Đi hết 3 chương; không hai ải giống nhau; bot 35 WPM qua mỗi ải thường ≥ 55 % |
 | **S1b Ấn và Chợ** | 5 Nguồn Ấn, bậc hiếm, Song Ấn; Chợ; Tinh nhuệ; Thử Thách Chữ; tiến hóa súng | Mỗi chương có ít nhất 3 kiểu build khác nhau |
 | **S2 Gõ thành năng lượng** | Mảnh chữ, lò, Nova cụm từ, Chuỗi, ô nguyên tố, Hoàn hảo | Gõ thấy rõ là nạp sức |
@@ -520,12 +556,12 @@ Mỗi giai đoạn: làm, phản biện độc lập, sửa; có test và kịch
 | **S4 Quái, boss, đủ thư viện** | 14 hành vi, quái gắn từ, tinh nhuệ, boss bộ phận gắn từ, báo đòn; thư viện đủ 12 Mục tiêu, 14 Hiểm họa, 8 Luật học, 10 Biến cố; sinh đủ **600 ải**, bot kiểm từng ải; 60 boss chương (27 model × nhiều kịch bản pha) | Báo cáo đường cong độ khó 600 ải; mọi ải qua bot; chủ dự án duyệt mẫu mỗi 10 chương |
 | **S4b Trạm Mẹ và Kho Vũ Khí** | Tri Thức, Mảnh Sao, cây nâng cấp vĩnh viễn, Kho Vũ Khí và cấp vĩnh viễn của súng, bùa vĩnh viễn, mở tàu, Độ Sâu Hố Đen, Thư Viện Từ, kiểm tra nhảy cấp | Ở chương 30 người chơi mạnh hơn chương 3 rõ rệt; học nhiều thì mạnh nhanh hơn |
 | **S5 Âm và nhạc** | Bus, nhường tiếng, 3 stem, tiếng theo bậc, xác nhận hạ | Tai người duyệt |
-| **S6 Hiệu năng, trợ năng** | 4 bậc chất lượng 3D, trần, giảm chuyển động, thanh trượt | 350 quái + bão hiệu ứng: p95 ≤ 12 ms; mọi công tắc có tác dụng |
+| **S6 Hiệu năng, trợ năng** | 4 bậc chất lượng 3D, trần, giảm chuyển động, thanh trượt | 700 quái + 2.000 đạn + bão hiệu ứng ở High: p95 ≤ 12 ms; mọi công tắc có tác dụng |
 | **S7 Dùng chung** | Campaign 3D và Defense chuyển sang `src/feedback/` | Không mất cảm giác cũ; test cũ xanh |
 
 **Kiểm (mọi giai đoạn):**
 - Gõ: chậm (20 WPM), vừa, rất nhanh (120 WPM); sai nhiều; chuỗi hoàn hảo; bộ gõ tiếng Việt đang bật.
-- Hình: 1 quái, 350 quái, boss, bão hiệu ứng.
+- Hình: 1 quái, 300 quái, 700 quái (High), 1.000 quái (Ultra), boss, bão hiệu ứng, domino nổ dây chuyền.
 - Học: từ mới, từ quen, từ thuộc; đang phát âm.
 - Hiệu năng: Low, High, Ultra.
 - Trợ năng: không rung, giảm chuyển động, không lóe.
