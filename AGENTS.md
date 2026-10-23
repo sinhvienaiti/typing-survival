@@ -10,7 +10,18 @@ guns that hold a corridor against a horde. It was split out of Space Typing
 - Commands: `pnpm dev`, `pnpm test`, `pnpm build`, `pnpm check`,
   `pnpm survival:balance`, `pnpm survival:replay <replay.json>`,
   `pnpm visual scripts/visual/scenarios/survival-s0-boot.mjs --width=1280 --height=720`
-  (scenarios: `boot`, `menu`, `fight`, `perf`, `keys`, `frames`).
+  (scenarios: `boot`, `menu`, `fight`, `perf`, `keys`, `frames`, `balance`).
+- Balance (parent `docs/games/BALANCE.md` §9.3, `docs/changelog/2026-10-23-balance.md`):
+  the kit's `src/kit/balance` runs inside the sim (FlowMeter, PaceDirector:
+  `src/sim/pace.ts`; the run's timeline: `src/sim/plan.ts`). Every balance
+  number is data in `src/content/balance.ts` (modes, pace k, step table),
+  `src/content/stage-s0.ts` (rates, surges, storms) and `src/content/rules.ts`
+  (near zone, drain, Giáp, repair pod). The run header (mode, pace k, E,
+  director) is set from the skill profile (`src/app/skill.ts`, key
+  `survival.skill`) before the world is made and goes into every replay.
+  `pnpm survival:balance` (default 100 seeds, ~3 min) prints the §3 metrics
+  per bot × mode and gates B1–B9; bots (`tests/survival/typist-bot.ts`) type
+  through `installKeys`. Retune data, then rerun the report and the tests.
 - Layout: `src/sim`, `src/content` (deterministic rules: no DOM, clock,
   `Math.random`, locale or trigonometry; same seed and log give the same
   hash in Node and Chrome), `src/view` (three.js), `src/app` (page, input,

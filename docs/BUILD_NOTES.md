@@ -210,3 +210,11 @@ Trận 180 s (đồng hồ giữ, người gõ 35 WPM trong trang), đo heap sau
 - Hai cấu hình `tsc` sạch; `npx vitest run` ba lần liền: 413 file, 2.715 test đạt (1 bỏ qua có sẵn), không lần nào hỏng; `vite build` đạt (`index.html`, khối CSS giảm chuyển động được viết lại thành `[data-motion=reduced]`).
 - Chạy các test mới trên `src/survival`, `src/feedback` của bản đầu: 10 test hỏng (rung giữ trauma 1 vượt 14 px: 16,1 px; bốn test số: gộp thành một, đặt cạnh, số dài ra đè số bên, nảy trong hộp; ba test sim: tia Tia, press, trận 35 WPM có đỉnh 120–160; hai test thông báo bộ gõ và tự dừng). Trên mã mới tất cả đạt.
 - Ảnh: `fight` (thường, đỉnh 1, đỉnh 2, màn kết) ở hai cỡ và hai tốc gõ, chuỗi 12 khung của `frames`.
+
+## 8. Cân bằng nhiều yếu tố (23/10/2026)
+
+> Thay các số của §3.2 và §7.1 (bảng nhịp ra quái, "S0 chỉnh cho 35 WPM"). Chi tiết, bảng bot × chế độ và cổng B1–B9: [`changelog/2026-10-23-balance.md`](changelog/2026-10-23-balance.md). Khung chung: `docs/games/BALANCE.md` §9.3 ở repo cha.
+
+- Ba chế độ Thư giãn / Cân bằng / Thử thách; nhịp k (0,75–1,30) từ hồ sơ gõ, ghi vào đầu replay; bộ điều nhịp trong trận (kit `balance`) đọc FlowMeter mỗi 0,1 s; áp lực liên tục: vùng hút giáp từ 16 m; mỗi lượt có "triều" và sức đỉnh tràn rút từ seed (có đỉnh "dữ dội").
+- Số nằm ở `src/content/balance.ts`, `src/content/stage-s0.ts`, `src/content/rules.ts`. Chỉnh xong thì chạy `pnpm survival:balance` (100 seed) và `npx vitest run`.
+- Bot gõ giống người (`tests/survival/typist-bot.ts`) đi qua `installKeys` như bàn phím thật.
