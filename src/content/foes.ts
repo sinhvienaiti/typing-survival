@@ -37,7 +37,7 @@ export type FoeSpec = {
 export const FOES: readonly FoeSpec[] = [
   { hp: 14, armour: 0, speed: 2.6, radius: 0.5, breach: 3, drain: 1, wobble: 0.55, wobbleHz: 0.32, mass: 1, knock: true, shield: 0, elite: true, name: "Bầy" },
   { hp: 56, armour: 0, speed: 1.8, radius: 0.8, breach: 6, drain: 2, wobble: 0.15, wobbleHz: 0.2, mass: 1, knock: true, shield: 0, elite: true, name: "Lính" },
-  { hp: 240, armour: 5, speed: 1.25, radius: 1.1, breach: 12, drain: 4, wobble: 0.06, wobbleHz: 0.12, mass: 4, knock: false, shield: 0, elite: false, name: "Trâu" },
+  { hp: 220, armour: 5, speed: 1.25, radius: 1.1, breach: 12, drain: 4, wobble: 0.06, wobbleHz: 0.12, mass: 4, knock: false, shield: 0, elite: false, name: "Trâu" },
   { hp: 80, armour: 0, speed: 1.9, radius: 0.8, breach: 6, drain: 2, wobble: 0.08, wobbleHz: 0.15, mass: 1, knock: true, shield: 100, elite: false, name: "Khiên" },
   { hp: 42, armour: 0, speed: 2.2, radius: 0.7, breach: 4, drain: 1.5, wobble: 0.5, wobbleHz: 0.45, mass: 1, knock: true, shield: 0, elite: true, name: "Tách" },
   { hp: 9, armour: 0, speed: 3, radius: 0.4, breach: 2, drain: 0.5, wobble: 0.6, wobbleHz: 0.55, mass: 1, knock: true, shield: 0, elite: false, name: "Mảnh" },

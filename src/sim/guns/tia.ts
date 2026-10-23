@@ -157,6 +157,7 @@ function pulse(w: World, bay: number, side: number): void {
   // The blow: along the ray and toward the sweep.
   const bx = ux * 0.6 + uz * side * 0.8;
   const bz = uz * 0.6 - ux * side * 0.8;
+  wall = -1;
   const stop = w.shields.count > 0 ? shieldAlong(w, ux, uz, half) : Infinity;
   const pad = half + MAX_RADIUS;
   const c0 = colOf((ex < 0 ? ex : 0) - pad);

@@ -1,20 +1,24 @@
 /**
  * Tán (docs/BUILD_S1.md §5.1): 6 volleys a magazine in 2 s, each 7 pellets
- * fanned ±18° (TAN_FAN, written out) round the foe nearest the muzzle within
- * 7 m of depth; each pellet that hits pushes its foe back 0.35 m (never a
- * heavy one: sim/projectiles.ts). Pellets are short-lived rounds: a shield's
- * face stops them. With nobody in reach the magazine waits.
+ * fanned ±18° (TAN_FAN, written out) toward the foe nearest the muzzle whose
+ * body is within 7 m of it (a scattergun's reach is a radius), the fan's
+ * axis pulled to the middle of the foes it covers; each pellet
+ * that hits pushes its foe back (never a heavy one: sim/projectiles.ts).
+ * Pellets are short-lived rounds: a shield's face stops them. With nobody
+ * in reach the magazine waits.
  */
 import { CRIT_MULT, TAN, TAN_FAN } from "../../content/guns";
+import { FOES } from "../../content/foes";
 import { FIELD } from "../../content/rules";
 import { EV, FLAG } from "../events";
 import { ROUND } from "../stores";
 import { firing, nextMagazine } from "../weapons";
 import type { World } from "../world";
-import { nearEdge } from "./xung";
 
 /** Pellets fly a little past the range so the fan's edges reach its depth too. */
 const LIFE = (TAN.range + 1.5) / TAN.speed;
+/** cos 18°: the fan's half-angle. */
+const FAN_COS = TAN_FAN[0]![0];
 
 export function fireTan(w: World, bay: number, dt: number): void {
   const G = w.guns;
@@ -31,17 +35,20 @@ export function fireTan(w: World, bay: number, dt: number): void {
   if (G.mags[bay] === 0) G.cooldown[bay] = 0;
 }
 
-/** The foe nearest the muzzle within reach (−1 none). */
+/** The foe nearest the muzzle with its body within reach (−1 none). */
 export function tanTarget(w: World): number {
   const F = w.foes;
   const mz = FIELD.muzzleZ;
   let best = -1;
   let bestD = Infinity;
   for (let s = 0; s < F.top; s += 1) {
-    if (F.alive[s] === 0 || nearEdge(w, s) > mz + TAN.range) continue;
+    if (F.alive[s] === 0) continue;
     const dx = F.x[s]!;
     const dz = F.z[s]! - mz;
+    if (dz < 0) continue;
+    const reach = TAN.range + FOES[F.kind[s]!]!.radius;
     const d = dx * dx + dz * dz;
+    if (d > reach * reach) continue;
     if (d < bestD) {
       bestD = d;
       best = s;
@@ -59,9 +66,27 @@ function volley(w: World, bay: number): boolean {
   const i = firing(bay);
   let ax = F.x[target]!;
   let az = F.z[target]! - mz;
-  const length = Math.sqrt(ax * ax + az * az) || 1;
+  let length = Math.sqrt(ax * ax + az * az) || 1;
   ax /= length;
   az /= length;
+  // The fan's axis: the mean direction of the foes in reach inside the fan round the nearest.
+  let sx = 0;
+  let sz = 0;
+  for (let s = 0; s < F.top; s += 1) {
+    if (F.alive[s] === 0) continue;
+    const dx = F.x[s]!;
+    const dz = F.z[s]! - mz;
+    if (dz < 0) continue;
+    const d = Math.sqrt(dx * dx + dz * dz) || 1;
+    if (d > TAN.range + FOES[F.kind[s]!]!.radius || (dx * ax + dz * az) / d < FAN_COS) continue;
+    sx += dx / d;
+    sz += dz / d;
+  }
+  length = Math.sqrt(sx * sx + sz * sz);
+  if (length > 0) {
+    ax = sx / length;
+    az = sz / length;
+  }
   G.aimX[bay] = ax;
   G.aimZ[bay] = az;
   const perfect = G.perfect[i] === 1 ? FLAG.perfect : 0;

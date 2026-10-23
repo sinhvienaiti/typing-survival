@@ -41,7 +41,7 @@ export const TIA = { seconds: 2.5, width: 1.4, sweep: 3, pulse: 0.1, damage: 6, 
  * pellet that hits pushes its foe back 0.35 m (never the heavy kinds).
  * Pellets are short-lived rounds (shields stop them).
  */
-export const TAN = { volleys: 6, seconds: 2, damage: 5, range: 7, speed: 40, radius: 0.12, knock: 0.35, crit: 0.05 } as const;
+export const TAN = { volleys: 6, seconds: 2, damage: 7, range: 7, speed: 40, radius: 0.12, knock: 0.6, crit: 0.05 } as const;
 /** The fan's directions as (cos, sin) of −18°, −12°, −6°, 0°, 6°, 12°, 18° (written out: no trigonometry in the sim). */
 export const TAN_FAN: readonly (readonly [number, number])[] = [
   [0.9510565162951535, -0.3090169943749474],
@@ -57,13 +57,13 @@ export const TAN_FAN: readonly (readonly [number, number])[] = [
  * to 6 foes on one line (×0.85 for each one passed), 30 m, 70 a foe, armour
  * counts ×0.25; a shield on the line breaks at once (and counts as one).
  */
-export const RAY = { shots: 3, seconds: 2.4, charge: 0.15, damage: 70, falloff: 0.85, pierce: 6, range: 30, width: 0.2, armour: 0.25, crit: 0.05 } as const;
+export const RAY = { shots: 3, seconds: 2.4, charge: 0.15, damage: 75, falloff: 0.85, pierce: 6, range: 30, width: 0.2, armour: 0.25, crit: 0.05 } as const;
 /**
  * Pháo Sao: 6 shells in 3 s, each flying 0.7 s to the heaviest cluster (by
  * hit points) 8–24 m out, bursting 3 m round: 26 at the centre falling to 13
  * at the edge. Shells fall from above: shields do not stop them.
  */
-export const PHAO = { shells: 6, seconds: 3, flight: 0.7, radius: 3, damage: 26, edge: 13, near: 8, far: 24, cell: 3, crit: 0.05 } as const;
+export const PHAO = { shells: 6, seconds: 3, flight: 0.7, radius: 2.5, damage: 22, edge: 9, near: 8, far: 24, cell: 3, armour: 0.5, crit: 0.05 } as const;
 
 /** Heavy guns (Ray, Pháo Sao) take words one letter longer at both ends of the band, at most `cap` letters. */
 export const HEAVY = { extra: 1, cap: 10 } as const;
@@ -91,13 +91,15 @@ export const GUN_SPECS: readonly GunSpec[] = [
   { key: "tia", name: "TIA", en: "beam", title: "tia nhiệt quét", magazine: "tia 12 m cháy 2,5 s, quét về cụm dày", range: "12 m", heavy: false, armour: 1, crit: TIA.crit, nominal: XUNG.rounds * XUNG.damage },
   { key: "tan", name: "TÁN", en: "scatter", title: "súng chùm đẩy lùi", magazine: "6 loạt × 7 viên xòe, đẩy lùi", range: "7 m", heavy: false, armour: 1, crit: TAN.crit, nominal: TAN.volleys * 7 * TAN.damage },
   { key: "ray", name: "RAY", en: "rail", title: "súng ray xuyên hàng", magazine: "3 phát xuyên 6 con, phá khiên", range: "30 m", heavy: true, armour: RAY.armour, crit: RAY.crit, nominal: RAY.shots * RAY.damage },
-  { key: "phao", name: "PHÁO SAO", en: "flak", title: "pháo cối nổ vùng", magazine: "6 quả nổ 3 m vào cụm nặng", range: "8–24 m", heavy: true, armour: 1, crit: PHAO.crit, nominal: PHAO.shells * PHAO.damage * 1.5 },
+  { key: "phao", name: "PHÁO SAO", en: "flak", title: "pháo cối nổ vùng", magazine: "6 quả nổ 2,5 m vào cụm nặng", range: "8–24 m", heavy: true, armour: PHAO.armour, crit: PHAO.crit, nominal: PHAO.shells * PHAO.damage * 1.5 },
 ];
 
 /**
  * The counter table (docs/BUILD_S1.md §5.2): per row of foes, per gun, 2 ●
- * (counters), 1 ○ (does), 0 ✕ (poor). tests/guns.test.ts (G3m) measures
- * every cell with a small sim run and fails when this table differs.
+ * (counters), 1 ○ (does), 0 ✕ (poor), as measured: tests/guns.test.ts
+ * (G3m, scenes in tests/survival/counters.ts, `node --import tsx
+ * scripts/counters.ts`) runs every cell and fails when this table differs.
+ * Where it differs from §5.2's guess, the measurement won (R1 changelog).
  */
 export const COUNTER_ROWS = ["swarmFar", "swarmNear", "scout", "armoured", "shield", "splitter"] as const;
 export type CounterRow = (typeof COUNTER_ROWS)[number];
@@ -110,10 +112,10 @@ export const COUNTER_LABELS: Readonly<Record<CounterRow, string>> = {
   splitter: "Tách và mảnh",
 };
 export const COUNTERS: Readonly<Record<CounterRow, readonly [number, number, number, number, number]>> = {
-  swarmFar: [0, 1, 0, 1, 2],
-  swarmNear: [2, 2, 2, 0, 0],
-  scout: [2, 1, 1, 2, 0],
-  armoured: [0, 0, 0, 2, 1],
-  shield: [0, 1, 0, 2, 2],
-  splitter: [1, 2, 2, 0, 1],
+  swarmFar: [0, 0, 0, 0, 2],
+  swarmNear: [2, 2, 2, 1, 0],
+  scout: [2, 0, 0, 2, 0],
+  armoured: [0, 0, 0, 2, 0],
+  shield: [0, 0, 0, 0, 2],
+  splitter: [1, 2, 2, 1, 2],
 };

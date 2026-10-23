@@ -180,7 +180,8 @@ export function moveBullets(w: World, dt: number): void {
     const z1 = z0 + B.vz[b]! * dt;
     const pellet = B.kind[b] === ROUND.pellet;
     const wallT = w.shields.count > 0 ? firstShieldHit(w, x0, z0, x1, z1) : 2;
-    const wall = hitShield;
+    // Only this query's wall (a slot found by an earlier query means nothing here).
+    const wall = wallT < 2 ? hitShield : -1;
     const shot = !pellet && w.shots.count > 0 ? firstShotHit(w.grid, w.shots, x0, z0, x1, z1, reach) : -1;
     const shotT = shot >= 0 ? hitT : 2;
     const foe = firstFoeHit(w.grid, w.foes, RADIUS, x0, z0, x1, z1, pellet ? TAN.radius : XUNG.radius);
