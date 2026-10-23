@@ -1,20 +1,28 @@
 /**
- * The balance matrix of Tuyến Cuối (docs/games/BALANCE.md §3, §6, §7): every
- * standard bot (plus the B6 tactics pair) in every mode over many seeds,
- * typed through the page's input path (tests/survival/typist-bot.ts), each run
- * with the header its profile would set (pace k, E, director). A run gives
- * the FlowMeter's summary, the director's, how long foes lived, the
- * learning check, what the run measured of the typist, and the step cost.
+ * The balance matrix of Tuyến Cuối (docs/games/BALANCE.md §3, §6, §7;
+ * docs/BUILD_S1.md §11.3): every standard bot (plus the B6 tactics pair) in
+ * every mode over many seeds, on every stage asked (the trial "s0" and
+ * chapter 1's stages, each with its reference kit and the guns the bot's
+ * tactics pick), typed through the page's input path
+ * (tests/survival/typist-bot.ts), each run with the header its profile would
+ * set (pace k, E, director, ρ). A run gives the FlowMeter's summary, the
+ * director's, how long foes lived, the learning check, what the run
+ * measured of the typist, the stage's length and the step cost.
  * scripts/balance.ts prints it; tests/balance.test.ts runs a small one.
  */
 import {
   BOT_IDS, SKILL_FULL, botSpec, newSkillProfile, runGates, summarizeRuns,
   type BandMode, type BotModeSummary, type FlowSummary, type GateResult, type PaceSummary, type RunRecord, type SkillProfile, type TypistParams,
 } from "../src/kit/balance";
+import { blendSkill } from "../src/kit/balance";
 import { headerFor, runSample } from "../src/app/skill";
-import { MODES, type Mode, type RunPace } from "../src/content/balance";
+import { MODES, stageHeader, type Mode, type RunHeader } from "../src/content/balance";
+import { stageById } from "../src/content/chapter-1";
+import type { GunId } from "../src/content/guns";
 import { EV } from "../src/sim/events";
-import type { World } from "../src/sim/world";
+import { hashHex } from "../src/sim/hash";
+import { createWorld, runLog, type World } from "../src/sim/world";
+import { chooseGuns } from "../tests/survival/tactics";
 import { playOut, sharedDeck, survivalParams, typistBot } from "../tests/survival/typist-bot";
 
 export type BotRow = { readonly id: string; readonly label: string; readonly params: TypistParams; readonly profile: { e: number; a: number; cv: number } };
@@ -47,7 +55,14 @@ export function botProfile(bot: BotRow, mode: Mode): SkillProfile {
 }
 
 export type RunResult = RunRecord & {
-  readonly header: RunPace;
+  readonly header: RunHeader;
+  readonly stage: string;
+  readonly guns: readonly GunId[];
+  /** World seconds the stage lasted. */
+  readonly seconds: number;
+  /** Telegraphs that started within ATTENTION.gap of the one before (the attention budget: 0). */
+  readonly clash: number;
+  readonly hash: string;
   readonly won: boolean;
   readonly hp: number;
   readonly words: number;
@@ -62,26 +77,49 @@ export type RunResult = RunRecord & {
 /** Distinct words before the band is used up and first letters that always differ (the deck's rules), and room to learn (≥ 8 words). */
 const MIN_WORDS = 8;
 
-export function runOne(deck: readonly string[], bot: BotRow, mode: Mode, seed: number, director = true, time = false): RunResult {
-  const header = headerFor(botProfile(bot, mode), mode, true);
+export type RunOptions = { director?: boolean; time?: boolean; stage?: string; guns?: readonly GunId[] };
+
+/** The header a bot's profile and tactics set for a stage (its guns: the tactics', or `guns`). */
+export function botHeader(bot: BotRow, mode: Mode, seed: number, stageId: string, guns?: readonly GunId[]): RunHeader {
+  const profile = botProfile(bot, mode);
+  const stage = stageById(stageId);
+  const pace = headerFor(profile, mode, true);
+  return stageHeader(pace, stage, guns ?? chooseGuns(stage, bot.params.tactics, seed), blendSkill({ ...profile, mode }));
+}
+
+export function runOne(deck: readonly string[], bot: BotRow, mode: Mode, seed: number, director = true, time = false, run: RunOptions = {}): RunResult {
+  const header = botHeader(bot, mode, seed, run.stage ?? "s0", run.guns);
   const options = { seed, deck, ...header, director: director && header.director };
-  const { session, bot: typist } = typistBot(options, bot.params, 7919 * seed + 13);
+  const { session, bot: typist } = typistBot(options, bot.params, 7919 * seed + 13, bot.id.split("@")[0]);
   const w = session.world;
   const seen = new Set<number>();
   let repeats = 0;
   let sameFirst = 0;
+  let firstHidden = 0;
   let read = 0;
+  let clash = 0;
+  let lastTelegraph = -1e9;
   const stepMs: number[] = [];
   const check = (world: World): void => {
     const R = world.events;
     for (let i = Math.max(read, R.written - R.size); i < R.written; i += 1) {
-      if (R.kind[i % R.size] !== EV.word) continue;
+      const kind = R.kind[i % R.size];
+      if (kind === EV.telegraph) {
+        if (world.time - lastTelegraph < 4 - 1e-6) clash += 1;
+        lastTelegraph = world.time;
+      }
+      if (kind !== EV.word) continue;
       const index = R.ref[i % R.size]!;
-      if (seen.has(index) && seen.size < world.typing.band.length) repeats += 1;
+      const band = world.typing.heavy[R.slot[i % R.size]!] === 1 ? world.typing.heavyBand : world.typing.band;
+      if (seen.has(index) && seen.size < band.length) repeats += 1;
       seen.add(index);
     }
     read = R.written;
-    if (world.deck[world.typing.word[0]!]![0] === world.deck[world.typing.word[1]!]![0]) sameFirst += 1;
+    const T = world.typing;
+    for (let a = 0; a < T.word.length; a += 1) {
+      if ((T.hidden[a]! & 1) !== 0) firstHidden += 1;
+      for (let b = a + 1; b < T.word.length; b += 1) if (world.deck[T.word[a]!]![0] === world.deck[T.word[b]!]![0]) sameFirst += 1;
+    }
   };
   if (time) {
     while (w.phase === "play" && w.tick < 60 * 400) {
@@ -101,8 +139,13 @@ export function runOne(deck: readonly string[], bot: BotRow, mode: Mode, seed: n
     flow,
     pace,
     killSeconds: w.stats.kills > 0 ? w.stats.lifeSum / w.stats.kills : undefined,
-    learnOk: typed ? repeats === 0 && sameFirst === 0 && w.stats.words >= MIN_WORDS : undefined,
+    learnOk: typed ? repeats === 0 && sameFirst === 0 && firstHidden === 0 && w.stats.words >= MIN_WORDS : undefined,
     header,
+    stage: header.stage,
+    guns: header.kit.guns,
+    seconds: w.time,
+    clash,
+    hash: hashHex(w),
     won: outcome === "won",
     hp: w.hp,
     words: w.stats.words,
@@ -115,30 +158,54 @@ export function runOne(deck: readonly string[], bot: BotRow, mode: Mode, seed: n
   };
 }
 
-export type Cell = { readonly bot: BotRow; readonly mode: Mode; readonly director: boolean; readonly runs: readonly RunResult[]; readonly summary: BotModeSummary };
+export type Cell = { readonly bot: BotRow; readonly mode: Mode; readonly director: boolean; readonly stage: string; readonly guns?: readonly GunId[]; readonly runs: readonly RunResult[]; readonly summary: BotModeSummary };
 
-export type MatrixOptions = { seeds: number; bots?: readonly string[]; modes?: readonly Mode[]; directorOff?: readonly string[]; time?: boolean; firstSeed?: number };
+export type MatrixOptions = {
+  seeds: number; bots?: readonly string[]; modes?: readonly Mode[]; directorOff?: readonly string[]; time?: boolean; firstSeed?: number;
+  /** Stages ("s0" the trial, "c1-s1" …); the trial alone by default. */
+  stages?: readonly string[];
+  /** Fixed kits instead of the bots' tactics (G3c: every pair). */
+  kits?: readonly (readonly GunId[])[];
+};
 
-/** Every bot × mode × seed (director on), and `directorOff` bots again with it off (B7). */
+/** Every stage × bot × mode × seed (director on), and `directorOff` bots again with it off (B7); with `kits`, every kit instead of the tactics' pick. */
 export function runMatrix(options: MatrixOptions, progress?: (done: number, total: number) => void): Cell[] {
   const deck = sharedDeck();
   const bots = botRows().filter((bot) => options.bots === undefined || options.bots.includes(bot.id));
   const modes = options.modes ?? MODES;
   const off = options.directorOff ?? ["standard"];
-  const jobs: { bot: BotRow; mode: Mode; director: boolean }[] = [];
-  for (const bot of bots) for (const mode of modes) jobs.push({ bot, mode, director: true });
-  for (const bot of bots) if (off.includes(bot.id)) for (const mode of modes) jobs.push({ bot, mode, director: false });
+  const stages = options.stages ?? ["s0"];
+  const kits: (readonly GunId[] | undefined)[] = options.kits !== undefined ? [...options.kits] : [undefined];
+  const jobs: { bot: BotRow; mode: Mode; director: boolean; stage: string; guns?: readonly GunId[] }[] = [];
+  for (const stage of stages) {
+    for (const guns of kits) {
+      for (const bot of bots) for (const mode of modes) jobs.push({ bot, mode, director: true, stage, guns });
+      if (guns === undefined) for (const bot of bots) if (off.includes(bot.id)) for (const mode of modes) jobs.push({ bot, mode, director: false, stage });
+    }
+  }
   const cells: Cell[] = [];
   const first = options.firstSeed ?? 1;
   jobs.forEach((job, index) => {
     const runs: RunResult[] = [];
-    for (let seed = first; seed < first + options.seeds; seed += 1) runs.push(runOne(deck, job.bot, job.mode, seed, job.director, options.time === true));
+    for (let seed = first; seed < first + options.seeds; seed += 1) runs.push(runOne(deck, job.bot, job.mode, seed, job.director, options.time === true, { stage: job.stage, guns: job.guns }));
     cells.push({ ...job, runs, summary: summarizeRuns(job.bot.id, job.mode as BandMode, runs, job.director) });
     progress?.(index + 1, jobs.length);
   });
   return cells;
 }
 
+/** The kit's gates B1–B9 over cells of one stage (and one kit choice). */
 export function gates(cells: readonly Cell[]): GateResult[] {
   return runGates({ summaries: cells.map((cell) => cell.summary), options: { tacticsPair: ["standard@good", "standard@poor"] } });
 }
+
+/** A run replayed from its own log to the same hash (gate G8, in Node). */
+export function replays(deck: readonly string[], bot: BotRow, mode: Mode, seed: number, stage: string): boolean {
+  const header = botHeader(bot, mode, seed, stage);
+  const a = typistBot({ seed, deck, ...header }, bot.params, 7919 * seed + 13, bot.id.split("@")[0]);
+  playOut(a.session, a.bot, 60 * 400);
+  const again = createWorld({ seed, deck, ...header });
+  runLog(again, a.session.log, a.session.world.tick);
+  return hashHex(again) === hashHex(a.session.world);
+}
+

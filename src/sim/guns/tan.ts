@@ -35,12 +35,28 @@ export function fireTan(w: World, bay: number, dt: number): void {
   if (G.mags[bay] === 0) G.cooldown[bay] = 0;
 }
 
-/** The foe nearest the muzzle with its body within reach (−1 none). */
+/** A scout shot this close to the muzzle comes before any foe (m). */
+const SHOT_GUARD = 6;
+
+/** The foe nearest the muzzle with its body within reach (−1 none), or a scout shot near the ship first (−2 − slot). */
 export function tanTarget(w: World): number {
   const F = w.foes;
+  const S = w.shots;
   const mz = FIELD.muzzleZ;
   let best = -1;
-  let bestD = Infinity;
+  let bestD = SHOT_GUARD * SHOT_GUARD;
+  for (let s = 0; s < S.top; s += 1) {
+    if (S.alive[s] === 0) continue;
+    const dx = S.x[s]!;
+    const dz = S.z[s]! - mz;
+    const d = dx * dx + dz * dz;
+    if (dz > 0 && d < bestD) {
+      bestD = d;
+      best = -2 - s;
+    }
+  }
+  if (best <= -2) return best;
+  bestD = Infinity;
   for (let s = 0; s < F.top; s += 1) {
     if (F.alive[s] === 0) continue;
     const dx = F.x[s]!;
@@ -61,31 +77,34 @@ function volley(w: World, bay: number): boolean {
   const F = w.foes;
   const G = w.guns;
   const target = tanTarget(w);
-  if (target < 0) return false;
+  if (target === -1) return false;
   const mz = FIELD.muzzleZ;
   const i = firing(bay);
-  let ax = F.x[target]!;
-  let az = F.z[target]! - mz;
+  const shot = target <= -2 ? -2 - target : -1;
+  let ax = shot >= 0 ? w.shots.x[shot]! : F.x[target]!;
+  let az = (shot >= 0 ? w.shots.z[shot]! : F.z[target]!) - mz;
   let length = Math.sqrt(ax * ax + az * az) || 1;
   ax /= length;
   az /= length;
-  // The fan's axis: the mean direction of the foes in reach inside the fan round the nearest.
-  let sx = 0;
-  let sz = 0;
-  for (let s = 0; s < F.top; s += 1) {
-    if (F.alive[s] === 0) continue;
-    const dx = F.x[s]!;
-    const dz = F.z[s]! - mz;
-    if (dz < 0) continue;
-    const d = Math.sqrt(dx * dx + dz * dz) || 1;
-    if (d > TAN.range + FOES[F.kind[s]!]!.radius || (dx * ax + dz * az) / d < FAN_COS) continue;
-    sx += dx / d;
-    sz += dz / d;
-  }
-  length = Math.sqrt(sx * sx + sz * sz);
-  if (length > 0) {
-    ax = sx / length;
-    az = sz / length;
+  // A foe: the fan's axis goes to the mean direction of the foes in reach inside the fan round it (a shot: straight at it).
+  if (shot < 0) {
+    let sx = 0;
+    let sz = 0;
+    for (let s = 0; s < F.top; s += 1) {
+      if (F.alive[s] === 0) continue;
+      const dx = F.x[s]!;
+      const dz = F.z[s]! - mz;
+      if (dz < 0) continue;
+      const d = Math.sqrt(dx * dx + dz * dz) || 1;
+      if (d > TAN.range + FOES[F.kind[s]!]!.radius || (dx * ax + dz * az) / d < FAN_COS) continue;
+      sx += dx / d;
+      sz += dz / d;
+    }
+    length = Math.sqrt(sx * sx + sz * sz);
+    if (length > 0) {
+      ax = sx / length;
+      az = sz / length;
+    }
   }
   G.aimX[bay] = ax;
   G.aimZ[bay] = az;

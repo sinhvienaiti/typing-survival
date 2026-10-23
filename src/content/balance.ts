@@ -121,7 +121,7 @@ export const STANDARD_VIEW = { e: STANDARD.wpm, a: STANDARD.accuracy, cv: STANDA
 /** The whole header of a stage run: the pace, the stage, its kit and ρ (from the typist's view; the standard one when the pace is fixed). */
 export function stageHeader(pace: RunPace, stage: Stage, guns: readonly GunId[], view: Pick<SkillValues, "e" | "a" | "cv" | "fatigue">, recall: readonly number[] = []): RunHeader {
   const learn = learnFactor(pace.director ? view : STANDARD_VIEW, stage.learn);
-  return { ...pace, stage: stage.id, kit: stage.id === "s0" ? TRIAL_KIT : stageKit(stage, guns), learn, telegraph: 1, recall };
+  return { ...pace, stage: stage.id, kit: stageKit(stage, guns), learn, telegraph: 1, recall };
 }
 
 export function runHeader(view: Pick<SkillValues, "e" | "a" | "cv" | "fatigue">, mode: Mode, adapt: boolean): RunPace {

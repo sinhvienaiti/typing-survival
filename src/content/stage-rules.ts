@@ -81,7 +81,7 @@ export const MISSING = { short: 6 } as const;
  * mines (× the mode and k, `min`–`max`) pour out over `spill` s, inside the
  * guns' reach.
  */
-export const RIFT = { warn: 2.5, zMin: 9, zMax: 13, foes: 8, min: 4, max: 12, spill: 1 } as const;
+export const RIFT = { warn: 2.5, zMin: 9, zMax: 13, foes: 6, min: 4, max: 12, spill: 1 } as const;
 
 /**
  * The attention budget (§7.6): one telegraph at a time (a surge's banner, a

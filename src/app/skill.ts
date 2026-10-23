@@ -12,6 +12,7 @@ import {
   type DifficultySuggestion, type Familiarity, type FlowSummary, type SkillProfile, type SkillSample, type SkillUpdate, type SkillView,
 } from "../kit/balance";
 import { MODE_SPECS, MODES, runHeader, type Mode, type RunPace } from "../content/balance";
+import { LEARN_RULES } from "../content/stage-rules";
 import type { World } from "../sim/world";
 
 export const SKILL_KEY = skillStorageKey("survival");
@@ -90,9 +91,13 @@ export function tallyWord(tally: ByFamiliarityTally, familiarity: Familiarity, l
 /**
  * The run as a skill sample: speed and CV from the clean words, accuracy from
  * the keys, Backspaces, dropped locks, by familiarity (when the page tallied
- * it), HP left, idle share and near misses from the FlowMeter.
+ * it), HP left, idle share and near misses from the FlowMeter. A stage with a
+ * hard learning rule (Thiếu chữ, Nghĩa: typed from memory, slower than the
+ * typist really is) gives no speed or spread, only accuracy and the seconds
+ * to the first key (docs/BUILD_S1.md §7.3).
  */
 export function runSample(w: World, flow: FlowSummary, outcome: SkillSample["outcome"], first: boolean, tally?: ByFamiliarityTally): SkillSample {
+  const hard = LEARN_RULES[w.stage.learn].hard;
   const M = w.measure;
   const S = w.stats;
   const gap = Math.max(M.longestGap, w.tick - M.lastKey) / 60;
@@ -105,7 +110,7 @@ export function runSample(w: World, flow: FlowSummary, outcome: SkillSample["out
       if (row.words === 0) continue;
       (byFamiliarity as Record<Familiarity, { words: number; wpm?: number; recognize?: number }>)[familiarity] = {
         words: row.words,
-        wpm: row.cleanSeconds > 0 ? (12 * row.cleanLetters) / row.cleanSeconds : undefined,
+        wpm: !hard && row.cleanSeconds > 0 ? (12 * row.cleanLetters) / row.cleanSeconds : undefined,
         recognize: row.recognize / row.words,
       };
     }
@@ -114,13 +119,13 @@ export function runSample(w: World, flow: FlowSummary, outcome: SkillSample["out
     outcome,
     afk: outcome !== "quit" && S.words > 0 && gap > AFK_SECONDS,
     words: S.words,
-    wpm: M.seconds > 0 ? (12 * M.letters) / M.seconds : undefined,
+    wpm: !hard && M.seconds > 0 ? (12 * M.letters) / M.seconds : undefined,
     keys: S.keysOk + S.keysBad,
     correctKeys: S.keysOk,
     backspaces: S.backspaces,
     cleanWords: S.clean,
     abandons: S.drops,
-    cv: mean > 0 && M.words > 1 ? Math.sqrt(variance) / mean : undefined,
+    cv: !hard && mean > 0 && M.words > 1 ? Math.sqrt(variance) / mean : undefined,
     byFamiliarity: tally !== undefined ? byFamiliarity : undefined,
     safety: outcome === "quit" ? undefined : flow.s / 1000,
     idle: flow.i / 1000,

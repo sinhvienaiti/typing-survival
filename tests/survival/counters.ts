@@ -6,8 +6,9 @@
  * typist). A cell's cost is the seconds to clear the row (§5.2) plus the
  * armour the scene takes on the way, a point a second (the near zone's
  * drain, breaches, scout shots: what a slow or blind gun lets through);
- * foes still standing at the end count as breaking through. ● within 1.25×
- * the row's best, ✕ from 2×, ○ between.
+ * foes still standing at the end count as breaking through, and so do
+ * those crossing a far row's line (Bầy giữa sân: thinned before 8 m).
+ * ● within 1.25× the row's best, ✕ from 2×, ○ between.
  */
 import { FOES, KIND } from "../../src/content/foes";
 import { COUNTER_ROWS, GUN_IDS, type CounterRow, type GunId } from "../../src/content/guns";
@@ -17,7 +18,8 @@ import { arena, cleared, feeder, lost, place, runUntil } from "./arena";
 
 const mz = FIELD.muzzleZ;
 
-type Scene = { readonly seconds: number; readonly setup: (w: World, seed: number) => void };
+/** A scene: its length cap, its foes; `line` (m from the muzzle): foes that cross it alive count as through (the row is about holding them beyond it). */
+type Scene = { readonly seconds: number; readonly line?: number; readonly setup: (w: World, seed: number) => void };
 
 /** A small deterministic jitter per foe from the seed (the scenes vary a little between seeds). */
 const jitter = (seed: number, i: number): number => (((seed * 7919 + i * 104729) % 1000) / 1000 - 0.5) * 0.4;
@@ -28,18 +30,19 @@ function pack(w: World, seed: number, p: number, x: number, z: number, n: number
 }
 
 export const SCENES: Readonly<Record<CounterRow, Scene>> = {
-  /** Three packs of 10 mines (blocks at the spawn's spacing) walking in from 13–22 m. */
+  /** Three packs of 10 mines (blocks at the spawn's spacing) walking in from 13–22 m: thinned before they come within 8 m. */
   swarmFar: {
     seconds: 40,
+    line: 8,
     setup: (w, seed) => {
       for (let p = 0; p < 3; p += 1) pack(w, seed, p, -6 + p * 6, mz + 13 + p * 4.5, 10);
     },
   },
-  /** A wave of 40 mines (four packs of 10) rushing in from 4–8 m. */
+  /** A wall of 30 mines (three packs of 10 side by side) pressing in from 5–8 m. */
   swarmNear: {
     seconds: 40,
     setup: (w, seed) => {
-      for (let p = 0; p < 4; p += 1) pack(w, seed, p, -7.5 + p * 5, mz + 4 + (p % 2) * 2, 10);
+      for (let p = 0; p < 3; p += 1) pack(w, seed, p, -6.5 + p * 6.5, mz + 5 + (p % 2) * 1.5, 10);
     },
   },
   /** 6 scouts walking in from 12–16 m to their firing line (6–9 m), shooting there as in a fight. */
@@ -98,8 +101,19 @@ export function measureCell(row: CounterRow, gun: GunId, seeds: readonly number[
   for (const seed of seeds) {
     const w = arena([gun], { seed });
     scene.setup(w, seed);
-    const time = runUntil(w, feeder(clean), cleared, scene.seconds);
-    total += (time === Infinity ? scene.seconds : time) + lost(w) + standing(w);
+    let through = 0;
+    const line = scene.line === undefined ? -Infinity : FIELD.muzzleZ + scene.line;
+    const done = (world: World): boolean => {
+      for (let s = 0; s < world.foes.top; s += 1) {
+        if (world.foes.alive[s] === 1 && world.foes.z[s]! < line) {
+          through += FOES[world.foes.kind[s]!]!.breach;
+          world.foes.remove(s);
+        }
+      }
+      return cleared(world);
+    };
+    const time = runUntil(w, feeder(clean), done, scene.seconds);
+    total += (time === Infinity ? scene.seconds : time) + lost(w) + standing(w) + through;
   }
   return total / seeds.length;
 }
