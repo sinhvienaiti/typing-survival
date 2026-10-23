@@ -44,6 +44,23 @@ export const BLOW = {
   drain: new THREE.Color("#ff3d1f"),
   /** The repair pod: typing teal (help, not a blow). */
   repair: new THREE.Color("#7ff5e0"),
-  /** A Giáp (armoured) foe's death: gold. */
+  /** A Bọc Thép (armoured) foe's death: gold. */
   armour: new THREE.Color("#ffd27a"),
+  // S1 guns (theme.css's --tan, --ray, --phao): Tán amber, Ray white-blue, Pháo Sao vermilion.
+  tan: new THREE.Color("#ffc53d"),
+  ray: new THREE.Color("#c4d2ff"),
+  rayCore: new THREE.Color("#f2f7ff"),
+  phao: new THREE.Color("#ff3f6c"),
+  smoke: new THREE.Color("#58616b"),
+  /** A blow Vỏ stopped: orange sparks bouncing back. */
+  clank: new THREE.Color("#ff9a2e"),
+  /** A clean magazine piercing Vỏ: a white-blue streak. */
+  pierce: new THREE.Color("#bfe9ff"),
+  /** Khiên's energy wall and its glass when it breaks. */
+  shield: new THREE.Color("#4fc8ff"),
+  glass: new THREE.Color("#9fe6ff"),
+  /** Đầu Đàn's beacon: gold. */
+  beacon: new THREE.Color("#ffcf4a"),
+  /** A rift's crack: molten orange. */
+  rift: new THREE.Color("#ff6a12"),
 } as const;

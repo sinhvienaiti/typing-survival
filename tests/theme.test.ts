@@ -109,4 +109,28 @@ describe("Tuyến Cuối theme", () => {
     expect(cycle(["low", "medium", "high", "ultra"], "ultra", 1)).toBe("low");
     expect(cycle(["low", "medium", "high", "ultra"], "low", -1)).toBe("ultra");
   });
+
+  it("every gun has its colour as a theme variable, each its own hue (BUILD_S1 §12)", () => {
+    const theme = text("src/view/theme.css");
+    const hue = (hex: string): number => {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255) as [number, number, number];
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      if (max === min) return 0;
+      const d = max - min;
+      const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      return (h * 60 + 360) % 360;
+    };
+    const resolve = (name: string): string => {
+      const value = new RegExp("--" + name + ":\\s*([^;]+);").exec(theme)?.[1]?.trim() ?? "";
+      const alias = /^var\(--([\w-]+)\)$/.exec(value);
+      return alias !== null ? resolve(alias[1]!) : value;
+    };
+    const hues = ["xung", "tia", "tan", "ray", "phao"].map((gun) => {
+      const value = resolve(gun);
+      expect(value, gun).toMatch(/^#[0-9a-f]{6}$/i);
+      return hue(value);
+    });
+    for (let a = 0; a < hues.length; a += 1) for (let b = a + 1; b < hues.length; b += 1) expect(Math.min(Math.abs(hues[a]! - hues[b]!), 360 - Math.abs(hues[a]! - hues[b]!))).toBeGreaterThanOrEqual(15);
+  });
 });

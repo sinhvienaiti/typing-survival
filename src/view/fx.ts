@@ -87,7 +87,8 @@ void main() {
   vec2 corner = position.xy * iSize.x;
   corner = vec2(corner.x * c - corner.y * s, corner.x * s + corner.y * c);
   if (ground > 0.5) {
-    gl_Position = projectionMatrix * viewMatrix * vec4(iPos.xyz + vec3(corner.x, 0.0, corner.y), 1.0);
+    // Flat on the floor, facing up (−y here would leave the quad's back to the camera: culled).
+    gl_Position = projectionMatrix * viewMatrix * vec4(iPos.xyz + vec3(corner.x, 0.0, -corner.y), 1.0);
   } else {
     vec4 view = modelViewMatrix * vec4(iPos.xyz, 1.0);
     view.xy += corner;
@@ -131,14 +132,16 @@ export class Glows {
 
   /**
    * A burst at (x, y, z) of `cell`, growing from `from` to `to` m over
-   * `life` s, colour × `intensity` (above 1 blooms), drifting (vx, vy, vz).
+   * `life` s, colour × `intensity` (above 1 blooms), drifting (vx, vy, vz),
+   * turning `spin` rad/s from `angle` (random when not given).
    */
-  burst(cell: number, x: number, y: number, z: number, from: number, to: number, life: number, color: THREE.Color, intensity: number, vx = 0, vy = 0, vz = 0, spin = 0): void {
+  burst(cell: number, x: number, y: number, z: number, from: number, to: number, life: number, color: THREE.Color, intensity: number, vx = 0, vy = 0, vz = 0, spin = 0, angle = NaN): void {
     if (this.live >= this.limit) return;
     const o = this.live * this.stride;
     const b = this.b;
     b[o] = x; b[o + 1] = y; b[o + 2] = z; b[o + 3] = vx; b[o + 4] = vy; b[o + 5] = vz;
-    b[o + 6] = from; b[o + 7] = to; b[o + 8] = Math.random() * 6.283; b[o + 9] = spin;
+    // A set angle (a flash along a shot), else a random one.
+    b[o + 6] = from; b[o + 7] = to; b[o + 8] = angle === angle ? angle : Math.random() * 6.283; b[o + 9] = spin;
     b[o + 10] = color.r * intensity; b[o + 11] = color.g * intensity; b[o + 12] = color.b * intensity;
     b[o + 13] = 0; b[o + 14] = life; b[o + 15] = cell;
     this.live += 1;

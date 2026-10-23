@@ -8,10 +8,11 @@
  * can hover (select) and click (take) the items too.
  */
 import type { Menu, MenuItem } from "../app/menu";
+import type { GunKey } from "../content/guns";
 
 export type Stat = { value: string; label: string; note?: string };
 export type Learned = { en: string; vi: string };
-export type GunCard = { name: string; title: string; text: string; kind: "xung" | "tia" };
+export type GunCard = { name: string; title: string; text: string; kind: GunKey };
 
 export type ScreenView =
   | { kind: "title"; menu: Menu; status: string; lead: string }
@@ -19,9 +20,9 @@ export type ScreenView =
   | { kind: "armory"; menu: Menu; guns: readonly GunCard[]; learning: readonly string[] }
   | { kind: "profile"; menu: Menu; stats: readonly Stat[]; advice: string; lines: readonly string[] }
   | { kind: "pause"; menu: Menu }
-  | { kind: "end"; menu: Menu; mode: string; won: boolean; stats: readonly Stat[]; words: readonly Learned[]; advice: string; note: string };
+  | { kind: "end"; menu: Menu; mode: string; won: boolean; stats: readonly Stat[]; words: readonly Learned[]; advice: string; note: string; stage?: string; stars?: string };
 
-const escapeHtml = (text: string): string => text.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]!);
+export const escapeHtml = (text: string): string => text.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]!);
 
 /** An LED bar of ten segments, `level` 0 … 1 lit. */
 function led(level: number): string {
@@ -46,11 +47,11 @@ function item(entry: MenuItem, index: number, on: boolean): string {
   );
 }
 
-function menu(m: Menu, extra = ""): string {
+export function menu(m: Menu, extra = ""): string {
   return '<nav class="sv-menu' + extra + '" role="menu">' + m.items.map((entry, index) => item(entry, index, index === m.index)).join("") + "</nav>";
 }
 
-const hints = (text: string): string => '<footer class="sv-hints">' + text + "</footer>";
+export const hints = (text: string): string => '<footer class="sv-hints">' + text + "</footer>";
 
 export function renderScreen(view: ScreenView): string {
   switch (view.kind) {
@@ -111,13 +112,14 @@ export function renderScreen(view: ScreenView): string {
     case "end":
       return (
         '<div class="sv-card sv-panel sv-sheet sv-end ' + (view.won ? "is-won" : "is-lost") + '">' +
-        "<h1>" + (view.won ? "TRỤ VỮNG!" : "TUYẾN ĐÃ VỠ") + '</h1><div class="sv-end-mode">' + escapeHtml(view.mode.toUpperCase()) + '</div><div class="sv-hazard" aria-hidden="true"></div>' +
+        "<h1>" + (view.stage ? (view.won ? "VƯỢT ẢI!" : "ẢI THẤT THỦ") : view.won ? "TRỤ VỮNG!" : "TUYẾN ĐÃ VỠ") + '</h1><div class="sv-end-mode">' + escapeHtml(((view.stage ? view.stage + " · " : "") + view.mode).toUpperCase()) + '</div><div class="sv-hazard" aria-hidden="true"></div>' +
+        (view.stars ?? "") +
         '<div class="sv-stats">' + view.stats.map((stat) => "<div><b>" + escapeHtml(stat.value) + "</b><small>" + escapeHtml(stat.label) + "</small></div>").join("") + "</div>" +
         '<p class="sv-advice">' + escapeHtml(view.advice) + "</p>" +
         (view.note ? '<p class="sv-note">' + escapeHtml(view.note) + "</p>" : "") +
         '<ul class="sv-words">' + view.words.map((word) => "<li><b>" + escapeHtml(word.en) + "</b>" + escapeHtml(word.vi) + "</li>").join("") + "</ul>" +
         menu(view.menu, " sv-row") +
-        hints("<kbd>Enter</kbd> chơi lại · <kbd>Esc</kbd> màn chính") +
+        hints("<kbd>↑</kbd><kbd>↓</kbd> chọn · <kbd>Enter</kbd> vào · <kbd>Esc</kbd> màn chính") +
         "</div>"
       );
   }

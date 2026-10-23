@@ -12,9 +12,11 @@ import { runFrameLoop, safeLocalStorage, safeSessionStorage } from "../kit/platf
 import { speakEnglish } from "../kit/speech";
 import { hordeIntensity } from "../audio/music";
 import { ThemeAudio } from "../audio/theme-audio";
-import { DEFAULT_MODE, MODES, MODE_SPECS, isMode, lengthFor, type Mode as Difficulty, type RunPace } from "../content/balance";
-import { TIA, XUNG } from "../content/guns";
+import { DEFAULT_MODE, MODES, MODE_SPECS, TRIAL_KIT, isMode, lengthFor, stageHeader, type Mode as Difficulty, type RunPace } from "../content/balance";
+import { CHAPTER_1, stageById } from "../content/chapter-1";
+import { GUN_KEYS, GUN_SPECS } from "../content/guns";
 import { FIELD, FOE_CAP, type Tier } from "../content/rules";
+import { LEARN_RULES } from "../content/stage-rules";
 import { STAGE_S0 } from "../content/stage-s0";
 import { peakAt } from "../sim/plan";
 import { hashHex } from "../sim/hash";
@@ -23,11 +25,14 @@ import { Crowd } from "../view/crowd";
 import { Hud } from "../view/hud";
 import { Stage } from "../view/scene";
 import { renderScreen, type ScreenView } from "../view/screens";
+import { renderJourney, starRow } from "../view/screens-journey";
 import { Ship, type Pilot } from "../view/ship";
-import { installDevHandle } from "./dev";
+import { FrameCosts, bays, eventCounts, installDevHandle, numberBoxes, runState, snapshot } from "./dev";
+import { Journey, NEXT_KEY, recordStage, starsOf, takeChoice, type RunChoice } from "./journey";
+import { countedText, profileView, runStats, runWords } from "./results";
 import { ImeNotice, installAutoPause, installKeys, type KeyAction } from "./input";
 import { reportWord } from "./learning";
-import type { SkillUpdate } from "../kit/balance";
+import { blendSkill, type SkillUpdate } from "../kit/balance";
 import { Menu, cycle, stepVolume, type MenuItem } from "./menu";
 import { Session } from "./session";
 import { SEEN_KEY, WordHistory, emptyTally, headerFor, loadProfile, recordRun, runSample, saveProfile, skillReport, tallyWord } from "./skill";
@@ -106,7 +111,10 @@ let runHeader: RunPace = headerFor(profile, pageMode, pageAdapt);
 const pinnedPace = Number(params.get("pace"));
 if (params.has("pace") && pinnedPace > 0) runHeader = { ...runHeader, pace: Math.round(Math.max(0.75, Math.min(1.3, pinnedPace)) * 1000) / 1000 };
 if (params.get("director") === "0") runHeader = { ...runHeader, director: false };
-const session = new Session({ seed, deck: vocab.deck, tier, ...runHeader });
+/** The stage this page plays: the journey's choice (survival.next, or ?stage=&guns=), else the trial. */
+const choice = takeChoice(safeSessionStorage, params);
+const level = stageById(choice?.stage ?? "s0");
+const session = new Session({ seed, deck: vocab.deck, tier, ...stageHeader(runHeader, level, choice?.guns ?? TRIAL_KIT.guns, blendSkill({ ...profile, mode: pageMode })) });
 const world = session.world;
 /** The first run of a play session (the fatigue base of the profile). */
 const SESSION_KEY = "survival.session";
@@ -115,7 +123,7 @@ safeSessionStorage.setItem(SESSION_KEY, "1");
 const tally = emptyTally();
 let settled: SkillUpdate | null = null;
 const wordOf = (index: number): Word => vocab.words.get(world.deck[index]!) ?? { en: world.deck[index] ?? "", vi: "", ipa: "" };
-const hud = new Hud(hudRoot, wordOf);
+const hud = new Hud(hudRoot, wordOf, world);
 const crowd = new Crowd(stage.scene);
 const ship = new Ship(stage.scene, pilot);
 const loading = Promise.all([crowd.load(), ship.load(stage.scene)]);
@@ -160,9 +168,19 @@ const combat = new Combat(stage, crowd, ship, pilot, tier, audio, {
   repaired: (hp) => hud.showBanner("TIẾP TẾ +" + Math.round(hp) + " GIÁP", clock),
   ended: () => {
     settle(world.phase === "won" ? "won" : "lost");
+    if (level.id !== "s0") {
+      const s = world.stats;
+      stars = starsOf(level, world.phase === "won", world.hp, world.armourMax, s.keysOk / Math.max(1, s.keysOk + s.keysBad));
+      recordStage(safeLocalStorage, world.header.mode, level.id, stars);
+      if (stars.some(Boolean)) audio.gun("star.get", 0, clock);
+    }
     setMode("end");
   },
 });
+
+/** A stage run's stars when it ended; the journey's screens. */
+let stars: boolean[] | null = null;
+const journey = new Journey({ mode: () => settings.mode, store: safeLocalStorage, sound: (kind) => audio.ui(kind), draw: () => drawScreen(), start: (next) => reload(true, next), back: () => (mode === "end" ? reload(false) : show("title")) });
 
 /** The run into the skill profile, once: after the end, or as a quit when a new run replaces it. */
 function settle(outcome: "won" | "lost" | "quit"): void {
@@ -179,7 +197,6 @@ const applyShake = (): void => {
 applyShake();
 combat.trauma.reduced = motionReduced();
 
-const decimal = (value: number): string => String(value).replace(".", ",");
 const percent = (value: number): string => Math.round(value * 100) + " %";
 const onOff = (on: boolean): string => (on ? "Bật" : "Tắt");
 const fixed = (value: number, digits: number): string => value.toFixed(digits).replace(".", ",");
@@ -190,12 +207,13 @@ function items(which: Screen): MenuItem[] {
   switch (which) {
     case "title":
       return [
-        { id: "start", label: started ? "Bắt đầu lại" : "Bắt đầu", note: started ? "Bỏ trận đang dở, vào trận mới" : "Trận mới · giữ hành lang " + STAGE_S0.seconds / 60 + " phút", enabled: true },
+        { id: "journey", label: "Hành trình", note: "Chương 1 · ải 1–" + CHAPTER_1.length + " · chọn ải, nạp súng", enabled: true },
+        { id: "start", label: started ? "Trận thử lại" : "Trận thử", note: started ? "Bỏ trận đang dở, vào trận thử mới" : "Xung và Tia · giữ hành lang " + STAGE_S0.seconds / 60 + " phút", enabled: true },
         { id: "continue", label: "Chơi tiếp", note: started ? "Về trận đang tạm dừng" : "Chưa có trận đang dở", enabled: started },
         { id: "mode", label: "Chế độ", value: MODE_SPECS[settings.mode].label, note: nextRun() ?? MODE_SPECS[settings.mode].note, enabled: true },
         { id: "profile", label: "Hồ sơ gõ", note: "Tốc độ, độ chính xác, lời khuyên", enabled: true },
         { id: "settings", label: "Cài đặt", note: "Âm thanh, rung, nhịp, tàu, chất lượng hình", enabled: true },
-        { id: "armory", label: "Kho súng · Học từ", note: "Sắp có", enabled: true },
+        { id: "armory", label: "Kho súng · Học từ", note: "5 súng, khắc chế, học từ", enabled: true },
       ];
     case "settings": {
       const later = started ? "Đổi ở màn chính, trước khi vào trận" : undefined;
@@ -219,11 +237,15 @@ function items(which: Screen): MenuItem[] {
         { id: "settings", label: "Cài đặt", note: "Âm thanh, rung, đọc từ", enabled: true },
         { id: "title", label: "Về màn chính", note: "Trận giữ nguyên, chơi tiếp được", enabled: true },
       ];
-    case "end":
+    case "end": {
+      const next = world.phase === "won" ? CHAPTER_1[level.index] : undefined;
       return [
-        { id: "replay", label: "Chơi lại", note: "Enter", enabled: true },
+        ...(next !== undefined ? [{ id: "next", label: "Ải " + next.index, note: next.name, enabled: true }] : []),
+        { id: "replay", label: level.id === "s0" ? "Chơi lại" : "Chơi lại ải", note: "Enter", enabled: true },
+        ...(level.id === "s0" ? [] : [{ id: "stages", label: "Chọn ải", note: "Hành trình", enabled: true }]),
         { id: "title", label: "Màn chính", note: "Esc", enabled: true },
       ];
+    }
     default:
       return [];
   }
@@ -238,79 +260,35 @@ function view(which: Screen): ScreenView | null {
         lead: "Bầy Hố Đen tràn ra từ mép hố đen. Gõ từ trên hai bến súng để nạp đạn; súng tự bắn. Gõ không lỗi thì đòn mạnh hơn.",
         status: "TÀU " + PILOT_NAMES[pilot].toUpperCase() + " · HÌNH " + TIER_NAMES[tier].toUpperCase() + " · " + MODE_SPECS[settings.mode].label.toUpperCase(),
       };
-    case "profile": {
-      const report = skillReport(profile, settings.mode);
-      const v = report.view;
-      const next = headerFor(profile, settings.mode, settings.paceAdapt);
-      const [lo, hi] = lengthFor(next.expected);
-      const sure = (confidence: number): string => (confidence >= 1 ? "đo đủ" : confidence > 0 ? "đang đo " + Math.round(confidence * 100) + " %" : "mặc định");
-      return {
-        kind: "profile",
-        menu,
-        stats: [
-          { value: String(Math.round(v.e)), label: "Tốc độ (WPM)", note: sure(v.confidence.e) },
-          { value: Math.round(v.a * 100) + "%", label: "Độ chính xác", note: sure(v.confidence.a) },
-          { value: fixed(v.recognize.new, 1) + " s", label: "Nhận từ mới", note: sure(v.confidence.recognize.new) },
-          { value: Math.round(Math.max(0, 1 - v.cv) * 100) + "%", label: "Độ đều", note: "lệch ±" + Math.round(v.cv * 100) + " % mỗi từ" },
-        ],
-        advice: report.advice,
-        lines: [
-          report.runs > 0 ? "Đã chơi " + report.runs + " trận" + (report.measured ? "" : ", chưa đủ số đo: đang dùng mặc định của chế độ") + "." : "Chưa có trận nào: hồ sơ đang dùng mặc định của chế độ " + MODE_SPECS[settings.mode].label + ".",
-          settings.paceAdapt
-            ? "Trận tới: " + MODE_SPECS[settings.mode].label + ", nhịp ×" + fixed(next.pace, 2) + ", từ " + lo + "–" + hi + " chữ, tự điều trong trận."
-            : "Trận tới: " + MODE_SPECS[settings.mode].label + ", nhịp chuẩn cố định (đã tắt tự điều).",
-          ...(report.suggestionText ? [report.suggestionText] : []),
-        ],
-      };
-    }
+    case "profile":
+      return { kind: "profile", menu, ...profileView(profile, settings.mode, settings.paceAdapt) };
     case "settings":
       return { kind: "settings", menu, note: started ? "" : "Đổi tàu hoặc chất lượng hình thì trang tải lại khi bấm Xong." };
     case "armory":
       return {
         kind: "armory",
         menu,
-        guns: [
-          { kind: "xung", name: "XUNG", title: "pháo xung liên thanh", text: XUNG.rounds + " viên một băng, bắn hết trong " + decimal(XUNG.seconds) + " s vào con gần vạch nhất, tầm " + XUNG.range + " m. Gõ không lỗi: đòn mạnh hơn, dễ chí mạng." },
-          { kind: "tia", name: "TIA", title: "tia nhiệt quét", text: "Một băng cháy " + decimal(TIA.seconds) + " s, dài " + TIA.length + " m, cắt qua cả đám và quét về cụm dày." },
-        ],
+        guns: GUN_SPECS.map((gun) => ({ kind: gun.key, name: gun.name, title: gun.title, text: gun.magazine + ", tầm " + gun.range + (gun.heavy ? ", từ dài hơn 1 chữ" : "") + "." })),
         learning: [
+          "Gõ không lỗi: đòn mạnh hơn, dễ chí mạng, và xuyên Vỏ (Vỏ chỉ chặn 75 %).",
           "Mỗi từ gõ xong được ghi vào sổ học chung của portal (mã typing-survival).",
-          "Sắp có: nâng cấp súng, súng mới, ôn lại từ giữa các trận.",
         ],
       };
     case "pause":
       return { kind: "pause", menu };
     case "end": {
-      const s = world.stats;
-      const keys = s.keysOk + s.keysBad;
-      const T = world.typing;
-      const seen = new Set<number>();
-      const words: { en: string; vi: string }[] = [];
-      for (let k = Math.max(0, T.doneCount - T.done.length); k < T.doneCount; k += 1) {
-        const index = T.done[k % T.done.length]!;
-        if (seen.has(index)) continue;
-        seen.add(index);
-        const word = wordOf(index);
-        words.push({ en: word.en, vi: word.vi });
-      }
-      const time = Math.min(world.seconds, world.time);
       const report = skillReport(profile, settings.mode);
-      const counted =
-        settled === null ? "" : settled.accepted ? "Hồ sơ gõ đã cập nhật: " + Math.round(report.view.e) + " WPM, chính xác " + Math.round(report.view.a * 100) + " %." : settled.reason === "short" ? "Trận này ít từ quá, chưa tính vào hồ sơ gõ." : settled.reason === "afk" ? "Bạn rời bàn phím lâu, trận này không tính vào hồ sơ gõ." : "Trận này lệch xa thường lệ, chưa tính vào hồ sơ gõ.";
       return {
         kind: "end",
         menu,
+        stage: level.id === "s0" ? "" : "Ải " + level.index + " · " + level.name,
+        stars: stars === null ? "" : starRow(stars, LEARN_RULES[level.learn].starAccuracy),
         mode: MODE_SPECS[world.header.mode].label,
         advice: report.advice,
-        note: [counted, report.suggestionText].filter(Boolean).join(" "),
+        note: [countedText(settled, report), report.suggestionText].filter(Boolean).join(" "),
         won: world.phase === "won",
-        stats: [
-          { value: Math.floor(time / 60) + ":" + String(Math.floor(time % 60)).padStart(2, "0"), label: "Thời gian" },
-          { value: String(s.kills), label: "Hạ" },
-          { value: (keys === 0 ? 100 : Math.round((s.keysOk / keys) * 100)) + "%", label: "Độ chuẩn" },
-          { value: String(s.words), label: "Từ đã gõ" },
-        ],
-        words,
+        stats: runStats(world),
+        words: runWords(world, wordOf),
       };
     }
     default:
@@ -321,17 +299,18 @@ function view(which: Screen): ScreenView | null {
 /** Shows `which` with a fresh menu (or redraws it in place, keeping the selection); `focus` selects that item. */
 function show(which: Screen, keep = false, focus?: string): void {
   const list = items(which);
-  menu = new Menu(list, keep && which === screen ? menu.index : which === "title" && started ? 1 : 0);
+  menu = new Menu(list, keep && which === screen ? menu.index : 0);
+  if (which === "title" && started && !keep) menu.select("continue");
   if (focus !== undefined) menu.select(focus);
   screen = which;
   drawScreen();
 }
 
 function drawScreen(): void {
-  const shown = view(screen);
-  hud.overlay.innerHTML = shown === null ? "" : renderScreen(shown);
-  hud.overlay.classList.toggle("is-on", shown !== null);
-  hud.overlay.dataset.screen = screen;
+  const shown = journey.active ? null : view(screen);
+  hud.overlay.innerHTML = journey.active ? renderJourney(journey) : shown === null ? "" : renderScreen(shown);
+  hud.overlay.classList.toggle("is-on", journey.active || shown !== null);
+  hud.overlay.dataset.screen = journey.active ? "journey-" + journey.screen : screen;
   hud.root.dataset.mode = mode;
 }
 
@@ -345,10 +324,13 @@ function setMode(next: Mode): void {
   else show("title");
 }
 
-/** A new page: `autostart` straight into a fight; the settings' ship, quality and mode go in its address. */
-function reload(autostart: boolean): void {
+/** A new page: `autostart` straight into a fight (a journey stage when `run` is given); the settings' ship, quality and mode go in its address. */
+function reload(autostart: boolean, run?: RunChoice): void {
   if (started && mode !== "end") settle("quit");
+  safeSessionStorage.setItem(NEXT_KEY, run === undefined ? "" : JSON.stringify({ stage: run.stage, guns: run.guns.map((gun) => GUN_KEYS[gun]) }));
   const next = new URLSearchParams(params);
+  next.delete("stage");
+  next.delete("guns");
   if (params.has("mode")) next.set("mode", settings.mode);
   if (params.has("adapt")) next.set("adapt", settings.paceAdapt ? "1" : "0");
   if (autostart) next.set("autostart", "1");
@@ -429,7 +411,15 @@ function take(): void {
       }
       break;
     case "replay":
-      reload(true);
+      reload(true, level.id === "s0" ? undefined : { stage: level.id, guns: world.header.kit.guns });
+      break;
+    case "journey":
+    case "stages":
+      journey.open(level.id === "s0" ? undefined : level.id);
+      break;
+    case "next":
+      journey.picked = world.header.kit.guns.slice();
+      journey.brief(CHAPTER_1[level.index]!);
       break;
   }
 }
@@ -443,6 +433,7 @@ function act(action: KeyAction): void {
     if (action === "pause") setMode("paused");
     return;
   }
+  if (journey.act(action)) return;
   const valued = menu.current?.value !== undefined;
   if (action === "up" || action === "down" || ((action === "left" || action === "right") && screen !== "settings" && !valued)) {
     if (menu.move(action === "up" || action === "left" ? -1 : 1)) {
@@ -469,6 +460,7 @@ function act(action: KeyAction): void {
 
 // A pointer can hover and click the menu items too.
 hud.overlay.addEventListener("pointermove", (event) => {
+  if (journey.active) return;
   const target = (event.target as HTMLElement | null)?.closest<HTMLElement>("[data-index]");
   const index = Number(target?.dataset.index ?? -1);
   if (index >= 0 && index !== menu.index && menu.items[index]?.enabled) {
@@ -478,8 +470,17 @@ hud.overlay.addEventListener("pointermove", (event) => {
   }
 });
 hud.overlay.addEventListener("click", (event) => {
-  const target = (event.target as HTMLElement | null)?.closest<HTMLElement>("[data-index]");
+  const target = (event.target as HTMLElement | null)?.closest<HTMLElement>("[data-index], [data-card], [data-start]");
   const index = Number(target?.dataset.index ?? -1);
+  if (journey.active) {
+    if (target?.dataset.card !== undefined) journey.pick(Number(target.dataset.card) + 1);
+    else if (target?.dataset.start !== undefined) journey.begin();
+    else if (index >= 0 && journey.menu.items[index]?.enabled) {
+      journey.menu.index = index;
+      journey.take();
+    }
+    return;
+  }
   if (index < 0 || !menu.items[index]?.enabled) return;
   menu.index = index;
   take();
@@ -494,6 +495,9 @@ installKeys(window, {
   act,
   onVietnamese: () => imeNotice.note(clock),
   allowUntrusted: params.get("untrusted") === "1",
+  pick: (n) => {
+    if (mode !== "play") journey.pick(n);
+  },
 });
 installAutoPause(window, document, () => {
   if (mode === "play") setMode("paused");
@@ -510,15 +514,15 @@ window.addEventListener("resize", resize);
 resize();
 void document.fonts?.ready.then(resize);
 
-/** Frame costs (ms) of the last 1200 frames: steps + events + HUD, and the draw; frame intervals. */
-const RING = 1200;
-const costs = { update: new Float32Array(RING), draw: new Float32Array(RING), interval: new Float32Array(RING), n: 0 };
+/** Frame costs (ms) of the last frames: steps + events + HUD, and the draw; frame intervals. */
+const costs = new FrameCosts();
 let lastDraw = -1;
 let lastRaf = -1;
 let held = false;
 let painted = false;
 let calls = 0;
 let triangles = 0;
+const aim = new Float64Array(2);
 
 function update(now: number): void {
   const start = performance.now();
@@ -543,7 +547,7 @@ function update(now: number): void {
     if (peak > 0 && mode === "play") audio.siren();
   }
   audio.setMusic(mode === "play" ? hordeIntensity(shown, peak > 0) : 0, mode === "play" ? 1 : mode === "paused" ? 0.45 : 0.8);
-  costs.update[costs.n % RING] = performance.now() - start;
+  costs.update[costs.at] = performance.now() - start;
 }
 
 function draw(now: number): void {
@@ -559,11 +563,9 @@ function draw(now: number): void {
   stage.roll = trauma.roll;
   const lead = mode === "play" ? session.lead() : 0;
   stage.setTitle(mode === "start");
-  // The ship turns with Xung, or with the Tia ray while Xung is empty.
-  const G = world.guns;
-  const ray = G.beamOn[1] === 1 && G.mags[0] === 0;
-  const norm = ray ? Math.hypot(G.beamX[1]!, TIA.length) : 1;
-  ship.update(dt, seconds, ray ? G.beamX[1]! / norm : G.aimX[0]!, ray ? TIA.length / norm : G.aimZ[0]!, stage.camera.position);
+  // The ship turns with the bay firing now (the Tia ray when only it burns).
+  combat.aim(world, aim);
+  ship.update(dt, seconds, aim[0]!, aim[1]!, stage.camera.position);
   crowd.update(world, seconds, lead);
   combat.draw(world, dt, seconds, lead);
   stage.update(seconds);
@@ -571,14 +573,14 @@ function draw(now: number): void {
   combat.sprites.render(stage.renderer);
   calls = stage.renderer.info.render.calls;
   triangles = stage.renderer.info.render.triangles;
-  costs.draw[costs.n % RING] = performance.now() - start;
+  costs.draw[costs.at] = performance.now() - start;
   costs.n += 1;
   painted = true;
 }
 
 runFrameLoop({
   update(raf) {
-    if (lastRaf >= 0) costs.interval[costs.n % RING] = raf - lastRaf;
+    if (lastRaf >= 0) costs.interval[costs.at] = raf - lastRaf;
     if (!held) clock += lastRaf < 0 ? 0 : Math.min(100, raf - lastRaf);
     lastRaf = raf;
     update(clock);
@@ -604,7 +606,7 @@ function onScreen(): number {
 
 installDevHandle({
   ready: () => painted && loaded,
-  models: () => ({ mine: crowd.loaded[0], scout: crowd.loaded[1], ship: ship.loaded }),
+  models: () => ({ mine: crowd.loaded[0], scout: crowd.loaded[1], brute: crowd.loaded[2], shield: crowd.loaded[3], splitter: crowd.loaded[4], ship: ship.loaded }),
   start: () => mode === "start" && setMode("play"),
   mode: () => mode,
   flags: () => ({ seed: world.seed, tier, pilot, deck: vocab.hash, vocabulary: vocab.source, ...world.header }),
@@ -617,27 +619,19 @@ installDevHandle({
   flood: (n: number) => session.send({ t: "flood", n }),
   hash: () => hashHex(world),
   /** The run so far, read at one instant: what a Node replay needs (scripts/replay.ts). */
-  snapshot: () => ({ seed: world.seed, tier, deck: vocab.hash, vocabulary: vocab.source, ...world.header, tick: world.tick, hash: hashHex(world), log: session.log.slice(), paceLog: world.director.log.slice() }),
-  state: () => ({
-    tick: world.tick, time: world.time, phase: world.phase, hp: world.hp, foes: world.foes.count, onScreen: onScreen(), bullets: world.bullets.count, shots: world.shots.count,
-    mags: Array.from(world.guns.mags), beam: world.guns.beamOn[1] === 1 ? world.guns.beamX[1] : null, stats: { ...world.stats }, spawned: world.spawn.spawned, waiting: world.spawn.waiting,
-  }),
-  slots: () => [0, 1].map((s) => ({ text: world.deck[world.typing.word[s]!]!, typed: world.typing.lock === s ? world.typing.typed[s]! : 0, locked: world.typing.lock === s, mags: world.guns.mags[s]! })),
-  costs: () => {
-    const n = Math.min(costs.n, RING);
-    const take = (list: Float32Array) => Array.from({ length: n }, (_, k) => list[(costs.n - n + k) % RING]!);
-    return { update: take(costs.update), draw: take(costs.draw), interval: take(costs.interval) };
-  },
+  snapshot: () => snapshot(session, { tier, deck: vocab.hash, vocabulary: vocab.source }),
+  state: () => runState(session, onScreen),
+  slots: () => bays(session),
+  /** The journey's screen and choices; a foe placed by a logged command (effects scenarios). */
+  journey: () => ({ screen: journey.screen, stage: journey.stage.id, picked: journey.picked.slice(), cursor: journey.cursor, ready: journey.ready, stars }),
+  place: (kind: number, x: number, z: number) => session.send({ t: "place", kind, x, z }),
+  events: () => eventCounts(session),
+  costs: () => costs.read(),
   /** Sounds started so far by id (docs/audio/THEME_SOUND_LIST.md), and whether audio runs. */
   sounds: () => ({ ready: audio.ready, played: Object.fromEntries(audio.played) }),
   screen: () => screen,
   info: () => ({ calls, triangles, geometries: stage.renderer.info.memory.geometries, textures: stage.renderer.info.memory.textures, drawn: crowd.drawn(), glows: combat.glows.count, sparks: combat.sparks.count, debris: combat.debris.live, numbers: combat.numbers.live, stops: combat.stopsAsked }),
-  numbers: () => {
-    const N = combat.numbers;
-    const boxes: { x: number; y: number; w: number; h: number; text: string }[] = [];
-    for (let i = 0; i < N.alive.length; i += 1) if (N.alive[i] === 1) boxes.push({ ...N.box(i, { x: 0, y: 0, w: 0, h: 0 }), text: N.text(i) });
-    return { live: N.live, overlaps: N.overlaps(), dropped: N.dropped, rects: N.protected.slice(), boxes };
-  },
+  numbers: () => numberBoxes(combat.numbers),
   rects: () => hud.protectedRects(),
   /** The shake settings and the camera's shake offset now (px). */
   motion: () => ({ scale: combat.trauma.scale, reduced: combat.trauma.reduced, trauma: combat.trauma.trauma, offset: Math.hypot(stage.shakeX, stage.shakeY) }),

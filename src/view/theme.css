@@ -36,11 +36,20 @@
   --urgent: #ffb020;
   --typing: #7ff5e0;
 
-  /* Guns: Xung is electric, Tia is heat. */
+  /* Guns (each its own hue): Xung electric blue, Tia heat, Tán amber, Ray white-blue, Pháo Sao vermilion. */
   --xung: var(--volt);
   --xung-glow: var(--volt-glow);
   --tia: var(--hot);
   --tia-glow: var(--hot-glow);
+  --tan: #ffc53d;
+  --tan-glow: rgba(255, 197, 61, 0.4);
+  --ray: #c4d2ff;
+  --ray-glow: rgba(196, 210, 255, 0.45);
+  --phao: #ff3f6c;
+  --phao-glow: rgba(255, 63, 108, 0.42);
+  /* A bay's gun colour: survival.css sets it per gun class (.sv-xung … .sv-phao). */
+  --gun: var(--xung);
+  --gun-glow: var(--xung-glow);
 
   /* Text. */
   --text: #f4f1eb;
@@ -83,6 +92,7 @@
   --rivet-size: 8px 8px;
   --hazard: repeating-linear-gradient(-45deg, var(--hot) 0 7px, var(--ink) 7px 14px);
   --hazard-volt: repeating-linear-gradient(-45deg, var(--volt) 0 7px, var(--ink) 7px 14px);
+  --hazard-gun: repeating-linear-gradient(-45deg, var(--gun) 0 7px, var(--ink) 7px 14px);
   --hazard-dim: repeating-linear-gradient(-45deg, rgba(255, 122, 31, 0.55) 0 7px, rgba(5, 6, 7, 0.8) 7px 14px);
   --segments: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px);
   --title-glow: 0 0 22px rgba(255, 122, 31, 0.45), 0 2px 0 rgba(0, 0, 0, 0.9);

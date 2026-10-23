@@ -6,7 +6,8 @@
  * and synthetic presses (unless the dev flag allows them) type nothing;
  * a sign of an input method at work asks the player to switch it off (for
  * a few seconds after the last sign: ImeNotice). Arrow keys move through the
- * menus (held, they repeat). A hidden tab or a window
+ * menus (held, they repeat); digits 1–9 pick a card on a screen (the gun
+ * cards of the loadout), never a letter. A hidden tab or a window
  * that loses focus pauses the fight (installAutoPause): keys cannot reach
  * it there, and the horde would not wait.
  */
@@ -14,7 +15,10 @@ import { isComposingKey, typedLetter, vietnameseInputSign } from "../kit/input";
 import type { CommandBody } from "../sim/world";
 
 export type KeyAction = "pause" | "enter" | "repeat" | "up" | "down" | "left" | "right";
-export type KeyHandlers = { send(command: CommandBody): void; act(action: KeyAction): void; onVietnamese(): void; allowUntrusted: boolean };
+export type KeyHandlers = { send(command: CommandBody): void; act(action: KeyAction): void; onVietnamese(): void; allowUntrusted: boolean; pick?: (n: number) => void };
+
+/** Digit keys (top row and keypad) → 1 … 9. */
+const DIGIT = /^(?:Digit|Numpad)([1-9])$/;
 
 /** Arrow keys move through the menus (held keys repeat there). */
 const ARROWS: Readonly<Record<string, KeyAction>> = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
@@ -39,7 +43,10 @@ export function installKeys(target: Window, keys: KeyHandlers): void {
       event.preventDefault();
       keys.act(arrow);
     } else if (event.repeat) return;
-    else if (event.code === "Escape") keys.act("pause");
+    else if (DIGIT.test(event.code) && keys.pick !== undefined) {
+      event.preventDefault();
+      keys.pick(Number(DIGIT.exec(event.code)![1]));
+    } else if (event.code === "Escape") keys.act("pause");
     else if (event.code === "Enter" || event.code === "NumpadEnter") {
       event.preventDefault();
       keys.act("enter");

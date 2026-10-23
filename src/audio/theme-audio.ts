@@ -18,6 +18,7 @@
 import { SceneAudio, noiseBuffer, type BusTable } from "../kit/audio";
 import { pentatonicRatio, tier } from "../kit/feedback";
 import { PRONUNCIATION_EVENT } from "../kit/speech";
+import { GUN_SOUNDS, GUN_SOUND_IDS, type GunSoundId } from "./gun-audio";
 import { Music } from "./music";
 import { crackle, noise, steel, STEEL, tone, type Voice } from "./synth";
 
@@ -63,8 +64,27 @@ export const SOUND_IDS = [
   "ui.back",
   "music.calm",
   "music.surge",
+  ...GUN_SOUND_IDS,
 ] as const;
 export type SoundId = (typeof SOUND_IDS)[number];
+
+/** S1 sounds: their bus, and the least time between two (ms; a sweep of blows on Vỏ is one ring, not a buzz). */
+const GUN_BUS: Readonly<Record<GunSoundId, { bus: Bus; gap: number }>> = {
+  "gun.tan.fire": { bus: "guns", gap: 60 },
+  "gun.ray.charge": { bus: "guns", gap: 0 },
+  "gun.ray.fire": { bus: "guns", gap: 0 },
+  "gun.phao.launch": { bus: "guns", gap: 0 },
+  "gun.phao.burst": { bus: "impacts", gap: 45 },
+  "hit.armour": { bus: "impacts", gap: 90 },
+  "shield.hit": { bus: "impacts", gap: 70 },
+  "shield.break": { bus: "impacts", gap: 0 },
+  "foe.split": { bus: "kills", gap: 60 },
+  "leader.horn": { bus: "alerts", gap: 0 },
+  "leader.down": { bus: "kills", gap: 0 },
+  "rift.warn": { bus: "alerts", gap: 0 },
+  "rift.open": { bus: "alerts", gap: 0 },
+  "star.get": { bus: "ui", gap: 0 },
+};
 
 const HIT_GATHER_MS = 38;
 const BURSTS = { max: 4, windowMs: 120 } as const;
@@ -90,6 +110,7 @@ export class ThemeAudio {
   private drainAt = -1e9;
   /** Sounds started since the page opened, by id (the scenarios read it). */
   readonly played = new Map<SoundId, number>();
+  private readonly lastGun = new Map<GunSoundId, number>();
 
   constructor(options: ThemeAudioOptions) {
     this.sfx = clamp01(options.sfx);
@@ -147,6 +168,16 @@ export class ThemeAudio {
 
   private count(id: SoundId): void {
     this.played.set(id, (this.played.get(id) ?? 0) + 1);
+  }
+
+  /** An S1 sound (gun-audio.ts) at `pan`; `now` in ms keeps its gap. */
+  gun(id: GunSoundId, pan: number, now: number): void {
+    const spec = GUN_BUS[id];
+    if (now - (this.lastGun.get(id) ?? -1e9) < spec.gap) return;
+    const v = this.voice(spec.bus, pan, id);
+    if (v === null) return;
+    this.lastGun.set(id, now);
+    GUN_SOUNDS[id](v);
   }
 
   /** A typed key (a relay on steel), `letter` 0–25; a wrong key is a muffled thud, never a buzzer. */

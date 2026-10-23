@@ -10,14 +10,17 @@ import * as THREE from "three";
 import type { ThemeAudio } from "../audio/theme-audio";
 import { Debris, HitStop, NumberField, NumberSprites, STOP_GAP_MS, STYLE, Trauma, tier, type Rect } from "../kit/feedback";
 import { ParticlePool, textures } from "../kit/three";
-import { TIA, GUN } from "../content/guns";
+import { GUN, TIA } from "../content/guns";
 import { FIELD, type Tier } from "../content/rules";
 import { EV, FLAG } from "../sim/events";
+import { ROUND } from "../sim/stores";
 import { beamEnd } from "../sim/guns/tia";
 import { bayOf, firing } from "../sim/weapons";
 import type { World } from "../sim/world";
 import type { Crowd } from "./crowd";
 import { CELL, Column, FLAT, Glows, Strips } from "./fx";
+import { GunFx } from "./gunfx";
+import { RiftCracks, ShieldWalls } from "./hazard-fx";
 import type { Stage } from "./scene";
 import { VIEW_TIERS } from "./scene";
 import { PILOT_COLORS, type Pilot, type Ship } from "./ship";
@@ -49,10 +52,13 @@ export class Combat {
   readonly hitstop = new HitStop();
   readonly audio: ThemeAudio;
   private readonly column: Column;
+  readonly walls = new ShieldWalls();
+  readonly cracks = new RiftCracks();
+  private readonly gunfx: GunFx;
   private cursor = 0;
   private readonly kills = new Float64Array(KILL_RING).fill(-1e9);
   private killCount = 0;
-  private readonly cluster = { n: new Int32Array(MAX_CLUSTERS), key: new Int32Array(MAX_CLUSTERS), x: new Float32Array(MAX_CLUSTERS), z: new Float32Array(MAX_CLUSTERS), dx: new Float32Array(MAX_CLUSTERS), dz: new Float32Array(MAX_CLUSTERS), scout: new Uint8Array(MAX_CLUSTERS), armour: new Uint8Array(MAX_CLUSTERS) };
+  private readonly cluster = { n: new Int32Array(MAX_CLUSTERS), key: new Int32Array(MAX_CLUSTERS), x: new Float32Array(MAX_CLUSTERS), z: new Float32Array(MAX_CLUSTERS), dx: new Float32Array(MAX_CLUSTERS), dz: new Float32Array(MAX_CLUSTERS), scout: new Uint8Array(MAX_CLUSTERS), armour: new Uint8Array(MAX_CLUSTERS), big: new Uint8Array(MAX_CLUSTERS) };
   private clusters = 0;
   private readonly v = new THREE.Vector3();
   private readonly at = new THREE.Vector3();
@@ -81,7 +87,8 @@ export class Combat {
     this.numbers.limit = spec.numbers;
     this.column = new Column(this.beam, TIA.length, 3.6, FIELD.muzzleZ);
     this.audio = audio;
-    stage.scene.add(this.column.mesh, this.debris.mesh, this.strips.mesh, this.glows.mesh, this.sparks.points);
+    this.gunfx = new GunFx({ glows: this.glows, strips: this.strips, sparks: this.sparks, debris: this.debris, trauma: this.trauma, ship, walls: this.walls, cracks: this.cracks, audio, ask: (ms) => this.ask(ms) });
+    stage.scene.add(this.column.mesh, this.debris.mesh, this.strips.mesh, this.glows.mesh, this.sparks.points, this.walls.mesh, this.cracks.mesh);
   }
 
   /** Point sprites are sized in world units: px per unit at distance 1. */
@@ -145,12 +152,18 @@ export class Combat {
           const tia = (flags & FLAG.tia) !== 0;
           const crit = (flags & FLAG.crit) !== 0;
           const perfect = (flags & FLAG.perfect) !== 0;
-          const t = tia ? (crit ? 2 : 1) : crit ? (perfect ? 3 : 2) : 1;
+          const heavy = (flags & (FLAG.ray | FLAG.phao)) !== 0;
+          // Vỏ that stopped most of a blow: a tick, never a big hit.
+          const blocked = (flags & FLAG.armour) !== 0 && (flags & FLAG.pierce) === 0;
+          const t = blocked ? 1 : tia || (flags & FLAG.tan) !== 0 ? (crit ? 2 : 1) : heavy ? (crit ? 3 : 2) : crit ? (perfect ? 3 : 2) : 1;
           const profile = tier(t);
-          this.crowd.reactions.hit(R.slot[i]!, R.ref[i]!, t, dx, dz, seconds);
+          this.crowd.reactions.hit(R.slot[i]!, R.ref[i]!, (flags & FLAG.big) !== 0 ? Math.max(1, t - 1) : t, dx, dz, seconds);
           const y = 0.9;
           const k = far(z);
-          if (tia) {
+          if (blocked) this.audio.gun("hit.armour", pan, now);
+          if (this.gunfx.hit(x, z, dx, dz, flags, k)) {
+            // The S1 look is drawn; the number and the sound below as for every blow.
+          } else if (tia) {
             this.tiaHits += 1;
             this.glows.burst(CELL.star4, x, y, -z, 0.4 * k, 0.95 * k, 0.08, this.beam, 1.2);
             if ((this.tiaHits & 1) === 0) this.spark(x, y, z, dx, dz, 2, 5, this.beam, 0.22, 0.35);
@@ -161,16 +174,17 @@ export class Combat {
             this.spark(x, y, z, -dx, -dz, profile.sparks, 6 + t * 2, color, 0.24, 0.4);
             if (profile.debris > 0) this.debris.burst(x, y, -z, dx, -dz, profile.debris >> 1, 4, C.shardHot, C.shardSteel);
           }
-          const style = tia ? STYLE.tick : perfect && crit ? STYLE.perfect : crit ? STYLE.crit : STYLE.normal;
-          // Beam ticks roll up per 4 m along the ray, not per foe: two or three numbers, not a stack.
+          const style = tia || blocked ? STYLE.tick : perfect && crit ? STYLE.perfect : crit ? STYLE.crit : STYLE.normal;
+          // Beam ticks roll up per 4 m along the ray, not per foe: two or three numbers, not a stack; Tán's pellets per foe.
           this.number(tia ? -1 - Math.floor(Math.hypot(x, z - FIELD.muzzleZ) / 4) : R.ref[i]!, x, z, R.value[i]!, style, t, dx, dz, seconds);
           this.audio.hit(t, pan, now);
-          this.trauma.add(tia ? 0.006 : profile.trauma);
-          if (!tia && t >= 2) this.ask(this.hitstop.request(t, now));
+          this.trauma.add(tia || (flags & FLAG.tan) !== 0 ? 0.006 : profile.trauma);
+          // Ray: a 12 ms stop at most every 300 ms (the hit stop's own spacing); none for Tán's pellets.
+          if (!tia && (flags & FLAG.tan) === 0 && t >= 2) this.ask(this.hitstop.request(t, now));
           break;
         }
         case EV.kill:
-          this.gather(x, z, dx, dz, (flags & FLAG.scout) !== 0, (flags & FLAG.elite) !== 0);
+          this.gather(x, z, dx, dz, (flags & FLAG.scout) !== 0, (flags & FLAG.elite) !== 0, (flags & FLAG.big) !== 0);
           this.kills[this.killCount++ % KILL_RING] = now;
           break;
         case EV.breach:
@@ -250,6 +264,8 @@ export class Combat {
           this.audio.end(R.slot[i] === 1);
           this.hooks.ended(R.slot[i] === 1);
           break;
+        default:
+          if (kind >= EV.volley) this.gunfx.event(R, i, w, seconds, now, pan);
       }
     }
     if (this.tiaHits > 0) this.audio.pulse(w.guns.beamX[Math.max(0, bayOf(w, GUN.tia))]! / FIELD.halfW, this.tiaHits);
@@ -271,7 +287,7 @@ export class Combat {
   }
 
   /** Kills in one 3 m cell this frame merge. */
-  private gather(x: number, z: number, dx: number, dz: number, scout: boolean, armour: boolean): void {
+  private gather(x: number, z: number, dx: number, dz: number, scout: boolean, armour: boolean, big = false): void {
     const K = this.cluster;
     const key = Math.floor(x / 3) * 100 + Math.floor(z / 3);
     let c = 0;
@@ -285,6 +301,7 @@ export class Combat {
         K.x[c] = K.z[c] = K.dx[c] = K.dz[c] = 0;
         K.scout[c] = 0;
         K.armour[c] = 0;
+        K.big[c] = 0;
       }
     }
     K.n[c] = K.n[c]! + 1;
@@ -294,6 +311,7 @@ export class Combat {
     K.dz[c] = K.dz[c]! + dz;
     if (scout) K.scout[c] = 1;
     if (armour) K.armour[c] = 1;
+    if (big) K.big[c] = 1;
   }
 
   /** One burst of size √N for a cluster of N kills; returns N. */
@@ -306,7 +324,9 @@ export class Combat {
     const dx = K.dx[c]! / length;
     const dz = K.dz[c]! / length;
     const scout = K.scout[c] === 1;
-    const size = Math.sqrt(n) * (scout ? 1.5 : 1) * far(z);
+    const big = K.big[c] === 1;
+    // A Trâu or Đầu Đàn breaks like a heap of kills: T3, heavy debris.
+    const size = Math.sqrt(n) * (scout ? 1.5 : big ? 2.4 : 1) * far(z);
     const tint = scout ? C.elite : K.armour[c] === 1 ? C.armour : C.swarm;
     this.glows.burst(CELL.core, x, 1, -z, 1 * size, 2.4 * size, 0.12, C.hot, 2.4);
     this.glows.burst(scout ? CELL.star12 : CELL.star8, x, 1.1, -z, 1.3 * size, 3.8 * size, 0.18, tint, 2.2, 0, 0, 0, (Math.random() - 0.5) * 3);
@@ -318,7 +338,8 @@ export class Combat {
     this.glows.burst(CELL.soft + FLAT, x, 0.07, -z, 2 * size, 2.6 * size, 1.2, C.ember, 0.35);
     this.spark(x, 1, z, dx, dz, Math.min(40, 10 + n * 4), 10 + size * 2.5, C.hot, 0.34, 0.55);
     this.spark(x, 1, z, dx, dz, Math.min(20, 5 + n * 2), 6, scout ? C.volt : C.swarm, 0.26, 0.85);
-    this.debris.burst(x, 0.9, -z, dx, -dz, Math.min(40, (scout ? 9 : 5) + n * 3), 5.5 + size, C.shardHot, C.shardSteel);
+    this.debris.burst(x, 0.9, -z, dx, -dz, Math.min(48, (scout ? 9 : big ? 30 : 5) + n * 3), 5.5 + size, C.shardHot, C.shardSteel);
+    if (big) this.ask(tier(3).stopMs);
     this.audio.kill(n, x / FIELD.halfW, scout, now);
     this.trauma.add(Math.min(0.2, (scout ? 0.1 : 0.025) * Math.sqrt(n)));
     // A heap of kills or a scout punches the view along the blow (at most every PUNCH_MS: a sweep is not a buzz).
@@ -330,13 +351,35 @@ export class Combat {
     return n;
   }
 
+  /** Where the ship turns (into `out`, sim x and z of a unit direction): the bay firing now, a Tia ray when only it burns, else the first bay's last aim. */
+  aim(w: World, out: Float64Array): Float64Array {
+    const G = w.guns;
+    let bay = -1;
+    let ray = -1;
+    for (let b = 0; b < G.gun.length; b += 1) {
+      if (G.mags[b]! <= 0) continue;
+      if (G.gun[b] === GUN.tia) ray = G.beamOn[b] === 1 ? b : ray;
+      else if (bay < 0) bay = b;
+    }
+    if (bay < 0 && ray >= 0) {
+      const norm = Math.hypot(G.beamX[ray]!, TIA.length);
+      out[0] = G.beamX[ray]! / norm;
+      out[1] = TIA.length / norm;
+      return out;
+    }
+    const b = bay < 0 ? 0 : bay;
+    out[0] = G.aimX[b]!;
+    out[1] = G.aimZ[b]!;
+    return out;
+  }
+
   /** Draws the frame: rounds, scout shots, the column, and every pool. `lead` extrapolates moving things (s). */
   draw(w: World, dt: number, time: number, lead: number): void {
     this.glows.step(dt);
     const B = w.bullets;
     this.strips.begin();
     for (let b = 0; b < B.top; b += 1) {
-      if (B.alive[b] === 0) continue;
+      if (B.alive[b] === 0 || B.kind[b] === ROUND.pellet) continue;
       const x = B.x[b]! + B.vx[b]! * lead;
       const z = B.z[b]! + B.vz[b]! * lead;
       const flags = B.flags[b]!;
@@ -382,6 +425,9 @@ export class Combat {
         this.sparks.spawn(this.at.set(mx + (ex - mx) * t + (Math.random() - 0.5) * 1.2, 0.3, mz + (-ez - mz) * t), this.v, this.beam, 0.25, 0.5, { drag: 2, gravity: 4 });
       }
     }
+    this.gunfx.draw(w, dt, time, lead);
+    this.walls.update(w, time, lead);
+    this.cracks.update(time);
     this.strips.end();
     this.glows.flush();
     this.sparks.update(dt, 0);

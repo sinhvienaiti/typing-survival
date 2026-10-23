@@ -55,26 +55,41 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 @keyframes sv-banner { 0% { opacity: 0; transform: translate(-50%, 0) scale(1.4); } 10% { opacity: 1; transform: translate(-50%, 0) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
 .sv-notice { position: absolute; top: calc(72px * var(--ui)); left: 50%; transform: translateX(-50%); padding: 6px 14px; border: 1px solid var(--danger); background: var(--notice); font: 700 14px var(--font-battle); }
 
-/* Bottom: the two gun bays and the learning frame between them. */
-.sv-bottom { position: absolute; left: 50%; bottom: calc(12px * var(--ui)); transform: translateX(-50%); display: grid; grid-template-columns: calc(290px * var(--ui)) calc(420px * var(--ui)) calc(290px * var(--ui)); gap: calc(12px * var(--ui)); align-items: end; }
-.sv-slot { position: relative; height: calc(118px * var(--ui)); padding: calc(14px * var(--ui)) calc(16px * var(--ui)) calc(10px * var(--ui)); display: flex; flex-direction: column; gap: calc(4px * var(--ui)); transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; }
-.sv-slot::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: calc(5px * var(--ui)); background: var(--hazard-dim); }
-.sv-xung::before { background: var(--hazard-volt); opacity: 0.55; }
-.sv-slot header { display: flex; align-items: center; gap: 8px; }
-.sv-gun { font: 700 calc(15px * var(--ui)) var(--font-title); letter-spacing: 0.18em; }
-.sv-xung .sv-gun, .sv-xung .sv-typed { color: var(--xung); }
-.sv-tia .sv-gun, .sv-tia .sv-typed { color: var(--tia); }
-.sv-hint { font: 600 calc(11px * var(--ui)) var(--font-battle); color: var(--muted); }
-.sv-mags { margin-left: auto; display: flex; gap: 5px; }
-.sv-mags i { --fill: 0; position: relative; width: calc(36px * var(--ui)); height: calc(10px * var(--ui)); background: var(--track); border: 1px solid var(--bevel-lo); overflow: hidden; }
+/* The objective's plate (top centre, fixed: only its numbers change). */
+.sv-goal { align-self: flex-start; padding: calc(7px * var(--ui)) calc(18px * var(--ui)); font: 700 calc(16px * var(--ui)) var(--font-title); letter-spacing: 0.14em; color: var(--led); text-shadow: 0 0 10px var(--led-glow); background-color: var(--screen); }
+.sv-goal.is-done { color: var(--typing); }
+/* A rift's warning, on its wall's side. */
+.sv-warn { position: absolute; top: 38%; padding: calc(6px * var(--ui)) calc(12px * var(--ui)); font: 700 calc(15px * var(--ui)) var(--font-title); letter-spacing: 0.1em; color: var(--ink); background: var(--hot); box-shadow: 0 0 22px var(--hot-glow); opacity: 0; transition: opacity 0.15s; }
+.sv-warn.is-on { opacity: 1; animation: sv-blink 0.5s steps(2, jump-none) infinite; }
+.sv-warn.is-left { left: calc(14px * var(--ui)); }
+.sv-warn.is-right { right: calc(14px * var(--ui)); }
+/* Something new appears: a small card for 2 s under the top bar. */
+.sv-fresh { position: absolute; top: calc(70px * var(--ui)); left: 50%; transform: translateX(-50%); padding: calc(4px * var(--ui)) calc(14px * var(--ui)); font: 700 calc(13px * var(--ui)) var(--font-title); letter-spacing: 0.12em; color: var(--text); background: var(--banner-band); border: 1px solid var(--urgent); opacity: 0; transition: opacity 0.2s; }
+.sv-fresh.is-on { opacity: 1; }
+
+/* Bottom: [bay 3][bay 1] [learning frame] [bay 2][bay 4] (BUILD_S1 §10); the frame keeps S0's size and place. */
+.sv-bottom { position: absolute; left: 50%; bottom: calc(12px * var(--ui)); transform: translateX(-50%); display: grid; grid-template-columns: calc(190px * var(--ui)) calc(190px * var(--ui)) calc(420px * var(--ui)) calc(190px * var(--ui)) calc(190px * var(--ui)); gap: calc(12px * var(--ui)); align-items: end; }
+/* Each bay's gun colour: --gun and --gun-glow. */
+.sv-xung { --gun: var(--xung); --gun-glow: var(--xung-glow); }
+.sv-tia { --gun: var(--tia); --gun-glow: var(--tia-glow); }
+.sv-tan { --gun: var(--tan); --gun-glow: var(--tan-glow); }
+.sv-ray { --gun: var(--ray); --gun-glow: var(--ray-glow); }
+.sv-phao { --gun: var(--phao); --gun-glow: var(--phao-glow); }
+.sv-slot { position: relative; min-width: 0; height: calc(118px * var(--ui)); padding: calc(13px * var(--ui)) calc(16px * var(--ui)) calc(10px * var(--ui)); display: flex; flex-direction: column; gap: calc(4px * var(--ui)); transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; }
+.sv-slot::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: calc(5px * var(--ui)); background: var(--hazard-gun); opacity: 0.55; }
+.sv-slot header { display: flex; align-items: center; gap: calc(6px * var(--ui)); min-width: 0; }
+.sv-gun { font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.12em; white-space: nowrap; color: var(--gun); }
+.sv-slot .sv-typed { color: var(--gun); }
+.sv-mags { margin-left: auto; display: flex; gap: calc(3px * var(--ui)); color: var(--gun); }
+.sv-mags i { --fill: 0; position: relative; width: calc(22px * var(--ui)); height: calc(9px * var(--ui)); background: var(--track); border: 1px solid var(--bevel-lo); overflow: hidden; }
 .sv-mags i::after { content: ""; position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--fill)); background: currentColor; -webkit-mask: var(--segments); mask: var(--segments); }
-.sv-xung .sv-mags { color: var(--xung); }
-.sv-tia .sv-mags { color: var(--tia); }
-.sv-word { font: 800 calc(32px * var(--ui)) var(--font-battle); letter-spacing: 0.02em; line-height: 1.15; white-space: nowrap; color: var(--text); }
+.sv-word { --fit: 1; font: 800 calc(32px * var(--ui) * var(--fit)) var(--font-battle); letter-spacing: 0.02em; line-height: 1.15; white-space: nowrap; color: var(--text); }
 .sv-mean { font: 600 calc(15px * var(--ui)) var(--font-battle); color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sv-slot.is-active { border-color: currentColor; }
-.sv-xung.is-active { color: var(--xung); box-shadow: inset 0 1px 0 var(--bevel-hi), 0 0 0 2px var(--xung), 0 0 26px var(--xung-glow); }
-.sv-tia.is-active { color: var(--tia); box-shadow: inset 0 1px 0 var(--bevel-hi), 0 0 0 2px var(--tia), 0 0 26px var(--tia-glow); }
+.sv-slot.is-active { border-color: var(--gun); box-shadow: inset 0 1px 0 var(--bevel-hi), 0 0 0 2px var(--gun), 0 0 26px var(--gun-glow); }
+/* A bay without a gun: a dark steel plate (bay 3 opens at the Mốc, bay 4 later). */
+.sv-bay-lock { height: calc(118px * var(--ui)); display: grid; place-items: center; background-color: var(--screen); font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.16em; color: var(--steel-400); }
+.sv-lock { width: calc(16px * var(--ui)); height: calc(12px * var(--ui)); border: 2px solid var(--steel-500); border-radius: 2px; position: relative; }
+.sv-lock::before { content: ""; position: absolute; left: 50%; bottom: 100%; width: calc(10px * var(--ui)); height: calc(8px * var(--ui)); transform: translateX(-50%); border: 2px solid var(--steel-500); border-bottom: 0; border-radius: 6px 6px 0 0; }
 .sv-slot.is-active .sv-word { color: var(--text); }
 .sv-slot.is-active::before { opacity: 1; }
 /* The other bay steps back: its words dim, the plate stays solid (the deck never shows through). */
@@ -89,10 +104,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 /* The learning frame: a recessed screen in the console. Nothing is drawn over it. */
 .sv-learn { height: calc(118px * var(--ui)); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: calc(8px * var(--ui)) calc(16px * var(--ui)); background-color: var(--screen); box-shadow: inset 0 2px 10px var(--shadow), inset 0 0 0 1px var(--bevel-lo), 0 8px 22px var(--shadow); }
 .sv-learn-word { --fit: 1; font: 800 calc(42px * var(--ui) * var(--fit)) var(--font-battle); line-height: 1.1; white-space: nowrap; max-width: 100%; color: var(--text); }
-.sv-learn.sv-xung .sv-typed { color: var(--xung); }
-.sv-learn.sv-tia .sv-typed { color: var(--tia); }
-.sv-learn.sv-xung { border-color: var(--xung); }
-.sv-learn.sv-tia { border-color: var(--tia); }
+.sv-learn.is-typing .sv-typed { color: var(--gun); }
+.sv-learn.is-typing { border-color: var(--gun); }
 .sv-learn-ipa { font: 500 calc(19px * var(--ui)) var(--font-ipa); color: var(--soft); min-height: 1.2em; }
 .sv-learn-mean { font: 600 calc(16px * var(--ui)) var(--font-battle); color: var(--soft); min-height: 1.2em; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sv-learn.is-done .sv-learn-word { font-size: calc(30px * var(--ui) * var(--fit)); color: var(--typing); }
@@ -146,15 +159,52 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-ledbar i.is-lit { background: var(--led); box-shadow: 0 0 6px var(--led-glow); }
 .sv-note { font-size: calc(13px * var(--ui)) !important; color: var(--muted) !important; }
 
-/* Armory placeholder. */
+/* Armory and the loadout's gun cards. */
 .sv-guns { display: grid; grid-template-columns: 1fr 1fr; gap: calc(10px * var(--ui)); margin-top: calc(12px * var(--ui)); text-align: left; }
-.sv-gun-card { padding: calc(10px * var(--ui)) calc(12px * var(--ui)); background: var(--screen); border: 1px solid var(--line); border-top: calc(3px * var(--ui)) solid currentColor; }
-.sv-gun-card.sv-xung { color: var(--xung); }
-.sv-gun-card.sv-tia { color: var(--tia); }
+.sv-gun-card { padding: calc(10px * var(--ui)) calc(12px * var(--ui)); background: var(--screen); border: 1px solid var(--line); border-top: calc(3px * var(--ui)) solid var(--gun); color: var(--gun); }
 .sv-gun-card header b { font: 700 calc(18px * var(--ui)) var(--font-title); letter-spacing: 0.16em; margin-right: 8px; }
 .sv-gun-card header small { font: 600 calc(12px * var(--ui)) var(--font-battle); color: var(--muted); }
 .sv-gun-card p { margin: 6px 0 0 !important; font-size: calc(13px * var(--ui)) !important; color: var(--soft) !important; }
 .sv-learning { margin: calc(12px * var(--ui)) 0 0; padding-left: 1.2em; text-align: left; font: 500 calc(13px * var(--ui)) var(--font-battle); color: var(--soft); }
+
+/* The journey: stage list, briefing, loadout (BUILD_S1 §4.2). */
+.sv-stages, .sv-brief, .sv-loadout { width: min(94vw, calc(760px * var(--ui))); }
+.sv-loadout { width: min(96vw, calc(1060px * var(--ui))); }
+.sv-brief-rules { display: grid; grid-template-columns: auto 1fr; gap: calc(6px * var(--ui)) calc(14px * var(--ui)); margin: calc(12px * var(--ui)) 0; text-align: left; font: 500 calc(14px * var(--ui)) var(--font-battle); color: var(--soft); }
+.sv-brief-rules dt { font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.12em; color: var(--steel-200); padding-top: 2px; }
+.sv-brief-rules dd { margin: 0; }
+.sv-brief-rules b { color: var(--text); }
+.sv-foes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: calc(6px * var(--ui)); text-align: left; }
+.sv-foes li { padding: calc(6px * var(--ui)) calc(10px * var(--ui)); background: var(--screen); border: 1px solid var(--bevel-lo); font: 500 calc(13px * var(--ui)) var(--font-battle); color: var(--soft); }
+.sv-foes li.is-new { border-color: var(--urgent); }
+.sv-foes b { color: var(--text); margin-right: 6px; }
+.sv-foes em { font: 700 calc(10px * var(--ui)) var(--font-title); letter-spacing: 0.14em; color: var(--ink); background: var(--urgent); padding: 0 5px; font-style: normal; margin-right: 6px; }
+.sv-foes small { display: block; color: var(--muted); }
+.sv-foes span { display: block; color: var(--typing); font-size: 0.95em; }
+.sv-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: calc(8px * var(--ui)); margin-top: calc(10px * var(--ui)); text-align: left; }
+.sv-cards .sv-gun-card { cursor: pointer; transition: box-shadow 0.1s, transform 0.1s; }
+.sv-cards .sv-gun-card header { display: flex; align-items: center; gap: 6px; }
+.sv-cards .sv-gun-card header b { font-size: calc(15px * var(--ui)); letter-spacing: 0.1em; margin-right: 0; }
+.sv-cards .sv-gun-card kbd { font: 700 calc(12px * var(--ui)) var(--font-title); padding: 0 5px; border: 1px solid var(--line-strong); color: var(--soft); }
+.sv-cards .sv-gun-card em { margin-left: auto; font: 700 calc(10px * var(--ui)) var(--font-title); letter-spacing: 0.1em; color: var(--ink); background: var(--gun); padding: 1px 5px; font-style: normal; }
+.sv-cards .sv-gun-card small { display: block; font: 600 calc(11px * var(--ui)) var(--font-battle); color: var(--muted); }
+.sv-cards .sv-gun-card p { margin: 5px 0 0 !important; font-size: calc(12px * var(--ui)) !important; line-height: 1.35; color: var(--soft) !important; }
+.sv-cards .sv-gun-card .sv-good { color: var(--typing) !important; }
+.sv-cards .sv-gun-card .sv-poor { color: var(--muted) !important; }
+.sv-cards .sv-gun-card.is-on { box-shadow: 0 0 0 2px var(--hot), 0 0 18px var(--hot-glow); }
+.sv-cards .sv-gun-card.is-picked { background-color: var(--steel-800); box-shadow: inset 0 0 0 2px var(--gun), 0 0 18px var(--gun-glow); }
+.sv-cards .sv-gun-card.is-on.is-picked { box-shadow: inset 0 0 0 2px var(--gun), 0 0 0 2px var(--hot), 0 0 18px var(--gun-glow); }
+.sv-threats { display: flex; flex-wrap: wrap; align-items: center; gap: calc(6px * var(--ui)); margin: calc(12px * var(--ui)) 0 calc(8px * var(--ui)); text-align: left; font: 600 calc(12px * var(--ui)) var(--font-battle); color: var(--soft); }
+.sv-threats b { font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.12em; color: var(--steel-200); margin-right: 4px; }
+.sv-threats span { padding: 2px 8px; background: var(--screen); border: 1px solid var(--bevel-lo); }
+.sv-threats span.is-open { border-color: var(--urgent); color: var(--urgent); }
+.sv-start { margin: calc(8px * var(--ui)) auto 0; width: max-content; padding: calc(8px * var(--ui)) calc(26px * var(--ui)); font: 700 calc(17px * var(--ui)) var(--font-title); letter-spacing: 0.12em; color: var(--text); background-color: var(--panel-raised); border: 1px solid var(--line); border-left: calc(4px * var(--ui)) solid var(--steel-600); cursor: pointer; }
+.sv-start.is-on { border-left-color: var(--hot); box-shadow: 0 0 0 1px var(--hot-glow), 0 0 18px var(--hot-glow); }
+.sv-start.is-off { opacity: 0.55; cursor: default; }
+.sv-star-row { list-style: none; display: flex; justify-content: center; gap: calc(14px * var(--ui)); margin: calc(4px * var(--ui)) 0 calc(6px * var(--ui)); padding: 0; font: 600 calc(13px * var(--ui)) var(--font-battle); color: var(--muted); }
+.sv-star-row b { display: block; font: 700 calc(30px * var(--ui)) var(--font-title); color: var(--steel-600); }
+.sv-star-row li.is-on { color: var(--soft); }
+.sv-star-row li.is-on b { color: var(--led); text-shadow: 0 0 14px var(--led-glow); }
 
 /* The typing profile ("Hồ sơ gõ") and the results' advice line. */
 .sv-stats em { display: block; margin-top: 2px; font: 500 calc(11px * var(--ui)) var(--font-battle); font-style: normal; color: var(--muted); }
@@ -173,6 +223,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-words b { color: var(--text); margin-right: 6px; }
 
 /* Reduced motion (the game's motion setting, src/app/motion.ts): no scaling bumps or blinking; the banner only fades. */
-[data-motion="reduced"] .sv-kills b.is-bump, [data-motion="reduced"] .sv-dot, [data-motion="reduced"] .sv-hp.is-low .sv-hp-bar i { animation: none; }
+[data-motion="reduced"] .sv-kills b.is-bump, [data-motion="reduced"] .sv-dot, [data-motion="reduced"] .sv-hp.is-low .sv-hp-bar i, [data-motion="reduced"] .sv-warn.is-on { animation: none; }
 [data-motion="reduced"] .sv-banner.is-on { animation: sv-banner-fade 2.2s ease-out forwards; }
 @keyframes sv-banner-fade { 0% { opacity: 0; transform: translate(-50%, 0); } 10% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 0); } }

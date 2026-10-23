@@ -18,9 +18,9 @@
 import { createRng, type Rng } from "../kit/platform/rng";
 import { MODES, STANDARD_HEADER, TRIAL_KIT, scalesFor, type RunHeader, type RunKit } from "../content/balance";
 import { stageById } from "../content/chapter-1";
-import { BULLET_CAP, DT, FOE_CAP, HITSTOP_SCALE, STORE, type Tier } from "../content/rules";
+import { BULLET_CAP, DT, FIELD, FOE_CAP, HITSTOP_SCALE, STORE, type Tier } from "../content/rules";
 import { stageSeconds } from "../content/stage-rules";
-import { SHIELD } from "../content/foes";
+import { KINDS, SHIELD } from "../content/foes";
 import { Ring, EV } from "./events";
 import { moveShells } from "./guns/phao";
 import { createHazards, hazardStep, planHazards } from "./hazards";
@@ -29,14 +29,14 @@ import { moveFoes, moveShields, separate } from "./move";
 import { createDirector, createMeter, createPace, kitMagazine, paceStep, pressure } from "./pace";
 import { createPlan, planStep } from "./plan";
 import { breakSplits, createSplits, moveBullets, moveShots } from "./projectiles";
-import { createSpawn, flood, spawnStep } from "./spawn";
+import { createSpawn, flood, placeFoe, spawnStep } from "./spawn";
 import { createObjective, stageOutcome } from "./stage";
 import { Bullets, Foes, Shells, Shields, Shots } from "./stores";
 import { createGuns, fireGuns } from "./weapons";
 import { backspace, createMeasure, createTyping, dealFirstWords, heavyBays, keyPress } from "./words";
 
 export type Command = { tick: number } & CommandBody;
-export type CommandBody = { t: "key"; letter: number } | { t: "back" } | { t: "stop"; ticks: number } | { t: "flood"; n: number };
+export type CommandBody = { t: "key"; letter: number } | { t: "back" } | { t: "stop"; ticks: number } | { t: "flood"; n: number } | { t: "place"; kind: number; x: number; z: number };
 
 export type Phase = "play" | "won" | "lost";
 
@@ -141,6 +141,7 @@ function apply(w: World, command: CommandBody): void {
   else if (command.t === "back") backspace(w);
   else if (command.t === "stop") w.slowTicks = Math.max(w.slowTicks, Math.min(12, Math.max(0, command.ticks | 0)));
   else if (command.t === "flood") flood(w, command.n | 0);
+  else if (command.t === "place" && command.kind >= 0 && command.kind < KINDS) placeFoe(w, command.kind, Math.max(-11, Math.min(11, command.x)), Math.max(FIELD.bottomZ + 1, Math.min(FIELD.gateZ + 10, command.z)));
 }
 
 /** One tick. `commands` are this tick's, in the order they were sent. */

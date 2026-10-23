@@ -79,10 +79,10 @@ export class Ship {
     return out.set(Math.sin(-this.yaw) * 1.4, 0.95, -FIELD.muzzleZ + 0.2);
   }
 
-  /** A round fired: a small kick. */
-  fired(): void {
-    this.kick = Math.min(1, this.kick + 0.35);
-    this.hero?.hurt(0.03);
+  /** A round fired: a small kick (`strength`: Tán's blast kicks harder). */
+  fired(strength = 0.35): void {
+    this.kick = Math.min(1, this.kick + strength);
+    this.hero?.hurt(strength * 0.09);
   }
 
   hurt(): void {
