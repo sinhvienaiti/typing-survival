@@ -218,3 +218,17 @@ Trận 180 s (đồng hồ giữ, người gõ 35 WPM trong trang), đo heap sau
 - Ba chế độ Thư giãn / Cân bằng / Thử thách; nhịp k (0,75–1,30) từ hồ sơ gõ, ghi vào đầu replay; bộ điều nhịp trong trận (kit `balance`) đọc FlowMeter mỗi 0,1 s; áp lực liên tục: vùng hút giáp từ 16 m; mỗi lượt có "triều" và sức đỉnh tràn rút từ seed (có đỉnh "dữ dội").
 - Số nằm ở `src/content/balance.ts`, `src/content/stage-s0.ts`, `src/content/rules.ts`. Chỉnh xong thì chạy `pnpm survival:balance` (100 seed) và `npx vitest run`.
 - Bot gõ giống người (`tests/survival/typist-bot.ts`) đi qua `installKeys` như bàn phím thật.
+
+## 9. S1 "Chương 1 · Hành Lang VC-7" (24/10/2026)
+
+> Đặc tả: [`BUILD_S1.md`](BUILD_S1.md). Mỗi đợt có changelog riêng.
+
+### 9.1 R1 "Súng và khắc chế"
+
+Chi tiết, lệch đặc tả, bảng khắc chế đo được và số cân bằng: [`changelog/2026-10-24-s1-r1.md`](changelog/2026-10-24-s1-r1.md).
+
+- Chơi được ải 1–4 từ màn chính: Hành trình → chọn ải → bảng tin → nạp súng (2 trong 5) → trận với bộ đồ tham chiếu của ải → kết ải 3 sao. Trận thử (ải S0) vẫn ở màn chính.
+- Súng mới: Tán, Ray, Pháo Sao. Có Vỏ, Băng Chuẩn xuyên Vỏ, khiên, Tách. Quái mới: Trâu, Khiên, Tách (cùng mảnh của nó), Đầu Đàn. Luật ải: Trụ vững, Săn, Vết nứt, Thiếu chữ.
+- Trận thử giữ đúng vết sự kiện của `00ed734` (18 trận vàng). `COUNTERS` là bảng đo được.
+- Lệch chính: Tán 7 sát thương, tầm 9 m; Pháo Sao 4 quả, 22 → 9, bán kính 2,5 m; Ray 75; Trâu 220 máu; nhịp các ải nâng lên; Đầu Đàn đến cách nhau 35 s. Lý do ở changelog.
+- Còn mở: G3c trượt, vì các cặp không có súng giữ vạch (Tia + Ray, Tia + Pháo Sao) và Xung + Tán ở ải khiên thua nhiều. Hướng sửa ở changelog.

@@ -8,9 +8,27 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `typing-survival`. Run from the parent repo checkout
   (`/Users/toandx/htdocs/typing-game/games/typing-survival`).
 - Commands: `pnpm dev`, `pnpm test`, `pnpm build`, `pnpm check`,
-  `pnpm survival:balance`, `pnpm survival:replay <replay.json>`,
+  `pnpm survival:balance [--stages=s0,c1-s1,c1-s2,c1-s3,c1-s4] [--g3c]`,
+  `pnpm survival:replay <replay.json>`,
   `pnpm visual scripts/visual/scenarios/survival-s0-boot.mjs --width=1280 --height=720`
-  (scenarios: `boot`, `menu`, `fight`, `perf`, `keys`, `frames`, `balance`).
+  (S0 scenarios on the trial: `boot`, `menu`, `fight`, `perf`, `keys`,
+  `frames`, `balance`; S1: `survival-s1-loadout`, `-guns` (frame
+  sequences), `-stage`, `-hazards`, `-perf`; agents run a dev server with
+  `npx vite --host 127.0.0.1 --port 3047 --strictPort` and set `URL`).
+- S1 "Chương 1 · Hành Lang VC-7" (`docs/BUILD_S1.md`; R1 done:
+  `docs/changelog/2026-10-24-s1-r1.md`): guns in `src/content/guns.ts`
+  (COUNTERS is the measured table: `node --import tsx scripts/counters.ts`,
+  gate G3m in `tests/guns.test.ts`), foes in `src/content/foes.ts`, stages
+  in `src/content/stage-rules.ts` + `chapter-1.ts` (the trial is stage
+  `s0`, `stage-s0.ts`), threat scoring for bots and the briefing in
+  `src/content/threat.ts`; sim per gun in `src/sim/guns/`, objectives in
+  `src/sim/stage.ts`, hazards in `src/sim/hazards.ts`; the journey screens in
+  `src/app/journey.ts` + `src/view/screens-journey.ts`; effects in
+  `src/view/gunfx.ts` + `hazard-fx.ts`; S1 sounds in
+  `src/audio/gun-audio.ts`. The trial's event trace is golden
+  (`tests/s0-trace.test.ts`, `tests/golden/s0-trace.json`): regenerate it
+  only on purpose (`node --import tsx scripts/s0-trace.ts --write`) and say
+  why in the changelog.
 - Balance (parent `docs/games/BALANCE.md` §9.3, `docs/changelog/2026-10-23-balance.md`):
   the kit's `src/kit/balance` runs inside the sim (FlowMeter, PaceDirector:
   `src/sim/pace.ts`; the run's timeline: `src/sim/plan.ts`). Every balance
@@ -50,7 +68,7 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   sound id has an entry in `docs/audio/THEME_SOUND_LIST.md`; add one there
   with each new id.
 - Each update gets `docs/changelog/<date>-<topic>.md` (Vietnamese).
-- Next milestone: S1 "Chương 1 · Hành Lang VC-7" (`docs/BUILD_S1.md`: guns
-  and counters, stage rules, chapter, balance gates G1–G8, rounds R1–R3).
+- Next: S1 R2 (chapter flow, doors, Lõi, Mốc, stages 5–9, Bão ion,
+  Giếng, Nghĩa) and R3 (the boss), `docs/BUILD_S1.md` §14.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.
