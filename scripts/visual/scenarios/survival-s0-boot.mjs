@@ -1,5 +1,7 @@
-// Sinh Tồn S0 (docs/BUILD_S0.md §9): the page builds; the start card,
-// then Enter, the HUD with its health bar, clock and kill counter, and two gun
+// Tuyến Cuối S0 (docs/BUILD_S0.md §9): the page builds; the title screen
+// "Tuyến Cuối" (keyboard menu: ↓ skips the disabled "Chơi tiếp", ↑ comes
+// back; the title font has every Vietnamese letter; a key starts the audio
+// and the music), then Enter, the HUD with its health bar, clock and kill counter, and two gun
 // slots that each show a word (≥ 26 px at 1280×720, contrast ≥ 7 : 1 on the
 // panel) with its meaning; the learning frame; no console error. S0 review:
 // a window that loses focus pauses the fight (Esc goes on); with the screen
@@ -18,7 +20,26 @@ export default async function (page) {
     if (!ready) await page.sleep(250);
   }
   const startCard = await page.eval(sv("return { mode: t.mode(), card: document.querySelector('.sv-overlay.is-on .sv-card')?.textContent ?? '' };"));
+  await page.sleep(600);
   const start = await page.shot(out("survival-s0-boot-start-" + size + ".png"));
+  // Every Vietnamese letter (both cases) in the title font: each glyph is Chakra Petch's when two different fallbacks measure the same.
+  const font = await page.eval(`(async () => {
+    const base = "aàáảãạăằắẳẵặâầấẩẫậbcdđeèéẻẽẹêềếểễệghiìíỉĩịklmnoòóỏõọôồốổỗộơờớởỡợpqrstuùúủũụưừứửữựvxyỳýỷỹỵ";
+    const letters = [...new Set([...base, ...base.toUpperCase()])].join("") + "0123456789×·↑↓";
+    await document.fonts.load('700 40px "Chakra Petch"', letters);
+    const g = document.createElement("canvas").getContext("2d");
+    const width = (char, fallback) => { g.font = '700 40px "Chakra Petch", ' + fallback; return g.measureText(char).width; };
+    const missing = [...letters].filter((char) => Math.abs(width(char, "monospace") - width(char, "serif")) > 0.01);
+    const title = document.querySelector(".sv-title-name");
+    return { letters: letters.length, missing, family: title ? getComputedStyle(title).fontFamily : "", loaded: document.fonts.check('700 40px "Chakra Petch"', "TUYẾN CUỐI") };
+  })()`);
+  const menu = async () => page.eval("[...document.querySelectorAll('.sv-overlay.is-on .sv-item')].map((n) => ({ text: n.querySelector('b').textContent, on: n.classList.contains('is-on'), off: n.classList.contains('is-off') }))");
+  const menuAtStart = await menu();
+  await page.key("ArrowDown", { code: "ArrowDown" });
+  const menuDown = await menu();
+  await page.key("ArrowUp", { code: "ArrowUp" });
+  const menuUp = await menu();
+  const soundsBefore = await page.eval(sv("return t.sounds();"));
   await page.key("Enter", { code: "Enter" });
   await page.sleep(1200);
   const hud = await page.eval(`(() => {
@@ -45,6 +66,7 @@ export default async function (page) {
     };
   })()`);
   const shot = await page.shot(out("survival-s0-boot-" + size + ".png"));
+  const sounds = await page.eval(sv("return t.sounds();"));
   // Focus lost: paused; Esc: on again.
   await page.eval("window.dispatchEvent(new Event('blur')); true");
   await page.sleep(100);
@@ -77,7 +99,10 @@ export default async function (page) {
   await page.eval("localStorage.removeItem('survival.motion'); true");
   const checks = {
     ready,
-    startCardShown: startCard?.mode === "start" && /SINH TỒN/.test(startCard.card),
+    startCardShown: startCard?.mode === "start" && /TUYẾN CUỐI/.test(startCard.card),
+    titleFontHasEveryLetter: font.loaded && font.missing.length === 0 && /Chakra Petch/.test(font.family),
+    titleMenu: menuAtStart.length === 4 && menuAtStart[0].on && menuAtStart[1].off && menuDown[2].on && menuUp[0].on,
+    audioStartsOnAKey: soundsBefore.played["ui.move"] >= 1 && sounds.ready && sounds.played["ui.select"] >= 1 && sounds.played["music.calm"] === 1,
     enterStarts: hud.mode === "play",
     twoSlotsWithWords: hud.slots.length === 2 && hud.slots.every((slot, k) => slot.word === hud.sim[k].text && slot.word.length >= 3 && slot.meaning.length > 0),
     firstLettersDiffer: hud.sim[0].text[0] !== hud.sim[1].text[0],
@@ -93,5 +118,5 @@ export default async function (page) {
   };
   const pass = Object.values(checks).every(Boolean);
   if (!pass) process.exitCode = 1;
-  return { pass, checks, hud, focus: { blurred, resumed }, shaking, shakeOff, reduced, shots: [start, shot] };
+  return { pass, checks, hud, font, menu: { menuAtStart, menuDown, menuUp }, sounds, focus: { blurred, resumed }, shaking, shakeOff, reduced, shots: [start, shot] };
 }

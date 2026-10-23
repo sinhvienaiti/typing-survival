@@ -1,9 +1,10 @@
 /**
- * The HUD (docs/BUILD_S0.md §7), DOM outside the shaking canvas:
+ * The HUD (docs/BUILD_S0.md §7), DOM outside the shaking canvas, dressed
+ * as the station's steel consoles (theme.css, survival.css):
  * the learning frame at the bottom centre (the word being typed, its IPA
- * and meaning; "word · meaning ✓" for 0.6 s when done), the two gun slots
+ * and meaning; "word · meaning ✓" for 0.6 s when done), the two gun bays
  * either side (gun name, word ≥ 26 px at 1280×720, meaning, two-magazine
- * bar), the ship's health, the time left and the kills of the last 3 s.
+ * LED bar), the line's armour, the time left and the kills of the last 3 s.
  * It publishes the rectangles damage numbers must not cover.
  */
 import type { Rect } from "../kit/feedback";
@@ -13,8 +14,8 @@ import type { World } from "../sim/world";
 import type { Word } from "../app/vocab";
 
 const GUNS = [
-  { name: "XUNG", kind: "xung", hint: "liên thanh" },
-  { name: "TIA", kind: "tia", hint: "cột sáng" },
+  { name: "XUNG", kind: "xung", hint: "pháo liên thanh" },
+  { name: "TIA", kind: "tia", hint: "tia nhiệt" },
 ] as const;
 const DONE_MS = 600;
 
@@ -56,12 +57,14 @@ export class Hud {
     const top = el("div", "sv-top", root);
     const left = el("div", "sv-left", top);
     this.hp = el("div", "sv-hp sv-panel", left);
-    el("span", "sv-label", this.hp, "TÀU");
+    el("span", "sv-label", this.hp, "GIÁP");
     const bar = el("div", "sv-hp-bar", this.hp);
     this.hpFill = el("i", "", bar);
     this.hpText = el("b", "", this.hp);
     const clock = el("div", "sv-clock sv-panel", left);
     this.time = el("b", "", clock);
+    // Unlit LED segments behind the digits (CSS draws them from the attribute; the text stays the time).
+    this.time.dataset.ghost = "8:88";
     el("small", "", clock, "còn lại");
     const kills = el("div", "sv-kills sv-panel", top);
     this.kills = el("b", "", kills);
@@ -226,7 +229,7 @@ export class Hud {
         this.learnWord.typed.textContent = "";
         this.learnWord.rest.textContent = "";
         this.learnIpa.textContent = "";
-        this.learnMean.textContent = "Gõ chữ đầu của một ô súng để nạp đạn";
+        this.learnMean.textContent = "Gõ chữ đầu của một bến súng để nạp đạn";
         this.learn.className = "sv-learn sv-panel is-idle";
       }
     }

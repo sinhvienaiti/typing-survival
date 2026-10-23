@@ -1,102 +1,172 @@
-/* Sinh Tồn S0 HUD (docs/BUILD_S0.md §7): DOM over the canvas, never shaken. */
-:root {
-  --ui: 1;
-  --xung: #5fe8ff;
-  --tia: #ffb347;
-  --panel: rgba(7, 9, 26, 0.9);
-  --line: rgba(150, 170, 255, 0.22);
-  --text: #f4f6ff;
-  --soft: #d3daf5;
-  color-scheme: dark;
-}
+/*
+ * Tuyến Cuối HUD and screens (docs/BUILD_S0.md §7): DOM over the canvas,
+ * never shaken. Steel plates with rivets and a bevel, hazard stripes, LED
+ * readouts. Every colour, font and surface comes from theme.css; nothing
+ * here is a literal colour (tests/theme.test.ts checks it).
+ */
+:root { --ui: 1; }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #02030a; color: var(--text); font-family: "Be Vietnam Pro", system-ui, sans-serif; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page); color: var(--text); font-family: var(--font-battle); }
 .sv-stage { position: fixed; inset: 0; }
 .sv-stage canvas { display: block; width: 100%; height: 100%; }
 .sv-hud { position: fixed; inset: 0; pointer-events: none; user-select: none; }
-.sv-loading { position: absolute; inset: 0; display: grid; place-items: center; font: 600 18px "Be Vietnam Pro", sans-serif; color: var(--soft); }
-.sv-panel { background: var(--panel); border: 1px solid var(--line); border-radius: calc(12px * var(--ui)); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
+.sv-loading { position: absolute; inset: 0; display: grid; place-items: center; font: 600 18px var(--font-title); letter-spacing: 0.12em; color: var(--soft); }
 
+/* A steel plate: brushed, lit from above, four rivets, a bevel. Its background colour keeps an alpha (the contrast check reads it). */
+.sv-panel {
+  background-color: var(--panel);
+  background-image: var(--rivet), var(--rivet), var(--rivet), var(--rivet), var(--plate-light), var(--brushed);
+  background-position: 3px 3px, calc(100% - 3px) 3px, 3px calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), 0 0, 0 0;
+  background-size: var(--rivet-size), var(--rivet-size), var(--rivet-size), var(--rivet-size), auto, auto;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 var(--bevel-hi), inset 0 -2px 0 var(--bevel-lo), 0 8px 22px var(--shadow);
+}
+.sv-hazard { height: calc(8px * var(--ui)); background: var(--hazard); border-top: 1px solid var(--bevel-lo); border-bottom: 1px solid var(--bevel-lo); }
+
+/* While the title (or its menus) shows, the fight's HUD steps aside (hidden, still laid out: the number field keeps its rectangles). */
+.sv-hud[data-mode="start"] .sv-top, .sv-hud[data-mode="start"] .sv-bottom, .sv-hud[data-mode="start"] .sv-banner, .sv-hud[data-mode="start"] .sv-notice { visibility: hidden; }
+
+/* Top: armour, clock, kills. */
 .sv-top { position: absolute; top: calc(12px * var(--ui)); left: calc(14px * var(--ui)); right: calc(14px * var(--ui)); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .sv-left { display: flex; gap: calc(10px * var(--ui)); align-items: stretch; }
-.sv-hp { display: flex; align-items: center; gap: calc(10px * var(--ui)); padding: calc(8px * var(--ui)) calc(14px * var(--ui)); }
-.sv-label { font: 800 calc(12px * var(--ui)) "Exo 2", sans-serif; letter-spacing: 0.14em; color: var(--soft); }
-.sv-hp-bar { width: calc(190px * var(--ui)); height: calc(12px * var(--ui)); border-radius: 99px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
-.sv-hp-bar i { display: block; height: 100%; transform-origin: left; background: linear-gradient(90deg, #39f0a0, #5fe8ff); transition: transform 0.18s ease-out; }
-.sv-hp.is-low .sv-hp-bar i { background: linear-gradient(90deg, #ff3b5c, #ff8a3a); }
-.sv-hp b { font: 800 calc(20px * var(--ui)) "Exo 2", sans-serif; min-width: 2.2em; text-align: right; }
-.sv-clock { display: flex; align-items: baseline; gap: 8px; padding: calc(6px * var(--ui)) calc(14px * var(--ui)); }
-.sv-clock b { font: 800 calc(24px * var(--ui)) "Exo 2", sans-serif; letter-spacing: 0.04em; }
-.sv-clock small, .sv-kills small { font: 600 calc(11px * var(--ui)) "Be Vietnam Pro", sans-serif; color: var(--soft); }
-.sv-kills { display: grid; grid-template-columns: auto auto; align-items: baseline; column-gap: 8px; padding: calc(6px * var(--ui)) calc(14px * var(--ui)); min-width: calc(150px * var(--ui)); }
-.sv-kills b { font: 800 italic calc(30px * var(--ui)) "Exo 2", sans-serif; color: #fff; display: inline-block; transform-origin: right center; }
-.sv-kills em { grid-column: 1 / -1; font: 600 calc(12px * var(--ui)) "Be Vietnam Pro", sans-serif; color: var(--soft); font-style: normal; }
-.sv-kills.is-hot b { color: #ffd34d; text-shadow: 0 0 18px rgba(255, 190, 60, 0.7); }
+.sv-hp { display: flex; align-items: center; gap: calc(10px * var(--ui)); padding: calc(8px * var(--ui)) calc(16px * var(--ui)); }
+.sv-label { font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.16em; color: var(--steel-200); }
+.sv-hp-bar { position: relative; width: calc(190px * var(--ui)); height: calc(12px * var(--ui)); background: var(--track); border: 1px solid var(--bevel-lo); overflow: hidden; }
+.sv-hp-bar i { display: block; height: 100%; transform-origin: left; background: linear-gradient(90deg, var(--volt), var(--volt-hi)); box-shadow: 0 0 10px var(--volt-glow); transition: transform 0.18s ease-out; -webkit-mask: var(--segments); mask: var(--segments); }
+.sv-hp.is-low .sv-hp-bar i { background: linear-gradient(90deg, var(--danger), var(--hot)); box-shadow: 0 0 10px var(--danger-glow); animation: sv-blink 0.8s steps(2, jump-none) infinite; }
+@keyframes sv-blink { 0% { opacity: 1; } 100% { opacity: 0.55; } }
+.sv-hp b { font: 700 calc(21px * var(--ui)) var(--font-title); min-width: 2.2em; text-align: right; color: var(--text); }
+.sv-clock { display: flex; align-items: baseline; gap: 8px; padding: calc(5px * var(--ui)) calc(16px * var(--ui)); background-color: var(--screen); }
+.sv-clock b { position: relative; font: 700 calc(26px * var(--ui)) var(--font-title); letter-spacing: 0.08em; color: var(--led); text-shadow: 0 0 12px var(--led-glow); }
+.sv-clock b::before { content: attr(data-ghost); position: absolute; left: 0; top: 0; color: var(--led-ghost); text-shadow: none; }
+.sv-clock small, .sv-kills small { font: 600 calc(11px * var(--ui)) var(--font-battle); color: var(--soft); }
+.sv-kills { display: grid; grid-template-columns: auto auto; align-items: baseline; column-gap: 8px; padding: calc(6px * var(--ui)) calc(16px * var(--ui)); min-width: calc(150px * var(--ui)); }
+.sv-kills b { font: 700 calc(30px * var(--ui)) var(--font-title); color: var(--text); display: inline-block; transform-origin: right center; }
+.sv-kills em { grid-column: 1 / -1; font: 600 calc(12px * var(--ui)) var(--font-battle); color: var(--soft); font-style: normal; }
+.sv-kills.is-hot b { color: var(--hot-hi); text-shadow: 0 0 18px var(--hot-glow); }
 .sv-kills b.is-bump { animation: sv-bump 0.22s ease-out; }
 @keyframes sv-bump { 0% { transform: scale(1.35); } 100% { transform: scale(1); } }
 
-.sv-banner { position: absolute; top: 16%; left: 50%; transform: translate(-50%, 0) scale(0.9); opacity: 0; font: 800 italic calc(34px * var(--ui)) "Exo 2", sans-serif; letter-spacing: 0.12em; color: #fff; text-shadow: 0 0 24px rgba(255, 70, 140, 0.85), 0 2px 0 #000; padding: 6px 28px; background: linear-gradient(90deg, transparent, rgba(80, 0, 40, 0.75), transparent); }
+/* A surge: an alarm band with hazard edges. */
+.sv-banner { position: absolute; top: 16%; left: 50%; transform: translate(-50%, 0) scale(0.9); opacity: 0; padding: calc(8px * var(--ui)) calc(40px * var(--ui)); font: 700 calc(34px * var(--ui)) var(--font-title); letter-spacing: 0.16em; color: var(--text); text-shadow: var(--title-glow); background: var(--banner-band); border-top: calc(5px * var(--ui)) solid transparent; border-bottom: calc(5px * var(--ui)) solid transparent; border-image: var(--hazard) 6; }
 .sv-banner.is-on { animation: sv-banner 2.2s ease-out forwards; }
 @keyframes sv-banner { 0% { opacity: 0; transform: translate(-50%, 0) scale(1.4); } 10% { opacity: 1; transform: translate(-50%, 0) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
-.sv-notice { position: absolute; top: calc(72px * var(--ui)); left: 50%; transform: translateX(-50%); padding: 6px 14px; border-radius: 8px; background: rgba(120, 20, 30, 0.92); font: 700 14px "Be Vietnam Pro", sans-serif; }
+.sv-notice { position: absolute; top: calc(72px * var(--ui)); left: 50%; transform: translateX(-50%); padding: 6px 14px; border: 1px solid var(--danger); background: var(--notice); font: 700 14px var(--font-battle); }
 
+/* Bottom: the two gun bays and the learning frame between them. */
 .sv-bottom { position: absolute; left: 50%; bottom: calc(12px * var(--ui)); transform: translateX(-50%); display: grid; grid-template-columns: calc(290px * var(--ui)) calc(420px * var(--ui)) calc(290px * var(--ui)); gap: calc(12px * var(--ui)); align-items: end; }
-.sv-slot { position: relative; height: calc(118px * var(--ui)); padding: calc(10px * var(--ui)) calc(16px * var(--ui)); display: flex; flex-direction: column; gap: calc(4px * var(--ui)); transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; }
+.sv-slot { position: relative; height: calc(118px * var(--ui)); padding: calc(14px * var(--ui)) calc(16px * var(--ui)) calc(10px * var(--ui)); display: flex; flex-direction: column; gap: calc(4px * var(--ui)); transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; }
+.sv-slot::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: calc(5px * var(--ui)); background: var(--hazard-dim); }
+.sv-xung::before { background: var(--hazard-volt); opacity: 0.55; }
 .sv-slot header { display: flex; align-items: center; gap: 8px; }
-.sv-gun { font: 800 italic calc(14px * var(--ui)) "Exo 2", sans-serif; letter-spacing: 0.16em; }
+.sv-gun { font: 700 calc(15px * var(--ui)) var(--font-title); letter-spacing: 0.18em; }
 .sv-xung .sv-gun, .sv-xung .sv-typed { color: var(--xung); }
 .sv-tia .sv-gun, .sv-tia .sv-typed { color: var(--tia); }
-.sv-hint { font: 600 calc(11px * var(--ui)) "Be Vietnam Pro", sans-serif; color: #aab3d8; }
-.sv-mags { margin-left: auto; display: flex; gap: 4px; }
-.sv-mags i { --fill: 0; position: relative; width: calc(34px * var(--ui)); height: calc(8px * var(--ui)); border-radius: 3px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
-.sv-mags i::after { content: ""; position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--fill)); background: currentColor; }
+.sv-hint { font: 600 calc(11px * var(--ui)) var(--font-battle); color: var(--muted); }
+.sv-mags { margin-left: auto; display: flex; gap: 5px; }
+.sv-mags i { --fill: 0; position: relative; width: calc(36px * var(--ui)); height: calc(10px * var(--ui)); background: var(--track); border: 1px solid var(--bevel-lo); overflow: hidden; }
+.sv-mags i::after { content: ""; position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--fill)); background: currentColor; -webkit-mask: var(--segments); mask: var(--segments); }
 .sv-xung .sv-mags { color: var(--xung); }
 .sv-tia .sv-mags { color: var(--tia); }
-.sv-word { font: 800 calc(32px * var(--ui)) "Be Vietnam Pro", sans-serif; letter-spacing: 0.02em; line-height: 1.15; white-space: nowrap; }
-.sv-mean { font: 600 calc(15px * var(--ui)) "Be Vietnam Pro", sans-serif; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sv-slot.is-active { box-shadow: 0 0 0 2px currentColor, 0 0 26px rgba(95, 232, 255, 0.35); }
-.sv-xung.is-active { color: var(--xung); }
-.sv-tia.is-active { color: var(--tia); box-shadow: 0 0 0 2px var(--tia), 0 0 26px rgba(255, 179, 71, 0.35); }
-.sv-slot.is-active .sv-word { color: #fff; }
-.sv-slot.is-dim { opacity: 0.72; }
+.sv-word { font: 800 calc(32px * var(--ui)) var(--font-battle); letter-spacing: 0.02em; line-height: 1.15; white-space: nowrap; color: var(--text); }
+.sv-mean { font: 600 calc(15px * var(--ui)) var(--font-battle); color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sv-slot.is-active { border-color: currentColor; }
+.sv-xung.is-active { color: var(--xung); box-shadow: inset 0 1px 0 var(--bevel-hi), 0 0 0 2px var(--xung), 0 0 26px var(--xung-glow); }
+.sv-tia.is-active { color: var(--tia); box-shadow: inset 0 1px 0 var(--bevel-hi), 0 0 0 2px var(--tia), 0 0 26px var(--tia-glow); }
+.sv-slot.is-active .sv-word { color: var(--text); }
+.sv-slot.is-active::before { opacity: 1; }
+/* The other bay steps back: its words dim, the plate stays solid (the deck never shows through). */
+.sv-slot.is-dim > * { opacity: 0.72; }
 .sv-slot.is-full .sv-mags { filter: drop-shadow(0 0 6px currentColor); }
 .sv-slot.is-loaded { animation: sv-load 0.35s ease-out; }
 .sv-slot.is-loaded.is-perfect { animation: sv-perfect 0.5s ease-out; }
-@keyframes sv-load { 0% { background: rgba(255, 255, 255, 0.28); } 100% { background: var(--panel); } }
-@keyframes sv-perfect { 0% { background: rgba(120, 255, 240, 0.45); } 100% { background: var(--panel); } }
+/* A loaded magazine flashes the plate from inside (the plate itself stays opaque: the deck never shows through). */
+@keyframes sv-load { 0% { box-shadow: inset 0 0 0 300px var(--flash-load); } 100% { box-shadow: inset 0 0 0 300px transparent; } }
+@keyframes sv-perfect { 0% { box-shadow: inset 0 0 0 300px var(--flash-perfect); } 100% { box-shadow: inset 0 0 0 300px transparent; } }
 
-.sv-learn { height: calc(118px * var(--ui)); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: calc(8px * var(--ui)) calc(14px * var(--ui)); }
-.sv-learn-word { --fit: 1; font: 800 calc(42px * var(--ui) * var(--fit)) "Be Vietnam Pro", sans-serif; line-height: 1.1; white-space: nowrap; max-width: 100%; }
+/* The learning frame: a recessed screen in the console. Nothing is drawn over it. */
+.sv-learn { height: calc(118px * var(--ui)); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: calc(8px * var(--ui)) calc(16px * var(--ui)); background-color: var(--screen); box-shadow: inset 0 2px 10px var(--shadow), inset 0 0 0 1px var(--bevel-lo), 0 8px 22px var(--shadow); }
+.sv-learn-word { --fit: 1; font: 800 calc(42px * var(--ui) * var(--fit)) var(--font-battle); line-height: 1.1; white-space: nowrap; max-width: 100%; color: var(--text); }
 .sv-learn.sv-xung .sv-typed { color: var(--xung); }
 .sv-learn.sv-tia .sv-typed { color: var(--tia); }
-.sv-learn-ipa { font: 500 calc(19px * var(--ui)) "Be Vietnam Pro", "Segoe UI", sans-serif; color: #e6e9ff; min-height: 1.2em; }
-.sv-learn-mean { font: 600 calc(16px * var(--ui)) "Be Vietnam Pro", sans-serif; color: var(--soft); min-height: 1.2em; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sv-learn.is-done .sv-learn-word { font-size: calc(30px * var(--ui) * var(--fit)); color: #9dffcf; }
+.sv-learn.sv-xung { border-color: var(--xung); }
+.sv-learn.sv-tia { border-color: var(--tia); }
+.sv-learn-ipa { font: 500 calc(19px * var(--ui)) var(--font-ipa); color: var(--soft); min-height: 1.2em; }
+.sv-learn-mean { font: 600 calc(16px * var(--ui)) var(--font-battle); color: var(--soft); min-height: 1.2em; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sv-learn.is-done .sv-learn-word { font-size: calc(30px * var(--ui) * var(--fit)); color: var(--typing); }
 .sv-learn.is-done .sv-learn-ipa, .sv-learn.is-done .sv-learn-mean { display: none; }
-.sv-learn.is-idle .sv-learn-mean { color: #aab3d8; }
+.sv-learn.is-idle .sv-learn-mean { color: var(--muted); }
 
-.sv-vignette { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 20, 50, 0.55) 100%); }
+.sv-vignette { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, transparent 55%, var(--danger-glow) 100%); }
 .sv-vignette.is-hurt { animation: sv-hurt 0.45s ease-out; }
 @keyframes sv-hurt { 0% { opacity: 1; } 100% { opacity: 0; } }
 
-.sv-overlay { position: absolute; inset: 0; display: none; place-items: center; background: rgba(2, 3, 12, 0.62); pointer-events: auto; }
+/* Screens: title, settings, armory, pause, results. */
+.sv-overlay { position: absolute; inset: 0; display: none; place-items: center; background: radial-gradient(ellipse at 50% 45%, var(--veil) 30%, var(--veil-edge) 100%); pointer-events: auto; }
 .sv-overlay.is-on { display: grid; }
-.sv-card { width: min(92vw, calc(620px * var(--ui))); max-height: 86vh; overflow: auto; padding: calc(24px * var(--ui)) calc(28px * var(--ui)); text-align: center; }
-.sv-card h1 { margin: 0 0 6px; font: 800 italic calc(40px * var(--ui)) "Exo 2", sans-serif; letter-spacing: 0.08em; }
-.sv-card p { margin: 6px 0; font: 500 calc(16px * var(--ui)) "Be Vietnam Pro", sans-serif; color: var(--soft); }
-.sv-card .sv-key { display: inline-block; margin-top: 14px; padding: calc(6px * var(--ui)) calc(16px * var(--ui)); border-radius: 8px; border: 1px solid var(--line); font: 700 calc(15px * var(--ui)) "Be Vietnam Pro", sans-serif; }
-.sv-choices { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0 2px; }
-.sv-choices a { padding: calc(6px * var(--ui)) calc(14px * var(--ui)); border-radius: 8px; border: 1px solid var(--line); color: var(--soft); text-decoration: none; font: 600 calc(14px * var(--ui)) "Be Vietnam Pro", sans-serif; }
-.sv-choices a.is-on { border-color: var(--xung); color: #fff; background: rgba(95, 232, 255, 0.14); }
-.sv-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
-.sv-stats div { padding: 10px 6px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); }
-.sv-stats b { display: block; font: 800 calc(26px * var(--ui)) "Exo 2", sans-serif; }
-.sv-stats small { font: 600 12px "Be Vietnam Pro", sans-serif; color: var(--soft); }
-.sv-words { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; text-align: left; max-height: 30vh; overflow: auto; }
-.sv-words li { font: 500 14px "Be Vietnam Pro", sans-serif; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sv-words b { color: #fff; margin-right: 6px; }
+.sv-overlay[data-screen="title"] { place-items: center start; background: linear-gradient(90deg, var(--veil-edge) 0%, var(--veil) 42%, transparent 75%); }
+.sv-card { width: min(92vw, calc(620px * var(--ui))); max-height: 94vh; overflow: auto; padding: calc(22px * var(--ui)) calc(26px * var(--ui)); text-align: center; }
+.sv-card h1 { margin: 0 0 calc(10px * var(--ui)); font: 700 calc(36px * var(--ui)) var(--font-title); line-height: 1.25; letter-spacing: 0.1em; color: var(--text); text-shadow: var(--title-glow); }
+.sv-card p { margin: 6px 0; font: 500 calc(15px * var(--ui)) var(--font-battle); color: var(--soft); }
+.sv-hints { margin-top: calc(12px * var(--ui)); font: 600 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.06em; color: var(--muted); }
+.sv-hints kbd { display: inline-block; min-width: 1.7em; margin: 0 2px; padding: 1px 5px; border: 1px solid var(--line-strong); border-bottom-width: 2px; background: var(--steel-800); font: 700 1em var(--font-title); color: var(--soft); }
 
-/* Reduced motion (the game's motion setting, src/app/motion.ts): no scaling bumps; the banner only fades. */
-[data-motion="reduced"] .sv-kills b.is-bump { animation: none; }
+/* The title: a console plate on the left, the black hole showing on the right. */
+.sv-title { width: 100%; height: 100%; display: grid; align-items: center; padding-left: max(4vw, calc(48px * var(--ui))); }
+.sv-title-card { width: min(46vw, calc(520px * var(--ui))); text-align: left; padding: calc(22px * var(--ui)) calc(28px * var(--ui)) calc(18px * var(--ui)); }
+.sv-title-tag { display: flex; align-items: center; gap: 8px; font: 600 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.22em; color: var(--hot-hi); }
+.sv-dot { width: calc(8px * var(--ui)); height: calc(8px * var(--ui)); border-radius: 50%; background: var(--hot); box-shadow: 0 0 10px var(--hot); animation: sv-blink 1.4s steps(2, jump-none) infinite; }
+.sv-title-name { margin: calc(4px * var(--ui)) 0 0; font: 700 calc(72px * var(--ui)) var(--font-title); line-height: 1.12; letter-spacing: 0.04em; color: var(--text); text-shadow: var(--title-glow); white-space: nowrap; }
+.sv-title-en { margin: 0 0 calc(10px * var(--ui)); font: 600 calc(15px * var(--ui)) var(--font-title); letter-spacing: 0.62em; color: var(--steel-300); }
+.sv-lead { margin: calc(12px * var(--ui)) 0 !important; font-size: calc(14px * var(--ui)) !important; line-height: 1.45; }
+.sv-status { margin-top: calc(12px * var(--ui)); padding: calc(5px * var(--ui)) calc(10px * var(--ui)); background: var(--screen); border: 1px solid var(--bevel-lo); font: 600 calc(11px * var(--ui)) var(--font-title); letter-spacing: 0.14em; color: var(--led); text-shadow: 0 0 8px var(--led-glow); }
+.sv-title-card .sv-hints { margin-top: calc(10px * var(--ui)); }
+
+/* Menu items: steel buttons with an LED; the selected one lit hot. */
+.sv-menu { display: flex; flex-direction: column; gap: calc(6px * var(--ui)); margin-top: calc(12px * var(--ui)); text-align: left; }
+.sv-menu.sv-row { flex-direction: row; justify-content: center; }
+.sv-item { display: flex; align-items: center; gap: calc(12px * var(--ui)); min-height: calc(46px * var(--ui)); padding: calc(6px * var(--ui)) calc(14px * var(--ui)); background-color: var(--panel-raised); background-image: var(--plate-light); border: 1px solid var(--line); border-left: calc(4px * var(--ui)) solid var(--steel-600); cursor: pointer; transition: border-color 0.1s, background-color 0.1s; }
+.sv-item b { display: block; font: 700 calc(18px * var(--ui)) var(--font-title); letter-spacing: 0.04em; line-height: 1.25; color: var(--soft); }
+.sv-item small { display: block; font: 500 calc(12px * var(--ui)) var(--font-battle); color: var(--muted); }
+.sv-item-text { flex: 1; min-width: 0; }
+.sv-led { flex: none; width: calc(9px * var(--ui)); height: calc(9px * var(--ui)); border-radius: 50%; background: var(--steel-700); box-shadow: inset 0 1px 1px var(--bevel-lo); }
+.sv-item.is-on { border-color: var(--line-strong); border-left-color: var(--hot); background-color: var(--steel-700); box-shadow: 0 0 0 1px var(--hot-glow), 0 0 18px var(--hot-glow); }
+.sv-item.is-on b { color: var(--text); }
+.sv-item.is-on .sv-led { background: var(--hot); box-shadow: 0 0 10px var(--hot); }
+.sv-item.is-off { opacity: 0.45; cursor: default; }
+.sv-menu.sv-row .sv-item { min-width: calc(180px * var(--ui)); }
+.sv-value { display: flex; align-items: center; gap: calc(8px * var(--ui)); font: 700 calc(16px * var(--ui)) var(--font-title); color: var(--text); }
+.sv-value b { min-width: 5.2em; text-align: center; font: inherit; color: var(--led); text-shadow: 0 0 8px var(--led-glow); }
+.sv-arrow { color: var(--steel-400); font-size: 0.8em; }
+.sv-item.is-on .sv-arrow { color: var(--hot); }
+.sv-ledbar { display: flex; gap: 2px; }
+.sv-ledbar i { width: calc(6px * var(--ui)); height: calc(14px * var(--ui)); background: var(--steel-700); }
+.sv-ledbar i.is-lit { background: var(--led); box-shadow: 0 0 6px var(--led-glow); }
+.sv-note { font-size: calc(13px * var(--ui)) !important; color: var(--muted) !important; }
+
+/* Armory placeholder. */
+.sv-guns { display: grid; grid-template-columns: 1fr 1fr; gap: calc(10px * var(--ui)); margin-top: calc(12px * var(--ui)); text-align: left; }
+.sv-gun-card { padding: calc(10px * var(--ui)) calc(12px * var(--ui)); background: var(--screen); border: 1px solid var(--line); border-top: calc(3px * var(--ui)) solid currentColor; }
+.sv-gun-card.sv-xung { color: var(--xung); }
+.sv-gun-card.sv-tia { color: var(--tia); }
+.sv-gun-card header b { font: 700 calc(18px * var(--ui)) var(--font-title); letter-spacing: 0.16em; margin-right: 8px; }
+.sv-gun-card header small { font: 600 calc(12px * var(--ui)) var(--font-battle); color: var(--muted); }
+.sv-gun-card p { margin: 6px 0 0 !important; font-size: calc(13px * var(--ui)) !important; color: var(--soft) !important; }
+.sv-learning { margin: calc(12px * var(--ui)) 0 0; padding-left: 1.2em; text-align: left; font: 500 calc(13px * var(--ui)) var(--font-battle); color: var(--soft); }
+
+/* Results. */
+.sv-end.is-lost h1 { color: var(--danger); }
+.sv-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
+.sv-stats div { padding: 10px 6px; background: var(--screen); border: 1px solid var(--bevel-lo); box-shadow: inset 0 1px 6px var(--shadow); }
+.sv-stats b { display: block; font: 700 calc(26px * var(--ui)) var(--font-title); color: var(--led); text-shadow: 0 0 10px var(--led-glow); }
+.sv-stats small { font: 600 12px var(--font-battle); color: var(--soft); }
+.sv-words { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; text-align: left; max-height: 30vh; overflow: auto; }
+.sv-words li { font: 500 14px var(--font-battle); color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sv-words b { color: var(--text); margin-right: 6px; }
+
+/* Reduced motion (the game's motion setting, src/app/motion.ts): no scaling bumps or blinking; the banner only fades. */
+[data-motion="reduced"] .sv-kills b.is-bump, [data-motion="reduced"] .sv-dot, [data-motion="reduced"] .sv-hp.is-low .sv-hp-bar i { animation: none; }
 [data-motion="reduced"] .sv-banner.is-on { animation: sv-banner-fade 2.2s ease-out forwards; }
 @keyframes sv-banner-fade { 0% { opacity: 0; transform: translate(-50%, 0); } 10% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 0); } }

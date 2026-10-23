@@ -6,7 +6,7 @@
  * squashes them (src/kit/feedback/reaction.ts), all per-instance numbers with no
  * extra draw call. A missing model (a clean clone has no local GLBs) is
  * replaced by a shape made in code. Soft dark spots under each foe keep the
- * crowd readable on the glass.
+ * crowd readable on the deck. Every kind wears the "Bầy Hố Đen" layer below.
  */
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
@@ -30,23 +30,66 @@ const LOOK = [
 const CAPACITY = [STORE.foes, 256];
 const FAR_GROW = 0.2;
 
+/**
+ * "Bầy Hố Đen", the horde's shared material layer (one new faction from the
+ * borrowed models): the body goes dark and dull (its own shading and
+ * silhouette kept), energy veins run through it and pulse per foe (hot orange
+ * in the swarm, electric blue in the elites), a black rim drinks the light
+ * with a hot hairline just inside it (light bent round an event horizon),
+ * and each foe is pulled out of shape a little, slowly (gravity: a stretch in
+ * its instance matrix, free). The vein field is worked out per vertex and
+ * interpolated (a crowd of 700 overdraws its pixels several times). The hit
+ * flash (white hot) and a hurt elite's red glow still read through all of it.
+ */
 const STATE_HEAD = /* glsl */ `
 attribute vec4 aState;
 varying vec4 vState;
+varying float vVein;
+uniform float uTime;
+uniform float uUnit;
+`;
+const STATE_VERTEX = /* glsl */ `
+#include <begin_vertex>
+vState = aState;
+// Veins: where a sum of wavy sines through the body crosses zero.
+vec3 bhP = position * uUnit * 1.55;
+vVein = sin(bhP.x * 9.0 + sin(bhP.y * 7.0 + uTime * 0.9) * 1.8) + sin(bhP.y * 8.0 + sin(bhP.z * 6.0 - uTime * 0.7) * 1.6) + sin(bhP.z * 10.0 + sin(bhP.x * 5.0) * 1.7);
 `;
 const STATE_FRAGMENT_HEAD = /* glsl */ `
 varying vec4 vState;
-uniform vec3 uRim;
+varying float vVein;
+uniform float uTime;
+uniform vec3 uBody;
+uniform vec3 uVein;
+uniform vec3 uHairline;
+uniform float uVeinGain;
 `;
 const STATE_COLOR = /* glsl */ `
 #include <emissivemap_fragment>
-// x: hit flash (white hot), y: hurt (scouts darken and glow red), z: spawn fade-in.
-float rim = pow(1.0 - abs(normalize(vNormal).z), 2.0);
-totalEmissiveRadiance += uRim * rim * 0.6;
-totalEmissiveRadiance += vec3(1.0, 0.25, 0.3) * vState.y * 0.6;
+// x: hit flash (white hot), y: hurt (elites glow red), w: the foe's own phase.
+totalEmissiveRadiance *= 0.2;
+float bhRim = 1.0 - abs(dot(normalize(normal), normalize(vViewPosition)));
+float bhLuma = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+diffuseColor.rgb = mix(diffuseColor.rgb, uBody * (0.5 + bhLuma), 0.88);
+float bhVein = smoothstep(0.34, 0.0, abs(vVein));
+float bhPulse = 0.6 + 0.4 * sin(uTime * 3.4 + vState.w * 6.283);
+vec3 bhVeinColor = mix(uVein, vec3(2.4, 0.5, 0.3), vState.y);
+totalEmissiveRadiance += bhVeinColor * bhVein * bhPulse * uVeinGain * (1.0 + vState.y);
+totalEmissiveRadiance += uHairline * smoothstep(0.5, 0.72, bhRim) * (1.0 - smoothstep(0.76, 0.9, bhRim));
 diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), vState.x * 0.85);
 totalEmissiveRadiance += vec3(2.6, 2.4, 2.2) * vState.x;
+totalEmissiveRadiance += vec3(1.0, 0.25, 0.3) * vState.y * 0.4;
 `;
+const STATE_OUT = /* glsl */ `
+// The rim drinks the light (never the hit flash).
+outgoingLight *= 1.0 - smoothstep(0.55, 0.9, bhRim) * 0.92 * (1.0 - vState.x);
+#include <opaque_fragment>
+`;
+/** Per kind: body tint, vein colour (above 1 blooms), hairline, vein strength. */
+const FACTION = [
+  { body: new THREE.Color(0.075, 0.07, 0.07), vein: new THREE.Color(2.2, 0.48, 0.07), hairline: new THREE.Color(0.75, 0.22, 0.04), gain: 1 },
+  { body: new THREE.Color(0.065, 0.075, 0.09), vein: new THREE.Color(0.3, 0.95, 2.4), hairline: new THREE.Color(0.75, 0.22, 0.04), gain: 1.1 },
+] as const;
 
 function placeholder(kind: number): THREE.BufferGeometry {
   if (kind === KIND.mine) {
@@ -117,7 +160,8 @@ export class Crowd {
   readonly loaded: boolean[] = [false, false];
   private readonly layers: Layer[] = [];
   private readonly shadows: THREE.InstancedMesh;
-  private readonly rim = { value: new THREE.Color("#ff7ad9") };
+  /** Shared clock of the horde's material (seconds). */
+  private readonly time = { value: 0 };
   private readonly matrix = new THREE.Matrix4();
   private readonly quat = new THREE.Quaternion();
   private readonly euler = new THREE.Euler(0, 0, 0, "YXZ");
@@ -126,7 +170,7 @@ export class Crowd {
   private readonly sample = new Float32Array(5);
 
   constructor(scene: THREE.Scene) {
-    for (const kind of [KIND.mine, KIND.scout]) this.layers.push(this.makeLayer(kind, placeholder(kind), new THREE.MeshStandardMaterial({ color: kind === KIND.mine ? "#ff6fcf" : "#7fe8ff", roughness: 0.35, metalness: 0.4, emissive: kind === KIND.mine ? "#5a0f44" : "#0f3a52" })));
+    for (const kind of [KIND.mine, KIND.scout]) this.layers.push(this.makeLayer(kind, placeholder(kind), new THREE.MeshStandardMaterial({ color: kind === KIND.mine ? "#4a3a32" : "#323a44", roughness: 0.45, metalness: 0.5 })));
     const spot = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
     this.shadows = new THREE.InstancedMesh(spot, new THREE.MeshBasicMaterial({ map: textures().soft, color: "#000000", transparent: true, opacity: 0.55, depthWrite: false }), STORE.foes);
     this.shadows.count = 0;
@@ -158,12 +202,22 @@ export class Crowd {
     geometry.translate(-centre.x, -centre.y, -centre.z);
     const size = box.getSize(new THREE.Vector3());
     if (geometry.getAttribute("normal") === undefined) geometry.computeVertexNormals();
-    material.onBeforeCompile = (shader) => {
-      shader.uniforms.uRim = this.rim;
-      shader.vertexShader = STATE_HEAD + shader.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\nvState = aState;");
-      shader.fragmentShader = STATE_FRAGMENT_HEAD + shader.fragmentShader.replace("#include <emissivemap_fragment>", STATE_COLOR);
+    const unit = 1 / Math.max(size.x, size.y, size.z, 0.001);
+    const faction = FACTION[kind]!;
+    const uniforms = {
+      uTime: this.time,
+      uUnit: { value: unit },
+      uBody: { value: faction.body },
+      uVein: { value: faction.vein },
+      uHairline: { value: faction.hairline },
+      uVeinGain: { value: faction.gain },
     };
-    material.customProgramCacheKey = () => "survival-crowd-v1";
+    material.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, uniforms);
+      shader.vertexShader = STATE_HEAD + shader.vertexShader.replace("#include <begin_vertex>", STATE_VERTEX);
+      shader.fragmentShader = STATE_FRAGMENT_HEAD + shader.fragmentShader.replace("#include <emissivemap_fragment>", STATE_COLOR).replace("#include <opaque_fragment>", STATE_OUT);
+    };
+    material.customProgramCacheKey = () => "last-line-horde-v1";
     const capacity = CAPACITY[kind]!;
     const mesh = new THREE.InstancedMesh(geometry, material, capacity);
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -180,6 +234,7 @@ export class Crowd {
   /** Writes every live foe into its kind's instances; `now` in seconds (wall clock, for the reactions). */
   update(w: World, now: number, lead: number): void {
     const F = w.foes;
+    this.time.value = now;
     for (const layer of this.layers) layer.count = 0;
     let shadows = 0;
     for (let s = 0; s < F.top; s += 1) {
@@ -199,7 +254,9 @@ export class Crowd {
       this.euler.set(0.22 + Math.min(0.25, speed * 0.06) + Math.sin(now * 3 + phase) * 0.06, yaw * 0.6, -vx * 0.18 + Math.sin(now * 2.1 + phase) * 0.08);
       this.quat.setFromEuler(this.euler);
       const base = layer.size * (kind === KIND.mine ? 0.92 + (F.phase[s]! % 0.17) : 1) * (1 + FAR_GROW * Math.min(1, Math.max(0, F.z[s]! / FIELD.gateZ)));
-      this.scale.set(base * r[4]!, base * r[3]!, base * r[4]!);
+      // Gravity pulls each foe out of shape a little, slowly, out of step with the others.
+      const pull = Math.sin(now * 2.3 + phase) * 0.045;
+      this.scale.set(base * r[4]! * (1 - pull), base * r[3]! * (1 + pull * 0.5), base * r[4]! * (1 + pull));
       const bob = Math.sin(now * (kind === KIND.mine ? 5.2 : 2.6) + phase) * 0.12;
       const x = F.x[s]! + vx * lead;
       const z = F.z[s]! + vz * lead;
@@ -210,7 +267,7 @@ export class Crowd {
       layer.state[o] = r[0]!;
       layer.state[o + 1] = kind === KIND.scout ? 1 - F.hp[s]! / FOES[kind]!.hp : 0;
       layer.state[o + 2] = 0;
-      layer.state[o + 3] = 0;
+      layer.state[o + 3] = F.phase[s]!;
       if (shadows < STORE.foes) {
         const spot = FOES[kind]!.radius * 2.6;
         this.matrix.compose(this.pos.set(x, 0.03, -z), this.quat.identity(), this.scale.set(spot, 1, spot));

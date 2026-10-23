@@ -12,14 +12,14 @@ import { FIELD } from "../content/rules";
 
 export type Pilot = "vanguard" | "draconis";
 export const PILOT_COLORS: Record<Pilot, { shot: THREE.Color; beam: THREE.Color }> = {
-  vanguard: { shot: new THREE.Color("#38d4ff"), beam: new THREE.Color("#ffb347") },
+  vanguard: { shot: new THREE.Color("#3db8ff"), beam: new THREE.Color("#ff8c32") },
   draconis: { shot: new THREE.Color("#ff8a3a"), beam: new THREE.Color("#ff5a1f") },
 };
 
 function stand(): THREE.Group {
   const group = new THREE.Group();
-  const hull = new THREE.Mesh(new THREE.ConeGeometry(0.55, 2.4, 6).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: "#c9d6ff", metalness: 0.7, roughness: 0.3, emissive: "#0d2a4a" }));
-  const wings = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.12, 0.9), new THREE.MeshStandardMaterial({ color: "#5a6bb5", metalness: 0.6, roughness: 0.4 }));
+  const hull = new THREE.Mesh(new THREE.ConeGeometry(0.55, 2.4, 6).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: "#aeb8c2", metalness: 0.75, roughness: 0.35, emissive: "#0d2a4a" }));
+  const wings = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.12, 0.9), new THREE.MeshStandardMaterial({ color: "#46525e", metalness: 0.7, roughness: 0.45 }));
   wings.position.z = 0.4;
   const glow = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.6, 2, 3) }));
   glow.position.z = 1.15;

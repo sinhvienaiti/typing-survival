@@ -1,18 +1,23 @@
 /**
  * The keyboard (docs/BUILD_S0.md §1): a letter types (a `key`
  * command), Backspace takes one back; command keys are never letters
- * (Escape pauses, Enter starts or restarts, Tab says the word again).
+ * (Escape pauses or goes back, Enter takes a menu item, Tab says the word again).
  * Composing presses of a Vietnamese input method, held keys, Ctrl/Alt/Meta
  * and synthetic presses (unless the dev flag allows them) type nothing;
  * a sign of an input method at work asks the player to switch it off (for
- * a few seconds after the last sign: ImeNotice). A hidden tab or a window
+ * a few seconds after the last sign: ImeNotice). Arrow keys move through the
+ * menus (held, they repeat). A hidden tab or a window
  * that loses focus pauses the fight (installAutoPause): keys cannot reach
  * it there, and the horde would not wait.
  */
 import { isComposingKey, typedLetter, vietnameseInputSign } from "../kit/input";
 import type { CommandBody } from "../sim/world";
 
-export type KeyHandlers = { send(command: CommandBody): void; act(action: "pause" | "enter" | "repeat"): void; onVietnamese(): void; allowUntrusted: boolean };
+export type KeyAction = "pause" | "enter" | "repeat" | "up" | "down" | "left" | "right";
+export type KeyHandlers = { send(command: CommandBody): void; act(action: KeyAction): void; onVietnamese(): void; allowUntrusted: boolean };
+
+/** Arrow keys move through the menus (held keys repeat there). */
+const ARROWS: Readonly<Record<string, KeyAction>> = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
 
 export function installKeys(target: Window, keys: KeyHandlers): void {
   target.addEventListener("keydown", (event) => {
@@ -26,9 +31,13 @@ export function installKeys(target: Window, keys: KeyHandlers): void {
       keys.send({ t: "key", letter: letter.charCodeAt(0) - 97 });
       return;
     }
+    const arrow = ARROWS[event.code];
     if (event.code === "Backspace") {
       event.preventDefault();
       keys.send({ t: "back" });
+    } else if (arrow !== undefined) {
+      event.preventDefault();
+      keys.act(arrow);
     } else if (event.repeat) return;
     else if (event.code === "Escape") keys.act("pause");
     else if (event.code === "Enter" || event.code === "NumpadEnter") {

@@ -1,0 +1,89 @@
+/*
+ * Tuyến Cuối, theme "Vành Chân Trời": an old steel station holding the last
+ * corridor at the rim of a black hole. Every colour, font and surface of the
+ * DOM UI is a variable here; survival.css (the HUD and the screens) only uses
+ * them. The 3D side reads the same palette from src/view/theme.ts.
+ * Palette: dark steel, hot orange, electric blue. The kit's four semantic
+ * colours (danger, urgent, money, typing) keep their meaning.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Steel, darkest to lightest. */
+  --steel-950: #07090b;
+  --steel-900: #0d1013;
+  --steel-850: #121519;
+  --steel-800: #181c21;
+  --steel-700: #232930;
+  --steel-600: #303840;
+  --steel-500: #48525c;
+  --steel-400: #69747e;
+  --steel-300: #929ca5;
+  --steel-200: #bcc4cb;
+
+  /* Hot orange (the horde, the accretion glow, alarms) and electric blue (power, the guns' charge). */
+  --hot: #ff7a1f;
+  --hot-hi: #ffb15c;
+  --hot-lo: #9c3c0a;
+  --hot-glow: rgba(255, 122, 31, 0.42);
+  --volt: #3db8ff;
+  --volt-hi: #a6e0ff;
+  --volt-glow: rgba(61, 184, 255, 0.38);
+
+  /* Semantic colours shared by every game (src/kit/ui tokens). */
+  --danger: #ff4a4a;
+  --danger-glow: rgba(255, 74, 74, 0.55);
+  --urgent: #ffb020;
+  --typing: #7ff5e0;
+
+  /* Guns: Xung is electric, Tia is heat. */
+  --xung: var(--volt);
+  --xung-glow: var(--volt-glow);
+  --tia: var(--hot);
+  --tia-glow: var(--hot-glow);
+
+  /* Text. */
+  --text: #f4f1eb;
+  --soft: #cdd2d6;
+  --muted: #98a1a9;
+  --ink: #050607;
+
+  /* LED readouts (clock, kill counter): amber segments, the unlit ones faintly behind. */
+  --led: #ffb347;
+  --led-glow: rgba(255, 160, 50, 0.55);
+  --led-ghost: rgba(255, 179, 71, 0.09);
+
+  /* Surfaces. Panels keep an alpha below 1 (the boot scenario measures contrast through it). */
+  --page: #050608;
+  --panel: rgba(19, 22, 26, 0.97);
+  --panel-raised: rgba(37, 43, 50, 0.97);
+  --screen: rgba(7, 9, 11, 0.97);
+  --line: rgba(150, 165, 178, 0.24);
+  --line-strong: rgba(190, 200, 210, 0.42);
+  --bevel-hi: rgba(255, 255, 255, 0.075);
+  --bevel-lo: rgba(0, 0, 0, 0.6);
+  --shadow: rgba(0, 0, 0, 0.55);
+  --veil: rgba(4, 5, 7, 0.66);
+  --veil-edge: rgba(0, 0, 0, 0.9);
+  --flash-load: rgba(255, 236, 214, 0.3);
+  --flash-perfect: rgba(127, 245, 224, 0.42);
+  --track: rgba(255, 255, 255, 0.07);
+  --banner-band: rgba(10, 11, 13, 0.92);
+  --notice: rgba(122, 18, 18, 0.95);
+
+  /* Fonts: Chakra Petch for titles, labels and readouts; Be Vietnam Pro for every word of the fight. */
+  --font-title: "Chakra Petch", "Be Vietnam Pro", system-ui, sans-serif;
+  --font-battle: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-ipa: "Be Vietnam Pro", "Segoe UI", "Noto Sans", system-ui, sans-serif;
+
+  /* Surfaces drawn in CSS: brushed steel, rivets, hazard stripes, LED segments. */
+  --brushed: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 3px, rgba(0, 0, 0, 0.05) 3px 4px);
+  --plate-light: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 38%, rgba(0, 0, 0, 0.16));
+  --rivet: radial-gradient(circle at 50% 50%, #aab4bc 0 1px, #5b656e 1.6px, #15191d 2.6px, transparent 3.2px);
+  --rivet-size: 8px 8px;
+  --hazard: repeating-linear-gradient(-45deg, var(--hot) 0 7px, var(--ink) 7px 14px);
+  --hazard-volt: repeating-linear-gradient(-45deg, var(--volt) 0 7px, var(--ink) 7px 14px);
+  --hazard-dim: repeating-linear-gradient(-45deg, rgba(255, 122, 31, 0.55) 0 7px, rgba(5, 6, 7, 0.8) 7px 14px);
+  --segments: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px);
+  --title-glow: 0 0 22px rgba(255, 122, 31, 0.45), 0 2px 0 rgba(0, 0, 0, 0.9);
+}
