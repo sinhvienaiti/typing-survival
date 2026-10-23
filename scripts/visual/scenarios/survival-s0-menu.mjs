@@ -17,7 +17,8 @@ export default async function (page) {
   await page.eval("localStorage.removeItem('survival.settings'); true");
   const read = () => page.eval(sv("return { mode: t.mode(), screen: t.screen(), tick: t.state().tick, sel: document.querySelector('.sv-item.is-on b')?.textContent ?? null, items: [...document.querySelectorAll('.sv-item')].map((n) => n.querySelector('b').textContent + (n.classList.contains('is-off') ? '(off)' : '') + (n.querySelector('.sv-value b') ? '=' + n.querySelector('.sv-value b').textContent : '')) };"));
   const log = [];
-  await key(page, "Enter"); await page.sleep(1500); log.push(["started", await read()]);
+  // Trận thử is the second item (S1: Hành trình first).
+  await key(page, "ArrowDown"); await key(page, "Enter"); await page.sleep(1500); log.push(["started", await read()]);
   await key(page, "Escape"); await page.sleep(200); log.push(["paused", await read()]);
   shots.push(await page.shot(out("survival-s0-menu-pause-" + size + ".png")));
   await key(page, "ArrowDown"); await key(page, "ArrowDown"); await key(page, "Enter"); await page.sleep(300); log.push(["title-from-pause", await read()]);

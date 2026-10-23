@@ -101,7 +101,8 @@ export default async function (page) {
   await page.goto(base + "/index.html?seed=1", { settle: 300 });
   const titleReady = await ready(page);
   const fresh = await menuState(page);
-  // The mode: ↓ to "Chế độ", → twice: Thử thách, then back to Cân bằng… we leave it on Thử thách for the picture.
+  // The mode: ↓ ↓ to "Chế độ" (S1: Hành trình, Trận thử first), → twice: Thử thách, then back to Cân bằng… we leave it on Thử thách for the picture.
+  await key(page, "ArrowDown");
   await key(page, "ArrowDown");
   await key(page, "ArrowRight");
   await page.sleep(150);
@@ -115,6 +116,7 @@ export default async function (page) {
   await page.eval("localStorage.setItem('survival.skill', " + JSON.stringify(JSON.stringify(PROFILE)) + "); true");
   await page.goto(base + "/index.html?seed=1", { settle: 300 });
   await ready(page);
+  await key(page, "ArrowDown");
   await key(page, "ArrowDown");
   await key(page, "ArrowDown");
   await key(page, "Enter");

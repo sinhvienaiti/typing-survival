@@ -1,7 +1,8 @@
-// Tuyến Cuối S0 (docs/BUILD_S0.md §9): the page builds; the title screen
-// "Tuyến Cuối" (keyboard menu: Bắt đầu, Chơi tiếp, Chế độ, Hồ sơ gõ, Cài đặt,
-// Kho súng; ↓ skips the disabled "Chơi tiếp", ↑ comes back; the title font has every Vietnamese letter; a key starts the audio
-// and the music), then Enter, the HUD with its health bar, clock and kill counter, and two gun
+// Tuyến Cuối S0 (docs/BUILD_S0.md §9; S1 title: Hành trình first): the page
+// builds; the title screen "Tuyến Cuối" (keyboard menu: Hành trình, Trận thử,
+// Chơi tiếp, Chế độ, Hồ sơ gõ, Cài đặt, Kho súng; ↓ ↓ skips the disabled
+// "Chơi tiếp", ↑ comes back; the title font has every Vietnamese letter; a key
+// starts the audio and the music), then Trận thử (↓ Enter), the HUD with its health bar, clock and kill counter, and two gun
 // slots that each show a word (≥ 26 px at 1280×720, contrast ≥ 7 : 1 on the
 // panel) with its meaning; the learning frame; no console error. S0 review:
 // a window that loses focus pauses the fight (Esc goes on); with the screen
@@ -35,6 +36,7 @@ export default async function (page) {
   })()`);
   const menu = async () => page.eval("[...document.querySelectorAll('.sv-overlay.is-on .sv-item')].map((n) => ({ text: n.querySelector('b').textContent, on: n.classList.contains('is-on'), off: n.classList.contains('is-off') }))");
   const menuAtStart = await menu();
+  await page.key("ArrowDown", { code: "ArrowDown" });
   await page.key("ArrowDown", { code: "ArrowDown" });
   const menuDown = await menu();
   await page.key("ArrowUp", { code: "ArrowUp" });
@@ -101,7 +103,7 @@ export default async function (page) {
     ready,
     startCardShown: startCard?.mode === "start" && /TUYẾN CUỐI/.test(startCard.card),
     titleFontHasEveryLetter: font.loaded && font.missing.length === 0 && /Chakra Petch/.test(font.family),
-    titleMenu: menuAtStart.length === 6 && menuAtStart[0].on && menuAtStart[1].off && menuAtStart[2].text === "Chế độ" && menuAtStart[3].text === "Hồ sơ gõ" && menuDown[2].on && menuUp[0].on,
+    titleMenu: menuAtStart.length === 7 && menuAtStart[0].on && menuAtStart[0].text === "Hành trình" && menuAtStart[1].text === "Trận thử" && menuAtStart[2].off && menuAtStart[3].text === "Chế độ" && menuAtStart[4].text === "Hồ sơ gõ" && menuDown[3].on && menuUp[1].on,
     audioStartsOnAKey: soundsBefore.played["ui.move"] >= 1 && sounds.ready && sounds.played["ui.select"] >= 1 && sounds.played["music.calm"] === 1,
     enterStarts: hud.mode === "play",
     twoSlotsWithWords: hud.slots.length === 2 && hud.slots.every((slot, k) => slot.word === hud.sim[k].text && slot.word.length >= 3 && slot.meaning.length > 0),
