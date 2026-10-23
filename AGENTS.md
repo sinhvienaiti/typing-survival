@@ -50,5 +50,7 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   sound id has an entry in `docs/audio/THEME_SOUND_LIST.md`; add one there
   with each new id.
 - Each update gets `docs/changelog/<date>-<topic>.md` (Vietnamese).
+- Next milestone: S1 "Chương 1 · Hành Lang VC-7" (`docs/BUILD_S1.md`: guns
+  and counters, stage rules, chapter, balance gates G1–G8, rounds R1–R3).
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.
