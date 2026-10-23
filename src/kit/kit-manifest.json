@@ -13,10 +13,16 @@
     "learning",
     "three",
     "tools",
-    "feedback"
+    "feedback",
+    "audio"
   ],
   "files": {
     "README.md": "94882f021f43e84a332911e43b07fa0e8ed7a7706cf36b82d3e1506ff9eaff0f",
+    "audio/dragon-voice.ts": "e2ad990904887af3e793721e3512669885b3847975547d06e407b8a817fcfb47",
+    "audio/index.ts": "dcad0590f87e8ad7b26a21ee95e97401b732ad8ba82078c87fce2ff2153aab80",
+    "audio/mix.ts": "ea84d2fdbb507ba8c8db3db3e3ad984d0e51e98434ad1efb97b70751c82a3bfe",
+    "audio/scene-audio.ts": "d34d458a92d4a68498d4174f3532770bd9ae33d2acfd49bde9bfb4ef0d471f23",
+    "audio/util.ts": "4cf81c46e98fe587f92d834cd74aeefe2b9fe0ff3326a33e83786406c25153a5",
     "feedback/audio-cues.ts": "c9a441a04d71df60fac26d64b0de858c8727303aaa567abd69e10523ae56213a",
     "feedback/debris.ts": "9f026e12f05eb778e6cb7330ca360ab95c3aa221074e6212e2988f3280adaf3c",
     "feedback/hitstop.ts": "a310135bb45553f2cbac7bff20a74ec9d9668928a81c9defa602e3a4582a7ea6",
