@@ -42,12 +42,13 @@ Model sẵn có của họ `rainbow` qua `/assets/space-typing/models/`: `mine`,
 | Thưởng "Vàng" và Chợ | **Bỏ Vàng khỏi S1.** Vàng và Chợ đi cùng nhau ở S1b | Có vàng mà không có chỗ tiêu thì không có quyết định nào |
 | Cửa có biểu tượng thưởng của **ải sau** (kiểu Hades) | Chọn cửa xong **nhận thưởng ngay**, rồi vào ải kế | Các ải trong chương cố định, nên chọn cửa chỉ là chọn thưởng. Hoãn thưởng chỉ thêm việc ghi sổ |
 | "Sửa: hồi 30 % máu", "Lõi: +máu tối đa" | **Sửa:** +1 Lõi Trạm. **Lõi:** +10 Giáp tối đa | Theo nghĩa mới của giáp ở trên |
-| Thử thách: không có Mốc | **Mọi chế độ đều có Mốc** ở S1 | Nếu không có Mốc: ở Thử thách mỗi ải thắng 50–75 %, có 3 Lõi, thì qua cả chương lần đầu chỉ khoảng 15 % (mục 11.4). "Không Mốc" sẽ là một tùy chọn Độ Sâu Hố Đen (S4b) |
+| Thử thách: không có Mốc | **Mọi chế độ đều có Mốc** ở S1 | Ở Thử thách mỗi ải thắng 50–75 %, có 3 Lõi, nên chỉ khoảng 15–45 % lượt chương qua được mà không vỡ (mục 11.4, G1). Không có Mốc thì mỗi lần vỡ, kể cả ở ải 9, đều phải đi lại từ ải 1: 25–30 phút mất trắng, dễ nản. "Không Mốc" sẽ là một tùy chọn Độ Sâu Hố Đen (S4b) |
 | Thư viện bản đầu: 4 Mục tiêu, 4 Hiểm họa, 3 Luật học | **3 Mục tiêu + Boss, 3 Hiểm họa, 3 Luật học.** Chỉ làm những gì Chương 1 dạy | Chương 1 dạy mỗi ải một thứ mới (§4.0b "dạy dần"). Món nào chưa dùng ở Chương 1 thì làm cùng Chương 2–3 |
 | 4 súng (Xung, Tán, Ray, Pháo Sao) | **5 súng**: giữ Tia của S0 | Tia đã có, đã cân bằng, và là súng cắt cụm tốt nhất |
 | Boss bộ phận gắn từ (S4) | **Boss 3 pha và từ chặn** (một từ báo trước để chặn đòn lớn). Chưa có bộ phận gắn từ | Bộ phận gắn từ cần hệ quái gắn từ (S4). Từ chặn thì đã dùng được yếu tố 9 "phản xạ báo trước" của BALANCE |
 | Thuộc tính tinh anh "Giáp" | Đổi tên thành **"Bọc Thép"** (vẫn HP ×2) | Tránh trùng với thanh GIÁP của tuyến và chỉ số **Vỏ** mới của quái |
 | Ô súng tối đa 6, mở dần | S1: **2 bến**, mở **bến 3** khi qua Mốc | Chữ ô súng phải ≥ 26 px ở 1280×720. Bố cục 4 cột vừa với 3 bến và khung học |
+| Trâu: "cần Ray, Tia, nguyên tố phá giáp" (§4.5) | Khắc Vỏ là **Ray**. Pháo Sao và Xung đã Rèn là lối thứ hai. **Tia kém** với Vỏ | Vỏ trừ ở mỗi đòn, mà Tia gây 6 mỗi nhịp, nên gần như mất hết sát thương. Tia lại quét từ cụm này sang cụm kia, không đứng trên một con. Nguyên tố phá giáp để S2. Vì Trâu có mặt ở 7 trong 9 ải thường, nguy cơ "Ray bắt buộc" có cổng riêng: G2(d) |
 | Kho Vũ Khí, mở súng (S4b) | Cả 5 súng **mở sẵn** để chọn đầu chương | Chưa có Trạm Mẹ |
 
 ## 2. Phạm vi
@@ -55,7 +56,7 @@ Model sẵn có của họ `rainbow` qua `/assets/space-typing/models/`: `mine`,
 | Trong S1 | Ngoài S1 (để sau) |
 |---|---|
 | Súng mới: **Tán, Ray, Pháo Sao**, mỗi súng một kiểu băng đạn, có đủ đầu nòng, đạn, va chạm, hạ | Nhánh băng đạn khi Rèn, Ấn, Song Ấn, tiến hóa (S1b); ô nguyên tố (S2) |
-| Bến 2–3, chọn 2 súng đầu chương, Rèn cấp 1–3, "Băng Hoàn hảo xuyên Vỏ" | Bến 4–6, Kho Vũ Khí, cấp vĩnh viễn (S4b) |
+| Bến 2–3, chọn 2 súng đầu chương, Rèn cấp 1–3, "Băng Chuẩn xuyên Vỏ" | Bến 4–6, Kho Vũ Khí, cấp vĩnh viễn (S4b) |
 | Quái mới: **Trâu** (Vỏ), **Khiên**, **Tách**; biến thể **Đầu Đàn**; **Tổ** (vật thể đẻ quái); boss **Cai Ngục** | 9 hành vi còn lại, quái gắn từ, tinh nhuệ theo biến thể (S4) |
 | Mục tiêu: **Trụ vững, Săn Đầu Đàn, Phá Tổ, Boss** | Giữ trạm, hộ tống, nhặt tinh thể, gỡ bom bằng từ, chặn hai đầu, Quét Triều (S1b, S4) |
 | Hiểm họa: **Vết nứt, Bão ion, Giếng hấp dẫn** | Mưa thiên thạch, sương tinh vân, Lóa chân trời, tường di động… (S1b, S4) |
@@ -70,8 +71,8 @@ Model sẵn có của họ `rainbow` qua `/assets/space-typing/models/`: `mine`,
 - **Kit:** không sửa tay `src/kit`. S1 dự kiến **không cần đổi kit**. Nếu thật sự cần (ví dụ một kiểu số mới trong `feedback/numbers`), sửa ở `shared/game-kit` kèm test, giữ tương thích ngược, rồi chạy `node scripts/sync-game-kit.mjs --target games/typing-survival` ở repo cha. **Không đụng `shared/game-kit/typing`**: một workflow khác đang sửa module đó, và phần gõ của game này nằm ở `src/sim/words.ts`.
 - **Không media trong Git.** Không dựng model nhân vật, quái, công trình, đồ vật bằng mã. Quái, tổ, boss dùng model của thư viện Space (thiếu thì dùng khối giữ chỗ như S0). Khiên, vết nứt, giếng, tia, nổ là **hiệu ứng** bằng shader và hạt (được phép).
 - **Phím không bao giờ bị nuốt**, kể cả khi đang dừng hình, khi bến bị Bão ion làm tê, hay khi đang có từ chặn.
-- **Học luôn rõ nhất:** khung học và các bến là DOM ngoài canvas, không rung. Chữ của từ trên bến ≥ 26 px ở 1280×720, tương phản ≥ 7 : 1. 0 số sát thương đè lên vùng cấm.
-- Không đổi hồ sơ gõ, nhịp k, bộ điều nhịp của kit. Game chỉ cấp **bảng bậc theo ải**.
+- **Học luôn rõ nhất:** khung học và các bến là DOM ngoài canvas, không rung. Chữ của từ trên bến **32 px như S0** ở 1280×720; chỉ từ dài mới được tự co, và không dưới 26 px. Tương phản ≥ 7 : 1. Khung học rộng 420 px và nằm giữa đáy như S0. 0 số sát thương đè lên vùng cấm.
+- Không sửa kit `balance` (hồ sơ gõ, `paceK`, bộ điều nhịp). Game chỉ ghép các hàm có sẵn: `paceK`, `familiarityMix`, `telegraphScale`, và mẫu `telegraph` của `updateSkill`. Game cấp **bảng bậc theo ải** và hệ số học ρ (mục 11.1).
 - Chú thích trong mã bằng tiếng Anh, ngắn. Tài liệu tiếng Việt có dấu. Mỗi đợt (R1, R2, R3) có `docs/changelog/<ngày>-s1-r<n>.md`.
 - Máy 16 GB RAM, nhiều agent chạy cùng lúc: mỗi lần chỉ **một** dev server (`npx vite --host 127.0.0.1 --port 3047 --strictPort`) và **một** Chrome. Tắt mọi tiến trình đã mở khi xong. Cổng 3007 vẫn là cổng mặc định của game.
 
@@ -95,9 +96,10 @@ Màn chính ─▶ Hành Trình ─▶ Bản đồ Chương 1 ─▶ Nạp súng
 | **Lõi Trạm** | Số lần được thua trong chương: Thư giãn 4, Cân bằng 3, Thử thách 3. Thua một ải thì −1 Lõi và chơi lại ải đó với seed mới, cùng bộ súng. Còn 0 Lõi mà thua nữa thì **chương vỡ** |
 | **Mốc** (ải 5) | Qua ải 5 thì lưu ảnh chụp bộ đồ (súng, cấp, số bến, Giáp tối đa). Chương vỡ sau Mốc thì chơi lại từ ải 6 với ảnh chụp đó, Lõi đầy lại. Chương vỡ trước Mốc thì làm lại từ đầu chương, chọn súng lại |
 | **Bến** | 2 bến từ đầu chương. Qua Mốc thì mở **bến 3** và được chọn ngay 1 trong 3 súng để đặt vào (ngoài phần thưởng của cửa) |
-| **Sao** | Mỗi ải 3 sao: ★ thắng · ★ giáp còn ≥ 50 % Giáp tối đa · ★ độ chính xác ≥ 95 %. Lưu theo ải và chế độ. Ải đã qua chơi lại được (chọn súng tự do, không ảnh hưởng chương) để lấy sao và ôn từ |
+| **Sao** | Mỗi ải 3 sao: ★ thắng · ★ giáp còn ≥ 50 % Giáp tối đa · ★ độ chính xác ≥ 95 % (ải Thiếu chữ và Nghĩa: ≥ 90 %, vì đoán sai một chữ ẩn cũng tính lỗi; sao không được phạt người đang học). Lưu theo ải và chế độ. Ải đã qua chơi lại được (chọn súng tự do, không ảnh hưởng chương) để lấy sao và ôn từ |
+| **Chơi một ải lẻ** (chơi lại lấy sao; ở R1 là mọi ải) | Dùng **bộ đồ tham chiếu** của ải đó (mục 8): số bến, cấp Rèn, Giáp tối đa. Súng chọn trước nhận cấp cao hơn. Như vậy người chơi gặp đúng ải mà ma trận theo ải đã cân, không dễ hơn vì bộ đồ cuối chương, cũng không khó hơn vì súng cấp 1 |
 | **Lưu giữa ải** | `survival.journey` (JSON, phiên bản 1): chương, chế độ, seed chương, ải, lần thử, bộ súng và cấp, số bến, Giáp tối đa, Lõi, sao, ảnh chụp Mốc. Lưu ở màn Chọn cửa và Bảng tin ải. Thoát ở đó thì lần sau "Tiếp tục hành trình" về đúng chỗ |
-| Bỏ dở giữa trận | Tính là thua ải (−1 Lõi). Hồ sơ gõ ghi là "bỏ dở" như S0 (không đổi số đo). Có hỏi lại trước khi thoát |
+| Bỏ dở giữa trận | Tính là thua ải (−1 Lõi). Hồ sơ gõ ghi là "bỏ dở" như S0 (không đổi số đo). Có hỏi lại trước khi thoát. Lúc vào trận, bản lưu ghi cờ `inFight` (ải, lần thử). Đóng tab hay tải lại trang giữa trận thì lần sau tính như bỏ dở. Như vậy không né được việc mất Lõi bằng cách đóng tab. Màn chính báo rõ: "Trận ải n bị bỏ dở: −1 Lõi" |
 
 - **Chế độ** (Thư giãn, Cân bằng, Thử thách) chọn khi bắt đầu chương. Đổi chế độ thì bắt đầu chương mới.
 - **Seed:** seed chương rút một lần khi bắt đầu chương. Seed của ải = hàm trộn (seed chương, số ải, lần thử). Mỗi trận vẫn là một replay riêng có đầu trận đầy đủ.
@@ -105,8 +107,10 @@ Màn chính ─▶ Hành Trình ─▶ Bản đồ Chương 1 ─▶ Nạp súng
 ### 4.2 Bản đồ, bảng tin, nạp súng (DOM, bàn phím trước)
 
 - **Bản đồ chương:** 10 nút trên một đường ray thép. Mỗi nút có biểu tượng mục tiêu, hiểm họa, luật học, sao đã có, và một dấu "MỐC" hoặc "BOSS". Có đèn LED Lõi Trạm và tóm tắt bộ súng (tên, cấp, bến). Người chơi thấy trước cả chương để tính đường.
-- **Bảng tin ải:** tên ải, mục tiêu có số ("Hạ 3 trong 5 Đầu Đàn"), hiểm họa và cách báo trước, luật học, danh sách quái kèm thẻ khắc chế ("Trâu · Vỏ 4 · khắc: Ray, Pháo Sao"). Súng trong bộ đồ khắc được quái nào thì sáng lên; quái chưa có súng khắc thì có dấu cảnh báo vàng. Enter vào trận.
+- **Bảng tin ải:** tên ải, mục tiêu có số ("Hạ 3 trong 5 Đầu Đàn"), hiểm họa và cách báo trước, luật học, danh sách quái kèm thẻ khắc chế lấy từ `COUNTERS` ("Trâu · Vỏ 5 · khắc: Ray · được: Pháo Sao"). Súng trong bộ đồ khắc được quái nào thì sáng lên; quái chưa có súng khắc thì có dấu cảnh báo vàng. Enter vào trận.
 - **Nạp súng** (đầu chương, hoặc khi chơi lại một ải): 5 thẻ súng. Chọn bằng phím 1–5 hoặc ← →, Enter chọn hoặc bỏ chọn, đủ 2 thì Bắt đầu. Mỗi thẻ ghi kiểu băng, tầm, khắc gì, bị gì khắc, độ dài từ ("+1 chữ").
+  - Trên màn có dải **"Chương này gặp gì"**: các quái và hiểm họa của ải 1–5 (ải 6–10 hiện mờ). Mỗi mục có thẻ khắc chế. Bộ 2 súng đang chọn mà chưa khắc được mục nào thì mục đó có dấu cảnh báo vàng. Đây chỉ là gợi ý, không chặn lựa chọn.
+  - Người mới chọn súng khi chưa biết Vỏ là gì. Hai luật sau giữ cho một lựa chọn sai không thành cái bẫy: Trâu đã xuất hiện ở ải 1 (mục 8), và có **cửa bảo hiểm** (mục 9).
 - **Kho súng** ở màn chính (trước đây là giữ chỗ) nay hiện đủ 5 thẻ với số lấy từ `content/guns.ts`.
 
 ## 5. Súng và băng đạn
@@ -122,25 +126,45 @@ Màn chính ─▶ Hành Trình ─▶ Bản đồ Chương 1 ─▶ Nạp súng
 | **Pháo Sao** (mới) | 6 quả trong 3,0 s, bay vòng 0,7 s, nổ bán kính 3 m vào cụm nặng nhất (tính theo HP) ở 8–24 m | 8–24 m | 26 ở tâm, giảm đều còn 13 ở mép | tính đủ | **bỏ qua** (rơi từ trên xuống) | dải E **+1 chữ** | Đánh cụm, đánh toán có khiên, đánh Tổ; vô dụng khi quái đã sát vạch (dưới 8 m) |
 
 - **Vỏ** của quái: mỗi đòn trừ Vỏ, còn ít nhất 1. Ray chỉ tính Vỏ × 0,25.
-- **Chất lượng gõ** (giữ số của S0): Chuẩn (0 lỗi) thì sát thương ×1,06 và chí mạng +4 %. Nhanh (≤ 0,7 thời gian mong đợi) thì tốc bắn ×1,15. **Hoàn hảo** (cả hai) thêm luật mới: **Băng Hoàn hảo xuyên Vỏ**, Vỏ chỉ tính × 0,5 (với Ray là × 0,125). Gõ chuẩn thì đòn sạch hơn, đúng tinh thần "tri thức thành năng lượng". Cổng B4 (chuẩn thắng ẩu) mạnh thêm.
-- **Rèn** (thưởng trong chương): cấp 2 thì sát thương mỗi đòn ×1,2. Cấp 3 thì ×1,4, và súng giữ tối đa **3 băng**. Vì Vỏ trừ thẳng, Rèn có lợi nhất cho súng đòn nhỏ: Xung cấp 3 bắn Trâu được 5,8 mỗi viên thay vì 3.
-- **Độ dài từ:** bảng `LENGTH_BY_E` như S0. Súng nặng (Ray, Pháo Sao) lấy từ **dài hơn 1 chữ**, trần 9 chữ, để băng mạnh phải trả bằng nhiều phím hơn. Mọi bến dùng chung một danh sách "đã dùng" (không lặp từ trước khi hết dải). Chữ đầu của mọi từ đang hiện (các bến và từ chặn) luôn khác nhau.
+- **Tầm với quái to:** với quái có bán kính > 0,8 (Trâu, Đầu Đàn, Tổ, Boss; xem mục 6), quái ở trong tầm khi **một phần thân chạm dải tầm** của súng, không cần tâm nằm trong dải. Tầm xa tính tới mép gần (z − bán kính), tầm gần của Pháo Sao tính tới mép xa (z + bán kính). Quả Pháo Sao rơi vào điểm của thân nằm trong dải.
+  - Nhờ vậy Tán (tới z 8,7) vẫn với được Tổ đứng ở z 10 và boss đứng ở z 8.
+  - Pháo Sao (tầm gần 8 m, tức z 9,7) vẫn đánh được boss ở z 8, vì mép xa của boss ở z 10,6. Nếu chỉ tính tâm thì Pháo Sao bị mù ở cả pha cuối của boss, trái ràng buộc 6 của mục 7.5.
+- **Chất lượng gõ** (giữ số của S0): Chuẩn (0 lỗi) thì sát thương ×1,06 và chí mạng +4 %. Nhanh (≤ 0,7 thời gian mong đợi) thì tốc bắn ×1,15. Luật mới: **Băng Chuẩn xuyên Vỏ**. Băng của từ gõ không lỗi chỉ tính Vỏ × 0,75 (với Ray là × 0,19). Gõ chuẩn thì đòn sạch hơn, đúng tinh thần "tri thức thành năng lượng".
+  - Không gắn luật này với Hoàn hảo (Chuẩn và Nhanh cùng lúc). Lý do: "Nhanh" so với chính E của người chơi, nên chỉ những từ gõ nhanh bất thường mới đạt. Với CV 0,25 thì chỉ khoảng 9 % số từ đạt Nhanh; với CV 0,35 là khoảng 19 %. Ước tính theo phân phối log-normal: bot Chuẩn có ~7 % băng Hoàn hảo, Chậm chắc ~4 %, Ẩu ~8 %. Nếu gắn với Hoàn hảo thì luật thưởng cho người gõ **không đều** và làm B4 yếu đi.
+  - Gắn với Chuẩn thì tỉ lệ băng xuyên Vỏ đi theo độ chính xác: Chậm chắc ~95 %, Chuẩn ~80 %, Ẩu ~48 %. Cổng B4 vì vậy mạnh thêm thật. Hoàn hảo vẫn giữ nghĩa của S0, và có số kiểu `perfect`.
+  - Băng Chuẩn làm Vỏ nhẹ đi với người gõ chuẩn. Vì vậy Vỏ khởi điểm của Trâu là **5**, để G3 vẫn đạt **với băng Chuẩn** (Ray hạ Trâu nhanh ≥ 2× Xung). Tính theo mỗi chữ gõ: Xung có băng Chuẩn còn 3,67 sát thương mỗi viên, khoảng 20 sát thương mỗi chữ; Ray khoảng 40 sát thương mỗi chữ.
+- **Rèn** (thưởng trong chương): cấp 2 thì sát thương mỗi đòn ×1,2. Cấp 3 thì ×1,4, và súng giữ tối đa **3 băng**. Vì Vỏ trừ thẳng, Rèn có lợi nhất cho súng đòn nhỏ: Xung cấp 3 bắn Trâu (Vỏ 5) được 4,8 mỗi viên thay vì 2 (băng có lỗi), hoặc 6,6 thay vì 3,7 (băng Chuẩn).
+- **Độ dài từ:** bảng `LENGTH_BY_E` như S0. Súng nặng (Ray, Pháo Sao) lấy từ **dài hơn 1 chữ** ở cả hai đầu dải, trần **10 chữ**, để băng mạnh phải trả bằng nhiều phím hơn. Trần là 10 vì dải của E ≥ 60 đã là 6–10 chữ: trần 9 sẽ làm từ của súng nặng **ngắn hơn** súng nhẹ với người gõ nhanh. 10 chữ vẫn vừa bến 190 px ở 26 px (mục 10). Mọi bến dùng chung một danh sách "đã dùng" (không lặp từ trước khi hết dải). Chữ đầu của mọi từ đang hiện (các bến và từ chặn) luôn khác nhau.
 - **Bến:** mỗi bến một súng. Bến có súng đã đầy băng thì gõ từ của nó cũng không nạp được gì (như S0). Thay súng (thưởng Súng) thì súng cũ mất cấp Rèn.
 
 ### 5.2 Bảng khắc chế (dữ liệu `COUNTERS`, dùng cho bảng tin, thẻ súng và bot)
 
+Bảng dưới là **dự kiến**. `COUNTERS` trong mã không viết tay theo cảm tính: test G3m (mục 11.4) đo từng ô bằng kịch bản nhỏ, và test hỏng khi bảng khác số đo.
+
 | Quái ↓ / Súng → | Xung | Tia | Tán | Ray | Pháo Sao |
 |---|---|---|---|---|---|
-| Bầy (xa) | ○ | ● | ✕ | ○ | ● |
-| Bầy (sát vạch) | ● | ● | ● | ○ | ✕ |
-| Lính và đạn lính | ● (bắn rơi đạn) | ○ | ○ | ● | ○ |
-| Trâu, Đầu Đàn (Vỏ) | ✕ | ✕ | ✕ | ● | ● |
+| Bầy giữa sân (12–24 m) | ✕ (ngoài tầm) | ○ | ✕ | ○ | ● |
+| Bầy sát vạch (≤ 8 m) | ● | ● | ● | ✕ (3 phát; bầy dàn ngang, ít con thẳng hàng) | ✕ |
+| Lính và đạn lính | ● (bắn rơi đạn) | ○ | ○ | ● | ✕ (bay 0,7 s, lính đi lại) |
+| Trâu, Đầu Đàn (Vỏ) | ✕ | ✕ | ✕ | ● | ○ |
 | Khiên (và toán sau khiên) | ✕ | ○ | ✕ | ● | ● |
-| Tách và mảnh | ○ | ● | ● | ✕ | ● |
+| Tách và mảnh | ○ | ● | ● | ✕ | ○ |
 | Tổ (xa) | ✕ | ○ (khi Tổ bò tới gần) | ✕ | ● | ● |
-| Boss Cai Ngục | ○ | ○ | ✕ | ● | ○ |
+| Boss Cai Ngục (thân, Vỏ 4) | ✕ | ✕ | ✕ | ● | ○ |
+| Hộ tống của boss | ● | ● | ● | ○ | ○ |
 
-● khắc · ○ được · ✕ kém. Không súng nào ● ở mọi hàng. Mỗi súng ● ở ít nhất hai hàng (cổng G2, G3).
+● khắc · ○ được · ✕ kém. **Cách đo** (G3m): mỗi ô là một kịch bản nhỏ trong sim Node. Mọi súng nhận cùng số chữ gõ (tính cả "+1 chữ" của súng nặng), rồi đo thời gian dọn hết quái của hàng. Nếu thời gian ≤ 1,25 × súng nhanh nhất của hàng thì là ●. Nếu ≥ 2 × súng nhanh nhất, hoặc súng không với tới, thì là ✕. Còn lại là ○.
+
+Bảng này giữ ba ràng buộc:
+- Không súng nào ● ở mọi hàng.
+- Mỗi súng ● ở ít nhất hai hàng, và ✕ ở ít nhất hai hàng.
+- Mọi bộ 2 súng đều có ít nhất một hàng mà **cả hai súng đều không ●**. Bộ nào cũng có chỗ hở, nên không có bộ "giải xong".
+
+Ray là súng có nhiều ● nhất (5 hàng), và là ● duy nhất ở hàng Trâu và hàng Boss. Đây là chỗ dễ thành "súng bắt buộc", nên:
+- Ray ✕ ở bầy sát vạch. Đúng với G3 (Tán giữ đợt 40 bầy ở 6 m, mất giáp ít hơn Ray ≥ 30 %). Bản trước ghi ○, nên Ray chỉ có một ✕, trái ràng buộc thứ hai ở trên.
+- Lối thứ hai với Vỏ phải dùng được thật: Pháo Sao ○, và Xung đã Rèn với băng Chuẩn (mục 5.1). G2(d) đo việc này bằng tỉ lệ thắng.
+
+Không được đọc bảng bằng cách đếm ●. Ray và Pháo Sao có nhiều ● ở các hàng quái to, nhưng quái to chỉ là vài phần trăm số quái. Bầy (70–85 % số quái, và là nguồn rỉ giáp chính) mới là hai hàng nặng nhất. Bot và bảng tin cân các hàng theo trọng số của ải (mục 11.2).
 
 ## 6. Quái
 
@@ -148,15 +172,15 @@ Màn chính ─▶ Hành Trình ─▶ Bản đồ Chương 1 ─▶ Nạp súng
 |---|---|---|---|---|---|---|---|---|
 | **Bầy** (S0) | `mine` | 14 | 0 | 2,6 | 0,5 | −3 | 1 | Như S0: đi theo trường hướng, chậm dần khi áp sát |
 | **Lính** (S0) | `scout` | 56 | 0 | 1,8 | 0,8 | −6 | 2 | Đứng 6–9 m, bắn đạn −3 mỗi 3 s, đi tiếp sau 12 s |
-| **Trâu** | `tank` | 240 | 4 | 1,25 | 1,1 | −12 | 4 | Chậm, nặng: đẩy bầy sang bên (khối lượng 4), không bị Tán đẩy lùi. Thường đi đầu một toán 5 bầy |
-| **Khiên** | `shield` | 80 + khiên 100 | 0 | 1,9 | 0,9 | −6 | 2 | **Khiên năng lượng** quay về phía tàu: đoạn chắn rộng 2,6 m đặt 0,8 m trước thân. Đạn Xung và viên Tán chạm đoạn chắn thì dừng (0 sát thương), nên cả **toán đi sau** nó cũng được che. Ray phá khiên ngay; Tia đốt khiên; Pháo Sao bỏ qua. Khiên vỡ thì không hồi. Đi đầu một toán 6 bầy hình nêm |
+| **Trâu** | `tank` | 240 | 5 | 1,25 | 1,1 | −12 | 4 | Chậm, nặng: đẩy bầy sang bên (khối lượng 4), không bị Tán đẩy lùi. Thường đi đầu một toán 5 bầy |
+| **Khiên** | `shield` | 80 + khiên 100 | 0 | 1,9 | 0,8 | −6 | 2 | **Khiên năng lượng** quay về phía tàu: đoạn chắn rộng 2,6 m đặt 0,8 m trước thân. Đạn Xung và viên Tán chạm đoạn chắn thì dừng (0 sát thương), nên cả **toán đi sau** nó cũng được che. Ray phá khiên ngay; Tia đốt khiên; Pháo Sao bỏ qua. Khiên vỡ thì không hồi. Đi đầu một toán 6 bầy hình nêm |
 | **Tách** | `splitter` | 42 | 0 | 2,2 | 0,7 | −4 | 1,5 | Chết thì vỡ thành **3 mảnh** (bầy nhỏ: 9 HP, 3,0 m/s, bán kính 0,4, chạm vạch −2, rỉ 0,5) văng ra ±1,2 m |
-| **Đầu Đàn** | `tank` + đèn hiệu | 360 | 3 | 1,1 | 1,3 | **−15** | 6 | Mục tiêu của "Săn". Có toán hộ tống 8 bầy đi trước. Có đèn hiệu vàng và vạch dọc trên sàn để thấy từ xa |
+| **Đầu Đàn** | `tank` + đèn hiệu | 360 | 3 | 1,1 | 1,3 | **−15** | 6 | Mục tiêu của "Săn". Có toán hộ tống 8 bầy đi trước. Phải nhận ra ngay giữa đám Trâu cùng model: vẽ to hơn Trâu 1,25×, viền phát sáng vàng, cột đèn hiệu, vạch dọc trên sàn, và một mũi tên ở mép màn khi nó còn ngoài khung nhìn. Là biến thể của họ Trâu, nên `checkChapter` tính chung với Trâu là một quái |
 | **Tổ** | `carrier` (đứng yên, bò) | 800 | 2 | bò 0,2 | 1,8 | — | 0 | Mục tiêu của "Phá Tổ". Xuất hiện ở z 30–36, bò tới z 10 thì dừng. Đẻ 6 bầy mỗi 7 s, khoảng đẻ ngắn dần còn 3,5 s ở giây 180 (× chế độ × k, × bậc `spawn` của bộ điều nhịp) |
-| **Boss Cai Ngục** | `warden-rainbow` (dùng clip ra mắt, trúng, chết nếu model có) | 5.000 | 4 | 0,35 | 2,6 | không chạm (dừng ở 10 m) | 8 khi trong 16 m | Mục 7.4 |
+| **Boss Cai Ngục** | `warden-rainbow` (chuyển động do AI làm, mục 12.1) | 5.000 | 4 | 0,35 | 2,6 | không chạm (đứng cuối ở z 8) | 8 khi trong 16 m | Mục 7.4 |
 
-- Thuộc tính tinh anh **Bọc Thép** (tên mới của "Giáp" ở S0) vẫn là HP ×2 cho cả toán, do bộ điều nhịp thêm hoặc bớt. Không bao giờ áp lên Đầu Đàn, Tổ, Boss.
-- Quái to (bán kính > 0,9: Trâu, Đầu Đàn, Tổ, Boss) nằm trong một **danh sách riêng** (tối đa 32), thử va chạm tuyến tính. Lưới 2 m vẫn giữ `MAX_RADIUS` 0,9 cho đám đông, để truy vấn không nở ra.
+- Thuộc tính tinh anh **Bọc Thép** (tên mới của "Giáp" ở S0) vẫn là HP ×2, do bộ điều nhịp thêm hoặc bớt. Nó chỉ áp lên **toán thường** (bầy, lính, Tách). Không áp lên Trâu, Khiên (cả khiên), Đầu Đàn, Tổ, Boss. Lý do: Trâu Bọc Thép có 480 HP, Vỏ 5. Với bộ súng không khắc thì một con cần khoảng 10 băng Xung. Bậc `elite` khi đó thành một bức tường, không còn là một nấc khó. `eliteCost` và W của bộ điều nhịp tính theo thành phần quái của từng ải (`chapter-1.ts`), không dùng số của S0.
+- Quái to (bán kính > 0,8: Trâu, Đầu Đàn, Tổ, Boss) nằm trong một **danh sách riêng** (tối đa 32), thử va chạm tuyến tính. Lưới 2 m giữ `MAX_RADIUS` **0,8 như hiện tại** (`sim/hits.ts`), để truy vấn không nở ra và vết sự kiện của Trận thử không đổi (R1 bước 1). Vì vậy Khiên có bán kính 0,8 (bằng Lính). Bản trước ghi "giữ 0,9" và Khiên 0,9: mã đang là 0,8, nên Khiên sẽ lọt khỏi truy vấn của lưới.
 - Khiên là một **danh sách đoạn chắn** (tối đa 32). Đạn Xung, viên Tán thử đoạn chắn trước rồi mới thử thân quái. Xung **chọn mục tiêu khôn**: bỏ qua quái mà đường bắn bị khiên chặn, để không phí băng.
 
 ## 7. Luật Ải: thư viện S1
@@ -168,7 +192,7 @@ Màn chính ─▶ Hành Trình ─▶ Bản đồ Chương 1 ─▶ Nạp súng
 | **Trụ vững** (S0) | Hết giờ mà còn giáp | Hết giáp | 150–180 s |
 | **Săn Đầu Đàn** | Hạ đủ N trong M Đầu Đàn. Ngay lúc đó **bầy rút lui**: quái còn lại mờ đi trong 2 s, không gây hại nữa, ải kết thúc | Hết giáp, hoặc số Đầu Đàn lọt qua vạch > M − N | Ải 2: 3/5, đến ở giây 20, 50, 80, 110, 140. Ải 7: 4/6, đến mỗi 25 s từ giây 20. Trần an toàn 240 s |
 | **Phá Tổ** | Hạ hết Tổ. Bầy rút lui như trên | Hết giáp, hoặc tới trần 300 s ("Tổ nở", thua) | Ải 5: 2 Tổ. Ải 8: 3 Tổ. Luồng thường của ải vẫn chạy, ở mức thấp |
-| **Boss** | Hạ boss | Hết giáp | Mục 7.4 |
+| **Boss** | Hạ boss | Hết giáp, hoặc tới trần an toàn 600 s (chỉ để không có trận vô tận; G6 kiểm không trận nào chạm trần) | Mục 7.4 |
 
 ### 7.2 Hiểm họa (luôn báo trước ≥ 2,5 s bằng hình và tiếng)
 
@@ -185,28 +209,39 @@ Màn chính ─▶ Hành Trình ─▶ Bản đồ Chương 1 ─▶ Nạp súng
 | Luật | Trên bến | Trong khung học | Độ quen cho nhịp k (d) |
 |---|---|---|---|
 | **Chuẩn** (S0) | Từ (to) + nghĩa (nhỏ) | Đang gõ: từ, IPA, nghĩa. Xong: "từ · nghĩa ✓" 0,6 s | `known` |
-| **Thiếu chữ** | Từ có 1 chữ ẩn (từ ≤ 6 chữ) hoặc 2 chữ ẩn (≥ 7 chữ), hiện thành ô "_". **Không bao giờ ẩn chữ đầu** (khóa bến cần nó), không ẩn hai chữ liền nhau. Chữ ẩn chọn bằng luồng `words` (tất định) | IPA và nghĩa luôn hiện để gợi nhớ. Gõ tới đâu chữ hiện tới đó | `learning` |
-| **Nghĩa** | **Nghĩa tiếng Việt** (to, ≥ 22 px ở 720p) + chữ đầu tiếng Anh và số ô chữ ("h · · · ·") | Đang gõ: nghĩa và các chữ đã gõ. IPA và từ đầy đủ chỉ hiện khi gõ xong, kèm phát âm | trộn `new` 0,6 + `learning` 0,4 |
+| **Thiếu chữ** | Từ có 1 chữ ẩn (từ ≤ 6 chữ) hoặc 2 chữ ẩn (≥ 7 chữ), hiện thành ô "_". **Không bao giờ ẩn chữ đầu** (khóa bến cần nó), không ẩn hai chữ liền nhau. Chữ ẩn chọn bằng một luồng riêng `hide` (tất định), để dãy từ được chia giống hệt khi không có luật này | IPA và nghĩa luôn hiện để gợi nhớ. Gõ tới đâu chữ hiện tới đó. **Gợi ý:** gõ sai ở một ô ẩn thì ô đó hiện chữ đúng ngay (lần sai vẫn tính lỗi). Người chơi không bao giờ phải đoán mò quá một phím | `learning` |
+| **Nghĩa** | **Nghĩa tiếng Việt** (to, cùng cỡ chữ với từ ở luật Chuẩn: 32 px, co tới 26 px, tối đa 2 dòng) + chữ đầu tiếng Anh và số ô chữ ("h · · · ·") | Đang gõ: nghĩa và các chữ đã gõ. IPA và từ đầy đủ chỉ hiện khi gõ xong, kèm phát âm. **Gợi ý:** từ đã hiện 5 s mà chưa gõ xong, hoặc đã khóa mà 2 s không có phím đúng, thì cả từ hiện mờ trên bến và trong khung học (Thư giãn: 3 s và 1,2 s). Từ đã có gợi ý không tính Chuẩn | trộn `new` 0,6 + `learning` 0,4 |
 
-- Nhịp k của ải tính lại theo d của luật học (`familiarityMix`, `paceK` của kit), nên ải Nghĩa tự thưa hơn mà không cần số riêng.
+- **Từ của ải Nghĩa:** Nghĩa là bài **nhớ lại**, nên chỉ dùng từ người chơi **đã gõ ít nhất một lần** (`survival.seen`), ưu tiên từ đã gặp trong chính chương này. Danh sách chỉ số từ (`recall`) đi vào đầu trận để replay tái lập được. Trong bot và Trận thử, `recall` rỗng nghĩa là dùng cả dải.
+  - Bỏ những từ mà bộ (nghĩa, chữ đầu, số chữ) trùng với một từ khác trong dải, để mỗi đề chỉ có một đáp án.
+  - Bỏ những từ có nghĩa quá dài, không vừa 2 dòng ở 26 px trên bến. Kiểm việc này khi dựng dải từ.
+  - `seen` còn ít (dưới 60 từ hợp lệ, ví dụ khi chơi lẻ ải 9 sớm) thì phần thiếu lấy từ dải. Từ chưa từng gặp thì hiện gợi ý ngay từ đầu, không bắt người chơi nhớ một từ chưa học.
+- **Nhịp của ải theo luật học:** nhịp không lấy thẳng từ `paceK` với d mới. k của kit bị kẹp ở 0,75–1,30; bot Mới đã nằm ở sàn 0,75 (k thô ≈ 0,70), nên ải Nghĩa sẽ không thưa đi chút nào cho người gõ chậm, trong khi người Chuẩn được thưa đi 21 %. Thay vào đó, game nhân k của hồ sơ (đã kẹp) với **hệ số học ρ**:
+  - ρ = C(E_eff; ℓ̄; d_luật) / C(E_eff; ℓ̄; d_known), tính bằng hàm `capacity` và `familiarityMix` của kit, kẹp trong 0,6–1,0, làm tròn 1/1000, và ghi vào đầu trận.
+  - Số dự kiến: Chuẩn có ρ = 0,87 ở Thiếu chữ và 0,79 ở Nghĩa; Mới có ρ = 0,78 ở Nghĩa.
 - Ràng buộc: luật học khó (Thiếu chữ, Nghĩa) không đi chung với hiểm họa nặng trong một ải.
-- Hồ sơ gõ: trận có luật Thiếu chữ hoặc Nghĩa **không cập nhật E và CV** (gõ theo trí nhớ chậm hơn thật), chỉ ghi độ chính xác và thời gian nhận từ theo độ quen.
+- Hồ sơ gõ: trận có luật Thiếu chữ hoặc Nghĩa **không cập nhật E và CV** (gõ theo trí nhớ chậm hơn thật). Trận đó chỉ ghi độ chính xác, thời gian nhận từ theo độ quen, và số lần dùng gợi ý.
 
 ### 7.4 Boss Cai Ngục (ải 10)
 
 | Pha | HP | Boss làm gì | Hộ tống | Đòn Sập |
 |---|---|---|---|---|
 | Ra mắt | — | Ở giây 20 bước qua cổng. Camera zoom chậm 6 % trong 2 s. Biển "CAI NGỤC · BẦY HỐ ĐEN". Thanh máu boss ở giữa trên, có vạch chia pha | — | — |
-| P1 | 100–66 % | Đi tới z 22 rồi đứng | 6 bầy mỗi 8 s từ hai bên boss | mỗi 20 s |
-| P2 | 66–33 % | Gầm, sóng chấn (T4); đi tới z 15 | Thêm một toán Khiên mỗi 16 s | mỗi 17 s |
-| P3 | < 33 % | Cuồng nộ; đi tới z 10 | Tách mỗi 10 s. "Gầm": hộ tống nhanh thêm 20 % trong 5 s, mỗi 20 s | mỗi 14 s |
+| P1 | 100–66 %, **tối đa 50 s** | Đi tới z 22 rồi đứng | 6 bầy mỗi 8 s từ hai bên boss | mỗi 20 s |
+| P2 | 66–33 %, **tối đa 50 s** | Gầm, sóng chấn (T4); đi tới z 15 | Thêm một toán Khiên mỗi 16 s | mỗi 17 s |
+| P3 | < 33 % | Cuồng nộ; đi tới z 8 | Tách mỗi 10 s. "Gầm": hộ tống nhanh thêm 20 % trong 5 s, mỗi 20 s | mỗi 14 s |
 
-- **Đòn Sập** báo trước bằng một **làn đỏ** có sọc cảnh báo trên sàn, từ boss tới vạch, và một **từ chặn** (3–5 chữ, từ đã thuộc, chữ đầu khác mọi bến). Từ chặn hiện trên một dải đỏ riêng, ngay trên khung học. Khung học không bị che.
-  - Thời gian báo trước: 3,0 s × 1/k, kẹp trong 2,5–4,0 s (Thư giãn luôn 4,0 s).
+- **Đổi pha theo HP hoặc theo giờ.** Ở z 22, mép thân boss là z 19,4, ngoài tầm Xung (z 11,7), Tia (z 13,7) và Tán (z 8,7). Nếu pha chỉ đổi theo HP, bộ đồ toàn súng gần sẽ không gây được sát thương nào. Boss sẽ đứng mãi ở P1, và trận chỉ kết thúc khi tuyến bị rỉ hết giáp: đó là thế kẹt không thể thắng. Vì vậy mỗi pha có trần thời gian. Hết giờ thì boss **bước tới** pha sau, dù HP còn cao; thanh máu boss ghi "TIẾN LÊN". Ở P3, boss đứng ở z 8 (mép thân z 5,4), trong tầm của mọi súng.
+- **Đòn Sập** báo trước bằng một **làn đỏ** có sọc cảnh báo trên sàn, từ boss tới vạch, và một **từ chặn** (từ đã thuộc, chữ đầu khác mọi bến). Từ chặn hiện trên một dải đỏ riêng, ngay trên khung học. Khung học không bị che.
+  - Độ dài từ chặn theo E của người chơi: 3–4 chữ khi E < 20, 3–5 chữ khi E 20–44, 4–5 chữ khi E ≥ 45.
+  - Thời gian báo trước phải đủ cho chính người đang chơi. Lấy T = max(2,5 s; 0,6 s + 1,6 × (ℓ + 1) × 12 / E_eff), rồi nhân với `telegraphScale(phản xạ)` của kit (× 0,85–1,5 theo yếu tố 9 của hồ sơ). Kẹp T trong 2,5–6 s (Thư giãn: 3,5–8 s). Hệ số `telegraph` đi vào đầu trận.
+  - Số dự kiến khi phản xạ mặc định (× 1,0) và từ chặn 4 chữ: Chuẩn khoảng 3,9 s, Mới khoảng 5,6 s. Trẻ em gõ từ 3 chữ ở Thư giãn: khoảng 7,6 s. Phản xạ mặc định của trẻ em là 0,6 (× 1,19), nên số này chạm trần 8 s.
+  - Không dùng 1/k ở đây. Dùng 1/k thì người gõ nhanh có ít thời gian hơn. Nhưng chặn được hay không là phản xạ (yếu tố 9 của BALANCE §2), không phải sức gõ. Sức gõ đã được tính vào T qua E_eff.
   - Gõ kịp: "CHẶN!", lóe khiên ở vạch (T3), không mất gì.
   - Không kịp: −10 giáp (Thư giãn −5, Thử thách −14) và đòn T4 vào tuyến.
-  - Đang gõ dở một bến mà muốn chặn thì phải gõ xong hoặc Backspace về 0. Đó là một quyết định thật (yếu tố 9 "phản xạ báo trước" của BALANCE §2).
-- Boss không bị Bọc Thép. HP boss chỉnh sao cho bộ đồ tham chiếu ải 10 hạ boss trong 150–240 s (G6).
+  - Đang gõ dở một bến mà muốn chặn thì phải gõ xong hoặc Backspace về 0. Đó là một quyết định thật.
+  - Hết trận, số lần chặn được trên tổng số Đòn Sập đi vào mẫu `telegraph` của `updateSkill`, để kit học phản xạ của người chơi.
+- Boss không bị Bọc Thép. HP boss chỉnh sao cho bộ đồ tham chiếu ải 10 hạ boss trong 150–240 s (G6). Mọi bộ 3 súng đều phải thắng được (G6, mục 11.4).
 
 ### 7.5 Ràng buộc của chương (`checkChapter`, test)
 
@@ -215,6 +250,24 @@ Màn chính ─▶ Hành Trình ─▶ Bản đồ Chương 1 ─▶ Nạp súng
 3. Mỗi ải dạy tối đa **một** cơ chế mới (mục tiêu, hiểm họa hoặc luật học) và tối đa **một** quái mới.
 4. Luật học khó không đi với hiểm họa nặng.
 5. Ải dựng tay: ải 5 (Mốc) và ải 10 (Boss).
+6. Không có thứ gì chỉ hạ được bằng súng ngoài tầm. Mọi mục tiêu của ải (Đầu Đàn, Tổ, boss ở pha cuối) phải tới được trong tầm của mọi súng (thân chạm dải tầm, kể cả tầm gần 8 m của Pháo Sao; mục 5.1), hoặc có trần thời gian đẩy nó lại gần.
+7. Mỗi ải đạt ngân sách chú ý (mục 7.6) trên dòng thời gian dự kiến.
+
+### 7.6 Ngân sách chú ý (không ngộp)
+
+Chủ dự án muốn trận căng mà không ngộp. Từ S1, mắt người chơi phải theo nhiều thứ: 3 bến, từ chặn, hiểm họa, biển mục tiêu, Đầu Đàn và đỉnh tràn. Vì vậy số thứ đòi chú ý cùng lúc có trần cứng, và test kiểm trần này.
+
+| Luật | Trần |
+|---|---|
+| Từ sống (gõ được) cùng lúc | ≤ 4: 3 bến + 1 từ chặn. Từ khóa cửa chỉ có ở màn chương, khi thế giới đã dừng |
+| Báo trước đang chạy cùng lúc (hiểm họa, Đòn Sập, tiếng tù và của Đầu Đàn, biển "ĐỈNH TRÀN") | ≤ 1. Hai lần báo trước liền nhau bắt đầu cách nhau ≥ 4 s. Bộ lập lịch (`plan.ts`) dời cái đến sau, rồi ghi sự kiện `plan` vào nhật ký để soi lại |
+| Hiểm họa so với đỉnh tràn | Không nổ trong 3 s đầu của một đỉnh tràn. Vết nứt không rơi vào đỉnh "dữ dội" |
+| Biển giữa màn | ≤ 1 cùng lúc. Biển mục tiêu cố định ở trên, không nhấp nháy, chỉ đổi số |
+| Thứ mới trong ải | ≤ 1 cơ chế + 1 quái (mục 7.5). Lần đầu nó xuất hiện có một thẻ nhỏ 2 s ở vùng biển trên ("MỚI · TRÂU · Vỏ 5"). Trận không dừng |
+| Khung học | Không lớp nào đè lên. Dải từ chặn nằm ngoài khung |
+
+- Test (`tests/stage-rules.test.ts`): chạy dòng thời gian của 10 ải, mỗi ải 20 seed ở cả 3 chế độ, đếm số lần có hai báo trước chồng nhau. Đích là 0.
+- Kịch bản `survival-s1-hazards` và `survival-s1-boss` chụp lúc có báo trước, rồi kiểm rằng chỉ có một báo trước trên màn.
 
 ## 8. Chương 1 "Hành Lang VC-7" (họ `rainbow` dưới lớp Bầy Hố Đen)
 
@@ -222,8 +275,8 @@ Số ở k = 1, Cân bằng, là **khởi điểm**. Đỉnh tràn vẫn nhân s
 
 | # | Tên | Mục tiêu | Hiểm họa | Luật học | Toán (tỉ lệ toán) | Nhịp thường (con/s) | Đỉnh tràn (giây) | Dài / trần | Dạy | Bộ đồ tham chiếu |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | Ca trực đầu | Trụ vững | — | Chuẩn | bầy 85 · lính 15 | 2,9 | 50, 115 | 150 s | luồng, 2 bến | 2 bến cấp 1, giáp 100 |
-| 2 | Đầu Đàn | Săn 3/5 | — | Chuẩn | bầy 80 · lính 12 · trâu 8 | 2,6 | 70 | trần 240 s | Trâu, Vỏ, Săn | như ải 1 |
+| 1 | Ca trực đầu | Trụ vững | — | Chuẩn | bầy 85 · lính 12 · trâu 3 (toán Trâu từ giây 80) | 2,9 | 50, 115 | 150 s | luồng, 2 bến, Trâu (Vỏ) | 2 bến cấp 1, giáp 100 |
+| 2 | Đầu Đàn | Săn 3/5 | — | Chuẩn | bầy 80 · lính 12 · trâu 8 | 2,6 | 70 | trần 240 s | Săn, Đầu Đàn (họ Trâu) | như ải 1 |
 | 3 | Vách nứt | Trụ vững | Vết nứt | Chuẩn | bầy 80 · lính 12 · trâu 8 | 2,8 | 55, 140 | 165 s | Vết nứt | như ải 1 |
 | 4 | Khiên sáng | Trụ vững | — | Thiếu chữ | bầy 75 · lính 12 · khiên 13 | 2,7 | 55, 140 | 165 s | Khiên, Thiếu chữ | 1 súng cấp 2 |
 | 5 | Tổ ngầm (**Mốc**, dựng tay) | Phá 2 Tổ | — | Chuẩn | bầy 70 · lính 10 · trâu 10 · khiên 10, cộng bầy do Tổ đẻ | 1,6 | — (Tổ đẻ dồn dần); giây 40 có "Đoàn hộ tổ": 1 trâu + 2 khiên | trần 300 s | Phá Tổ | 1 súng cấp 2, giáp 110 |
@@ -234,6 +287,7 @@ Số ở k = 1, Cân bằng, là **khởi điểm**. Đỉnh tràn vẫn nhân s
 | 10 | Cai Ngục (**Boss**, dựng tay) | Boss | — | Chuẩn | boss + hộ tống theo pha | 1,6 (20 s đầu) | — (Đòn Sập) | đến khi xong | Boss, từ chặn | 3 bến, cấp 3/2/2, giáp 120 |
 
 - Bộ ba (Mục tiêu, Hiểm họa, Luật học) của 10 ải đều khác nhau. Thiếu chữ (ải 4) và Nghĩa (ải 9) chỉ đi với "không" hoặc Vết nứt (nhẹ).
+- **Trâu ra mắt ở ải 1, không phải ải 2.** Bản đầu của đặc tả dồn vào ải 2 cả Vỏ, Trâu, Đầu Đàn lẫn mục tiêu Săn: hai quái mới và một cơ chế mới, trái ràng buộc 3. Ải 2 lại là ải đầu tiên mà bộ súng chọn mù ở đầu chương bị thử thật. Nay ải 1 cho thấy vài toán Trâu ở nửa sau (bảng tin có thẻ "Trâu · Vỏ 5 · khắc: Ray · được: Pháo Sao"). Người chơi gặp Vỏ ở một ải dễ, rồi mới tới cửa đầu tiên (có cửa bảo hiểm, mục 9). Sau đó ải 2 chỉ dạy Săn và Đầu Đàn.
 - **Răng cưa:** áp lực tăng dần từ ải 1 đến ải 5, giảm nhẹ ở ải 6 (vừa qua Mốc, có bến 3), rồi tăng tới boss. Sức tăng đến từ cơ chế mới và thành phần quái, không phải từ máu quái.
 - **Bộ đồ tham chiếu** dùng cho ma trận theo ải (mục 11.3): số bến, cấp Rèn, Giáp tối đa mà một người chơi "Vừa" thường có ở ải đó. Súng thì bot tự chọn theo chiến thuật của nó (mục 11.2).
 - Từ vựng: cấp 1–3 của kho như S0 (kế hoạch từ mới / ôn theo độ thuộc là S3).
@@ -250,13 +304,20 @@ Số ở k = 1, Cân bằng, là **khởi điểm**. Đỉnh tràn vẫn nhân s
 
 - Sau ải 1–4: mời **2 cửa**. Sau ải 5–8: mời **3 cửa**. Sau ải 9: mời 2 cửa trong {Rèn, Lõi, Sửa} (chuẩn bị đánh boss).
 - Ải 5 (Mốc) còn có thưởng riêng: mở bến 3 và chọn 1 trong 3 súng cho bến đó.
-- Rút cửa bằng luồng `loot` từ seed chương, trọng số Súng 30 · Rèn 35 · Lõi 20 · Sửa 15. Hai cửa không trùng loại. Chơi lại cùng seed chương thì ra cùng cửa (test).
+- Rút cửa bằng luồng `loot` từ seed chương, trọng số Súng 30 · Rèn 35 · Lõi 20 · Sửa 15. Hai cửa không trùng loại. Chơi lại cùng seed chương thì ra cùng cửa (test). Cửa là hàm thuần của (seed chương, số ải, trạng thái hành trình).
+- **Cửa bảo hiểm:** sau ải 1–4, nếu bộ súng chưa có súng nào ● với quái chính của ải kế, thì một trong các cửa mời **chắc chắn là Súng**. Quái chính là quái có trọng số lớn nhất ngoài bầy (mục 11.2). Thưởng Súng khi đó luôn có ít nhất một súng khắc được quái ấy. Luật này giữ cho lựa chọn mù ở đầu chương không thành cái bẫy kéo dài ba ải, mà vẫn để lựa chọn tốt ở đầu chương có giá trị: người chọn tốt được cửa Rèn hay Lõi thay vì phải lấy Súng.
 - **Chọn bằng gõ từ khóa tiếng Anh** (kế hoạch §4.7, học thêm) hoặc phím 1/2/3 (trợ năng). Mỗi thẻ cửa hiện từ khóa, nghĩa tiếng Việt và thưởng. Không có "đổi cửa" ở S1 (cần Vàng).
+- **Thẻ thưởng** cũng chọn bằng gõ hoặc phím 1/2/3. Thẻ súng dùng tên tiếng Anh của súng: `pulse`, `beam`, `scatter`, `rail`, `flak`. Thẻ Rèn dùng tên súng được rèn. Chữ đầu các thẻ trên một màn luôn khác nhau.
 
 ## 10. Học trong S1
 
 - Khung học, phát âm, gửi sự kiện học với `gameId` `typing-survival`: như S0. Thêm: từ chặn của boss và từ khóa của cửa cũng gửi sự kiện học khi gõ xong.
-- **Bố cục đáy màn hình** (1280×720, `--ui` 1): `[bến 1 220 px][bến 2 220 px] [khung học 380 px] [bến 3 220 px]`, khoảng cách 12 px, tổng 1.076 px. Chỗ của bến 4 để trống (S1b). Chữ trên bến tự co để vừa nhưng không dưới 26 px. Từ quá dài thì không cho vào bến ở dải đó (kiểm khi dựng dải từ).
+- **Bố cục đáy màn hình** (1280×720, `--ui` 1): `[bến 3 · 190][bến 1 · 190] [khung học 420] [bến 2 · 190][bến 4 · 190]`, khoảng cách 12 px, tổng 1.228 px (lề mỗi bên 26 px).
+  - Khung học giữ **đúng cỡ và vị trí của S0** (420 px, giữa đáy, kế hoạch §6.2). Bến 1 và bến 2 vẫn sát hai bên khung như S0, để người đã chơi S0 không phải học lại chỗ nhìn.
+  - Bản đầu của đặc tả để khung còn 380 px và lệch khỏi giữa 116 px, đồng thời dời bến 2 sang trái. Như vậy là làm học kém rõ đi để lấy chỗ cho súng, trái mục 0 câu 3.
+  - Ô bến 3 và bến 4 có ngay từ đầu, là tấm thép tối. Ô bến 3 ghi "MỞ Ở MỐC"; ô bến 4 chỉ có biểu tượng khóa, không có chữ (người chơi không cần biết tên mốc "S1b"). Qua Mốc thì ô bến 3 sáng lên, và bố cục không nhảy.
+  - **Bến hẹp hơn S0** (190 px thay vì 290 px, phần chứa chữ còn 158 px), nên phần đầu bến phải gọn lại. Tên súng 12 px; thanh băng thành 2–3 vạch 22 px, nằm cùng hàng với tên. Đầu bến của S0 (tên 15 px giãn chữ 0,18em, cộng 3 thanh 36 px) rộng khoảng 220 px với "PHÁO SAO", không vừa. Bản gọn: khoảng 150 px. Kịch bản `survival-s1-loadout` và `survival-s1-journey` kiểm: không phần tử nào trong bến bị tràn (`scrollWidth ≤ clientWidth`), ở 1280×720 với 3 băng.
+  - Chữ trên bến 32 px như S0. Từ ≥ 8 chữ được tự co, nhưng không dưới 26 px. Từ quá dài thì không cho vào bến ở dải đó (kiểm khi dựng dải từ). Nghĩa trên bến giữ một dòng có "…" như S0, trừ ở luật Nghĩa (mục 7.3).
 - **Vùng cấm cho số sát thương:** 3 bến, khung học, dải từ chặn, thanh giáp, thanh máu boss, biển mục tiêu. Đích vẫn là 0 lần đè.
 - Màn **Tổng kết chương:** từ đã gõ, **từ mới gặp** (lần đầu theo `survival.seen`), các từ gõ sai nhiều nhất (bấm để nghe), sao, thời gian, Lõi đã dùng.
 
@@ -264,8 +325,14 @@ Số ở k = 1, Cân bằng, là **khởi điểm**. Đỉnh tràn vẫn nhân s
 
 ### 11.1 Đầu trận và bộ điều nhịp
 
-- `RunHeader` thêm `stage` (ví dụ `"c1-s4"`, hoặc `"s0"` cho Trận thử) và `kit` `{ guns, levels, bays, armourMax }`. Đầu trận đi vào `createWorld`, mã băm, ảnh chụp, replay và `scripts/replay.ts`.
-- k của ải = `paceK(effectiveE(…), { len, d: familiarityMix(luật học), ref: PACE_REF })`. k nhân vào tốc ra quái, sức đỉnh tràn, tốc đi (như S0), và vào khoảng đẻ của Tổ, kích thước toán của Vết nứt, nhịp hộ tống của boss.
+- `RunHeader` thêm các trường sau. Đầu trận đi vào `createWorld`, mã băm, ảnh chụp, replay và `scripts/replay.ts`.
+  - `stage`: ví dụ `"c1-s4"`, hoặc `"s0"` cho Trận thử.
+  - `kit`: `{ guns, levels, bays, armourMax }`.
+  - `learn`: hệ số học ρ (mục 7.3), bằng 1 ở luật Chuẩn.
+  - `telegraph`: hệ số báo trước từ `telegraphScale` (mục 7.4).
+  - `recall`: danh sách từ cho luật Nghĩa (mục 7.3), có thể rỗng.
+- Nhịp của ải: **k_ải = k × ρ**. k là `paceFor` của S0 (đã kẹp 0,75–1,30, d = `known`), đúng BALANCE §4.1. ρ là **hệ số của ải**, giống hệ số của chế độ (Thư giãn đã nhân tốc ra quái × 0,66), không phải một k thứ hai. Vì ρ nằm ngoài phần kẹp, người ở sàn 0,75 vẫn được thưa đi khi luật học khó hơn. k_ải nhân vào tốc ra quái, sức đỉnh tràn, tốc đi (như S0), và vào khoảng đẻ của Tổ, kích thước toán của Vết nứt, nhịp hộ tống của boss. Không nhân vào thời gian báo trước (mục 7.4).
+- W (tổng HP quái của ải) và `eliteCost` của bộ điều nhịp tính theo thành phần quái của từng ải, không dùng HP bầy và lính của S0.
 - **Bảng bậc theo ải** (`PaceTable` lấy từ dữ liệu ải):
 
 | Mục tiêu | Bậc khó lên | Bậc dễ đi |
@@ -281,17 +348,26 @@ Số ở k = 1, Cân bằng, là **khởi điểm**. Đỉnh tràn vẫn nhân s
 ### 11.2 Bot
 
 - `tests/survival/typist-bot.ts` lên N bến. Lựa chọn "danger" của mỗi bến = **giá trị của một băng lúc này** (`gunValue`: số mục tiêu trong tầm × sát thương sau Vỏ và khiên; Đầu Đàn ×4, Tổ ×3, quái trong 7 m ×2) × số băng còn thiếu. Bến đầy thì −1.
+- **Chấm súng cho một ải** (dùng ở bot và ở bảng tin): điểm = Σ theo hàng của `COUNTERS` của w(hàng, ải) × v(ô), với v ● = 1, ○ = 0,5, ✕ = 0.
+  - w là phần của hàng trong **mối nguy** của ải: phần HP của hàng trong thành phần quái, nhân với hệ số nguy.
+  - Hệ số nguy: bầy sát vạch × 1,5 (nguồn rỉ giáp chính); mục tiêu của ải (Đầu Đàn, Tổ, boss) × 2; Lính × 1,2 (đạn bắn tàu).
+  - Bộ 2 súng được chấm **cả bộ**: mỗi hàng lấy v lớn nhất của hai súng. Như vậy bộ phủ được nhiều hàng hơn thì điểm cao hơn, không phải hai súng "mạnh" nhất cộng lại.
+  - Không đếm ●. Đếm ● thì bot Tốt sẽ luôn chọn Ray và Pháo Sao (nhiều ● ở các hàng quái to), và cổng G2 sẽ trượt ngay từ cách tính.
 - Các cấp chiến thuật của kit giữ trọng số chọn mục tiêu (`TARGET_MIX`) và phản xạ (`REFLEX`). Thêm `tests/survival/tactics.ts` cho các quyết định ngoài trận:
 
 | Quyết định | Tốt (`good`) | Vừa (`fair`) | Kém (`poor`) |
 |---|---|---|---|
-| Nạp súng đầu chương / chơi lại ải | Chấm 5 súng theo `COUNTERS` với thành phần quái và mục tiêu của các ải sắp tới, lấy 2 súng điểm cao nhất | 50 %: như Tốt; 50 %: ngẫu nhiên | Hai thẻ đầu (Xung, Tia) hoặc ngẫu nhiên |
+| Nạp súng đầu chương / chơi lại ải | Bộ (2 hoặc 3 súng, theo số bến) có điểm cao nhất. Đầu chương: tính trên các ải 1–5, trọng số giảm dần theo khoảng cách tới ải. Chơi lẻ một ải: chỉ ải đó | 50 %: như Tốt; 50 %: một bộ ngẫu nhiên | **Luôn** Xung + Tia (hai thẻ đầu, bộ của S0): người chơi giữ thứ quen, không đọc khắc chế. Ở ải có 3 bến (bộ đồ tham chiếu ải 6–10, bến 3 ở Mốc): thêm Tán (thẻ đầu còn lại) |
 | Chọn cửa | Sửa khi đã mất ≥ 1 Lõi và còn ≤ 1; Súng khi các ải tới có quái chưa ai khắc; còn lại Rèn súng khắc chính | 50 / 50 | Cửa đầu tiên |
 | Thưởng Súng, Rèn | Theo điểm khắc chế | 50 / 50 | Thẻ đầu |
 | Bão ion | Không gõ bến đang tê; nạp các bến khác lúc báo trước | Nửa số lần | Bỏ qua cảnh báo |
 | Từ chặn | Theo `REFLEX` (Tốt 0,9; Vừa 0,75; Kém 0,5): bỏ từ đang gõ dở nếu cần | như bên trái | như bên trái |
 
 - Độ quen theo luật học: Chuẩn `known`, Thiếu chữ `learning`, Nghĩa `new`. Mọi lựa chọn rút từ RNG của bot (có seed), nên mỗi trận vẫn tất định và chạy lại được.
+- **Bot nhớ lại** (khởi điểm, chỉnh theo B9). Bot của kit chỉ chép từ đang thấy, nên trước hết không biết quên. Ở hai luật học khó, bot rút thêm một lần "nhớ" cho mỗi từ:
+  - Thiếu chữ: mỗi ô ẩn nhớ sai với xác suất 0,2 (Chuẩn), 0,3 (Mới), 0,4 (Trẻ em). Nhớ sai thì gõ một phím sai, ô hiện chữ đúng, rồi gõ tiếp.
+  - Nghĩa: mỗi từ không nhớ ra với xác suất 0,15 (Chuẩn), 0,25 (Mới), 0,35 (Trẻ em). Không nhớ ra thì bot chờ gợi ý (mục 7.3) rồi mới gõ.
+  - Khi không có hai luật này, mọi xác suất bằng 0, nên số đo ở luật Chuẩn không đổi.
 
 ### 11.3 Báo cáo
 
@@ -325,7 +401,7 @@ Số ở k = 1, Cân bằng, là **khởi điểm**. Đỉnh tràn vẫn nhân s
 | B4 | Chậm chắc có S cao hơn Ẩu ở mỗi ải; Chuẩn hạ quái nhanh hơn Ẩu |
 | B5 | Không gõ thua ở mọi ải, mọi chế độ |
 | B6 | **Tốt hơn Kém ≥ +10 điểm thắng ở Cân bằng và Thử thách** (gộp các ải 1–9; đích +15). Thêm ở ma trận chương: qua chương lần đầu Tốt hơn Kém ≥ +15 điểm |
-| B7 | ≤ 3 bậc mỗi đợt; khoảng sinh trong ±15 %; tắt bộ điều nhịp thì bot Chuẩn vẫn trong dải ở ≥ 8/9 ải |
+| B7 | ≤ 3 bậc mỗi đợt; khoảng sinh trong ±15 %; tắt bộ điều nhịp thì bot Chuẩn vẫn trong dải **ở mọi ải 1–9** (đúng như BALANCE §7; ô lệch ≤ 3 điểm thì chạy lại như B1). Bản đầu của đặc tả nới thành "≥ 8/9 ải": đó là đổi một cổng chung mà chưa hỏi chủ dự án, nên đã bỏ |
 | B8 | Cổng học G5 đạt ở mọi bot có gõ |
 | B9 | Chủ dự án chơi thử (mục 18); bot cùng hồ sơ lệch ≤ 15 % |
 
@@ -334,12 +410,13 @@ Số ở k = 1, Cân bằng, là **khởi điểm**. Đỉnh tràn vẫn nhân s
 | # | Cổng | Ngưỡng |
 |---|---|---|
 | G1 | Chương qua được | Cân bằng, bot Chuẩn: qua chương lần đầu (không phải quay lại Mốc hay đầu chương) 70–90 %, qua không mất Lõi 10–35 %. Thư giãn: Trẻ em qua lần đầu ≥ 85 %, người lớn ≥ 95 %. Thử thách, bot Chuẩn: qua lần đầu 20–45 %, quay lại Mốc tối đa 2 lần thì ≥ 70 % |
-| G2 | Không súng thống trị | Ở bot Tốt (Khá, Nhanh, Chuẩn · Tốt), 100 chương: mỗi súng chiếm 10–40 % số lần được chọn (đầu chương, Mốc, thưởng Súng); không bộ hai súng đầu chương nào > 40 % |
-| G3 | Khắc chế đo được (sim Node, kịch bản nhỏ) | Ray hạ 6 Trâu nhanh ≥ 2× Xung. Pháo Sao hạ cụm 10 bầy ở 16 m nhanh ≥ 1,5× Xung. Tán giữ đợt 40 bầy lao vào 6 m, mất giáp ít hơn Ray ≥ 30 %. Xung và Tán gây 0 sát thương vào khiên từ phía trước; Ray phá khiên trong 1 phát. Tán và Pháo Sao dọn mảnh Tách nhanh hơn Ray. Băng Hoàn hảo của Xung hạ Trâu nhanh hơn băng thường ≥ 15 % |
-| G3c | Không ải bắt buộc | Cả 10 bộ 2 súng: bot Chuẩn thắng ≥ 35 % ở mọi ải thường ở Cân bằng, kể cả bộ kém nhất; bộ tốt nhất ≤ 97 % |
+| G2 | Không súng thống trị (đo bằng **thắng**, không đo bằng lựa chọn của bot) | Dùng ma trận G3c (10 bộ × ải 1–9, bot Chuẩn, Cân bằng, 100 seed). (a) Không bộ nào đứng nhất ở quá 3 trong 9 ải. (b) Mỗi súng có mặt trong một bộ top 3 ở ≥ 2 ải. (c) Ở mỗi ải, bộ đứng nhất hơn bộ đứng ba ≤ 12 điểm. (d) **Không súng nào** có mặt trong bộ đứng nhất ở quá 6 trong 9 ải. Lý do có (d): (a) chỉ xét từng bộ, nên bốn bộ khác nhau cùng có Ray có thể chia nhau đứng nhất mọi ải mà (a) vẫn đạt. Trượt (d) thì chỉnh lối thứ hai với Vỏ (Pháo Sao, Rèn của Xung) hoặc Vỏ của Trâu, không giảm Ray trước Tỉ lệ chọn của bot Tốt (đầu chương, Mốc, thưởng Súng; mỗi súng 10–40 %) chỉ in ra để xem, là đích mềm. Tỉ lệ đó đo cách bot chấm điểm, không đo game, nên không dùng làm cổng |
+| G3 | Khắc chế đo được (sim Node, kịch bản nhỏ, cùng số chữ gõ) | Ray hạ 6 Trâu nhanh ≥ 2× Xung, **cả khi mọi băng đều Chuẩn**. Pháo Sao hạ cụm 10 bầy ở 16 m nhanh ≥ 1,5× Xung. Tán giữ đợt 40 bầy lao vào 6 m, mất giáp ít hơn Ray ≥ 30 %. Xung và Tán gây 0 sát thương vào khiên từ phía trước; Ray phá khiên trong 1 phát. Tán và Tia dọn mảnh Tách nhanh hơn Ray. Băng Chuẩn của Xung hạ Trâu nhanh hơn băng có lỗi ≥ 25 % |
+| G3m | Bảng khắc chế khớp số đo | Chạy 9 hàng × 5 súng kịch bản nhỏ (mục 5.2), xếp ●/○/✕ theo ngưỡng 1,25× và 2×. `COUNTERS` phải khớp kết quả; mọi ràng buộc của mục 5.2 phải đạt (mỗi súng ≥ 2 ● và ≥ 2 ✕; mọi bộ 2 súng có một hàng không ●) |
+| G3c | Không ải bắt buộc, chọn sai không thành bẫy | Cả 10 bộ súng, bot Chuẩn, Cân bằng, mọi ải thường, mỗi ải với bộ đồ tham chiếu của nó: ải 1–5 là 10 bộ 2 súng, ải 6–9 là 10 bộ 3 súng (cũng là C(5,3) = 10). Bộ kém nhất thắng **≥ 60 %** và kém bộ tốt nhất **≤ 30 điểm**; bộ tốt nhất ≤ 97 %. Bản đầu ghi "≥ 35 %", trái với mục 19 (bộ sai chỉ nên thua bộ đúng 15–25 điểm). Với 35 %, người chọn sai ở đầu chương sẽ mất trung bình khoảng 2 Lõi chỉ riêng ở ải 2 |
 | G4 | Răng cưa | Ở Cân bằng, P của bot Chuẩn không giảm quá 2 điểm từ ải này sang ải kế trong ải 1–5 và 6–9; ải 6 thấp hơn ải 5; boss có P cao nhất chương (± 3) |
 | G5 | Học | Không lặp từ trước khi hết dải; chữ đầu của mọi từ đang hiện (các bến và từ chặn) luôn khác nhau; Thiếu chữ không bao giờ ẩn chữ đầu; ải Nghĩa luôn hiện nghĩa; bot Mới gõ ≥ 8 từ mỗi ải; 0 số đè vùng cấm (kịch bản) |
-| G6 | Mục tiêu đúng giờ | Thời lượng trung vị ở Cân bằng, bot Chuẩn: Săn và Phá Tổ 110–190 s, Boss 150–240 s |
+| G6 | Mục tiêu đúng giờ, không kẹt | Thời lượng trung vị ở Cân bằng, bot Chuẩn: Săn và Phá Tổ 110–190 s, Boss 150–240 s. **Boss với mọi bộ 3 súng** (10 bộ, bộ đồ tham chiếu ải 10): bot Chuẩn thắng ≥ 45 % ở Cân bằng, boss luôn tới P3 trước giây 140, và không trận nào chạm trần 600 s |
 | G7 | Từ chặn | Tỉ lệ chặn của bot Chuẩn 60–85 %, Tốt ≥ 80 %, Kém ≤ 60 %. Trẻ em ở Thư giãn ≥ 50 % |
 | G8 | Tất định | Cùng seed, phím, đầu trận (cả ải và bộ súng) thì cùng mã băm, cùng nhật ký `pace`, ở Node và Chrome. Replay của mọi kịch bản S1 khớp. Cửa và thưởng tái lập từ seed chương |
 
@@ -352,7 +429,7 @@ Mọi đòn đi qua các bậc phản hồi của kit (`tier()` T0–T5: rung, d
 | **Tán** | Quạt 3 tia lửa 50 ms; tàu giật lùi 0,25 m; cú đẩy camera 3 px ngược hướng bắn | 7 vệt ngắn sáng (`Strips`, sống 0,12 s) | T1: sao 4 tia nhỏ; quái bị đẩy lùi thấy rõ (đẩy thật trong sim + giật lùi giả) | T1, mảnh vỡ văng theo hướng đẩy; nhiều con chết cùng ô thì gom √N | `gun.tan.fire` (tiếng nổ đanh trên thép + vỏ đạn leng keng) |
 | **Ray** | **Nạp** 150 ms: lõi trắng xanh co lại ở nòng (báo trước), rồi lóe dài 80 ms | Đường thẳng mảnh trắng xanh 0,25 s, có vòng gợn ion dọc đường, mờ dần | T2 ở mỗi quái bị xuyên: tia lửa theo hướng đường bắn. Trúng Vỏ: tia lửa cam kèm tiếng keng | T2/T3, dừng hình 12 ms (cách nhau ≥ 300 ms) | `gun.ray.charge`, `gun.ray.fire` (rít tụ điện rồi nổ đanh, có đuôi) |
 | **Pháo Sao** | Thụp cối: quầng khói xám, lóe hướng lên | Quả sáng có vệt bay **vòng cung** (view vẽ parabol, sim chỉ biết điểm rơi và giờ rơi); vòng đỏ mảnh trên sàn đánh dấu điểm rơi 0,7 s | Nổ T2: sao 8 tia, **sóng tròn trên sàn** 3 m, lóe, mảnh vỡ | Gom √N; nổ liền nhau cách 40–70 ms ra hiệu ứng domino | `gun.phao.launch`, `gun.phao.burst` (bụp, rít, nổ trầm) |
-| **Vỏ** (Trâu, Đầu Đàn, Tổ, Boss) | — | — | Tia lửa cam bật ngược; số sát thương nhỏ hơn và màu xám (kiểu số `normal`, cỡ nhỏ); Băng Hoàn hảo xuyên Vỏ hiện số kiểu "HOÀN HẢO" | Trâu: T3 + mảnh vỡ nặng; Đầu Đàn: T4, đèn hiệu tắt, dừng hình 45 ms | `hit.armour`, `leader.horn` (khi Đầu Đàn tới), `leader.down` |
+| **Vỏ** (Trâu, Đầu Đàn, Tổ, Boss) | — | — | Đòn bị Vỏ chặn: tia lửa cam bật ngược, tiếng keng, số kiểu `tick` của kit (nhỏ, gộp; không cần kiểu số mới). Đòn của **băng Chuẩn xuyên Vỏ**: vệt xuyên trắng lam ngắn đi vào thân, số kiểu `normal`. Nhờ vậy người chơi thấy ngay rằng gõ chuẩn thì xuyên giáp. Băng Hoàn hảo vẫn hiện kiểu `perfect` như S0 | Trâu: T3 + mảnh vỡ nặng; Đầu Đàn: T4, đèn hiệu tắt, dừng hình 45 ms | `hit.armour`, `leader.horn` (khi Đầu Đàn tới), `leader.down` |
 | **Khiên** | — | — | Đạn chạm: vòm lục giác lóe tại chỗ trúng, tia lửa trượt sang bên | Vỡ khiên: mảnh kính lam (T3) | `shield.hit`, `shield.break` |
 | **Tách** | — | — | — | Lóe nứt, 3 mảnh bay ra (là quái thật) | `foe.split` |
 | **Tổ** | — | — | Nhịp đẻ: quầng cam co bóp trước mỗi lần đẻ | Vỡ: T4, dừng hình 45 ms, sóng kép, mưa mảnh vỡ | `nest.spawn`, `nest.down` |
@@ -365,6 +442,23 @@ Mọi đòn đi qua các bậc phản hồi của kit (`tier()` T0–T5: rung, d
 - **Nhạc:** thêm một lớp "boss" cho ải 10 (trống máy dày hơn, bass hạ một quãng), mờ vào khi boss ra mắt. Mỗi id âm mới có mục và prompt trong `docs/audio/THEME_SOUND_LIST.md` (test kiểm).
 - **Màu súng** (biến trong `theme.css`, sọc cảnh báo của bến theo màu súng): Xung lam điện, Tia cam nóng, Tán hổ phách, Ray trắng xanh, Pháo Sao đỏ son. Hai súng không được trùng sắc.
 - **Quái mới** dùng lớp vật liệu "Bầy Hố Đen" như S0. Trâu và Đầu Đàn có vân vàng đậm hơn, Khiên có vân lam. Tổ có vân cam co bóp theo nhịp đẻ.
+
+### 12.1 Chuyển động (AI làm, không dựng model bằng mã)
+
+Model của thư viện chỉ cho **hình**. Phần lớn model chỉ có clip đứng yên. Mọi dáng đi, phản ứng và đòn của quái là chuyển động thủ tục, do AI viết. Phần này chạy trong shader instanced: dịch, nghiêng, lắc, co giãn theo thuộc tính của từng quái, như S0 (`crowd.ts`), không thêm draw call. Mỗi dòng dưới đây được duyệt bằng chuỗi khung chụp 50 ms (kịch bản `survival-s1-guns`, `survival-s1-boss`) trước khi báo xong.
+
+| Quái | Dáng đi | Bị trúng / bị đẩy | Khoảnh khắc riêng |
+|---|---|---|---|
+| **Trâu** | Bước nặng, nhịp chậm (1,1 Hz). Mỗi bước thân hạ 6 cm rồi nhô lên. Sàn rung nhẹ (vòng bụi mờ) ở vài Trâu gần tàu nhất | Đòn bị Vỏ chặn: thân gần như không lùi (giật 0,03 m), chỉ lóe cam. Đòn xuyên: giật 0,12 m. Không bị Tán đẩy, nhưng hơi khựng 80 ms | Khi tới 10 m: cúi đầu, tăng tốc 10 % ("húc"), báo bằng hình chứ không bằng biển |
+| **Đầu Đàn** | Như Trâu, to 1,25×. Đầu ngẩng, cột đèn hiệu đung đưa ngược nhịp bước | Như Trâu | Lúc vào cổng: dừng 0,6 s, ngẩng lên, cùng tiếng tù và `leader.horn`. Lúc chết: quỵ hai nhịp rồi đổ (0,5 s), đèn hiệu tắt sau cùng |
+| **Khiên** | Đi khom, khiên luôn quay về tàu: xoay theo hướng tàu với tốc góc có trần, không giật | Trúng khiên: vòm lục giác gợn từ chỗ trúng ra. Khiên nứt dần theo % máu khiên (3 bậc vết nứt bằng shader) | Khiên vỡ: thân giật lùi 0,2 m, rồi đứng thẳng, đi nhanh hơn 10 % |
+| **Tách** | Lảo đảo, nhún lệch pha (bước không đều), thân phập phồng theo nhịp 2 Hz | Như bầy S0 | Trước khi vỡ: phồng 1,15× trong 90 ms, rồi 3 mảnh bật ra theo hình cung (vị trí lấy từ sim; view chỉ thêm vòng cung giả) |
+| **Tổ** | Bò: thân co lại rồi duỗi ra mỗi 1,5 s, tiến theo từng nhịp | Lóe cam, không lùi | Trước mỗi lần đẻ: phồng dần 0,8 s (khớp vân cam co bóp), rồi "nôn" bầy ra kèm vòng sóng nhỏ |
+| **Boss Cai Ngục** | Bước chậm có lực: thân nghiêng về chân trụ, mỗi bước camera giật 1 px (tắt khi giảm chuyển động). Có clip thì dùng clip làm lớp nền, AI vẫn thêm lớp nghiêng và nhún | Đòn thường: giật 0,05 m. Mỗi 10 % máu mất: khựng 120 ms, mảnh vỏ văng | **Đòn Sập:** vươn lên 1,08× trong lúc báo trước (đọc được từ xa), khựng, rồi đập xuống khớp với giờ trúng của sim. **Đổi pha:** gầm (ngửa ra sau 0,4 s), sóng chấn. **"TIẾN LÊN"** (hết giờ pha): bước dài, sàn nứt sáng theo bước |
+| **Đạn Pháo Sao** | Bay vòng cung (view vẽ parabol khớp giờ rơi của sim), quả xoay, vệt sáng mờ dần | — | Nổ liền nhau cách 40–70 ms thì thành chuỗi domino |
+
+- Mọi chuyển động trên tôn trọng "giảm chuyển động" (chỉ giữ lóe và mờ dần) và rung camera 0 %.
+- Model thiếu (repo sạch, không có GLB) thì dùng khối giữ chỗ như S0, vẫn có đủ các chuyển động trên để duyệt nhịp.
 
 ## 13. Dữ liệu và mã (ngân sách dòng)
 
@@ -388,11 +482,12 @@ Mọi đòn đi qua các bậc phản hồi của kit (`tier()` T0–T5: rung, d
 | `src/sim/weapons.ts` | 308 | 200 | R1 | Bến, băng, cấp, chia việc cho từng súng (Xung, Tia chuyển ra file riêng) |
 | `src/sim/guns/{xung,tia,tan,ray,phao}.ts` | mới (Xung, Tia chuyển sang) | 130 / 170 / 120 / 150 / 150 | R1 | Một file mỗi súng |
 | `src/sim/projectiles.ts` | 105 | 190 | R1 | Vỏ, đoạn chắn khiên, Tách vỡ, quả Pháo Sao |
+| `src/sim/hits.ts` | 116 | 170 | R1 | Lưới (giữ `MAX_RADIUS` 0,8), danh sách quái to, thử thân chạm dải tầm |
 | `src/sim/stores.ts` | 134 | 190 | R1 | Cột mới cho quái (Vỏ, khiên, cờ to, đèn hiệu), kho `Shells`, `Shields` |
 | `src/sim/words.ts` | 196 | 280 | R1, R3 | N bến, dải theo độ lệch chữ, che chữ, từ chặn |
 | `src/sim/pace.ts` | 221 | 250 | R1 | Ảnh chụp N bến, bảng bậc theo ải |
 | `src/sim/events.ts`, `hash.ts` | 51, 45 | 90, 55 | R1–R3 | Sự kiện mới; mã băm gồm mọi kho mới |
-| `src/app/main.ts` | 656 | 600 | R2 | Tách luồng màn sang `journey.ts` |
+| `src/app/main.ts` | 656 | 480 | R2 | Tách luồng màn sang `journey.ts` (hiện đã quá trần 480; R1 không được làm nó dài thêm) |
 | `src/app/journey.ts` | mới | 280 | R1 (chọn ải, nạp súng), R2 (chương) | Luồng màn, lưu `survival.journey` |
 | `src/app/skill.ts`, `dev.ts` | 161, 10 | 185, 40 | R1 | Loại E khỏi ải luật học khó; tay cầm kịch bản |
 | `src/view/hud.ts` | 251 | 400 | R1–R3 | 2–3 bến, biển mục tiêu, cảnh báo hiểm họa, chữ che, dải từ chặn, thanh boss |
@@ -411,7 +506,8 @@ Mọi đòn đi qua các bậc phản hồi của kit (`tier()` T0–T5: rung, d
 | `tests/survival/tactics.ts`, `typist-bot.ts` | mới, 189 | 180, 260 | R1–R3 | Chọn súng, cửa, thưởng; N bến; từ chặn |
 | `scripts/balance-lib.ts`, `balance.ts`, `replay.ts` | 144, 90, 53 | 260, 170, 70 | R1–R2 | `--stages`, `--chapter`, G1–G8 |
 
-- Trần chung: `src/` (không kể `src/kit`) ≤ **9.000 dòng**. Không file nào trong `src/` quá 480 dòng.
+- Trần chung: `src/` (không kể `src/kit`, tính cả CSS) ≤ **10.000 dòng**. Không file nào trong `src/` quá 480 dòng (từ cuối R2; `main.ts` được tạm vượt tới khi tách).
+- Các trần trong bảng là trần **từng file**, không phải dự kiến. Cộng hết lại thì khoảng 10.200 dòng, thêm khoảng 530 dòng của các file không đổi (`hits.ts` đã có dòng riêng, `ship.ts`, `input.ts`, `menu.ts`…). Vì vậy trần chung mới là ràng buộc chính: không file nào được chạm trần của nó mà không bớt ở chỗ khác. Bản trước ghi trần chung 9.000, thấp hơn tổng các trần từng file khoảng 1.700 dòng, và để `main.ts` 600 dòng, trái luật 480.
 - `tests/boundary.test.ts`, `tests/survival-boundary.test.ts`: `src/sim/guns/*`, `src/content/*` mới cũng chịu luật "không DOM, đồng hồ, `Math.random`, lượng giác".
 
 ## 14. Thứ tự làm
@@ -421,16 +517,16 @@ Mỗi đợt: làm, tự xem ảnh và chuỗi khung, chạy cân bằng, rồi 
 ### R1 "Súng và khắc chế" (chơi được riêng)
 
 1. **Tách mã, chưa đổi luật.** Chuyển súng và quái sang `content/guns.ts`, `content/foes.ts`; tách `sim/guns/xung.ts`, `tia.ts`; bến thành mảng N. Trước khi bật luật mới, **vết sự kiện của Trận thử phải giống hệt** bản `00ed734`: 6 seed × 3 bot, so dãy (tick, loại, giá trị) của sự kiện và số liệu cuối trận. Mã băm thì được đổi (kho có thêm cột).
-2. **Súng mới:** Tán, Ray, Pháo Sao; Vỏ; Băng Hoàn hảo xuyên Vỏ; Rèn (chưa có cửa, chỉ dùng cho bộ đồ tham chiếu và test); độ dài từ +1.
+2. **Súng mới:** Tán, Ray, Pháo Sao; Vỏ; Băng Chuẩn xuyên Vỏ (mục 5.1); tầm với quái to; Rèn (chưa có cửa, chỉ dùng cho bộ đồ tham chiếu và test); độ dài từ +1.
 3. **Quái mới:** Trâu, Khiên, Tách, Đầu Đàn.
 4. **Luật Ải:** mục tiêu Trụ vững và Săn, hiểm họa Vết nứt, luật học Thiếu chữ; dữ liệu ải 1–4; đầu trận có ải và bộ súng.
-5. **Màn:** màn chính có "Hành trình · Chương 1 (ải 1–4)" và "Trận thử". Chọn ải (mở dần theo ải đã qua) → Bảng tin → Nạp súng (2 trong 5) → Trận → Kết ải có sao. Kho súng hiện 5 súng.
+5. **Màn:** màn chính có "Hành trình · Chương 1 (ải 1–4)" và "Trận thử". Chọn ải (mở dần theo ải đã qua) → Bảng tin → Nạp súng (2 trong 5) → Trận → Kết ải có sao. Mỗi ải dùng bộ đồ tham chiếu của nó (mục 4.1, "Chơi một ải lẻ"), nên ải 4 có một súng cấp 2. Kho súng hiện 5 súng.
 6. **HUD:** bến theo súng (tên, màu, kiểu băng), biển mục tiêu ("ĐẦU ĐÀN 2/3"), cảnh báo Vết nứt, chữ che của Thiếu chữ.
 7. **Hình và tiếng** của 3 súng mới, Vỏ, khiên, Tách, Đầu Đàn, Vết nứt (mục 12).
-8. **Bot và báo cáo:** N bến, `gunValue`, `tactics.ts` (chọn súng); `--stages` cho Trận thử và ải 1–4; B1–B9, G3, G3c, G5, G6 (Săn), G8.
+8. **Bot và báo cáo:** N bến, `gunValue`, `tactics.ts` (chọn súng); `--stages` cho Trận thử và ải 1–4; B1–B9, G3, G3m, G3c, G5, G6 (Săn), G8; G2 tính tạm trên ải 1–4 (chỉ in số).
 9. **Kịch bản:** `survival-s1-loadout`, `survival-s1-guns`, `survival-s1-stage` (ải 2 và ải 4), `survival-s1-perf`; 5 kịch bản S0 vẫn đạt trên Trận thử.
 
-**R1 xong khi:** chơi được ải 1–4 từ màn chính đến kết ải, với bất kỳ bộ 2 súng nào; `pnpm check` xanh; báo cáo 100 seed ải 1–4 đạt B1–B5, B7, B8, G3, G3c, G5, G8. B6 ở R1 là số đo (đích +10 có thể chờ tới R2, khi có cửa và bến 3). Hiệu năng mục 17 đạt.
+**R1 xong khi:** chơi được ải 1–4 từ màn chính đến kết ải, với bất kỳ bộ 2 súng nào; `pnpm check` xanh; báo cáo 100 seed ải 1–4 đạt B1–B5, B7, B8, G3, G3m, G3c, G5, G8. B6 ở R1 là số đo (đích +10 có thể chờ tới R2, khi có cửa và bến 3). Hiệu năng mục 17 đạt.
 
 ### R2 "Chương, cửa và hiểm họa"
 
@@ -452,8 +548,8 @@ Mỗi đợt: làm, tự xem ảnh và chuỗi khung, chạy cân bằng, rồi 
 
 ## 15. Test (Vitest)
 
-- **Súng** (`tests/guns.test.ts`): số viên, loạt, phát, quả và thời gian mỗi băng; nạp và cộng dồn (2 băng, cấp 3 là 3); Vỏ trừ thẳng, còn ít nhất 1; Ray × 0,25; Hoàn hảo × 0,5; Ray xuyên ≤ 6 quái và giảm ×0,85; Pháo Sao: tầm 8–24 m, nổ giảm đều, bỏ qua khiên; Tán: nón, đẩy lùi (không đẩy Trâu); khiên chặn Xung và Tán từ phía trước, che toán phía sau, Ray phá, Tia đốt; Xung không bắn vào quái bị khiên che; Rèn ×1,2 / ×1,4; độ dài từ +1, trần 9; cổng G3 (kịch bản nhỏ, nhiều seed).
-- **Luật Ải** (`tests/stage-rules.test.ts`): Săn kết thúc đúng lúc hạ đủ N; thua khi lọt quá M − N; bầy rút lui không gây hại; Phá Tổ: Tổ bò, đẻ dồn dần, trần 300 s; Vết nứt: báo trước, vị trí, số con; Bão ion: báo trước, bến tê không bắn, vẫn gõ và nạp được, không phím nào mất; Giếng: kéo quái, bẻ đạn Xung, không bẻ Ray; Thiếu chữ: không ẩn chữ đầu, không hai chữ liền, tất định; Nghĩa; Boss: pha theo HP, Đòn Sập, từ chặn (kịp, không kịp, đang gõ dở), chữ đầu khác mọi bến; `checkChapter` đạt với Chương 1 và báo lỗi với một chương sai cố ý.
+- **Súng** (`tests/guns.test.ts`): số viên, loạt, phát, quả và thời gian mỗi băng; nạp và cộng dồn (2 băng, cấp 3 là 3); Vỏ trừ thẳng, còn ít nhất 1; Ray × 0,25; băng Chuẩn × 0,75 (Ray × 0,19), băng có lỗi tính đủ Vỏ; tầm với quái to (thân chạm dải tầm, cả tầm gần của Pháo Sao); Khiên và mọi quái bán kính ≤ 0,8 nằm trong lưới, quái to nằm trong danh sách riêng; Ray xuyên ≤ 6 quái và giảm ×0,85; Pháo Sao: tầm 8–24 m, nổ giảm đều, bỏ qua khiên; Tán: nón, đẩy lùi (không đẩy Trâu); khiên chặn Xung và Tán từ phía trước, che toán phía sau, Ray phá, Tia đốt; Xung không bắn vào quái bị khiên che; Rèn ×1,2 / ×1,4; độ dài từ +1, trần 10; cổng G3 (kịch bản nhỏ, nhiều seed).
+- **Luật Ải** (`tests/stage-rules.test.ts`): Săn kết thúc đúng lúc hạ đủ N; thua khi lọt quá M − N; bầy rút lui không gây hại; Phá Tổ: Tổ bò, đẻ dồn dần, trần 300 s; Vết nứt: báo trước, vị trí, số con; Bão ion: báo trước, bến tê không bắn, vẫn gõ và nạp được, không phím nào mất; Giếng: kéo quái, bẻ đạn Xung, không bẻ Ray; Thiếu chữ: không ẩn chữ đầu, không hai chữ liền, tất định; Nghĩa; Boss: pha theo HP **hoặc** hết giờ pha ("TIẾN LÊN"), trần 600 s, thời gian báo trước theo E_eff và `telegraphScale`, Đòn Sập, từ chặn (kịp, không kịp, đang gõ dở), chữ đầu khác mọi bến; `checkChapter` đạt với Chương 1 và báo lỗi với một chương sai cố ý.
 - **Hành trình** (`tests/journey.test.ts`): cửa tái lập từ seed chương, không trùng loại, đúng điều kiện mời; thưởng đúng; Lõi, thua, chương vỡ, quay về Mốc với đúng ảnh chụp; sao; lưu rồi đọc lại (kể cả JSON hỏng thì bắt đầu lại sạch).
 - **Sim và cân bằng** (sửa test cũ): tất định có đầu trận mới; replay khớp; bot qua `installKeys` với 3 bến; ma trận nhỏ ra đủ 9 cổng; bước sim 700 quái + 2.000 đạn + 64 quả Pháo Sao + 3 bến cùng bắn ≤ 1,5 ms.
 - **Ranh giới, chủ đề:** như S0; thêm mỗi id âm mới có mục trong `THEME_SOUND_LIST.md`; màu súng là biến trong `theme.css`.
@@ -469,7 +565,7 @@ Chrome headless, gõ thật qua CDP, 1280×720 và 1920×1080, 0 lỗi console, 
 | `survival-s1-stage` | Ải 2 (Săn) và ải 4 (Thiếu chữ, Khiên) gõ 35 và 45 WPM; biển mục tiêu đếm đúng; bầy rút lui khi đủ; chữ che hiện "_", không bao giờ ở chữ đầu; 0 số đè vùng cấm; Node chạy lại khớp mã băm |
 | `survival-s1-hazards` | Vết nứt, Bão ion, Giếng: ảnh lúc báo trước và lúc xảy ra; chữ của bến tê vẫn ≥ 26 px, tương phản ≥ 7 : 1; không phím nào mất trong lúc tê |
 | `survival-s1-journey` | Chương: ải 1 → cửa (gõ `forge`) → Rèn → ải 2; thua ải → −1 Lõi → chơi lại; tải lại trang ở màn cửa → Tiếp tục đúng chỗ; Mốc mở bến 3, bố cục 3 bến không chồng, chữ ≥ 26 px |
-| `survival-s1-learn` | Ải 9 (Nghĩa): nghĩa ≥ 22 px, IPA và từ hiện khi xong, phát âm; khung học không bị che; tổng kết chương có từ mới và từ sai nhiều |
+| `survival-s1-learn` | Ải 9 (Nghĩa): nghĩa trên bến 32 px (từ dài co tới ≥ 26 px, tối đa 2 dòng), IPA và từ hiện khi xong, phát âm, gợi ý hiện đúng giờ; khung học không bị che; tổng kết chương có từ mới và từ sai nhiều |
 | `survival-s1-boss` | Boss ra mắt (camera zoom), Đòn Sập: làn đỏ + từ chặn, gõ kịp ("CHẶN!") và để trượt (T4); đổi pha; boss chết; 12 khung quanh lúc chặn |
 | `survival-s1-perf` | Đo khung: ải 8 lúc đỉnh (3 bến, Pháo Sao + Tia + Giếng, ~150 quái); ải 10 với hộ tống; `flood(700)` khi cả 3 bến cùng bắn; số draw call |
 | S0: `boot`, `menu`, `fight`, `keys`, `frames`, `perf`, `balance` | Vẫn đạt trên Trận thử (đường hồi quy) |
@@ -503,14 +599,14 @@ Chrome headless, gõ thật qua CDP, 1280×720 và 1920×1080, 0 lỗi console, 
 | Rủi ro | Dấu hiệu | Cách giảm |
 |---|---|---|
 | Phạm vi lớn (3 súng, 4 loại quái, 3 hiểm họa, 2 mục tiêu, boss, luồng chương) | R1 kéo dài quá 1,5 lần dự kiến | R1 chỉ ải 1–4. Nếu trễ: dời Giếng hấp dẫn và Nghĩa sang S1b, thay ải 8 và 9 bằng tổ hợp đã có (vẫn qua `checkChapter`) |
-| Khắc chế quá cứng làm B1 trượt với bot "Vừa" | Ô ↓ ở các ải có Trâu, Tổ | Cổng G3c (mọi bộ 2 súng thắng ≥ 35 %). Chỉnh Vỏ và HP trước, nhịp sau. Mục tiêu: bộ súng sai thua kém bộ đúng khoảng 15–25 điểm, không hơn |
+| Khắc chế quá cứng làm B1 trượt với bot "Vừa" | Ô ↓ ở các ải có Trâu, Tổ | Cổng G3c (mọi bộ súng thắng ≥ 60 %, kém bộ tốt nhất ≤ 30 điểm) và G2(d) (Ray không bắt buộc). Chỉnh Vỏ và HP trước, nhịp sau. Mục tiêu: bộ súng sai thua kém bộ đúng khoảng 15–25 điểm, không hơn |
 | B6 đạt nhờ bot, người chơi thật không thấy khác | Chủ dự án thấy súng nào cũng như nhau | Mục 18.1; B9; ảnh và số thời gian hạ quái trong bảng tin |
 | Ma trận bot chạy lâu (30–40 phút) | Mỗi vòng chỉnh mất nửa giờ | 40 seed khi chỉnh, 100 seed cho báo cáo; chỉ chạy ải và bot vừa đổi (`--stages`, `--bots`); một tiến trình Node chạy nền |
 | RAM 16 GB, nhiều agent | Chrome treo, kịch bản chập chờn | Một dev server (3047), một Chrome; tắt khi xong; đo hiệu năng hai lần, ghi lúc máy bận |
 | Hiệu năng tụt vì thêm model quái, boss, hạt Pháo Sao | p95 tăng ở `perf` | Instanced theo model; quái to dùng danh sách riêng; trần hạt theo bậc; gom nổ √N; đo `perf` ở mỗi đợt |
 | Khung học bị lấn (3 bến, từ chặn, biển mục tiêu, thanh boss) | Chữ < 26 px, số đè | Thêm vùng cấm; kịch bản `journey` và `learn` đo cỡ chữ và lần đè ở 1280×720 |
 | Model tạm (`rainbow-tank`, `rainbow-scout` là bản sao họ `prism`; Tổ dùng `carrier`) | Hình không hợp vai | Dùng làm giữ chỗ, ghi danh sách cho chủ dự án; không dựng model bằng mã |
-| `main.ts` phình | > 600 dòng | Tách `app/journey.ts` ở R2 |
+| `main.ts` phình | Dài hơn 656 dòng ở R1; > 480 dòng sau R2 | R1 đặt luồng màn mới vào `app/journey.ts` ngay; tách phần còn lại ở R2 |
 | Kit `typing` đang bị sửa ở workflow khác | Xung đột khi đồng bộ kit | Không dùng kit `typing`; chỉ đồng bộ kit khi thật cần (`feedback`, `balance`), chạy `--check` trước |
 | Mã băm đổi khi tách mã | Không biết refactor có đổi luật không | R1 bước 1: so vết sự kiện của Trận thử với bản `00ed734` trước khi bật luật mới |
 | Lõi Trạm làm người gõ chậm phải chơi lại nhiều | Trẻ em, bot Mới thua chương nhiều lần | Thư giãn 4 Lõi; Mốc ở mọi chế độ; gợi ý đổi chế độ của kit (`suggestDifficulty`) sau 2 lần vỡ chương |
