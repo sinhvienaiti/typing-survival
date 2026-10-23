@@ -8,7 +8,7 @@
  * It publishes the rectangles damage numbers must not cover.
  */
 import type { Rect } from "../kit/feedback";
-import { MAG_MAX, TIA, WEAPON, XUNG } from "../content/rules";
+import { MAG_MAX, TIA, XUNG } from "../content/guns";
 import { STAGE_S0 } from "../content/stage-s0";
 import { peakAt } from "../sim/plan";
 import type { World } from "../sim/world";
@@ -189,7 +189,7 @@ export class Hud {
       slot.root.classList.toggle("is-active", T.lock === s);
       slot.root.classList.toggle("is-dim", T.lock >= 0 && T.lock !== s);
       const mags = w.guns.mags[s]!;
-      const first = s === WEAPON.xung ? w.guns.rounds / XUNG.rounds : w.guns.beamLeft / TIA.seconds;
+      const first = s === 0 ? w.guns.left[s]! / XUNG.rounds : w.guns.left[s]! / TIA.seconds;
       for (let m = 0; m < MAG_MAX; m += 1) {
         const fill = m < mags - 1 ? 1 : m === mags - 1 ? Math.max(0, Math.min(1, first)) : 0;
         slot.mags[m]!.style.setProperty("--fill", fill.toFixed(3));

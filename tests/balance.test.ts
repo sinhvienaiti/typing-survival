@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { BANDS, SKILL_FULL, botParams, newSkillProfile, parseSkill, serializeSkill, type PaceDecision } from "../src/kit/balance";
 import { SEEN_KEY, SKILL_KEY, WordHistory, emptyTally, headerFor, loadProfile, recordRun, runSample, saveProfile, skillReport, tallyWord, type TextStore } from "../src/app/skill";
 import { FLOW_EVERY, MODE_SPECS, PACE_GAIN, SURVIVAL_PACE_TABLE, WARMUP_TICKS, paceFor, runHeader, scalesFor } from "../src/content/balance";
-import { DRAIN, ELITE, FIELD, FOES, KIND, MAG_MAX, NEAR, PATH, SHIP, SUPPORT, XUNG } from "../src/content/rules";
+import { FOES, KIND } from "../src/content/foes";
+import { MAG_MAX, XUNG } from "../src/content/guns";
+import { DRAIN, ELITE, FIELD, NEAR, PATH, SHIP, SUPPORT } from "../src/content/rules";
 import { STAGE_S0 } from "../src/content/stage-s0";
 import { EV } from "../src/sim/events";
 import { hashHex } from "../src/sim/hash";
@@ -149,7 +151,7 @@ describe("pace k and the run header (BALANCE.md §4.1)", () => {
     const slow = world(1, { pace: 0.75, director: false });
     const s = slow.foes.add(KIND.mine, 0, FIELD.gateZ - 2, 1e6, 0);
     step(slow);
-    expect(-slow.foes.vz[s]!).toBeCloseTo(FOES[KIND.mine].speed * slow.scales.speed, 1);
+    expect(-slow.foes.vz[s]!).toBeCloseTo(FOES[KIND.mine]!.speed * slow.scales.speed, 1);
     // The same seed spawns about k times as many foes over the stage.
     const spawned = (pace: number) => {
       const w = world(9, { pace, director: false });
@@ -188,7 +190,7 @@ describe("pace k and the run header (BALANCE.md §4.1)", () => {
 describe("the FlowMeter snapshot (BALANCE.md §3 for this game)", () => {
   it("danger: a foe or a scout shot in the near zone; live words: bays whose gun takes a magazine; busy: a word under way; backlog: words owed at the line", () => {
     const w = world(3);
-    const far = w.foes.add(KIND.mine, 0, NEAR.z + 3, FOES[KIND.mine].hp, 0);
+    const far = w.foes.add(KIND.mine, 0, NEAR.z + 3, FOES[KIND.mine]!.hp, 0);
     pressure(w, 0);
     let snap = flowSnapshot(w);
     expect(snap.danger).toBe(false);
@@ -201,9 +203,9 @@ describe("the FlowMeter snapshot (BALANCE.md §3 for this game)", () => {
     expect(snap.danger).toBe(true);
     expect(snap.backlog).toBe(0);
     // 30 mines at the line: 420 HP = two magazines of Xung owed.
-    for (let k = 0; k < 29; k += 1) w.foes.add(KIND.mine, -10 + k * 0.7, NEAR.z - 2, FOES[KIND.mine].hp, 0);
+    for (let k = 0; k < 29; k += 1) w.foes.add(KIND.mine, -10 + k * 0.7, NEAR.z - 2, FOES[KIND.mine]!.hp, 0);
     pressure(w, 0);
-    expect(flowSnapshot(w).backlog).toBe(Math.floor((30 * FOES[KIND.mine].hp) / (XUNG.rounds * XUNG.damage)));
+    expect(flowSnapshot(w).backlog).toBe(Math.floor((30 * FOES[KIND.mine]!.hp) / (XUNG.rounds * XUNG.damage)));
     // Both guns full and no word under way: nothing to type (idle); a lock is busy.
     w.guns.mags[0] = MAG_MAX;
     w.guns.mags[1] = MAG_MAX;

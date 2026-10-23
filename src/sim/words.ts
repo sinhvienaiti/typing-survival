@@ -1,40 +1,57 @@
 /**
- * The two gun slots' words (docs/BUILD_S0.md §5). Each slot shows
- * one word; the first key whose letter starts a slot's word locks it (the
- * two first letters always differ), further keys type it, a wrong key is an
- * error (the word stays), Backspace takes a letter back and frees the lock
- * at zero. A finished word loads its gun with the word's quality and the
- * slot takes a new word at once: from the band of E, never the one on the
- * other slot, none again until the band is used up.
+ * The bays' words (docs/BUILD_S0.md §5, docs/BUILD_S1.md §5.1, §7.3). Each
+ * bay shows one word; the first key whose letter starts a bay's word locks
+ * it (the first letters of all shown words always differ), further keys type
+ * it, a wrong key is an error (the word stays), Backspace takes a letter
+ * back and frees the lock at zero. A finished word loads its bay's gun with
+ * the word's quality and the bay takes a new word at once: from the band of
+ * E (a heavy gun's band is a letter longer), never one on another bay, none
+ * again until its band is used up (one "used" list for every bay).
+ * Thiếu chữ hides one letter of a word (two from 7 letters): never the
+ * first, never two side by side, drawn from the hide stream (the kit's `ai`
+ * stream, which nothing else draws) so the words are dealt exactly as
+ * without the rule; a wrong key on a hidden letter shows it (still an error).
  */
-import { LENGTH_BY_E, QUALITY } from "../content/rules";
+import { lengthFor } from "../content/balance";
+import { GUN_SPECS } from "../content/guns";
+import { QUALITY } from "../content/guns";
+import { MISSING } from "../content/stage-rules";
 import { EV, FLAG } from "./events";
 import { loadMagazine } from "./weapons";
 import type { World } from "./world";
 
 const DONE_RING = 1024;
 
-export function createTyping(deck: readonly string[], expected: number) {
-  let len: readonly [number, number] = LENGTH_BY_E[0].len;
-  for (const entry of LENGTH_BY_E) if (expected >= entry.minE) len = entry.len;
+function bandOf(deck: readonly string[], len: readonly [number, number]): Int32Array {
   let band = deck.flatMap((text, index) => (text.length >= len[0] && text.length <= len[1] ? [index] : []));
   if (band.length < 6) band = deck.map((_, index) => index);
+  return Int32Array.from(band);
+}
+
+/** `heavy[b]`: bay b's gun takes the heavy band. */
+export function createTyping(deck: readonly string[], expected: number, heavy: readonly boolean[] = [false, false]) {
+  const bays = heavy.length;
   return {
-    band: Int32Array.from(band),
+    band: bandOf(deck, lengthFor(expected)),
+    heavyBand: bandOf(deck, lengthFor(expected, true)),
+    heavy: Uint8Array.from(heavy, (on) => (on ? 1 : 0)),
     used: new Uint8Array(deck.length),
-    /** The locked slot (−1: none). */
+    /** The locked bay (−1: none). */
     lock: -1,
-    word: new Int32Array([-1, -1]),
-    typed: new Int32Array(2),
-    errors: new Int32Array(2),
+    word: new Int32Array(bays).fill(-1),
+    typed: new Int32Array(bays),
+    errors: new Int32Array(bays),
     /** Ticks of the word's first and last right key. */
-    first: new Int32Array(2),
-    last: new Int32Array(2),
-    /** The tick each slot's word was dealt, and the tick the typist was last free (a word done or a lock let go). */
-    dealt: new Int32Array(2),
+    first: new Int32Array(bays),
+    last: new Int32Array(bays),
+    /** The tick each bay's word was dealt, and the tick the typist was last free (a word done or a lock let go). */
+    dealt: new Int32Array(bays),
     free: 0,
     /** Seconds from the word being there (and the typist free) to its first key. */
-    recognize: new Float64Array(2),
+    recognize: new Float64Array(bays),
+    /** Thiếu chữ: bit i set when letter i is hidden, and when a wrong key showed it. */
+    hidden: new Int32Array(bays),
+    shown: new Int32Array(bays),
     /** Deck indices of the finished words, in order (a ring). */
     done: new Int32Array(DONE_RING),
     doneCount: 0,
@@ -42,6 +59,9 @@ export function createTyping(deck: readonly string[], expected: number) {
 }
 
 export type Typing = ReturnType<typeof createTyping>;
+
+/** The heavy flags of a kit's bays (for createTyping). */
+export const heavyBays = (guns: readonly number[], bays: number): boolean[] => Array.from({ length: bays }, (_, b) => (guns[b] !== undefined ? GUN_SPECS[guns[b]!]!.heavy : false));
 
 /**
  * What the run measures of the typist for the skill profile (BALANCE.md §2;
@@ -63,34 +83,75 @@ function noteKey(w: World): void {
   M.lastKey = w.tick;
 }
 
-/** Deals slot `slot` a word: random start in the band, the first fresh one whose first letter differs from the other slot's. */
+/** Bay `slot`'s word clashes with another bay's: the same word or the same first letter. */
+function clashes(w: World, slot: number, index: number): boolean {
+  const T = w.typing;
+  const first = w.deck[index]!.charCodeAt(0);
+  for (let other = 0; other < T.word.length; other += 1) {
+    if (other === slot) continue;
+    const word = T.word[other]!;
+    if (word < 0) continue;
+    if (word === index || w.deck[word]!.charCodeAt(0) === first) return true;
+  }
+  return false;
+}
+
+/** Deals bay `slot` a word: random start in its band, the first fresh one whose first letter differs from every other bay's. */
 export function dealWord(w: World, slot: number): void {
   const T = w.typing;
-  const other = T.word[1 - slot]!;
-  const otherFirst = other >= 0 ? w.deck[other]!.charCodeAt(0) : -1;
-  const n = T.band.length;
+  const band = T.heavy[slot] === 1 ? T.heavyBand : T.band;
+  const n = band.length;
   for (let pass = 0; pass < 2; pass += 1) {
     const start = w.rng.words.int(0, n - 1);
     for (let k = 0; k < n; k += 1) {
-      const index = T.band[(start + k) % n]!;
-      if (T.used[index] === 1 || index === other || w.deck[index]!.charCodeAt(0) === otherFirst) continue;
+      const index = band[(start + k) % n]!;
+      if (T.used[index] === 1 || clashes(w, slot, index)) continue;
       T.used[index] = 1;
       T.word[slot] = index;
       T.typed[slot] = 0;
       T.errors[slot] = 0;
       T.dealt[slot] = w.tick;
+      hide(w, slot, index);
       return;
     }
     // The band is used up: start it again.
-    for (let k = 0; k < n; k += 1) T.used[T.band[k]!] = 0;
+    for (let k = 0; k < n; k += 1) T.used[band[k]!] = 0;
   }
-  T.word[slot] = T.band[0]!;
+  T.word[slot] = band[0]!;
   T.dealt[slot] = w.tick;
+  hide(w, slot, band[0]!);
+}
+
+/** Thiếu chữ: picks the hidden letters of bay `slot`'s new word. */
+function hide(w: World, slot: number, index: number): void {
+  const T = w.typing;
+  T.hidden[slot] = 0;
+  T.shown[slot] = 0;
+  if (w.stage.learn !== "missing") return;
+  T.hidden[slot] = hiddenMask(w.deck[index]!.length, w.rng.ai);
+}
+
+/** Positions to hide in a word of `length` letters (bit mask): 1 or 2, never 0, never side by side. */
+export function hiddenMask(length: number, rng: { int(min: number, max: number): number }): number {
+  if (length < 2) return 0;
+  const first = rng.int(1, length - 1);
+  let mask = 1 << first;
+  if (length <= MISSING.short) return mask;
+  const free: number[] = [];
+  for (let p = 1; p < length; p += 1) if (Math.abs(p - first) > 1) free.push(p);
+  if (free.length > 0) mask |= 1 << free[rng.int(0, free.length - 1)]!;
+  return mask;
 }
 
 function ensureWords(w: World): void {
-  if (w.typing.word[0]! < 0) dealWord(w, 0);
-  if (w.typing.word[1]! < 0) dealWord(w, 1);
+  for (let slot = 0; slot < w.typing.word.length; slot += 1) if (w.typing.word[slot]! < 0) dealWord(w, slot);
+}
+
+/** The bay whose word starts with `code`, or −1. */
+function bayStarting(w: World, code: number): number {
+  const T = w.typing;
+  for (let slot = 0; slot < T.word.length; slot += 1) if (w.deck[T.word[slot]!]!.charCodeAt(0) === code) return slot;
+  return -1;
 }
 
 export function keyPress(w: World, letter: number): void {
@@ -100,7 +161,7 @@ export function keyPress(w: World, letter: number): void {
   const code = 97 + letter;
   let slot = T.lock;
   if (slot < 0) {
-    slot = w.deck[T.word[0]!]!.charCodeAt(0) === code ? 0 : w.deck[T.word[1]!]!.charCodeAt(0) === code ? 1 : -1;
+    slot = bayStarting(w, code);
     if (slot < 0) {
       w.stats.keysBad += 1;
       w.events.push(w.tick, EV.keyBad, -1, letter, 0, 0, 0, 0, 0, 0);
@@ -115,6 +176,8 @@ export function keyPress(w: World, letter: number): void {
   } else if (w.deck[T.word[slot]!]!.charCodeAt(T.typed[slot]!) !== code) {
     T.errors[slot] = T.errors[slot]! + 1;
     w.stats.keysBad += 1;
+    // A wrong key on a hidden letter shows it (the hint): the player never guesses more than once.
+    if ((T.hidden[slot]! & (1 << T.typed[slot]!)) !== 0) T.shown[slot] = T.shown[slot]! | (1 << T.typed[slot]!);
     w.events.push(w.tick, EV.keyBad, slot, letter, 0, 0, 0, 0, T.typed[slot]!, 0);
     return;
   }
@@ -190,7 +253,7 @@ function finish(w: World, slot: number): void {
   dealWord(w, slot);
 }
 
-/** Deals both slots their first words (before the first step, so the HUD shows them). */
+/** Deals every bay its first word (before the first step, so the HUD shows them). */
 export function dealFirstWords(w: World): void {
   ensureWords(w);
 }

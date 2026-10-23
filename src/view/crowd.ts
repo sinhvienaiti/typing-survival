@@ -13,7 +13,8 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { Reactions } from "../kit/feedback";
 import { loadModel, pickModelTier, textures } from "../kit/three";
 import { models } from "./models";
-import { FIELD, FOES, KIND, STORE } from "../content/rules";
+import { FOES, KIND } from "../content/foes";
+import { FIELD, STORE } from "../content/rules";
 import type { World } from "../sim/world";
 
 type Layer = { mesh: THREE.InstancedMesh; state: Float32Array; attribute: THREE.InstancedBufferAttribute; size: number; lift: number; count: number };

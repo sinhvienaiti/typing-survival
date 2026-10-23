@@ -12,8 +12,9 @@ import { runFrameLoop, safeLocalStorage, safeSessionStorage } from "../kit/platf
 import { speakEnglish } from "../kit/speech";
 import { hordeIntensity } from "../audio/music";
 import { ThemeAudio } from "../audio/theme-audio";
-import { DEFAULT_MODE, MODES, MODE_SPECS, isMode, lengthFor, type Mode as Difficulty, type RunHeader } from "../content/balance";
-import { FIELD, FOE_CAP, TIA, XUNG, type Tier } from "../content/rules";
+import { DEFAULT_MODE, MODES, MODE_SPECS, isMode, lengthFor, type Mode as Difficulty, type RunPace } from "../content/balance";
+import { TIA, XUNG } from "../content/guns";
+import { FIELD, FOE_CAP, type Tier } from "../content/rules";
 import { STAGE_S0 } from "../content/stage-s0";
 import { peakAt } from "../sim/plan";
 import { hashHex } from "../sim/hash";
@@ -101,7 +102,7 @@ let profile = loadProfile(safeLocalStorage, settings.mode);
 const history = new WordHistory(safeLocalStorage.getItem(SEEN_KEY));
 const pageMode = settings.mode;
 const pageAdapt = settings.paceAdapt;
-let runHeader: RunHeader = headerFor(profile, pageMode, pageAdapt);
+let runHeader: RunPace = headerFor(profile, pageMode, pageAdapt);
 const pinnedPace = Number(params.get("pace"));
 if (params.has("pace") && pinnedPace > 0) runHeader = { ...runHeader, pace: Math.round(Math.max(0.75, Math.min(1.3, pinnedPace)) * 1000) / 1000 };
 if (params.get("director") === "0") runHeader = { ...runHeader, director: false };
@@ -560,9 +561,9 @@ function draw(now: number): void {
   stage.setTitle(mode === "start");
   // The ship turns with Xung, or with the Tia ray while Xung is empty.
   const G = world.guns;
-  const ray = G.beamOn === 1 && G.mags[0] === 0;
-  const norm = ray ? Math.hypot(G.beamX, TIA.length) : 1;
-  ship.update(dt, seconds, ray ? G.beamX / norm : G.aimX, ray ? TIA.length / norm : G.aimZ, stage.camera.position);
+  const ray = G.beamOn[1] === 1 && G.mags[0] === 0;
+  const norm = ray ? Math.hypot(G.beamX[1]!, TIA.length) : 1;
+  ship.update(dt, seconds, ray ? G.beamX[1]! / norm : G.aimX[0]!, ray ? TIA.length / norm : G.aimZ[0]!, stage.camera.position);
   crowd.update(world, seconds, lead);
   combat.draw(world, dt, seconds, lead);
   stage.update(seconds);
@@ -619,7 +620,7 @@ installDevHandle({
   snapshot: () => ({ seed: world.seed, tier, deck: vocab.hash, vocabulary: vocab.source, ...world.header, tick: world.tick, hash: hashHex(world), log: session.log.slice(), paceLog: world.director.log.slice() }),
   state: () => ({
     tick: world.tick, time: world.time, phase: world.phase, hp: world.hp, foes: world.foes.count, onScreen: onScreen(), bullets: world.bullets.count, shots: world.shots.count,
-    mags: Array.from(world.guns.mags), beam: world.guns.beamOn === 1 ? world.guns.beamX : null, stats: { ...world.stats }, spawned: world.spawn.spawned, waiting: world.spawn.waiting,
+    mags: Array.from(world.guns.mags), beam: world.guns.beamOn[1] === 1 ? world.guns.beamX[1] : null, stats: { ...world.stats }, spawned: world.spawn.spawned, waiting: world.spawn.waiting,
   }),
   slots: () => [0, 1].map((s) => ({ text: world.deck[world.typing.word[s]!]!, typed: world.typing.lock === s ? world.typing.typed[s]! : 0, locked: world.typing.lock === s, mags: world.guns.mags[s]! })),
   costs: () => {

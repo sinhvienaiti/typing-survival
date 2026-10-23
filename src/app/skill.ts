@@ -11,7 +11,7 @@ import {
   ADVICE_VI, blendSkill, newSkillProfile, parseSkill, serializeSkill, skillAdvice, skillStorageKey, suggestDifficulty, updateSkill,
   type DifficultySuggestion, type Familiarity, type FlowSummary, type SkillProfile, type SkillSample, type SkillUpdate, type SkillView,
 } from "../kit/balance";
-import { MODE_SPECS, MODES, runHeader, type Mode, type RunHeader } from "../content/balance";
+import { MODE_SPECS, MODES, runHeader, type Mode, type RunPace } from "../content/balance";
 import type { World } from "../sim/world";
 
 export const SKILL_KEY = skillStorageKey("survival");
@@ -30,7 +30,7 @@ export function saveProfile(store: TextStore, profile: SkillProfile): void {
 }
 
 /** The next run's header from the stored profile (blended toward `mode`'s defaults while it has few samples). */
-export function headerFor(profile: SkillProfile, mode: Mode, adapt: boolean): RunHeader {
+export function headerFor(profile: SkillProfile, mode: Mode, adapt: boolean): RunPace {
   return runHeader(blendSkill({ ...profile, mode }), mode, adapt);
 }
 

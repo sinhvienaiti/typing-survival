@@ -4,7 +4,7 @@
  * ticks, and the PaceDirector judging it every 5 s against the mode's band,
  * its decisions mapped through this game's step table (content/balance.ts):
  *   spawn   the spawn interval of what comes next, ±7 % a step;
- *   elite   one Giáp affix on the next plain pack (or off the next armoured one);
+ *   elite   one Bọc Thép affix on the next plain pack (or off the next armoured one);
  *   peak    the coming surge 3 s earlier or later;
  *   lull    the coming lull 3 s shorter or longer;
  *   support a repair pod near defeat, once a wave.
@@ -13,20 +13,55 @@
  * step is a `pace` event in the director's log and the event ring.
  */
 import { FlowMeter, PaceDirector, type FlowSnapshot, type PaceDecision, type PaceLever } from "../kit/balance";
-import { FLOW_EVERY, SURVIVAL_PACE_TABLE, WARMUP_TICKS, bandOf, type RunHeader } from "../content/balance";
-import { DRAIN, ELITE, FIELD, FOES, KIND, MAG_MAX, NEAR, PATH, SHIP, SUPPORT, XUNG } from "../content/rules";
+import { FLOW_EVERY, WARMUP_TICKS, bandOf, type RunHeader } from "../content/balance";
+import { FOES, KIND, PACK } from "../content/foes";
+import { GUN_SPECS } from "../content/guns";
+import { DRAIN, ELITE, FIELD, NEAR, PATH, SUPPORT } from "../content/rules";
+import { stageSeconds, type Stage } from "../content/stage-rules";
 import { stageFoes } from "../content/stage-s0";
 import { EV } from "./events";
 import { movePeak, moveLull, waveAt } from "./plan";
 import type { World } from "./world";
 
+/** The kit's magazine near the line: the mean of its guns' (the unit of "words owed"). */
+export function kitMagazine(guns: readonly number[]): number {
+  let sum = 0;
+  for (const gun of guns) sum += GUN_SPECS[gun]!.nominal;
+  return guns.length > 0 ? sum / guns.length : GUN_SPECS[0]!.nominal;
+}
+
 const KILL_BUFFER = 1024;
 const ELITE_QUEUE = 16;
 export const LEVER_INDEX: Readonly<Record<PaceLever, number>> = { spawn: 0, elite: 1, peak: 2, lull: 3, support: 4 };
-/** One Xung magazine's damage: the unit of "words owed" at the line. */
-const MAGAZINE = XUNG.rounds * XUNG.damage;
+/**
+ * The stage's W: foes it spawns at the run's rate × their mean hit points
+ * (plain packs: mines and the stage's scouts; special packs by their share).
+ */
+export function stageWork(stage: Stage, scaleRate: number): number {
+  const scouts = stage.scouts.share;
+  const plain = FOES[KIND.mine]!.hp * (1 - scouts) + FOES[KIND.scout]!.hp * scouts;
+  let special = 0;
+  let share = 0;
+  const brute = stage.packs.brute;
+  if (brute !== undefined) {
+    share += brute.share;
+    special += (brute.share * (FOES[KIND.brute]!.hp + PACK.brute.follow * FOES[KIND.mine]!.hp)) / (1 + PACK.brute.follow);
+  }
+  const shield = stage.packs.shield;
+  if (shield !== undefined) {
+    share += shield.share;
+    special += (shield.share * (FOES[KIND.shield]!.hp + FOES[KIND.shield]!.shield + PACK.shield.follow * FOES[KIND.mine]!.hp)) / (1 + PACK.shield.follow);
+  }
+  const splitter = stage.packs.splitter;
+  if (splitter !== undefined) {
+    share += splitter.share;
+    special += splitter.share * (FOES[KIND.splitter]!.hp + 3 * FOES[KIND.shard]!.hp);
+  }
+  const mean = share > 0 ? plain * (1 - share) + special : plain;
+  return stageFoes(stage, stageSeconds(stage)) * scaleRate * mean;
+}
 
-export function createPace(header: RunHeader, scaleRate: number) {
+export function createPace(header: RunHeader, scaleRate: number, stage: Stage) {
   return {
     /** The wave the director was last told about. */
     wave: 0,
@@ -38,7 +73,7 @@ export function createPace(header: RunHeader, scaleRate: number) {
     eliteHead: 0,
     eliteCount: 0,
     /** The stage's W (foe hit points it spawns, ≈), for the elite steps' real cost. */
-    work: stageFoes() * scaleRate * (FOES[KIND.mine].hp * 0.85 + FOES[KIND.scout].hp * 0.15),
+    work: stageWork(stage, scaleRate),
     /** What happened since the last feed. */
     kills: new Float64Array(KILL_BUFFER),
     killCount: 0,
@@ -61,8 +96,8 @@ export function createMeter(): FlowMeter {
   return new FlowMeter();
 }
 
-export function createDirector(header: RunHeader): PaceDirector {
-  return new PaceDirector({ band: bandOf(header.mode), table: SURVIVAL_PACE_TABLE, off: header.director ? null : "setting" });
+export function createDirector(header: RunHeader, stage: Stage): PaceDirector {
+  return new PaceDirector({ band: bandOf(header.mode), table: stage.pace, off: header.director ? null : "setting" });
 }
 
 /** A kill's path fraction (from the gate to the bottom line) for Q. */
@@ -101,7 +136,7 @@ export function pressure(w: World, dt: number): void {
   P.nearWeight = weight;
   P.nearHp = hp;
   P.nearShots = shots;
-  if (leech === 0 || w.phase !== "play") return;
+  if (leech === 0 || w.phase !== "play" || w.objective.retreat >= 0) return;
   P.drainOwed += DRAIN.perFoe * Math.min(leech, DRAIN.maxLeech) * w.scales.drain * dt;
   while (P.drainOwed >= 1 && w.hp > 0) {
     P.drainOwed -= 1;
@@ -119,21 +154,25 @@ const snapshot: { -readonly [K in keyof FlowSnapshot]: FlowSnapshot[K] } & { kil
 /**
  * The FlowMeter's snapshot of the world (BALANCE.md §3 for this game):
  * danger: a foe or a scout shot in the near zone (losing armour counts by
- * itself); live words: the slots whose gun can still take a magazine (a full
- * gun's word does nothing, so with both full and no word under way there is
- * nothing to do: idle); the slots never pile words up (never capped);
- * backlog: words owed at the line, the near zone's hit points in Xung
- * magazines; busy: a word under way; the kills' path fractions, the locks
- * dropped and the damage done since the last feed (all of it typed: the guns
- * fire only what words load).
+ * itself); live words: the bays whose gun can still take a magazine (a full
+ * gun's word does nothing, so with every gun full and no word under way
+ * there is nothing to do: idle); the bays never pile words up (never capped);
+ * backlog: words owed at the line, the near zone's hit points in magazines
+ * of the kit (the mean of its guns' near-line damage; S0's Xung and Tia
+ * both count S0's Xung magazine); busy: a word under way; the kills' path
+ * fractions, the locks dropped and the damage done since the last feed (all
+ * of it typed: the guns fire only what words load).
  */
 export function flowSnapshot(w: World): FlowSnapshot {
   const P = w.pace;
+  const G = w.guns;
   snapshot.danger = P.nearWeight > 0 || P.nearShots > 0;
-  snapshot.hp = w.hp / SHIP.hp;
-  snapshot.live = (w.guns.mags[0]! < MAG_MAX ? 1 : 0) + (w.guns.mags[1]! < MAG_MAX ? 1 : 0);
+  snapshot.hp = w.hp / w.armourMax;
+  let live = 0;
+  for (let b = 0; b < G.mags.length; b += 1) if (G.gun[b]! >= 0 && G.mags[b]! < G.cap[b]!) live += 1;
+  snapshot.live = live;
   snapshot.capped = false;
-  snapshot.backlog = Math.floor(P.nearHp / MAGAZINE);
+  snapshot.backlog = Math.floor(P.nearHp / w.magazine);
   snapshot.busy = w.typing.lock >= 0;
   snapshot.kills.length = 0;
   for (let k = 0; k < P.killCount; k += 1) snapshot.kills.push(P.kills[k]!);
@@ -189,7 +228,7 @@ export function applyPace(w: World, decision: PaceDecision): void {
       applied = Math.round(moveLull(w, decision.amount) * 60);
       break;
     case "support":
-      applied = Math.min(SUPPORT.hp, SHIP.hp - w.hp);
+      applied = Math.min(SUPPORT.hp, w.armourMax - w.hp);
       w.hp += applied;
       w.stats.supports += 1;
       w.events.push(w.tick, EV.support, -1, decision.id, 0, FIELD.muzzleZ, 0, 0, applied, 0);
@@ -199,7 +238,7 @@ export function applyPace(w: World, decision: PaceDecision): void {
 }
 
 /**
- * A new pack's affix: every ELITE.every-th from ELITE.from s carries Giáp;
+ * A new plain pack's affix: every ELITE.every-th from ELITE.from s carries Bọc Thép;
  * the first waiting elite step adds it to a plain pack (+1) or takes it off
  * an armoured one (−1), and the director hears its real cost (‰ of W).
  */
@@ -211,7 +250,7 @@ export function packArmour(w: World, n: number): boolean {
     const dir = P.eliteDir[P.eliteHead]!;
     if ((dir > 0 && !armoured) || (dir < 0 && armoured)) {
       armoured = dir > 0;
-      const cost = Math.round((dir * n * FOES[KIND.mine].hp * (ELITE.hp - 1) * 1000) / Math.max(1, P.work));
+      const cost = Math.round((dir * n * FOES[KIND.mine]!.hp * (ELITE.hp - 1) * 1000) / Math.max(1, P.work));
       w.director.report(P.eliteId[P.eliteHead]!, cost);
       P.eliteHead = (P.eliteHead + 1) % ELITE_QUEUE;
       P.eliteCount -= 1;

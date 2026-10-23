@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { DT, FIELD, FOES, KIND, MAG_MAX, PRESS, QUALITY, STORE, TIA, TICK_HZ, XUNG } from "../src/content/rules";
+import { FOES, KIND } from "../src/content/foes";
+import { MAG_CAP, MAG_MAX, QUALITY, TIA, XUNG } from "../src/content/guns";
+import { DT, FIELD, PRESS, STORE, TICK_HZ } from "../src/content/rules";
 import { STAGE_S0, calmAt } from "../src/content/stage-s0";
 import { EV, FLAG } from "../src/sim/events";
 import { hashHex } from "../src/sim/hash";
 import { firstFoeHit, hitT, segmentHit } from "../src/sim/hits";
 import { RADIUS, pressAt } from "../src/sim/move";
-import { aimOf, densest, loadMagazine } from "../src/sim/weapons";
+import { aimOf, densest } from "../src/sim/guns/tia";
+import { loadMagazine } from "../src/sim/weapons";
 import { isFast } from "../src/sim/words";
 import { rateAt } from "../src/sim/plan";
 import { createWorld, runLog, step, type Command, type CommandBody, type World } from "../src/sim/world";
@@ -191,7 +194,7 @@ describe("magazines (BUILD_S0 §5)", () => {
     expect(w.guns.rate[0]).toBe(QUALITY.fastRate);
     expect(w.guns.perfect[0]).toBe(1);
     loadMagazine(w, 1, false, false);
-    expect([w.guns.damage[2], w.guns.rate[2], w.guns.perfect[2]]).toEqual([1, 1, 0]);
+    expect([w.guns.damage[MAG_CAP], w.guns.rate[MAG_CAP], w.guns.perfect[MAG_CAP]]).toEqual([1, 1, 0]);
     // Fast at 0.7 of the expected time (12 / E s a letter); slow above.
     expect(isFast(5, Math.floor(0.7 * 5 * (12 / 35) * 60 * (4 / 5)), 35)).toBe(true);
     expect(isFast(5, Math.ceil(0.75 * 5 * (12 / 35) * 60 * (4 / 5)), 35)).toBe(false);
@@ -207,7 +210,7 @@ describe("magazines (BUILD_S0 §5)", () => {
       for (let t = 0; t < TICK_HZ * 4; t += 1) {
         const before = w.events.written;
         step(w);
-        if (w.guns.beamOn === 1) on += 1;
+        if (w.guns.beamOn[1] === 1) on += 1;
         for (let i = before; i < w.events.written; i += 1) if (w.events.kind[i % w.events.size] === EV.beamPulse) pulses += 1;
       }
       expect(on / TICK_HZ).toBeCloseTo(TIA.seconds, 1);
@@ -268,7 +271,7 @@ describe("the grid", () => {
 });
 
 describe("Tia aims at the crowd", () => {
-  const add = (w: World, x: number, z: number, n: number, hp = FOES[KIND.mine].hp * 50) => {
+  const add = (w: World, x: number, z: number, n: number, hp = FOES[KIND.mine]!.hp * 50) => {
     for (let k = 0; k < n; k += 1) w.foes.add(KIND.mine, x + (k % 3) * 0.3, z + Math.floor(k / 3) * 0.6, hp, 0);
   };
 
@@ -281,13 +284,13 @@ describe("Tia aims at the crowd", () => {
     expect(Math.abs(densest(w, 0, -1) - aimOf(-4.7, 9.9, 0))).toBeLessThanOrEqual(TIA.strip * 1.5);
     loadMagazine(w, 1, false, false);
     step(w);
-    expect(w.guns.beamOn).toBe(1);
-    const start = w.guns.beamX;
+    expect(w.guns.beamOn[1]).toBe(1);
+    const start = w.guns.beamX[1]!;
     expect(start).toBeLessThan(0);
-    expect(w.guns.beamTo).toBeGreaterThan(0);
+    expect(w.guns.beamTo[1]).toBeGreaterThan(0);
     for (let t = 0; t < 30; t += 1) step(w);
     // The far end sweeps 3 m/s toward the other cluster.
-    expect(w.guns.beamX - start).toBeCloseTo(TIA.sweep * (30 / TICK_HZ), 0);
+    expect(w.guns.beamX[1]! - start).toBeCloseTo(TIA.sweep * (30 / TICK_HZ), 0);
     const hits = events(w, EV.hit).filter((i) => (w.events.flags[i]! & FLAG.tia) !== 0);
     expect(hits.length).toBeGreaterThan(10);
     expect(hits.every((i) => w.events.z[i]! < 20)).toBe(true);
@@ -300,9 +303,9 @@ describe("Tia aims at the crowd", () => {
     const beside = w.foes.add(KIND.mine, 3.5, FIELD.muzzleZ + 5, 1e6, 0);
     const beyond = w.foes.add(KIND.mine, 0, FIELD.muzzleZ + TIA.length + 1.5, 1e6, 0);
     loadMagazine(w, 1, false, false);
-    w.guns.beamOn = 1;
-    w.guns.beamX = 0;
-    w.guns.beamTo = 0;
+    w.guns.beamOn[1] = 1;
+    w.guns.beamX[1] = 0;
+    w.guns.beamTo[1] = 0;
     w.grid.build(w.foes, w.shots);
     const before = w.events.written;
     step(w);
@@ -323,8 +326,8 @@ describe("the press (S0 review)", () => {
     const far = w.foes.add(KIND.mine, 0, FIELD.gateZ - 2, 1e6, 0);
     const close = w.foes.add(KIND.mine, 0, PRESS.near - 1, 1e6, 0);
     step(w);
-    expect(-w.foes.vz[far]!).toBeCloseTo(FOES[KIND.mine].speed, 1);
-    expect(-w.foes.vz[close]!).toBeLessThan(FOES[KIND.mine].speed * PRESS.slow * 1.05);
+    expect(-w.foes.vz[far]!).toBeCloseTo(FOES[KIND.mine]!.speed, 1);
+    expect(-w.foes.vz[close]!).toBeLessThan(FOES[KIND.mine]!.speed * PRESS.slow * 1.05);
   });
 
   it("Xung holds its fire while every foe is out of its range, and opens up once one walks in", () => {
@@ -333,10 +336,10 @@ describe("the press (S0 review)", () => {
     loadMagazine(w, 0, false, false);
     for (let t = 0; t < 10; t += 1) step(w);
     expect(w.bullets.count).toBe(0);
-    expect(w.guns.rounds).toBe(XUNG.rounds);
+    expect(w.guns.left[0]).toBe(XUNG.rounds);
     w.foes.z[s] = FIELD.muzzleZ + XUNG.range - 1;
     for (let t = 0; t < 10; t += 1) step(w);
-    expect(w.guns.rounds).toBeLessThan(XUNG.rounds);
+    expect(w.guns.left[0]).toBeLessThan(XUNG.rounds);
   });
 });
 
@@ -363,7 +366,7 @@ describe("hit stops never drop keys", () => {
   it("holds the guns' fire during a stop: the rounds of a word finished in it wait", () => {
     const w = world(13);
     // Foes in Xung's range.
-    for (let k = 0; k < 20; k += 1) w.foes.add(KIND.mine, -5 + k * 0.5, FIELD.muzzleZ + XUNG.range - 2, FOES[KIND.mine].hp, 0);
+    for (let k = 0; k < 20; k += 1) w.foes.add(KIND.mine, -5 + k * 0.5, FIELD.muzzleZ + XUNG.range - 2, FOES[KIND.mine]!.hp, 0);
     loadMagazine(w, 0, false, false);
     const before = w.events.written;
     step(w, [{ t: "stop", ticks: 2 }]);

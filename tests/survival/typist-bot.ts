@@ -29,7 +29,8 @@ import { RngStream } from "../../src/kit/platform/rng";
 import { installKeys } from "../../src/app/input";
 import { Session } from "../../src/app/session";
 import { buildDeck } from "../../src/content/deck";
-import { FIELD, MAG_MAX, NEAR, TIA, XUNG } from "../../src/content/rules";
+import { MAG_MAX, TIA, XUNG } from "../../src/content/guns";
+import { FIELD, NEAR } from "../../src/content/rules";
 import type { World, WorldOptions } from "../../src/sim/world";
 
 type Keydown = (event: object) => void;

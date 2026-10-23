@@ -1,33 +1,39 @@
 /**
- * The Tuyến Cuối world and its fixed 60 Hz step (docs/BUILD_S0.md §1).
- * Pure TypeScript: no clock, no DOM, randomness only from the seeded streams
- * of src/kit/platform/rng. The same seed, deck, run header and command log
- * give the same world, tick by tick, in Node and in every browser.
+ * The Tuyến Cuối world and its fixed 60 Hz step (docs/BUILD_S0.md §1,
+ * docs/BUILD_S1.md). Pure TypeScript: no clock, no DOM, randomness only from
+ * the seeded streams of src/kit/platform/rng. The same seed, deck, run header
+ * and command log give the same world, tick by tick, in Node and in every
+ * browser.
  *
  * Typing runs at full rate every tick; the rest of the world steps by
  * DT × scale, where a hit stop (a logged `stop` command) sets the scale to
  * HITSTOP_SCALE for a few ticks and the guns hold their fire: keys are never
  * slowed or dropped, and the rounds of a word finished meanwhile wait.
  *
- * The run header (content/balance.ts: mode, pace k, E, director on or off)
- * is set before the first step from the player's skill profile and goes
- * into the replay; the in-run balance (sim/pace.ts) reads the world and
- * changes only what comes next.
+ * The run header (content/balance.ts: mode, pace k, E, director; the stage,
+ * the kit, ρ) is set before the first step from the player's skill profile
+ * and choices, and goes into the replay; the in-run balance (sim/pace.ts)
+ * reads the world and changes only what comes next.
  */
 import { createRng, type Rng } from "../kit/platform/rng";
-import { MODES, STANDARD_HEADER, scalesFor, type RunHeader } from "../content/balance";
-import { BULLET_CAP, DT, FOE_CAP, HITSTOP_SCALE, SHIP, STORE, type Tier } from "../content/rules";
-import { STAGE_S0 } from "../content/stage-s0";
+import { MODES, STANDARD_HEADER, TRIAL_KIT, scalesFor, type RunHeader, type RunKit } from "../content/balance";
+import { stageById } from "../content/chapter-1";
+import { BULLET_CAP, DT, FOE_CAP, HITSTOP_SCALE, STORE, type Tier } from "../content/rules";
+import { stageSeconds } from "../content/stage-rules";
+import { SHIELD } from "../content/foes";
 import { Ring, EV } from "./events";
+import { moveShells } from "./guns/phao";
+import { createHazards, hazardStep, planHazards } from "./hazards";
 import { Grid } from "./hits";
-import { moveFoes, separate } from "./move";
-import { createDirector, createMeter, createPace, paceStep, pressure } from "./pace";
-import { createPlan } from "./plan";
-import { moveBullets, moveShots } from "./projectiles";
-import { flood, spawnStep } from "./spawn";
-import { Bullets, Foes, Shots } from "./stores";
+import { moveFoes, moveShields, separate } from "./move";
+import { createDirector, createMeter, createPace, kitMagazine, paceStep, pressure } from "./pace";
+import { createPlan, planStep } from "./plan";
+import { breakSplits, createSplits, moveBullets, moveShots } from "./projectiles";
+import { createSpawn, flood, spawnStep } from "./spawn";
+import { createObjective, stageOutcome } from "./stage";
+import { Bullets, Foes, Shells, Shields, Shots } from "./stores";
 import { createGuns, fireGuns } from "./weapons";
-import { backspace, createMeasure, createTyping, dealFirstWords, keyPress } from "./words";
+import { backspace, createMeasure, createTyping, dealFirstWords, heavyBays, keyPress } from "./words";
 
 export type Command = { tick: number } & CommandBody;
 export type CommandBody = { t: "key"; letter: number } | { t: "back" } | { t: "stop"; ticks: number } | { t: "flood"; n: number };
@@ -39,7 +45,7 @@ export type WorldOptions = {
   /** The vocabulary, lowercase a–z words; the band of E picks from it. */
   deck: readonly string[];
   tier?: Tier;
-  /** The run header's parts (content/balance.ts RunHeader); each defaults to the standard run. */
+  /** The run header's parts (content/balance.ts RunHeader); each defaults to the standard trial run. */
   mode?: RunHeader["mode"];
   /** Pace k, 0.75–1.30, rounded to 1/1000. */
   pace?: number;
@@ -47,23 +53,39 @@ export type WorldOptions = {
   expected?: number;
   /** The in-run pace director runs. */
   director?: boolean;
+  /** The stage ("s0" the trial, "c1-s1" …) and the kit on its bays. */
+  stage?: string;
+  kit?: RunKit;
+  /** ρ: the stage's learning factor (spawns × k × ρ). */
+  learn?: number;
+  telegraph?: number;
+  recall?: readonly number[];
   seconds?: number;
 };
 
 export function createWorld(options: WorldOptions) {
   const tier = options.tier ?? "high";
+  const stageId = options.stage ?? STANDARD_HEADER.stage;
+  const stage = stageById(stageId);
   const header: RunHeader = {
     mode: options.mode ?? STANDARD_HEADER.mode,
     pace: Math.round((options.pace ?? STANDARD_HEADER.pace) * 1000) / 1000,
     expected: options.expected ?? STANDARD_HEADER.expected,
     director: options.director ?? STANDARD_HEADER.director,
+    stage: stageId,
+    kit: options.kit ?? (stageId === "s0" ? TRIAL_KIT : { guns: TRIAL_KIT.guns, levels: stage.kit.levels.slice(0, 2), bays: stage.kit.bays, armour: stage.kit.armour }),
+    learn: Math.round((options.learn ?? 1) * 1000) / 1000,
+    telegraph: options.telegraph ?? 1,
+    recall: options.recall ?? [],
   };
-  const scales = scalesFor(header.mode, header.pace);
+  // ρ is a stage factor like the mode's: it scales the stage's pace as k does.
+  const scales = scalesFor(header.mode, header.pace * header.learn);
   const rng: Rng = createRng(options.seed);
   const w = {
     seed: options.seed >>> 0,
     tier,
     header,
+    stage,
     scales,
     tick: 0,
     /** World seconds (slowed by hit stops). */
@@ -71,23 +93,31 @@ export function createWorld(options: WorldOptions) {
     scale: 1,
     slowTicks: 0,
     phase: "play" as Phase,
-    hp: SHIP.hp as number,
-    seconds: options.seconds ?? STAGE_S0.seconds,
+    hp: header.kit.armour,
+    armourMax: header.kit.armour,
+    seconds: options.seconds ?? stageSeconds(stage),
     foeCap: FOE_CAP[tier] as number,
     bulletCap: BULLET_CAP[tier] as number,
     expected: header.expected,
+    /** One magazine of the kit near the line (the FlowMeter's unit of words owed). */
+    magazine: kitMagazine(header.kit.guns),
     rng,
-    spawn: { owed: 0, size: 0, shape: 0, spawned: 0, waiting: 0, packs: 0 },
-    plan: createPlan(rng.rare),
-    pace: createPace(header, scales.rate),
+    spawn: createSpawn(),
+    plan: createPlan(rng.rare, stage),
+    pace: createPace(header, scales.rate, stage),
     meter: createMeter(),
-    director: createDirector(header),
+    director: createDirector(header, stage),
+    objective: createObjective(stage),
+    hazards: createHazards(),
     foes: new Foes(STORE.foes),
     bullets: new Bullets(STORE.bullets),
     shots: new Shots(STORE.shots),
+    shells: new Shells(STORE.shells),
+    shields: new Shields(SHIELD.max),
+    splits: createSplits(),
     grid: new Grid(STORE.foes, STORE.shots),
-    guns: createGuns(),
-    typing: createTyping(options.deck, header.expected),
+    guns: createGuns(header.kit),
+    typing: createTyping(options.deck, header.expected, heavyBays(header.kit.guns, header.kit.bays)),
     measure: createMeasure(),
     deck: options.deck,
     stats: {
@@ -96,6 +126,7 @@ export function createWorld(options: WorldOptions) {
     },
     events: new Ring(),
   };
+  planHazards(w);
   dealFirstWords(w);
   return w;
 }
@@ -123,17 +154,22 @@ export function step(w: World, commands: readonly CommandBody[] = []): void {
   if (w.slowTicks > 0) w.slowTicks -= 1;
   const dt = DT * w.scale;
   spawnStep(w, dt);
+  hazardStep(w, dt);
   moveFoes(w, dt);
+  moveShields(w, dt);
   moveShots(w, dt);
   w.grid.build(w.foes, w.shots);
   separate(w);
   pressure(w, dt);
-  if (w.scale === 1) fireGuns(w, dt);
+  if (w.scale === 1 && w.objective.retreat < 0) fireGuns(w, dt);
   moveBullets(w, dt);
+  moveShells(w, dt);
+  breakSplits(w);
   w.time += dt;
+  planStep(w);
   if (w.foes.count > w.stats.peakFoes) w.stats.peakFoes = w.foes.count;
-  if (w.hp <= 0) end(w, "lost");
-  else if (w.time >= w.seconds - 1e-9) end(w, "won");
+  const outcome = stageOutcome(w);
+  if (outcome !== null) end(w, outcome);
   paceStep(w);
   w.tick += 1;
 }

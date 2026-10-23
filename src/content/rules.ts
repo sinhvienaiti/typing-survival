@@ -1,6 +1,6 @@
 /**
- * Every rule number of Sinh Tồn S0 (docs/BUILD_S0.md §3–§5). Metres,
- * seconds, hit points. The corridor runs along +z from the ship (z = 0) to
+ * The field's rule numbers (docs/BUILD_S0.md §3–§5; guns in content/guns.ts,
+ * foes in content/foes.ts since S1). Metres, seconds, hit points. The corridor runs along +z from the ship (z = 0) to
  * the gate (z = 40; BUILD_S0 had 60, shortened in the S0 review so the camera
  * comes closer and foes read bigger: docs/BUILD_NOTES.md §7); x is
  * across, −12 … 12.
@@ -13,19 +13,6 @@ export const MAX_STEPS_PER_FRAME = 8;
 /** The grid's 2 m cells cover z from `minZ` to the queue above the gate (gateZ + 12, where foes are held). */
 export const FIELD = { halfW: 12, gateZ: 40, bottomZ: 2.4, muzzleZ: 1.7, wall: 0.7, cell: 2, cols: 12, rows: 30, minZ: -4 } as const;
 export const SHIP = { hp: 100 } as const;
-
-export const KIND = { mine: 0, scout: 1 } as const;
-export type FoeKind = (typeof KIND)[keyof typeof KIND];
-
-/**
- * Per kind: hit points, speed (m/s, at full stride: see PRESS), body radius,
- * ship damage on reaching the bottom line, and its weight in the near
- * zone's drain (DRAIN).
- */
-export const FOES = [
-  { hp: 14, speed: 2.6, radius: 0.5, breach: 3, drain: 1, wobble: 0.55, wobbleHz: 0.32 },
-  { hp: 56, speed: 1.8, radius: 0.8, breach: 6, drain: 2, wobble: 0.15, wobbleHz: 0.2 },
-] as const;
 
 /**
  * The near zone (docs/games/BALANCE.md §3 "vòng gần", §5): foes at z ≤ `z`
@@ -47,9 +34,10 @@ export const NEAR = { z: 7 } as const;
 export const DRAIN = { from: 16, perFoe: 0.08, maxLeech: 12 } as const;
 
 /**
- * The elite affix "Giáp" (armoured pack, SURVIVAL_MODE_PLAN.md 4.5 "tinh
- * nhuệ: giáp"): every member of the pack spawns with `hp` × its hit points
- * and is drawn larger with gold veins. From `from` s, every `every`-th pack
+ * The elite affix "Bọc Thép" (S0 called it "Giáp"; renamed in S1 so it
+ * does not clash with the line's GIÁP bar or the foes' Vỏ): every member of
+ * a plain pack (mines, scouts, Tách) spawns with `hp` × its hit points and
+ * is drawn larger with gold veins. From `from` s, every `every`-th pack
  * carries it; the pace director adds one to the next plain pack or takes it
  * off the next armoured one (never a live foe's hit points).
  */
@@ -81,32 +69,6 @@ export const FLOW = { pull: 0.55, from: 30 } as const;
 /** Spawned in groups of 4–12 in a block, wedge or line, `spacing` apart, above the gate. */
 export const SPAWN = { groupMin: 4, groupMax: 12, spacing: 1.35, scoutShare: 0.15, scoutFromS: 12 } as const;
 
-export const WEAPON = { xung: 0, tia: 1 } as const;
-/** Magazines a gun holds at most (the one firing included). */
-export const MAG_MAX = 2;
-/**
- * Xung: 24 rounds in 2.4 s at the foe nearest the bottom in a 50° cone (cos 25°).
- * Range and spread are not in §5: tuned with the bots (scripts/balance.ts)
- * so a 35 WPM typist sees 40–80 foes, 120–160 at the surges, and the crowd
- * presses into the ship's half of the field before it dies (BUILD_NOTES.md §7;
- * 42 m at first, which killed everything at the gate). The range is a depth:
- * foes up to `range` m beyond the muzzle.
- */
-export const XUNG = { rounds: 24, seconds: 2.4, damage: 7, coneCos: 0.9063, speed: 46, radius: 0.15, life: 1.3, crit: 0.05, shotGuard: 16, range: 10, spread: 0.08 } as const;
-/**
- * Tia: a 1.4 m wide ray for 2.5 s, `length` m long from the muzzle; 6 a
- * pulse every 0.1 s to every foe it crosses; its far end sweeps 3 m/s
- * (`strip`, `away`: on the far line). BUILD_S0 §5 says "column": a strip
- * of floor fed by a bent beam read badly once it was short, so it became a
- * ray. The length is not in §5 (24 m at first): 12 m, just past Xung's
- * reach, so the ray meets the crowd's front first and cuts into it while
- * the crowd still comes close (and its magazines do not sit idle).
- */
-export const TIA = { seconds: 2.5, width: 1.4, sweep: 3, pulse: 0.1, damage: 6, crit: 0.05, strip: 1.2, away: 2.4, length: 12 } as const;
-export const CRIT_MULT = 2;
-/** Typing quality of the loading word: Chuẩn (0 errors), Nhanh (≤ 0.7 of the expected time). */
-export const QUALITY = { cleanDamage: 1.06, cleanCrit: 0.04, fastShare: 0.7, fastRate: 1.15 } as const;
-
 /** The typist's expected speed E (WPM) and word length band by E (as Typing Defense). */
 export const EXPECTED_WPM = 35;
 export const LENGTH_BY_E = [
@@ -119,8 +81,8 @@ export const LENGTH_BY_E = [
 /** World speed during a hit stop. */
 export const HITSTOP_SCALE = 0.05;
 
-/** Store sizes (the Ultra crowd cap fits). */
-export const STORE = { foes: 1024, bullets: 2048, shots: 256 } as const;
+/** Store sizes (the Ultra crowd cap fits). Bullets hold Xung rounds and Tán pellets; shells are Pháo Sao's. */
+export const STORE = { foes: 1024, bullets: 2048, shots: 256, shells: 64 } as const;
 /** Foes on the field at most per quality tier: the rest wait at the gate (never lost). */
 export const FOE_CAP = { low: 200, medium: 400, high: 700, ultra: 1000 } as const;
 export type Tier = keyof typeof FOE_CAP;

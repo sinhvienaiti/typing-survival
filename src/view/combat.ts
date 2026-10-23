@@ -10,9 +10,11 @@ import * as THREE from "three";
 import type { ThemeAudio } from "../audio/theme-audio";
 import { Debris, HitStop, NumberField, NumberSprites, STOP_GAP_MS, STYLE, Trauma, tier, type Rect } from "../kit/feedback";
 import { ParticlePool, textures } from "../kit/three";
-import { FIELD, TIA, type Tier } from "../content/rules";
+import { TIA, GUN } from "../content/guns";
+import { FIELD, type Tier } from "../content/rules";
 import { EV, FLAG } from "../sim/events";
-import { beamEnd } from "../sim/weapons";
+import { beamEnd } from "../sim/guns/tia";
+import { bayOf, firing } from "../sim/weapons";
 import type { World } from "../sim/world";
 import type { Crowd } from "./crowd";
 import { CELL, Column, FLAT, Glows, Strips } from "./fx";
@@ -250,7 +252,7 @@ export class Combat {
           break;
       }
     }
-    if (this.tiaHits > 0) this.audio.pulse(w.guns.beamX / FIELD.halfW, this.tiaHits);
+    if (this.tiaHits > 0) this.audio.pulse(w.guns.beamX[Math.max(0, bayOf(w, GUN.tia))]! / FIELD.halfW, this.tiaHits);
     let killed = 0;
     for (let c = 0; c < this.clusters; c += 1) killed += this.explode(c, now);
     if (killed > 0) this.ask(this.hitstop.kill(killed, now));
@@ -356,9 +358,10 @@ export class Combat {
       this.glows.stamp(CELL.core, x, 1.1, -z, 0.55, 0, C.hot, 2.2);
     }
     const G = w.guns;
-    const on = G.beamOn === 1;
-    const power = on ? 1 + (G.perfect[2] === 1 ? 0.35 : 0) : 0;
-    beamEnd(G.beamX, this.end);
+    const tia = bayOf(w, GUN.tia);
+    const on = tia >= 0 && G.beamOn[tia] === 1;
+    const power = on ? 1 + (G.perfect[firing(tia)] === 1 ? 0.35 : 0) : 0;
+    beamEnd(tia >= 0 ? G.beamX[tia]! : 0, this.end);
     const ex = this.end[0]!;
     const ez = this.end[1]!;
     this.column.update(on, ex / TIA.length, (ez - FIELD.muzzleZ) / TIA.length, power, time);

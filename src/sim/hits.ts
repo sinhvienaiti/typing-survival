@@ -1,8 +1,12 @@
 /**
  * The spatial grid (2 m cells over the corridor) for foes and scout shots,
- * rebuilt every step after movement; rounds, the Tia column and the crowd's
- * spacing ask it instead of testing every pair.
+ * rebuilt every step after movement; rounds, the Tia ray and the crowd's
+ * spacing ask it instead of testing every pair. Big foes (radius above
+ * MAX_RADIUS: Trâu, Đầu Đàn) are not in the grid: they sit in a short list
+ * (BIG_MAX) that every query also tests one by one, so the grid's reach
+ * stays MAX_RADIUS (docs/BUILD_S1.md §6).
  */
+import { BIG_MAX, FOES, isBig } from "../content/foes";
 import { FIELD } from "../content/rules";
 import type { Foes, Shots } from "./stores";
 
@@ -16,6 +20,9 @@ export class Grid {
   readonly shotHead = new Int32Array(cols * rows);
   readonly next: Int32Array;
   readonly shotNext: Int32Array;
+  /** Big foes' slots, in slot order. */
+  readonly big = new Int32Array(BIG_MAX);
+  bigCount = 0;
 
   constructor(foes: number, shots: number) {
     this.next = new Int32Array(foes);
@@ -25,8 +32,13 @@ export class Grid {
   build(foes: Foes, shots: Shots): void {
     this.head.fill(-1);
     this.shotHead.fill(-1);
+    this.bigCount = 0;
     for (let s = 0; s < foes.top; s += 1) {
       if (foes.alive[s] === 0) continue;
+      if (isBig(foes.kind[s]!) && this.bigCount < BIG_MAX) {
+        this.big[this.bigCount++] = s;
+        continue;
+      }
       const c = cellOf(foes.x[s]!, foes.z[s]!);
       this.next[s] = this.head[c]!;
       this.head[c] = s;
@@ -47,6 +59,9 @@ export const cellOf = (x: number, z: number): number => rowOf(z) * cols + colOf(
 function clampInt(value: number, max: number): number {
   return value < 0 ? 0 : value > max ? max : value;
 }
+
+/** A foe's body radius. */
+export const radiusOf = (foes: Foes, s: number): number => FOES[foes.kind[s]!]!.radius;
 
 /**
  * Where along p0 → p1 (0 … 1) a point of radius r first comes within reach,
@@ -87,6 +102,15 @@ export function firstFoeHit(grid: Grid, foes: Foes, radius: readonly number[], x
       }
     }
   }
+  for (let k = 0; k < grid.bigCount; k += 1) {
+    const s = grid.big[k]!;
+    if (foes.alive[s] === 0) continue;
+    const t = segmentHit(x0, z0, x1, z1, foes.x[s]!, foes.z[s]!, radius[foes.kind[s]!]! + pad);
+    if (t >= 0 && (t < bestT || (t === bestT && s < best))) {
+      bestT = t;
+      best = s;
+    }
+  }
   hitT = bestT;
   return best;
 }
@@ -113,4 +137,31 @@ export function firstShotHit(grid: Grid, shots: Shots, x0: number, z0: number, x
   }
   hitT = bestT;
   return best;
+}
+
+/** Slots collectNear found (shared scratch: read before the next call). */
+export const nearList = new Int32Array(4096);
+
+/**
+ * Collects into `nearList` every live foe whose cell lies within the box
+ * (x0, z0) – (x1, z1) grown by MAX_RADIUS, then every big foe (the caller
+ * tests the exact shape); returns how many. Grid order, then the big list:
+ * deterministic, and nothing allocated.
+ */
+export function collectNear(grid: Grid, foes: Foes, x0: number, z0: number, x1: number, z1: number): number {
+  const c0 = colOf(x0 - MAX_RADIUS);
+  const c1 = colOf(x1 + MAX_RADIUS);
+  const r0 = rowOf(z0 - MAX_RADIUS);
+  const r1 = rowOf(z1 + MAX_RADIUS);
+  let n = 0;
+  for (let row = r0; row <= r1; row += 1) {
+    for (let col = c0; col <= c1; col += 1) {
+      for (let s = grid.head[row * cols + col]!; s >= 0 && n < nearList.length; s = grid.next[s]!) if (foes.alive[s] === 1) nearList[n++] = s;
+    }
+  }
+  for (let k = 0; k < grid.bigCount && n < nearList.length; k += 1) {
+    const s = grid.big[k]!;
+    if (foes.alive[s] === 1) nearList[n++] = s;
+  }
+  return n;
 }

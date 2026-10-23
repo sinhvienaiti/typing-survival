@@ -2,7 +2,8 @@
  * The world hash: every rule number of the world folded into 32 bits, floats
  * by their bit pattern (as Typing Defense). Two runs with the same seed, deck,
  * run header and command log match tick by tick, on Node and in Chrome. The
- * header, the run's timeline, the FlowMeter and the pace director are state
+ * header (with the stage and the kit), the run's timeline, the objective,
+ * the hazards, every store, the FlowMeter and the pace director are state
  * too. Events are output, not state, and stay out.
  */
 import { rngState } from "../kit/platform/rng";
@@ -33,10 +34,13 @@ function mixObject(hash: number, object: object): number {
 
 export function hashWorld(w: World): number {
   let h = 0x811c9dc5;
-  for (const value of [w.tick, w.time, w.scale, w.slowTicks, w.hp, w.foeCap, w.bulletCap, w.expected, ["play", "won", "lost"].indexOf(w.phase)]) h = mixNumber(h, value);
-  for (const value of [modeIndex(w), w.header.pace, w.header.director ? 1 : 0, w.scales.rate, w.scales.surge, w.scales.speed, w.scales.drain]) h = mixNumber(h, value);
+  for (const value of [w.tick, w.time, w.scale, w.slowTicks, w.hp, w.armourMax, w.foeCap, w.bulletCap, w.expected, w.magazine, ["play", "won", "lost"].indexOf(w.phase)]) h = mixNumber(h, value);
+  for (const value of [modeIndex(w), w.header.pace, w.header.director ? 1 : 0, w.header.learn, w.header.telegraph, w.scales.rate, w.scales.surge, w.scales.speed, w.scales.drain]) h = mixNumber(h, value);
+  // The header's stage and kit: its id's letters, the guns, levels, bays, armour, and the recall words.
+  for (let i = 0; i < w.header.stage.length; i += 1) h = mix(h, w.header.stage.charCodeAt(i));
+  for (const value of [...w.header.kit.guns, -1, ...w.header.kit.levels, -1, w.header.kit.bays, w.header.kit.armour, ...w.header.recall]) h = mixNumber(h, value);
   for (const value of rngState(w.rng)) h = mix(h, value);
-  for (const part of [w.spawn, w.plan, w.pace, w.foes, w.bullets, w.shots, w.guns, w.typing, w.measure, w.stats]) h = mixObject(h, part);
+  for (const part of [w.spawn, w.plan, w.pace, w.objective, w.hazards, w.foes, w.bullets, w.shots, w.shells, w.shields, w.splits, w.guns, w.typing, w.measure, w.stats]) h = mixObject(h, part);
   for (const value of w.meter.state()) h = mixNumber(h, value);
   for (const value of w.director.state()) h = mixNumber(h, value);
   return h >>> 0;

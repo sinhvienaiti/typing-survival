@@ -7,10 +7,12 @@
  * the same run.
  */
 import {
-  BANDS, FAMILIARITY_SPEED, botSpec, capacity, effectiveE, paceK,
+  BANDS, FAMILIARITY_SPEED, botSpec, capacity, effectiveE, paceK, round3,
   type Band, type BandMode, type PaceTable, type SkillValues,
 } from "../kit/balance";
+import { GUN, HEAVY, type GunId } from "./guns";
 import { EXPECTED_WPM, LENGTH_BY_E } from "./rules";
+import { LEARN_RULES, PACE_HOLD, type LearnRule, type Stage } from "./stage-rules";
 
 export const MODES = ["relax", "balanced", "challenge"] as const satisfies readonly BandMode[];
 export type Mode = (typeof MODES)[number];
@@ -34,11 +36,11 @@ export const isMode = (value: unknown): value is Mode => typeof value === "strin
 
 export const bandOf = (mode: Mode): Band => BANDS[mode];
 
-/** The word length band for a typist at E (LENGTH_BY_E) and its mean ℓ̄. */
-export function lengthFor(e: number): readonly [number, number] {
+/** The word length band for a typist at E (LENGTH_BY_E) and its mean ℓ̄; a heavy gun's is a letter longer at both ends, at most HEAVY.cap. */
+export function lengthFor(e: number, heavy = false): readonly [number, number] {
   let len: readonly [number, number] = LENGTH_BY_E[0].len;
   for (const entry of LENGTH_BY_E) if (e >= entry.minE) len = entry.len;
-  return len;
+  return heavy ? [Math.min(HEAVY.cap, len[0] + HEAVY.extra), Math.min(HEAVY.cap, len[1] + HEAVY.extra)] : len;
 }
 export const meanLength = (e: number): number => {
   const [lo, hi] = lengthFor(e);
@@ -63,16 +65,66 @@ export function paceFor(view: Pick<SkillValues, "e" | "a" | "cv" | "fatigue">): 
 }
 
 /**
- * The run header (written into the replay with the seed): the mode, pace k,
- * E for the word lengths and Nhanh, and whether the in-run director runs.
- * "Nhịp tự điều theo cách bạn gõ: Tắt" plays the standard pace: k = 1, E 35,
- * no director (the same fixed parameters a fair-score run would use).
+ * The run's pace (from the skill profile): the mode, pace k, E for the word
+ * lengths and Nhanh, and whether the in-run director runs. "Nhịp tự điều
+ * theo cách bạn gõ: Tắt" plays the standard pace: k = 1, E 35, no director
+ * (the same fixed parameters a fair-score run would use).
  */
-export type RunHeader = { readonly mode: Mode; readonly pace: number; readonly expected: number; readonly director: boolean };
+export type RunPace = { readonly mode: Mode; readonly pace: number; readonly expected: number; readonly director: boolean };
 
-export const STANDARD_HEADER: RunHeader = { mode: DEFAULT_MODE, pace: 1, expected: EXPECTED_WPM, director: true };
+/** The guns on the bays (bay order), their Rèn levels, how many bays, the armour the line starts with. */
+export type RunKit = { readonly guns: readonly GunId[]; readonly levels: readonly number[]; readonly bays: number; readonly armour: number };
 
-export function runHeader(view: Pick<SkillValues, "e" | "a" | "cv" | "fatigue">, mode: Mode, adapt: boolean): RunHeader {
+/**
+ * The run header (written into the replay with the seed; docs/BUILD_S1.md
+ * §11.1): the pace, the stage ("s0" the trial, "c1-s4" …), the kit, the
+ * stage's learning factor ρ (spawns × k × ρ), the telegraph scale (R3) and
+ * the recall words (Nghĩa, R2). The same seed, header and keys give the same run.
+ */
+export type RunHeader = RunPace & {
+  readonly stage: string;
+  readonly kit: RunKit;
+  readonly learn: number;
+  readonly telegraph: number;
+  readonly recall: readonly number[];
+};
+
+export const TRIAL_KIT: RunKit = { guns: [GUN.xung, GUN.tia], levels: [1, 1], bays: 2, armour: 100 };
+
+export const STANDARD_PACE: RunPace = { mode: DEFAULT_MODE, pace: 1, expected: EXPECTED_WPM, director: true };
+export const STANDARD_HEADER: RunHeader = { ...STANDARD_PACE, stage: "s0", kit: TRIAL_KIT, learn: 1, telegraph: 1, recall: [] };
+
+/**
+ * ρ (§7.3, §11.1): capacity with the rule's familiarity over capacity with
+ * known words, at the typist's E_eff and ℓ̄, 0.6–1.0, rounded to 1/1000.
+ * The stage's spawns run at k × ρ: a typist on k's floor still gets room
+ * when the words get harder.
+ */
+export function learnFactor(view: Pick<SkillValues, "e" | "a" | "cv" | "fatigue">, rule: LearnRule): number {
+  const familiarity = LEARN_RULES[rule].familiarity;
+  if (familiarity === "known") return 1;
+  const eff = effectiveE({ e: view.e, a: view.a, cv: view.cv, fatigue: view.fatigue });
+  const len = meanLength(Math.round(view.e));
+  const known = capacity(eff, len, PACE_D);
+  return known > 0 ? round3(Math.max(0.6, Math.min(1, capacity(eff, len, FAMILIARITY_SPEED[familiarity]) / known))) : 1;
+}
+
+/** The kit for a stage: its bays, armour and Rèn levels, the levels going to the guns in the order they were picked. */
+export function stageKit(stage: Stage, guns: readonly GunId[]): RunKit {
+  const picked = guns.slice(0, stage.kit.bays);
+  return { guns: picked, levels: picked.map((_, index) => stage.kit.levels[index] ?? 1), bays: stage.kit.bays, armour: stage.kit.armour };
+}
+
+/** The standard typist's view (E 35, 95 %, CV 0.25): ρ when "Nhịp tự điều" is off. */
+export const STANDARD_VIEW = { e: STANDARD.wpm, a: STANDARD.accuracy, cv: STANDARD.cv, fatigue: 0 } as const;
+
+/** The whole header of a stage run: the pace, the stage, its kit and ρ (from the typist's view; the standard one when the pace is fixed). */
+export function stageHeader(pace: RunPace, stage: Stage, guns: readonly GunId[], view: Pick<SkillValues, "e" | "a" | "cv" | "fatigue">, recall: readonly number[] = []): RunHeader {
+  const learn = learnFactor(pace.director ? view : STANDARD_VIEW, stage.learn);
+  return { ...pace, stage: stage.id, kit: stage.id === "s0" ? TRIAL_KIT : stageKit(stage, guns), learn, telegraph: 1, recall };
+}
+
+export function runHeader(view: Pick<SkillValues, "e" | "a" | "cv" | "fatigue">, mode: Mode, adapt: boolean): RunPace {
   if (!adapt) return { mode, pace: 1, expected: EXPECTED_WPM, director: false };
   const expected = Math.max(10, Math.min(150, Math.round(view.e)));
   return { mode, pace: paceFor(view), expected, director: true };
@@ -99,21 +151,16 @@ export function scalesFor(mode: Mode, k: number): Scales {
 
 /**
  * The director's steps in this game (BALANCE.md §4.2, §9.3): harder, the
- * next pack's spawn interval −7 %, one Giáp affix on the next plain pack,
+ * next pack's spawn interval −7 %, one Bọc Thép affix on the next plain pack,
  * the coming surge 3 s earlier, the coming lull 3 s shorter; easier, a
  * repair pod when near defeat (once a wave) first, then the reverse of each.
  * The kit keeps the caps (±15 % spawn interval, ±10 % W, 2 steps a wave).
  * eliteCost: one armoured pack ≈ 8 mines × 14 HP extra over the stage's W
- * (≈ 16,000 HP): ≈ 7 ‰, rounded up; the sim reports the real one.
+ * (≈ 16,000 HP): ≈ 7 ‰, rounded up; the sim reports the real one. Each
+ * stage carries its own table by objective (content/stage-rules.ts); this
+ * is Trụ vững's, the trial's.
  */
-export const SURVIVAL_PACE_TABLE: PaceTable = {
-  up: ["spawn", "elite", "peak", "lull"],
-  down: ["support", "spawn", "elite", "lull", "peak"],
-  spawnStep: 70,
-  eliteCost: 10,
-  peakTicks: 180,
-  lullTicks: 180,
-};
+export const SURVIVAL_PACE_TABLE: PaceTable = PACE_HOLD;
 
 /** FlowMeter snapshots every this many ticks (0.1 s): kills, damage and drops add up in between. */
 export const FLOW_EVERY = 6;

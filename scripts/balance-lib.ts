@@ -12,7 +12,7 @@ import {
   type BandMode, type BotModeSummary, type FlowSummary, type GateResult, type PaceSummary, type RunRecord, type SkillProfile, type TypistParams,
 } from "../src/kit/balance";
 import { headerFor, runSample } from "../src/app/skill";
-import { MODES, type Mode, type RunHeader } from "../src/content/balance";
+import { MODES, type Mode, type RunPace } from "../src/content/balance";
 import { EV } from "../src/sim/events";
 import type { World } from "../src/sim/world";
 import { playOut, sharedDeck, survivalParams, typistBot } from "../tests/survival/typist-bot";
@@ -47,7 +47,7 @@ export function botProfile(bot: BotRow, mode: Mode): SkillProfile {
 }
 
 export type RunResult = RunRecord & {
-  readonly header: RunHeader;
+  readonly header: RunPace;
   readonly won: boolean;
   readonly hp: number;
   readonly words: number;
