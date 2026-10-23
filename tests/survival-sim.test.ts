@@ -1,20 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { FIELD, FOES, KIND, MAG_MAX, PRESS, QUALITY, STORE, TIA, TICK_HZ, XUNG } from "../src/content/rules";
-import { STAGE_S0 } from "../src/content/stage-s0";
+import { DT, FIELD, FOES, KIND, MAG_MAX, PRESS, QUALITY, STORE, TIA, TICK_HZ, XUNG } from "../src/content/rules";
+import { STAGE_S0, calmAt } from "../src/content/stage-s0";
 import { EV, FLAG } from "../src/sim/events";
 import { hashHex } from "../src/sim/hash";
 import { firstFoeHit, hitT, segmentHit } from "../src/sim/hits";
 import { RADIUS, pressAt } from "../src/sim/move";
 import { aimOf, densest, loadMagazine } from "../src/sim/weapons";
 import { isFast } from "../src/sim/words";
+import { rateAt } from "../src/sim/plan";
 import { createWorld, runLog, step, type Command, type CommandBody, type World } from "../src/sim/world";
-import { bot, botKeys, sharedDeck } from "./survival/bot";
+import { bot, botKeys } from "./survival/bot";
+import { sharedDeck, typistBot } from "./survival/typist-bot";
 
 /**
- * The Sinh Tồn S0 rules (docs/BUILD_S0.md §9): a deterministic
- * fixed-step sim, spawns by the stage table, magazines, the grid against
- * pairwise tests, Tia toward the dense cluster, and keys that a hit stop
- * never drops.
+ * The Tuyến Cuối S0 rules (docs/BUILD_S0.md §9, balance pass
+ * docs/changelog/2026-10-23-balance.md): a deterministic fixed-step sim,
+ * spawns by the run's plan, magazines, the grid against pairwise tests, Tia
+ * toward the dense cluster, keys that a hit stop never drops, and the stage
+ * as the human-like standard bot plays it.
  */
 const deck = sharedDeck();
 const world = (seed = 1, extra: Partial<Parameters<typeof createWorld>[0]> = {}) => createWorld({ seed, deck, ...extra });
@@ -76,34 +79,67 @@ describe("determinism", () => {
   });
 });
 
-describe("spawns (BUILD_S0 §4)", () => {
-  it("follow the rate table, counted in 1 s windows, in groups of 4–12", () => {
-    const w = world(11);
+describe("spawns (BUILD_S0 §4, the run's plan)", () => {
+  it("follow the plan: calm × tide, surges × their strength, lulls after them, all × mode and k; groups of 4–12", () => {
+    const w = world(11, { director: false });
     w.hp = 1e9;
-    const perSecond = new Array<number>(STAGE_S0.seconds).fill(0);
+    const seconds = STAGE_S0.seconds;
+    const owed = new Array<number>(seconds).fill(0);
+    const got = new Array<number>(seconds).fill(0);
     const sizes: number[] = [];
-    while (w.time < STAGE_S0.seconds - 1e-9) {
+    let vanguard = 0;
+    while (w.time < seconds - 1e-9) {
       const before = w.events.written;
+      const second = Math.min(seconds - 1, Math.floor(w.time));
+      // What spawnStep owes this tick, read before the step (the rate at the step's start).
+      owed[second]! += rateAt(w) * DT;
       step(w);
       for (let i = before; i < w.events.written; i += 1) {
         const k = i % w.events.size;
-        if (w.events.kind[k] === EV.spawn) {
-          perSecond[Math.min(STAGE_S0.seconds - 1, Math.floor(w.time))]! += w.events.ref[k]!;
+        if (w.events.kind[k] !== EV.spawn) continue;
+        if (w.tick === 1) vanguard += w.events.ref[k]!;
+        else {
+          got[second]! += w.events.ref[k]!;
           sizes.push(w.events.ref[k]!);
         }
       }
     }
+    expect(vanguard).toBe(STAGE_S0.vanguard.reduce((sum, pack) => sum + pack.n, 0));
     expect(Math.min(...sizes)).toBeGreaterThanOrEqual(4);
     expect(Math.max(...sizes)).toBeLessThanOrEqual(12);
-    for (const span of STAGE_S0.rates) {
-      const windows = perSecond.slice(span.from, span.to);
-      const mean = windows.reduce((sum, n) => sum + n, 0) / windows.length;
-      // Whole groups: the window mean is within one group of the rate.
-      expect(Math.abs(mean - span.rate), span.from + "–" + span.to + " s").toBeLessThanOrEqual(12 / windows.length + 0.05);
+    // Whole groups: by any time, what came is within one group of what was owed.
+    let sumOwed = 0;
+    let sumGot = 0;
+    for (let second = 0; second < seconds; second += 1) {
+      sumOwed += owed[second]!;
+      sumGot += got[second]!;
+      expect(Math.abs(sumGot - sumOwed), second + " s").toBeLessThanOrEqual(12.5);
     }
-    const total = perSecond.reduce((sum, n) => sum + n, 0);
-    const owed = STAGE_S0.rates.reduce((sum, span) => sum + (span.to - span.from) * span.rate, 0);
-    expect(Math.abs(total - owed)).toBeLessThanOrEqual(12);
+    // The plan itself: calm × tide outside the surges and lulls; a surge × its strength; its lull × tide.
+    const P = w.plan;
+    for (const t of [10, 40, 100, 170]) {
+      w.time = t;
+      expect(rateAt(w)).toBeCloseTo(calmAt(t) * P.tide, 9);
+    }
+    w.time = P.surgeAt[0]! + 1;
+    expect(rateAt(w)).toBeCloseTo(STAGE_S0.surges[0]!.rate * P.strength[0]!, 9);
+    w.time = P.surgeEnd[1]! + 0.5;
+    expect(rateAt(w)).toBeCloseTo(STAGE_S0.surges[1]!.lullRate * P.tide, 9);
+  });
+
+  it("draw each run's tide and surge strengths from the seed: the same seed, the same plan; storms at their chance, within their spread", () => {
+    const strengths: number[] = [];
+    for (let seed = 1; seed <= 200; seed += 1) {
+      const a = world(seed);
+      expect(Array.from(world(seed).plan.strength)).toEqual(Array.from(a.plan.strength));
+      expect(a.plan.tide).toBeGreaterThanOrEqual(STAGE_S0.tide[0]);
+      expect(a.plan.tide).toBeLessThanOrEqual(STAGE_S0.tide[1]);
+      strengths.push(...a.plan.strength);
+    }
+    const storms = strengths.filter((x) => x >= STAGE_S0.storm.spread[0]).length / strengths.length;
+    expect(storms).toBeGreaterThan(STAGE_S0.storm.chance - 0.07);
+    expect(storms).toBeLessThan(STAGE_S0.storm.chance + 0.07);
+    expect(strengths.every((x) => (x >= STAGE_S0.surgeSpread[0] && x <= STAGE_S0.surgeSpread[1]) || (x >= STAGE_S0.storm.spread[0] && x <= STAGE_S0.storm.spread[1]))).toBe(true);
   });
 
   it("keep a group waiting at the gate while the field is at the cap, and never lose it", () => {
@@ -348,43 +384,42 @@ describe("the stage plays", () => {
     return n;
   };
 
-  it("a 35 WPM bot sees 40–80 foes in the calm, 120–160 at both surges, fights in the ship's half, and wins (several runs)", () => {
-    const runs = [1, 2, 3, 4, 5, 6].map((seed) => {
-      const w = world(seed);
-      const b = bot(35, 0.04);
-      b.seed = 12345 + seed * 7;
+  it("the standard bot (35 WPM, typed like a person, k = 1) sees 35–80 foes in the calm, a flood at a surge and far more at a storm, fights in the ship's half, and wins most runs", () => {
+    const runs = [1, 2, 3, 4, 5, 6, 7, 8].map((seed) => {
+      const { session, bot: typist } = typistBot({ seed, deck, director: false }, "standard", 7919 * seed + 13);
+      const w = session.world;
       const calm: number[] = [];
       const kills: number[] = [];
-      let peak1 = 0;
-      let peak2 = 0;
+      const peaks = [0, 0];
       let seen = 0;
       while (w.phase === "play") {
-        step(w, botKeys(w, b));
+        typist.act(w);
+        session.tick();
         const R = w.events;
         for (let i = seen; i < R.written; i += 1) if (R.kind[i % R.size] === EV.kill) kills.push(R.z[i % R.size]!);
         seen = R.written;
         if (w.tick % 15 !== 0) continue;
         const n = onScreen(w);
-        if (w.time >= 90 && w.time < 150) calm.push(n);
-        if (w.time >= 60 && w.time < 80) peak1 = Math.max(peak1, n);
-        if (w.time >= 150 && w.time < 172) peak2 = Math.max(peak2, n);
+        if (w.time >= 95 && w.time < 140) calm.push(n);
+        for (let i = 0; i < 2; i += 1) if (w.time >= w.plan.surgeAt[i]! && w.time < w.plan.lullEnd[i]! + 10) peaks[i] = Math.max(peaks[i]!, n);
       }
       calm.sort((a, c) => a - c);
       kills.sort((a, c) => a - c);
-      return { won: w.phase === "won", calm: calm[calm.length >> 1]!, peak1, peak2, killDepth: kills[kills.length >> 1]!, shotsDown: w.stats.shotsDown, scoutKills: w.stats.scoutKills };
+      return { won: w.phase === "won", calm: calm[calm.length >> 1]!, peaks, strength: Array.from(w.plan.strength), killDepth: kills[kills.length >> 1]!, shotsDown: w.stats.shotsDown, scoutKills: w.stats.scoutKills, drained: w.stats.drained };
     });
-    // "Most of the time": at most one loss in six.
-    expect(runs.filter((run) => run.won).length).toBeGreaterThanOrEqual(5);
+    expect(runs.filter((run) => run.won).length).toBeGreaterThanOrEqual(6);
     for (const run of runs) {
-      expect(run.calm, JSON.stringify(run)).toBeGreaterThanOrEqual(40);
+      expect(run.calm, JSON.stringify(run)).toBeGreaterThanOrEqual(35);
       expect(run.calm, JSON.stringify(run)).toBeLessThanOrEqual(80);
-      for (const peak of [run.peak1, run.peak2]) {
-        expect(peak, JSON.stringify(run)).toBeGreaterThanOrEqual(120);
-        expect(peak, JSON.stringify(run)).toBeLessThanOrEqual(160);
-      }
-      // The crowd presses in: half the kills land in the nearest third of the field (BUILD_S0's 42 m Xung killed at the gate).
+      run.strength.forEach((strength, i) => {
+        if (strength >= STAGE_S0.storm.spread[0]) expect(run.peaks[i], JSON.stringify(run)).toBeGreaterThanOrEqual(140);
+        else expect(run.peaks[i], JSON.stringify(run)).toBeGreaterThanOrEqual(60);
+      });
+      // The crowd presses in: half the kills land in the nearest third of the field.
       expect(run.killDepth, JSON.stringify(run)).toBeLessThan(FIELD.gateZ / 3);
       expect(run.shotsDown + run.scoutKills).toBeGreaterThan(0);
+      // Continuous pressure (BALANCE.md §5): even a won run loses armour to the near zone.
+      expect(run.drained).toBeGreaterThan(5);
     }
   });
 

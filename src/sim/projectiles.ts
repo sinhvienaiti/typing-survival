@@ -3,23 +3,31 @@
  * against scout shots and foes, the earlier touch wins), scout shots flying
  * at the ship, and the damage that both guns deal.
  */
-import { FIELD, FOES, KIND, SCOUT, XUNG } from "../content/rules";
+import { FIELD, KIND, SCOUT, XUNG } from "../content/rules";
 import { EV, FLAG } from "./events";
 import { firstFoeHit, firstShotHit, hitT } from "./hits";
 import { RADIUS } from "./move";
+import { noteKill } from "./pace";
 import type { World } from "./world";
 
 /** Deals `damage` to foe `s`; `dx, dz` is the blow's direction (for the recoil and the numbers). */
 export function damageFoe(w: World, s: number, damage: number, flags: number, dx: number, dz: number): void {
   const F = w.foes;
+  const dealt = Math.min(damage, Math.max(0, F.hp[s]!));
   F.hp[s] = F.hp[s]! - damage;
+  w.stats.damageDealt += dealt;
+  w.pace.damage += dealt;
   const scout = F.kind[s] === KIND.scout ? FLAG.scout : 0;
+  const elite = F.elite[s] === 1 ? FLAG.elite : 0;
   const kill = F.hp[s]! <= 0 ? FLAG.kill : 0;
-  w.events.push(w.tick, EV.hit, s, F.id[s]!, F.x[s]!, F.z[s]!, dx, dz, damage, flags | scout | kill);
+  w.events.push(w.tick, EV.hit, s, F.id[s]!, F.x[s]!, F.z[s]!, dx, dz, damage, flags | scout | kill | elite);
   if (kill === 0) return;
   w.stats.kills += 1;
   if (scout !== 0) w.stats.scoutKills += 1;
-  w.events.push(w.tick, EV.kill, s, F.id[s]!, F.x[s]!, F.z[s]!, dx, dz, FOES[F.kind[s]!]!.hp, flags | scout);
+  if (elite !== 0) w.stats.eliteKills += 1;
+  w.stats.lifeSum += w.time - (F.reached[s]! >= 0 ? F.reached[s]! : F.born[s]!);
+  noteKill(w, F.z[s]!);
+  w.events.push(w.tick, EV.kill, s, F.id[s]!, F.x[s]!, F.z[s]!, dx, dz, F.maxHp[s]!, flags | scout | elite);
   F.remove(s);
 }
 
@@ -89,6 +97,7 @@ export function moveShots(w: World, dt: number): void {
     if (dx * dx + dz * dz <= 1.3 * 1.3) {
       w.hp = Math.max(0, w.hp - SCOUT.shotDamage);
       w.stats.damageTaken += SCOUT.shotDamage;
+      w.stats.shotDamage += SCOUT.shotDamage;
       w.events.push(w.tick, EV.playerHit, s, S.id[s]!, S.x[s]!, S.z[s]!, S.vx[s]! / SCOUT.shotSpeed, S.vz[s]! / SCOUT.shotSpeed, SCOUT.shotDamage, 0);
       S.remove(s);
     } else if (S.life[s]! <= 0 || S.z[s]! < FIELD.minZ + 1) S.remove(s);

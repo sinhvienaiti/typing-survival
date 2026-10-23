@@ -37,10 +37,15 @@ class Pool {
   }
 }
 
-/** Foes. state: 0 walking in, 1 holding (scouts), 2 walking on. */
+/** Foes. state: 0 walking in, 1 holding (scouts), 2 walking on. elite: 1 for the Giáp affix; maxHp: its hit points at spawn. */
 export class Foes extends Pool {
   readonly kind = new Uint8Array(this.cap);
   readonly state = new Uint8Array(this.cap);
+  readonly elite = new Uint8Array(this.cap);
+  readonly maxHp = new Float64Array(this.cap);
+  /** World seconds at spawn, and when it came within the guns' reach (DRAIN.from; −1 not yet): how long it lived under fire (BALANCE.md §7 B4). */
+  readonly born = new Float64Array(this.cap);
+  readonly reached = new Float64Array(this.cap);
   readonly x = new Float64Array(this.cap);
   readonly z = new Float64Array(this.cap);
   readonly vx = new Float64Array(this.cap);
@@ -54,11 +59,15 @@ export class Foes extends Pool {
   readonly timer = new Float64Array(this.cap);
   readonly wait = new Float64Array(this.cap);
 
-  add(kind: number, x: number, z: number, hp: number, phase: number): number {
+  add(kind: number, x: number, z: number, hp: number, phase: number, elite = 0, born = 0): number {
     const s = this.take();
     if (s < 0) return -1;
+    this.born[s] = born;
+    this.reached[s] = -1;
     this.kind[s] = kind;
     this.state[s] = 0;
+    this.elite[s] = elite;
+    this.maxHp[s] = hp;
     this.x[s] = x;
     this.z[s] = z;
     this.vx[s] = 0;

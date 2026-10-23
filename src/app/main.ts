@@ -13,7 +13,8 @@ import { speakEnglish } from "../kit/speech";
 import { hordeIntensity } from "../audio/music";
 import { ThemeAudio } from "../audio/theme-audio";
 import { FIELD, FOE_CAP, TIA, XUNG, type Tier } from "../content/rules";
-import { STAGE_S0, spanAt } from "../content/stage-s0";
+import { STAGE_S0 } from "../content/stage-s0";
+import { peakAt } from "../sim/plan";
 import { hashHex } from "../sim/hash";
 import { Combat } from "../view/combat";
 import { Crowd } from "../view/crowd";
@@ -437,7 +438,7 @@ function update(now: number): void {
     if (z <= FIELD.gateZ + 4) shown += 1;
   }
   stage.threat = Math.min(1, near / 12);
-  const peak = spanAt(world.time).peak;
+  const peak = peakAt(world);
   if (peak !== lastPeak) {
     lastPeak = peak;
     if (peak > 0 && mode === "play") audio.siren();

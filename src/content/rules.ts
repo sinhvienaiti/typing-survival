@@ -17,11 +17,49 @@ export const SHIP = { hp: 100 } as const;
 export const KIND = { mine: 0, scout: 1 } as const;
 export type FoeKind = (typeof KIND)[keyof typeof KIND];
 
-/** Per kind: hit points, speed (m/s, at full stride: see PRESS), body radius, ship damage on reaching the bottom line. */
+/**
+ * Per kind: hit points, speed (m/s, at full stride: see PRESS), body radius,
+ * ship damage on reaching the bottom line, and its weight in the near
+ * zone's drain (DRAIN).
+ */
 export const FOES = [
-  { hp: 14, speed: 2.6, radius: 0.5, breach: 3, wobble: 0.55, wobbleHz: 0.32 },
-  { hp: 56, speed: 1.8, radius: 0.8, breach: 6, wobble: 0.15, wobbleHz: 0.2 },
+  { hp: 14, speed: 2.6, radius: 0.5, breach: 3, drain: 1, wobble: 0.55, wobbleHz: 0.32 },
+  { hp: 56, speed: 1.8, radius: 0.8, breach: 6, drain: 2, wobble: 0.15, wobbleHz: 0.2 },
 ] as const;
+
+/**
+ * The near zone (docs/games/BALANCE.md §3 "vòng gần", §5): foes at z ≤ `z`
+ * are a real threat. It is where the press is slowest, a few seconds from
+ * the bottom line; the floor glows there (view/scene.ts).
+ */
+export const NEAR = { z: 7 } as const;
+
+/**
+ * Continuous pressure (BALANCE.md §5): the Bầy Hố Đen leaches the line's
+ * armour from `from` m in, harder the closer it comes: a foe at depth z
+ * takes `perFoe` × (from − z) / (from − bottom line) HP a second, times its
+ * drain weight (mine 1, scout 2); all of it counts as at most `maxLeech`
+ * foes at the line (a pile does not melt the line in a moment). Whole points come off as they add up
+ * (EV.drain). A foe the guns stop far out costs almost nothing; one that walks
+ * deep costs more the longer it lives there, so a faster, cleaner typist
+ * loses less armour, smoothly, and breaches are the overflow on top.
+ */
+export const DRAIN = { from: 16, perFoe: 0.08, maxLeech: 12 } as const;
+
+/**
+ * The elite affix "Giáp" (armoured pack, SURVIVAL_MODE_PLAN.md 4.5 "tinh
+ * nhuệ: giáp"): every member of the pack spawns with `hp` × its hit points
+ * and is drawn larger with gold veins. From `from` s, every `every`-th pack
+ * carries it; the pace director adds one to the next plain pack or takes it
+ * off the next armoured one (never a live foe's hit points).
+ */
+export const ELITE = { hp: 2, every: 9, from: 20 } as const;
+
+/** The director's support drop near defeat (BALANCE.md §4.2): a repair pod, `hp` armour, at most once a wave. */
+export const SUPPORT = { hp: 20 } as const;
+
+/** Path fraction at a kill (BALANCE.md §3 "Q"): from the gate (z = `from`) to the bottom line. */
+export const PATH = { from: 40 } as const;
 
 /**
  * The press: foes walk in at full stride and slow as they close on the ship
@@ -36,7 +74,7 @@ export const PRESS = { near: 6, far: 24, slow: 0.4 } as const;
  * reach of the shorter guns they shot the ship freely), fire a slow shot
  * every 3 s, and walk on after `holdS`.
  */
-export const SCOUT = { holdMin: 6, holdMax: 9, fireEvery: 3, holdS: 12, shotSpeed: 6, shotDamage: 4, shotRadius: 0.35, shotLife: 9 } as const;
+export const SCOUT = { holdMin: 6, holdMax: 9, fireEvery: 3, holdS: 12, shotSpeed: 6, shotDamage: 3, shotRadius: 0.35, shotLife: 9 } as const;
 
 /** Funnel: how strongly the flow field bends toward the ship as foes come close (0 from `from` m out). */
 export const FLOW = { pull: 0.55, from: 30 } as const;
@@ -67,15 +105,15 @@ export const XUNG = { rounds: 24, seconds: 2.4, damage: 7, coneCos: 0.9063, spee
 export const TIA = { seconds: 2.5, width: 1.4, sweep: 3, pulse: 0.1, damage: 6, crit: 0.05, strip: 1.2, away: 2.4, length: 12 } as const;
 export const CRIT_MULT = 2;
 /** Typing quality of the loading word: Chuẩn (0 errors), Nhanh (≤ 0.7 of the expected time). */
-export const QUALITY = { cleanDamage: 1.15, cleanCrit: 0.1, fastShare: 0.7, fastRate: 1.15 } as const;
+export const QUALITY = { cleanDamage: 1.06, cleanCrit: 0.04, fastShare: 0.7, fastRate: 1.15 } as const;
 
 /** The typist's expected speed E (WPM) and word length band by E (as Typing Defense). */
 export const EXPECTED_WPM = 35;
 export const LENGTH_BY_E = [
   { minE: 0, len: [3, 5] },
-  { minE: 25, len: [3, 6] },
+  { minE: 20, len: [3, 6] },
   { minE: 45, len: [4, 7] },
-  { minE: 65, len: [4, 8] },
+  { minE: 60, len: [6, 10] },
 ] as const;
 
 /** World speed during a hit stop. */

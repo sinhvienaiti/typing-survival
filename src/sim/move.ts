@@ -64,7 +64,7 @@ export function moveFoes(w: World, dt: number): void {
     } else {
       const c = rowOf(z) * cols + colOf(x);
       const sway = wave(F.phase[s]! + w.time * spec.wobbleHz) * spec.wobble;
-      const speed = spec.speed * pressAt(z);
+      const speed = spec.speed * w.scales.speed * pressAt(z);
       F.vx[s] = FIELD_X[c]! * speed + sway;
       F.vz[s] = FIELD_Z[c]! * speed;
     }
@@ -141,6 +141,7 @@ function breach(w: World, s: number): void {
   w.hp = Math.max(0, w.hp - damage);
   w.stats.breaches += 1;
   w.stats.damageTaken += damage;
+  w.stats.breachDamage += damage;
   w.events.push(w.tick, EV.breach, s, F.id[s]!, F.x[s]!, F.z[s]!, 0, -1, damage, kind === KIND.scout ? FLAG.scout : 0);
   F.remove(s);
 }

@@ -1,11 +1,12 @@
 /**
  * The world hash: every rule number of the world folded into 32 bits, floats
- * by their bit pattern (as Typing Defense). Two runs with the same seed, deck
- * and command log match tick by tick, on Node and in Chrome. Events are
- * output, not state, and stay out.
+ * by their bit pattern (as Typing Defense). Two runs with the same seed, deck,
+ * run header and command log match tick by tick, on Node and in Chrome. The
+ * header, the run's timeline, the FlowMeter and the pace director are state
+ * too. Events are output, not state, and stay out.
  */
 import { rngState } from "../kit/platform/rng";
-import type { World } from "./world";
+import { modeIndex, type World } from "./world";
 
 const PRIME = 0x01000193;
 const float = new Float64Array(1);
@@ -33,8 +34,11 @@ function mixObject(hash: number, object: object): number {
 export function hashWorld(w: World): number {
   let h = 0x811c9dc5;
   for (const value of [w.tick, w.time, w.scale, w.slowTicks, w.hp, w.foeCap, w.bulletCap, w.expected, ["play", "won", "lost"].indexOf(w.phase)]) h = mixNumber(h, value);
+  for (const value of [modeIndex(w), w.header.pace, w.header.director ? 1 : 0, w.scales.rate, w.scales.surge, w.scales.speed, w.scales.drain]) h = mixNumber(h, value);
   for (const value of rngState(w.rng)) h = mix(h, value);
-  for (const part of [w.spawn, w.foes, w.bullets, w.shots, w.guns, w.typing, w.stats]) h = mixObject(h, part);
+  for (const part of [w.spawn, w.plan, w.pace, w.foes, w.bullets, w.shots, w.guns, w.typing, w.measure, w.stats]) h = mixObject(h, part);
+  for (const value of w.meter.state()) h = mixNumber(h, value);
+  for (const value of w.director.state()) h = mixNumber(h, value);
   return h >>> 0;
 }
 

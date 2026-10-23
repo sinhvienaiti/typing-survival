@@ -9,7 +9,7 @@
  */
 import type { Rect } from "../kit/feedback";
 import { MAG_MAX, TIA, WEAPON, XUNG } from "../content/rules";
-import { spanAt } from "../content/stage-s0";
+import { peakAt } from "../sim/plan";
 import type { World } from "../sim/world";
 import type { Word } from "../app/vocab";
 
@@ -152,7 +152,7 @@ export class Hud {
       this.last.time = clock;
       this.time.textContent = clock;
     }
-    const peak = spanAt(w.time).peak;
+    const peak = peakAt(w);
     if (peak !== this.last.peak) {
       this.last.peak = peak;
       if (peak > 0) this.showBanner("ĐỈNH TRÀN " + peak, now);

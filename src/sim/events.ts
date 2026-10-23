@@ -6,10 +6,16 @@
 export const EV = {
   shot: 1, hit: 2, kill: 3, breach: 4, foeShot: 5, shotDown: 6, playerHit: 7,
   keyOk: 8, keyBad: 9, word: 10, load: 11, beamStart: 12, beamPulse: 13, beamEnd: 14, spawn: 15, end: 16,
+  /** A point of armour leached by the near zone (slot, ref: the foe nearest the line). */
+  drain: 17,
+  /** The director's repair pod (value: armour restored). */
+  support: 18,
+  /** A pace director step (slot: lever index, ref: its id, x: dir, z: tension ‰, dx: level, dz: spawn scale ‰, value: what applied). */
+  pace: 19,
 } as const;
 
-/** flags bits: crit, perfect magazine, Tia, killing blow, scout, clean, fast. */
-export const FLAG = { crit: 1, perfect: 2, tia: 4, kill: 8, scout: 16, clean: 32, fast: 64 } as const;
+/** flags bits: crit, perfect magazine, Tia, killing blow, scout, clean, fast, Giáp (an armoured foe). */
+export const FLAG = { crit: 1, perfect: 2, tia: 4, kill: 8, scout: 16, clean: 32, fast: 64, elite: 128 } as const;
 
 const SIZE = 16384;
 

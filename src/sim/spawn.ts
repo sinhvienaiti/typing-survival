@@ -1,12 +1,16 @@
 /**
- * Steady grouped spawns (docs/BUILD_S0.md §4): the stage's rate
- * accrues foes owed; once a whole group (4–12, drawn ahead) is owed it walks
- * in above the gate as a block, wedge or line, scouts in its back rows. A
- * group that would pass the tier's crowd cap waits at the gate: never lost.
+ * Steady grouped spawns (docs/BUILD_S0.md §4): the stage's rate (sim/plan.ts:
+ * calm, surge or lull, times the mode and pace k, over the director's spawn
+ * interval scale) accrues foes owed; once a whole group (4–12, drawn ahead) is
+ * owed it walks in above the gate as a block, wedge or line, scouts in its
+ * back rows, the Giáp affix on some packs (sim/pace.ts). A group that would
+ * pass the tier's crowd cap waits at the gate: never lost.
  */
-import { FIELD, FOES, KIND, SCOUT, SPAWN } from "../content/rules";
-import { spanAt } from "../content/stage-s0";
-import { EV } from "./events";
+import { ELITE, FIELD, FOES, KIND, SCOUT, SPAWN } from "../content/rules";
+import { STAGE_S0 } from "../content/stage-s0";
+import { EV, FLAG } from "./events";
+import { packArmour } from "./pace";
+import { rateAt } from "./plan";
 import type { World } from "./world";
 
 const SHAPES = 3;
@@ -42,7 +46,7 @@ function slotOf(shape: number, i: number, n: number, out: Float64Array): void {
 
 const place = new Float64Array(2);
 
-function spawnGroup(w: World, n: number, shape: number): void {
+function spawnGroup(w: World, n: number, shape: number, front: number = FIELD.gateZ + 1): void {
   const rng = w.rng.spawn;
   let half = 0;
   for (let i = 0; i < n; i += 1) {
@@ -52,10 +56,12 @@ function spawnGroup(w: World, n: number, shape: number): void {
   const room = FIELD.halfW - FIELD.wall - 1 - half;
   const cx = room > 0 ? (rng.float() * 2 - 1) * room : 0;
   const scouts = w.time >= SPAWN.scoutFromS ? Math.floor(n * SPAWN.scoutShare + rng.float()) : 0;
+  const elite = packArmour(w, n) ? 1 : 0;
+  const hpScale = elite === 1 ? ELITE.hp : 1;
   for (let i = 0; i < n; i += 1) {
     slotOf(shape, i, n, place);
     const kind = i >= n - scouts ? KIND.scout : KIND.mine;
-    const s = w.foes.add(kind, cx + place[0]! * SPAWN.spacing, FIELD.gateZ + 1 + place[1]! * SPAWN.spacing, FOES[kind].hp, rng.float());
+    const s = w.foes.add(kind, cx + place[0]! * SPAWN.spacing, front + place[1]! * SPAWN.spacing, FOES[kind].hp * hpScale, rng.float(), elite, w.time);
     if (s < 0) break;
     if (kind === KIND.scout) {
       w.foes.holdZ[s] = SCOUT.holdMin + rng.float() * (SCOUT.holdMax - SCOUT.holdMin);
@@ -64,12 +70,22 @@ function spawnGroup(w: World, n: number, shape: number): void {
     }
   }
   w.spawn.spawned += n;
-  w.events.push(w.tick, EV.spawn, shape, n, cx, FIELD.gateZ, 0, 0, scouts, 0);
+  w.events.push(w.tick, EV.spawn, shape, n, cx, front - 1, 0, 0, scouts, elite === 1 ? FLAG.elite : 0);
+}
+
+/** The stage's vanguard, before the first step's spawns (sizes × the mode and k, 4–12). */
+function vanguard(w: World): void {
+  for (const pack of STAGE_S0.vanguard) {
+    const n = Math.max(SPAWN.groupMin, Math.min(SPAWN.groupMax, Math.round(pack.n * w.scales.rate)));
+    const shape = w.rng.spawn.int(0, SHAPES - 1);
+    if (w.foes.count + n <= w.foeCap) spawnGroup(w, n, shape, pack.z);
+  }
 }
 
 export function spawnStep(w: World, dt: number): void {
+  if (w.tick === 0 && w.spawn.packs === 0) vanguard(w);
   if (w.spawn.size === 0) drawGroup(w);
-  if (w.time < w.seconds) w.spawn.owed += spanAt(w.time).rate * dt;
+  if (w.time < w.seconds) w.spawn.owed += ((rateAt(w) * 1000) / w.pace.spawnScale) * dt;
   while (w.spawn.owed >= w.spawn.size) {
     if (w.foes.count + w.spawn.size > w.foeCap) {
       w.spawn.waiting = w.spawn.size;
@@ -90,7 +106,7 @@ export function flood(w: World, n: number): void {
   for (let i = 0; i < count; i += 1) {
     const x = (rng.float() * 2 - 1) * (FIELD.halfW - FIELD.wall - 0.5);
     const z = near + rng.float() * (FIELD.gateZ - near);
-    w.foes.add(KIND.mine, x, z, FOES[KIND.mine].hp, rng.float());
+    w.foes.add(KIND.mine, x, z, FOES[KIND.mine].hp, rng.float(), 0, w.time);
   }
   w.spawn.spawned += count;
 }
