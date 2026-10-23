@@ -221,8 +221,14 @@ export function moveBullets(w: World, dt: number): void {
 export function moveShots(w: World, dt: number): void {
   const S = w.shots;
   const hitZ = FIELD.muzzleZ - 0.6;
+  // The horde pulling back is harmless: its shots in the air fade too.
+  const calm = w.objective.retreat >= 0;
   for (let s = 0; s < S.top; s += 1) {
     if (S.alive[s] === 0) continue;
+    if (calm) {
+      S.remove(s);
+      continue;
+    }
     S.x[s] = S.x[s]! + S.vx[s]! * dt;
     S.z[s] = S.z[s]! + S.vz[s]! * dt;
     S.life[s] = S.life[s]! - dt;

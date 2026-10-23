@@ -41,7 +41,7 @@ export const CHAPTER_1: readonly Stage[] = [
     id: "c1-s2",
     index: 2,
     name: "Đầu Đàn",
-    objective: { kind: "hunt", need: 3, leaders: [20, 55, 90, 125, 160], cap: 240 },
+    objective: { kind: "hunt", need: 3, leaders: [20, 58, 96, 134, 172], cap: 240 },
     hazard: null,
     learn: "standard",
     calm: calm(3.4, 240),

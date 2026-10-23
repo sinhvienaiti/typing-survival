@@ -91,7 +91,7 @@ describe("Săn Đầu Đàn (§7.1)", () => {
     w.objective.of = 999;
     const arrivals: number[] = [];
     let seen = 0;
-    while (w.phase === "play" && w.time < 170) {
+    while (w.phase === "play" && w.time < leaders!.leaders.at(-1)! + 2) {
       step(w);
       const list = eventsOf(w, EV.leader, seen);
       seen = w.events.written;
