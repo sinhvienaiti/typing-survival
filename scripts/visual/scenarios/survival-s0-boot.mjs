@@ -1,6 +1,6 @@
 // Tuyến Cuối S0 (docs/BUILD_S0.md §9): the page builds; the title screen
-// "Tuyến Cuối" (keyboard menu: ↓ skips the disabled "Chơi tiếp", ↑ comes
-// back; the title font has every Vietnamese letter; a key starts the audio
+// "Tuyến Cuối" (keyboard menu: Bắt đầu, Chơi tiếp, Chế độ, Hồ sơ gõ, Cài đặt,
+// Kho súng; ↓ skips the disabled "Chơi tiếp", ↑ comes back; the title font has every Vietnamese letter; a key starts the audio
 // and the music), then Enter, the HUD with its health bar, clock and kill counter, and two gun
 // slots that each show a word (≥ 26 px at 1280×720, contrast ≥ 7 : 1 on the
 // panel) with its meaning; the learning frame; no console error. S0 review:
@@ -101,7 +101,7 @@ export default async function (page) {
     ready,
     startCardShown: startCard?.mode === "start" && /TUYẾN CUỐI/.test(startCard.card),
     titleFontHasEveryLetter: font.loaded && font.missing.length === 0 && /Chakra Petch/.test(font.family),
-    titleMenu: menuAtStart.length === 4 && menuAtStart[0].on && menuAtStart[1].off && menuDown[2].on && menuUp[0].on,
+    titleMenu: menuAtStart.length === 6 && menuAtStart[0].on && menuAtStart[1].off && menuAtStart[2].text === "Chế độ" && menuAtStart[3].text === "Hồ sơ gõ" && menuDown[2].on && menuUp[0].on,
     audioStartsOnAKey: soundsBefore.played["ui.move"] >= 1 && sounds.ready && sounds.played["ui.select"] >= 1 && sounds.played["music.calm"] === 1,
     enterStarts: hud.mode === "play",
     twoSlotsWithWords: hud.slots.length === 2 && hud.slots.every((slot, k) => slot.word === hud.sim[k].text && slot.word.length >= 3 && slot.meaning.length > 0),

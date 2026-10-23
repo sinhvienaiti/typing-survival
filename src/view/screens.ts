@@ -1,13 +1,15 @@
 /**
  * The screens over the fight (DOM in the HUD's overlay, styled by
- * survival.css with theme.css's variables): the title "Tuyến Cuối", settings,
- * the armory and learning placeholder, pause and the results. Each is drawn
+ * survival.css with theme.css's variables): the title "Tuyến Cuối" (with the
+ * mode), settings (with "Nhịp tự điều"), the armory and learning placeholder,
+ * the typing profile "Hồ sơ gõ", pause and the results (with one line of
+ * advice). Each is drawn
  * whole from its menu (src/app/menu.ts) whenever something changes; a pointer
  * can hover (select) and click (take) the items too.
  */
 import type { Menu, MenuItem } from "../app/menu";
 
-export type Stat = { value: string; label: string };
+export type Stat = { value: string; label: string; note?: string };
 export type Learned = { en: string; vi: string };
 export type GunCard = { name: string; title: string; text: string; kind: "xung" | "tia" };
 
@@ -15,8 +17,9 @@ export type ScreenView =
   | { kind: "title"; menu: Menu; status: string; lead: string }
   | { kind: "settings"; menu: Menu; note: string }
   | { kind: "armory"; menu: Menu; guns: readonly GunCard[]; learning: readonly string[] }
+  | { kind: "profile"; menu: Menu; stats: readonly Stat[]; advice: string; lines: readonly string[] }
   | { kind: "pause"; menu: Menu }
-  | { kind: "end"; menu: Menu; won: boolean; stats: readonly Stat[]; words: readonly Learned[] };
+  | { kind: "end"; menu: Menu; mode: string; won: boolean; stats: readonly Stat[]; words: readonly Learned[]; advice: string; note: string };
 
 const escapeHtml = (text: string): string => text.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]!);
 
@@ -86,6 +89,17 @@ export function renderScreen(view: ScreenView): string {
         hints("<kbd>Enter</kbd> hoặc <kbd>Esc</kbd> quay lại") +
         "</div>"
       );
+    case "profile":
+      return (
+        '<div class="sv-card sv-panel sv-sheet sv-profile">' +
+        '<h1>HỒ SƠ GÕ</h1><div class="sv-hazard" aria-hidden="true"></div>' +
+        '<div class="sv-stats">' + view.stats.map((stat) => "<div><b>" + escapeHtml(stat.value) + "</b><small>" + escapeHtml(stat.label) + "</small>" + (stat.note ? "<em>" + escapeHtml(stat.note) + "</em>" : "") + "</div>").join("") + "</div>" +
+        '<p class="sv-advice">' + escapeHtml(view.advice) + "</p>" +
+        '<ul class="sv-learning">' + view.lines.map((line) => "<li>" + escapeHtml(line) + "</li>").join("") + "</ul>" +
+        menu(view.menu) +
+        hints("<kbd>Enter</kbd> hoặc <kbd>Esc</kbd> quay lại") +
+        "</div>"
+      );
     case "pause":
       return (
         '<div class="sv-card sv-panel sv-sheet sv-pause">' +
@@ -97,8 +111,10 @@ export function renderScreen(view: ScreenView): string {
     case "end":
       return (
         '<div class="sv-card sv-panel sv-sheet sv-end ' + (view.won ? "is-won" : "is-lost") + '">' +
-        "<h1>" + (view.won ? "TRỤ VỮNG!" : "TUYẾN ĐÃ VỠ") + '</h1><div class="sv-hazard" aria-hidden="true"></div>' +
+        "<h1>" + (view.won ? "TRỤ VỮNG!" : "TUYẾN ĐÃ VỠ") + '</h1><div class="sv-end-mode">' + escapeHtml(view.mode.toUpperCase()) + '</div><div class="sv-hazard" aria-hidden="true"></div>' +
         '<div class="sv-stats">' + view.stats.map((stat) => "<div><b>" + escapeHtml(stat.value) + "</b><small>" + escapeHtml(stat.label) + "</small></div>").join("") + "</div>" +
+        '<p class="sv-advice">' + escapeHtml(view.advice) + "</p>" +
+        (view.note ? '<p class="sv-note">' + escapeHtml(view.note) + "</p>" : "") +
         '<ul class="sv-words">' + view.words.map((word) => "<li><b>" + escapeHtml(word.en) + "</b>" + escapeHtml(word.vi) + "</li>").join("") + "</ul>" +
         menu(view.menu, " sv-row") +
         hints("<kbd>Enter</kbd> chơi lại · <kbd>Esc</kbd> màn chính") +

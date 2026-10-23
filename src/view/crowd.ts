@@ -29,6 +29,8 @@ const LOOK = [
 ] as const;
 const CAPACITY = [STORE.foes, 256];
 const FAR_GROW = 0.2;
+/** The Giáp affix draws a foe this much larger (and its veins gold). */
+const ARMOUR_GROW = 1.22;
 
 /**
  * "Bầy Hố Đen", the horde's shared material layer (one new faction from the
@@ -66,15 +68,15 @@ uniform float uVeinGain;
 `;
 const STATE_COLOR = /* glsl */ `
 #include <emissivemap_fragment>
-// x: hit flash (white hot), y: hurt (elites glow red), w: the foe's own phase.
+// x: hit flash (white hot), y: hurt (elites glow red), z: the Giáp affix (gold veins), w: the foe's own phase.
 totalEmissiveRadiance *= 0.2;
 float bhRim = 1.0 - abs(dot(normalize(normal), normalize(vViewPosition)));
 float bhLuma = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
 diffuseColor.rgb = mix(diffuseColor.rgb, uBody * (0.5 + bhLuma), 0.88);
 float bhVein = smoothstep(0.34, 0.0, abs(vVein));
 float bhPulse = 0.6 + 0.4 * sin(uTime * 3.4 + vState.w * 6.283);
-vec3 bhVeinColor = mix(uVein, vec3(2.4, 0.5, 0.3), vState.y);
-totalEmissiveRadiance += bhVeinColor * bhVein * bhPulse * uVeinGain * (1.0 + vState.y);
+vec3 bhVeinColor = mix(mix(uVein, vec3(2.6, 1.9, 0.6), vState.z), vec3(2.4, 0.5, 0.3), vState.y);
+totalEmissiveRadiance += bhVeinColor * bhVein * bhPulse * uVeinGain * (1.0 + vState.y + vState.z * 0.6);
 totalEmissiveRadiance += uHairline * smoothstep(0.5, 0.72, bhRim) * (1.0 - smoothstep(0.76, 0.9, bhRim));
 diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), vState.x * 0.85);
 totalEmissiveRadiance += vec3(2.6, 2.4, 2.2) * vState.x;
@@ -217,7 +219,7 @@ export class Crowd {
       shader.vertexShader = STATE_HEAD + shader.vertexShader.replace("#include <begin_vertex>", STATE_VERTEX);
       shader.fragmentShader = STATE_FRAGMENT_HEAD + shader.fragmentShader.replace("#include <emissivemap_fragment>", STATE_COLOR).replace("#include <opaque_fragment>", STATE_OUT);
     };
-    material.customProgramCacheKey = () => "last-line-horde-v1";
+    material.customProgramCacheKey = () => "last-line-horde-v2";
     const capacity = CAPACITY[kind]!;
     const mesh = new THREE.InstancedMesh(geometry, material, capacity);
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -253,7 +255,8 @@ export class Crowd {
       const yaw = speed > 0.2 ? Math.atan2(vx, -vz) : 0;
       this.euler.set(0.22 + Math.min(0.25, speed * 0.06) + Math.sin(now * 3 + phase) * 0.06, yaw * 0.6, -vx * 0.18 + Math.sin(now * 2.1 + phase) * 0.08);
       this.quat.setFromEuler(this.euler);
-      const base = layer.size * (kind === KIND.mine ? 0.92 + (F.phase[s]! % 0.17) : 1) * (1 + FAR_GROW * Math.min(1, Math.max(0, F.z[s]! / FIELD.gateZ)));
+      const armour = F.elite[s] === 1;
+      const base = layer.size * (kind === KIND.mine ? 0.92 + (F.phase[s]! % 0.17) : 1) * (armour ? ARMOUR_GROW : 1) * (1 + FAR_GROW * Math.min(1, Math.max(0, F.z[s]! / FIELD.gateZ)));
       // Gravity pulls each foe out of shape a little, slowly, out of step with the others.
       const pull = Math.sin(now * 2.3 + phase) * 0.045;
       this.scale.set(base * r[4]! * (1 - pull), base * r[3]! * (1 + pull * 0.5), base * r[4]! * (1 + pull));
@@ -265,8 +268,8 @@ export class Crowd {
       layer.mesh.setMatrixAt(i, this.matrix);
       const o = i * 4;
       layer.state[o] = r[0]!;
-      layer.state[o + 1] = kind === KIND.scout ? 1 - F.hp[s]! / FOES[kind]!.hp : 0;
-      layer.state[o + 2] = 0;
+      layer.state[o + 1] = kind === KIND.scout ? 1 - F.hp[s]! / F.maxHp[s]! : 0;
+      layer.state[o + 2] = armour ? 1 : 0;
       layer.state[o + 3] = F.phase[s]!;
       if (shadows < STORE.foes) {
         const spot = FOES[kind]!.radius * 2.6;

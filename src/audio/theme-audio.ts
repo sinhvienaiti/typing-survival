@@ -53,6 +53,8 @@ export const SOUND_IDS = [
   "foe.shot.down",
   "hurt.breach",
   "hurt.hull",
+  "hurt.drain",
+  "support.repair",
   "alarm.surge",
   "end.win",
   "end.lose",
@@ -68,6 +70,7 @@ const HIT_GATHER_MS = 38;
 const BURSTS = { max: 4, windowMs: 120 } as const;
 const CHAIN_MS = 1000;
 const KEY_PITCH = [1, 1.06, 0.94, 1.12, 0.89] as const;
+const DRAIN_GAP_MS = 420;
 
 export type ThemeAudioOptions = { sfx: number; music: number };
 
@@ -84,6 +87,7 @@ export class ThemeAudio {
   private readonly bursts: number[] = [];
   private level = 1;
   private surging = false;
+  private drainAt = -1e9;
   /** Sounds started since the page opened, by id (the scenarios read it). */
   readonly played = new Map<SoundId, number>();
 
@@ -295,6 +299,29 @@ export class ThemeAudio {
     steel(v, 0, 0.38, 0.17, 176, STEEL.beam);
     tone(v, 0, 0.26, 0.4, 100, 38);
     noise(v, 0, 0.2, 0.14, "lowpass", 900);
+  }
+
+  /**
+   * The near zone leaches the line (EV.drain): a dry electric crackle on the
+   * armour, quiet, at most one every DRAIN_GAP_MS however fast points go.
+   */
+  drain(pan: number, now: number): void {
+    if (now - this.drainAt < DRAIN_GAP_MS) return;
+    this.drainAt = now;
+    const v = this.voice("alerts", pan, "hurt.drain");
+    if (v === null) return;
+    crackle(v, 0, 0.16, 5, 0.035, 3600);
+    tone(v, 0, 0.14, 0.03, 220, 150, { type: "sawtooth", filter: "lowpass", cutoff: 900 });
+  }
+
+  /** The repair pod docks (the pace director's support near defeat): servos rising, a lock clunk, a hiss. */
+  repair(): void {
+    const v = this.voice("alerts", 0, "support.repair");
+    if (v === null) return;
+    tone(v, 0, 0.45, 0.05, 180, 720, { type: "square", filter: "lowpass", cutoff: 1400, cutoffTo: 3000, attack: 0.05 });
+    tone(v, 0.42, 0.22, 0.4, 150, 60);
+    steel(v, 0.42, 0.25, 0.08, 520, STEEL.bar);
+    noise(v, 0.5, 0.5, 0.05, "highpass", 3000, 0.7, 1500, 0.04);
   }
 
   /** A surge begins: the station's siren, two tones swept twice. */

@@ -16,7 +16,7 @@
 | `guns` | 0,42 | ×0,5 | `gun.xung`, `gun.tia.start`, `gun.tia.end` |
 | `impacts` | 0,6 | ×0,5 | `hit.*`, `gun.tia.pulse`, `foe.shot.down` |
 | `kills` | 0,55 | ×0,56 | `kill.*` |
-| `alerts` | 0,8 | ×0,8 | `word.*`, `foe.shot`, `hurt.*`, `alarm.surge`, `end.*` |
+| `alerts` | 0,8 | ×0,8 | `word.*`, `foe.shot`, `hurt.*`, `support.repair`, `alarm.surge`, `end.*` |
 | `ui` | 0,55 | ×0,7 | `ui.*` |
 | `music` | 0,9 | ×0,63 | `music.calm`, `music.surge` |
 
@@ -84,12 +84,16 @@ Chuỗi hạ: thanh thép của `kill.*` leo một nốt ngũ cung mỗi lần h
 |---|---|---|---|
 | `hurt.breach` | Quái chạm vạch đáy | Thân trạm rung: tiếng nổ trầm, thép rên, còi báo hai nốt | Sin 82 → 28 Hz, răng cưa trầm lọc, hai bíp vuông 440 / 330 Hz |
 | `hurt.hull` | Đạn lính trúng tàu | Tiếng thép bị đập mạnh, ngân ngắn | Thép dầm 176 Hz, sin 100 → 38 Hz |
+| `hurt.drain` | Quái trong vùng hút rút giáp tuyến (mỗi điểm giáp, tối đa một tiếng mỗi 420 ms) | Lách tách điện khô trên tấm giáp, nhỏ: nghe là biết tuyến đang bị hút | Tách điện 3,6 kHz, răng cưa 220 → 150 Hz lọc thấp |
+| `support.repair` | Bộ điều nhịp thả khoang sửa chữa khi tuyến gần vỡ (+giáp) | Động cơ servo rít lên, chốt khóa sập, xì hơi: được cứu một nhịp | Vuông 180 → 720 Hz, cú đập 150 → 60 Hz, thép thanh 520 Hz, xì cao |
 | `alarm.surge` | Bắt đầu đỉnh tràn (biển "ĐỈNH TRÀN") | Còi báo động của trạm, hai lượt lên xuống, nền ù trầm | Răng cưa 420 ↔ 640 Hz qua lọc thấp, ù 55 Hz 1,25 s |
 | `end.win` | Giữ được 3 phút | Hợp âm máy (power chord) mở dần, xả hơi nước: nhẹ nhõm, nặng nề | Ba răng cưa La 110 / 165 / 220 Hz, lọc mở 380 → 3.200 Hz, hơi xì |
 | `end.lose` | Tuyến vỡ | Hạ điện, kim loại sụp từng mảng | Răng cưa rơi bốn quãng tám, năm tiếng thép thấp dần, nổ trầm |
 
 - `hurt.breach` — *Prompt:* "Station hull breach: deep boom, groaning stressed steel and a short two-tone klaxon, 600 ms, industrial, ominous."
 - `hurt.hull` — *Prompt:* "Heavy blow on a ship's steel hull, loud clang with short ring and low thud, 400 ms."
+- `hurt.drain` — *Prompt:* "Faint dry electrical crackle on steel armour plating, short (150 ms), a parasite sapping power, quiet, no boom."
+- `support.repair` — *Prompt:* "Repair pod docking on a steel station: servo whine rising, heavy lock clunk, short hiss of pressure, 900 ms, reassuring, industrial."
 - `alarm.surge` — *Prompt:* "Industrial station siren, two rising and falling sweeps over a low drone, 1.3 s, urgent but not piercing, slightly distorted."
 - `end.win` — *Prompt:* "Triumphant but heavy industrial stinger: distorted power chord in A swelling open with a filter sweep, ending with a hiss of steam, 2 s."
 - `end.lose` — *Prompt:* "Industrial failure stinger: machines powering down, falling pitch, metal structure collapsing in several heavy clanks, low boom, 2 s."

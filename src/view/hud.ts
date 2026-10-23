@@ -9,6 +9,7 @@
  */
 import type { Rect } from "../kit/feedback";
 import { MAG_MAX, TIA, WEAPON, XUNG } from "../content/rules";
+import { STAGE_S0 } from "../content/stage-s0";
 import { peakAt } from "../sim/plan";
 import type { World } from "../sim/world";
 import type { Word } from "../app/vocab";
@@ -155,7 +156,8 @@ export class Hud {
     const peak = peakAt(w);
     if (peak !== this.last.peak) {
       this.last.peak = peak;
-      if (peak > 0) this.showBanner("ĐỈNH TRÀN " + peak, now);
+      // A storm surge (STAGE_S0.storm) says so: the horde is far thicker this time.
+      if (peak > 0) this.showBanner("ĐỈNH TRÀN " + peak + (w.plan.strength[peak - 1]! >= STAGE_S0.storm.spread[0] ? " · DỮ DỘI" : ""), now);
     }
     if (now > this.bannerUntil) this.banner.classList.remove("is-on");
     if (killsRecent !== this.last.kills) {

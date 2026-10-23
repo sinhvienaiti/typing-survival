@@ -1,4 +1,4 @@
-// Tuyến Cuối menus (docs/changelog/2026-10-23-theme.md), keyboard only:
+// Tuyến Cuối menus (docs/changelog/2026-10-23-theme.md, -balance.md), keyboard only:
 // Enter starts; Esc pauses; "Về màn chính" shows the title with "Chơi tiếp"
 // selected while the run holds still; the settings screen (opened from the
 // title during a run) locks the ship and quality, ← → change the volumes and
@@ -24,7 +24,8 @@ export default async function (page) {
   const tickAtTitle = (await read()).tick;
   await page.sleep(600);
   const tickLater = (await read()).tick;
-  await key(page, "ArrowDown"); await key(page, "Enter"); await page.sleep(200); log.push(["settings-in-run", await read()]);
+  // Chơi tiếp → Chế độ → Hồ sơ gõ → Cài đặt.
+  await key(page, "ArrowDown"); await key(page, "ArrowDown"); await key(page, "ArrowDown"); await key(page, "Enter"); await page.sleep(200); log.push(["settings-in-run", await read()]);
   await key(page, "ArrowRight"); await key(page, "ArrowDown"); await key(page, "ArrowLeft"); await key(page, "ArrowLeft"); await page.sleep(200); log.push(["settings-changed", await read()]);
   shots.push(await page.shot(out("survival-s0-menu-settings-" + size + ".png")));
   const stored = await page.eval("localStorage.getItem('survival.settings')");
@@ -32,7 +33,8 @@ export default async function (page) {
   await key(page, "ArrowDown"); await key(page, "Enter"); await page.sleep(200); log.push(["armory", await read()]);
   shots.push(await page.shot(out("survival-s0-menu-armory-" + size + ".png")));
   await key(page, "Escape"); await page.sleep(200); log.push(["armory-back", await read()]);
-  await key(page, "ArrowUp"); await key(page, "ArrowUp"); await page.sleep(100); log.push(["on-continue", await read()]);
+  for (let k = 0; k < 4; k += 1) await key(page, "ArrowUp");
+  await page.sleep(100); log.push(["on-continue", await read()]);
   await key(page, "Enter"); await page.sleep(800); log.push(["continued", await read()]);
   await page.eval("localStorage.removeItem('survival.settings'); true");
   const checks = {

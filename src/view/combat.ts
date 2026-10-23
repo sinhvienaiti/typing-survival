@@ -28,8 +28,11 @@ const PUNCH_MS = 220;
 
 export type CombatHooks = {
   stop(ms: number): void;
-  wordDone(slot: number, index: number, perfect: boolean): void;
+  /** A word finished: its slot, deck index, perfect; its seconds, seconds to its first key, wrong keys (the skill sample). */
+  wordDone(slot: number, index: number, perfect: boolean, seconds: number, recognize: number, errors: number): void;
   hurt(): void;
+  /** The pace director's repair pod restored `hp` armour. */
+  repaired(hp: number): void;
   ended(won: boolean): void;
 };
 
@@ -47,7 +50,7 @@ export class Combat {
   private cursor = 0;
   private readonly kills = new Float64Array(KILL_RING).fill(-1e9);
   private killCount = 0;
-  private readonly cluster = { n: new Int32Array(MAX_CLUSTERS), key: new Int32Array(MAX_CLUSTERS), x: new Float32Array(MAX_CLUSTERS), z: new Float32Array(MAX_CLUSTERS), dx: new Float32Array(MAX_CLUSTERS), dz: new Float32Array(MAX_CLUSTERS), scout: new Uint8Array(MAX_CLUSTERS) };
+  private readonly cluster = { n: new Int32Array(MAX_CLUSTERS), key: new Int32Array(MAX_CLUSTERS), x: new Float32Array(MAX_CLUSTERS), z: new Float32Array(MAX_CLUSTERS), dx: new Float32Array(MAX_CLUSTERS), dz: new Float32Array(MAX_CLUSTERS), scout: new Uint8Array(MAX_CLUSTERS), armour: new Uint8Array(MAX_CLUSTERS) };
   private clusters = 0;
   private readonly v = new THREE.Vector3();
   private readonly at = new THREE.Vector3();
@@ -165,7 +168,7 @@ export class Combat {
           break;
         }
         case EV.kill:
-          this.gather(x, z, dx, dz, (flags & FLAG.scout) !== 0);
+          this.gather(x, z, dx, dz, (flags & FLAG.scout) !== 0, (flags & FLAG.elite) !== 0);
           this.kills[this.killCount++ % KILL_RING] = now;
           break;
         case EV.breach:
@@ -203,7 +206,23 @@ export class Combat {
           this.audio.word((flags & FLAG.perfect) !== 0, R.slot[i] === 0 ? -0.35 : 0.35);
           break;
         case EV.word:
-          this.hooks.wordDone(R.slot[i]!, R.ref[i]!, (flags & FLAG.perfect) !== 0);
+          this.hooks.wordDone(R.slot[i]!, R.ref[i]!, (flags & FLAG.perfect) !== 0, R.dx[i]!, R.dz[i]!, R.x[i]!);
+          break;
+        case EV.drain: {
+          // The near zone leaches the line: the foe flares dull red, sparks drift toward the line, an ember glows on the armour.
+          this.glows.burst(CELL.soft, x, 0.9, -z, 0.8, 1.8, 0.3, C.drain, 1.6);
+          this.glows.burst(CELL.soft + FLAT, x * 0.6, 0.06, -FIELD.bottomZ, 0.8, 2.2, 0.45, C.drain, 1.2);
+          this.spark(x, 0.6, z, 0, -1, 3, 4, C.drain, 0.2, 0.45);
+          this.audio.drain(pan, now);
+          break;
+        }
+        case EV.support:
+          this.ship.muzzle(this.at);
+          this.glows.burst(CELL.ring + FLAT, 0, 0.08, -FIELD.muzzleZ, 1, 9, 0.8, C.repair, 2.2);
+          this.glows.burst(CELL.star8, this.at.x, this.at.y, this.at.z, 1.5, 5, 0.5, C.repair, 2.4);
+          this.spark(0, 1, FIELD.muzzleZ, 0, 1, 24, 7, C.repair, 0.28, 0.8);
+          this.audio.repair();
+          this.hooks.repaired(R.value[i]!);
           break;
         case EV.beamStart: {
           // x, z: the ray's far end.
@@ -250,7 +269,7 @@ export class Combat {
   }
 
   /** Kills in one 3 m cell this frame merge. */
-  private gather(x: number, z: number, dx: number, dz: number, scout: boolean): void {
+  private gather(x: number, z: number, dx: number, dz: number, scout: boolean, armour: boolean): void {
     const K = this.cluster;
     const key = Math.floor(x / 3) * 100 + Math.floor(z / 3);
     let c = 0;
@@ -263,6 +282,7 @@ export class Combat {
         K.n[c] = 0;
         K.x[c] = K.z[c] = K.dx[c] = K.dz[c] = 0;
         K.scout[c] = 0;
+        K.armour[c] = 0;
       }
     }
     K.n[c] = K.n[c]! + 1;
@@ -271,6 +291,7 @@ export class Combat {
     K.dx[c] = K.dx[c]! + dx;
     K.dz[c] = K.dz[c]! + dz;
     if (scout) K.scout[c] = 1;
+    if (armour) K.armour[c] = 1;
   }
 
   /** One burst of size √N for a cluster of N kills; returns N. */
@@ -284,7 +305,7 @@ export class Combat {
     const dz = K.dz[c]! / length;
     const scout = K.scout[c] === 1;
     const size = Math.sqrt(n) * (scout ? 1.5 : 1) * far(z);
-    const tint = scout ? C.elite : C.swarm;
+    const tint = scout ? C.elite : K.armour[c] === 1 ? C.armour : C.swarm;
     this.glows.burst(CELL.core, x, 1, -z, 1 * size, 2.4 * size, 0.12, C.hot, 2.4);
     this.glows.burst(scout ? CELL.star12 : CELL.star8, x, 1.1, -z, 1.3 * size, 3.8 * size, 0.18, tint, 2.2, 0, 0, 0, (Math.random() - 0.5) * 3);
     this.glows.burst(CELL.soft, x, 1, -z, 1.8 * size, 3.6 * size, 0.32, tint, 0.8);

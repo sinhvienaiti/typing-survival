@@ -8,10 +8,11 @@ import "@fontsource/be-vietnam-pro/600.css";
 import "@fontsource/be-vietnam-pro/800.css";
 import "../view/theme.css";
 import "../view/survival.css";
-import { runFrameLoop, safeLocalStorage } from "../kit/platform";
+import { runFrameLoop, safeLocalStorage, safeSessionStorage } from "../kit/platform";
 import { speakEnglish } from "../kit/speech";
 import { hordeIntensity } from "../audio/music";
 import { ThemeAudio } from "../audio/theme-audio";
+import { DEFAULT_MODE, MODES, MODE_SPECS, isMode, lengthFor, type Mode as Difficulty, type RunHeader } from "../content/balance";
 import { FIELD, FOE_CAP, TIA, XUNG, type Tier } from "../content/rules";
 import { STAGE_S0 } from "../content/stage-s0";
 import { peakAt } from "../sim/plan";
@@ -25,8 +26,10 @@ import { Ship, type Pilot } from "../view/ship";
 import { installDevHandle } from "./dev";
 import { ImeNotice, installAutoPause, installKeys, type KeyAction } from "./input";
 import { reportWord } from "./learning";
+import type { SkillUpdate } from "../kit/balance";
 import { Menu, cycle, stepVolume, type MenuItem } from "./menu";
 import { Session } from "./session";
+import { SEEN_KEY, WordHistory, emptyTally, headerFor, loadProfile, recordRun, runSample, saveProfile, skillReport, tallyWord } from "./skill";
 import { loadVocab, type Word } from "./vocab";
 
 /**
@@ -37,8 +40,12 @@ import { loadVocab, type Word } from "./vocab";
  * draws it, the combat view turns its events into feedback and the theme's
  * sound, the DOM HUD shows the words; window.__survival lets the browser
  * scenarios drive it. Storage: only survival.* keys (quality, ship and the
- * settings screen's volumes, shake and pronunciation). Each typed word goes
- * to the portal's learning record as "typing-survival".
+ * settings screen's volumes, shake, pronunciation, mode and "Nhịp tự điều"),
+ * the skill profile (survival.skill, the kit's key) and the words finished
+ * here (survival.seen). Each typed word goes to the portal's learning record
+ * as "typing-survival". Balance (docs/changelog/2026-10-23-balance.md): the
+ * mode and the profile set the run header (pace k, E, director) before the
+ * world is made; the profile learns from every run.
  */
 const QUALITY_KEY = "survival.quality";
 const PILOT_KEY = "survival.pilot";
@@ -62,11 +69,21 @@ const pilot: Pilot = pick(params.get("pilot"), PILOTS) ?? pick(safeLocalStorage.
 if (params.has("q")) safeLocalStorage.setItem(QUALITY_KEY, tier);
 if (params.has("pilot")) safeLocalStorage.setItem(PILOT_KEY, pilot);
 const seed = Number(params.get("seed") ?? "") >>> 0 || (Math.floor(Math.random() * 0x7fffffff) >>> 0) || 1;
-type Settings = { sfxVolume: number; musicVolume: number; screenShake: boolean; pronunciationEnabled: boolean; pronunciationRate: number; pronunciationVolume: number };
+type Settings = {
+  sfxVolume: number; musicVolume: number; screenShake: boolean; pronunciationEnabled: boolean; pronunciationRate: number; pronunciationVolume: number;
+  /** The mode (Thư giãn, Cân bằng, Thử thách) and "Nhịp tự điều theo cách bạn gõ". */
+  mode: Difficulty; paceAdapt: boolean;
+};
 const saved = (safeLocalStorage.readJson(SETTINGS_KEY) ?? {}) as Partial<Settings>;
-const DEFAULTS: Settings = { sfxVolume: 0.7, musicVolume: 0.5, screenShake: true, pronunciationEnabled: true, pronunciationRate: 0.9, pronunciationVolume: 1 };
+const DEFAULTS: Settings = { sfxVolume: 0.7, musicVolume: 0.5, screenShake: true, pronunciationEnabled: true, pronunciationRate: 0.9, pronunciationVolume: 1, mode: DEFAULT_MODE, paceAdapt: true };
 const settings: Settings = { ...DEFAULTS, ...saved };
 for (const key of ["sfxVolume", "musicVolume"] as const) if (!Number.isFinite(settings[key])) settings[key] = DEFAULTS[key];
+if (!isMode(settings.mode)) settings.mode = DEFAULT_MODE;
+if (typeof settings.paceAdapt !== "boolean") settings.paceAdapt = DEFAULTS.paceAdapt;
+const urlMode = params.get("mode");
+if (isMode(urlMode)) settings.mode = urlMode;
+if (params.has("adapt")) settings.paceAdapt = params.get("adapt") !== "0";
+if (isMode(urlMode) || params.has("adapt")) safeLocalStorage.writeJson(SETTINGS_KEY, settings);
 const speech = { enabled: settings.pronunciationEnabled, rate: settings.pronunciationRate, volume: settings.pronunciationVolume };
 const shakeAllowed = params.get("shake") !== "0";
 
@@ -79,8 +96,23 @@ try {
   throw new Error("survival: no WebGL");
 }
 const vocab = await loadVocab();
-const session = new Session({ seed, deck: vocab.deck, tier });
+/** The run header (content/balance.ts): from the mode and the stored skill profile; ?pace= and ?director=0 pin it (scenarios). */
+let profile = loadProfile(safeLocalStorage, settings.mode);
+const history = new WordHistory(safeLocalStorage.getItem(SEEN_KEY));
+const pageMode = settings.mode;
+const pageAdapt = settings.paceAdapt;
+let runHeader: RunHeader = headerFor(profile, pageMode, pageAdapt);
+const pinnedPace = Number(params.get("pace"));
+if (params.has("pace") && pinnedPace > 0) runHeader = { ...runHeader, pace: Math.round(Math.max(0.75, Math.min(1.3, pinnedPace)) * 1000) / 1000 };
+if (params.get("director") === "0") runHeader = { ...runHeader, director: false };
+const session = new Session({ seed, deck: vocab.deck, tier, ...runHeader });
 const world = session.world;
+/** The first run of a play session (the fatigue base of the profile). */
+const SESSION_KEY = "survival.session";
+const firstOfSession = safeSessionStorage.getItem(SESSION_KEY) === null;
+safeSessionStorage.setItem(SESSION_KEY, "1");
+const tally = emptyTally();
+let settled: SkillUpdate | null = null;
 const wordOf = (index: number): Word => vocab.words.get(world.deck[index]!) ?? { en: world.deck[index] ?? "", vi: "", ipa: "" };
 const hud = new Hud(hudRoot, wordOf);
 const crowd = new Crowd(stage.scene);
@@ -92,10 +124,10 @@ const audio = new ThemeAudio({ sfx: settings.sfxVolume, music: settings.musicVol
 
 type Mode = "start" | "play" | "paused" | "end";
 /** What the overlay shows: a menu screen, or nothing in a running fight. */
-type Screen = "title" | "settings" | "armory" | "pause" | "end" | "none";
+type Screen = "title" | "settings" | "armory" | "profile" | "pause" | "end" | "none";
 let mode: Mode = "start";
 let screen: Screen = "none";
-/** Where settings and the armory go back to. */
+/** Where settings, the armory and the typing profile go back to. */
 let back: Screen = "title";
 let menu = new Menu([]);
 /** A run has begun: the title then offers "Chơi tiếp", and the ship and quality wait for the next page. */
@@ -110,9 +142,11 @@ let lastPeak = 0;
 
 const combat = new Combat(stage, crowd, ship, pilot, tier, audio, {
   stop: (ms) => session.stop(ms),
-  wordDone(slot, index, perfect) {
+  wordDone(slot, index, perfect, seconds, recognize, errors) {
     hud.finished(slot, index, perfect, clock);
     const word = wordOf(index);
+    const text = world.deck[index] ?? "";
+    tallyWord(tally, history.finished(text), text.length, seconds, recognize, errors === 0);
     if (vocab.source === "vocabulary") reportWord(word, perfect);
     // Said the first time it is typed in this run, at most once every 3 s.
     if (settings.pronunciationEnabled && !spoken.has(word.en) && clock - lastSpeak >= SPEAK_GAP_MS) {
@@ -122,8 +156,22 @@ const combat = new Combat(stage, crowd, ship, pilot, tier, audio, {
     }
   },
   hurt: () => hud.hurt(),
-  ended: () => setMode("end"),
+  repaired: (hp) => hud.showBanner("TIẾP TẾ +" + Math.round(hp) + " GIÁP", clock),
+  ended: () => {
+    settle(world.phase === "won" ? "won" : "lost");
+    setMode("end");
+  },
 });
+
+/** The run into the skill profile, once: after the end, or as a quit when a new run replaces it. */
+function settle(outcome: "won" | "lost" | "quit"): void {
+  if (settled !== null || (outcome === "quit" && !started)) return;
+  const sample = runSample(world, world.meter.summary(outcome), outcome, firstOfSession, tally);
+  settled = recordRun(profile, sample);
+  profile = settled.profile;
+  saveProfile(safeLocalStorage, profile);
+  safeLocalStorage.setItem(SEEN_KEY, JSON.stringify(history));
+}
 const applyShake = (): void => {
   combat.trauma.scale = settings.screenShake && shakeAllowed ? 1 : 0;
 };
@@ -133,6 +181,9 @@ combat.trauma.reduced = motionReduced();
 const decimal = (value: number): string => String(value).replace(".", ",");
 const percent = (value: number): string => Math.round(value * 100) + " %";
 const onOff = (on: boolean): string => (on ? "Bật" : "Tắt");
+const fixed = (value: number, digits: number): string => value.toFixed(digits).replace(".", ",");
+/** During a run, a new mode or "Nhịp tự điều" waits for the next one. */
+const nextRun = (): string | undefined => (started ? "Áp dụng từ trận sau" : undefined);
 
 function items(which: Screen): MenuItem[] {
   switch (which) {
@@ -140,7 +191,9 @@ function items(which: Screen): MenuItem[] {
       return [
         { id: "start", label: started ? "Bắt đầu lại" : "Bắt đầu", note: started ? "Bỏ trận đang dở, vào trận mới" : "Trận mới · giữ hành lang " + STAGE_S0.seconds / 60 + " phút", enabled: true },
         { id: "continue", label: "Chơi tiếp", note: started ? "Về trận đang tạm dừng" : "Chưa có trận đang dở", enabled: started },
-        { id: "settings", label: "Cài đặt", note: "Âm thanh, rung, tàu, chất lượng hình", enabled: true },
+        { id: "mode", label: "Chế độ", value: MODE_SPECS[settings.mode].label, note: nextRun() ?? MODE_SPECS[settings.mode].note, enabled: true },
+        { id: "profile", label: "Hồ sơ gõ", note: "Tốc độ, độ chính xác, lời khuyên", enabled: true },
+        { id: "settings", label: "Cài đặt", note: "Âm thanh, rung, nhịp, tàu, chất lượng hình", enabled: true },
         { id: "armory", label: "Kho súng · Học từ", note: "Sắp có", enabled: true },
       ];
     case "settings": {
@@ -150,12 +203,14 @@ function items(which: Screen): MenuItem[] {
         { id: "music", label: "Nhạc", value: percent(settings.musicVolume), level: settings.musicVolume, enabled: true },
         { id: "shake", label: "Rung màn hình", value: onOff(settings.screenShake), note: shakeAllowed ? undefined : "Đang tắt bởi ?shake=0", enabled: true },
         { id: "speak", label: "Đọc từ tiếng Anh", value: onOff(settings.pronunciationEnabled), enabled: true },
+        { id: "adapt", label: "Nhịp tự điều theo cách bạn gõ", value: onOff(settings.paceAdapt), note: nextRun() ?? (settings.paceAdapt ? "Bầy dày thưa theo hồ sơ gõ của bạn" : "Nhịp chuẩn cố định, không điều trong trận"), enabled: true },
         { id: "pilot", label: "Tàu", value: PILOT_NAMES[chosen.pilot], note: later, enabled: !started },
         { id: "quality", label: "Chất lượng hình", value: TIER_NAMES[chosen.tier], note: later, enabled: !started },
         { id: "done", label: "Xong", enabled: true },
       ];
     }
     case "armory":
+    case "profile":
       return [{ id: "back", label: "Quay lại", enabled: true }];
     case "pause":
       return [
@@ -180,8 +235,33 @@ function view(which: Screen): ScreenView | null {
         kind: "title",
         menu,
         lead: "Bầy Hố Đen tràn ra từ mép hố đen. Gõ từ trên hai bến súng để nạp đạn; súng tự bắn. Gõ không lỗi thì đòn mạnh hơn.",
-        status: "TÀU " + PILOT_NAMES[pilot].toUpperCase() + " · HÌNH " + TIER_NAMES[tier].toUpperCase() + " · HÀNH LANG 24 × " + FIELD.gateZ + " M",
+        status: "TÀU " + PILOT_NAMES[pilot].toUpperCase() + " · HÌNH " + TIER_NAMES[tier].toUpperCase() + " · " + MODE_SPECS[settings.mode].label.toUpperCase(),
       };
+    case "profile": {
+      const report = skillReport(profile, settings.mode);
+      const v = report.view;
+      const next = headerFor(profile, settings.mode, settings.paceAdapt);
+      const [lo, hi] = lengthFor(next.expected);
+      const sure = (confidence: number): string => (confidence >= 1 ? "đo đủ" : confidence > 0 ? "đang đo " + Math.round(confidence * 100) + " %" : "mặc định");
+      return {
+        kind: "profile",
+        menu,
+        stats: [
+          { value: String(Math.round(v.e)), label: "Tốc độ (WPM)", note: sure(v.confidence.e) },
+          { value: Math.round(v.a * 100) + "%", label: "Độ chính xác", note: sure(v.confidence.a) },
+          { value: fixed(v.recognize.new, 1) + " s", label: "Nhận từ mới", note: sure(v.confidence.recognize.new) },
+          { value: Math.round(Math.max(0, 1 - v.cv) * 100) + "%", label: "Độ đều", note: "lệch ±" + Math.round(v.cv * 100) + " % mỗi từ" },
+        ],
+        advice: report.advice,
+        lines: [
+          report.runs > 0 ? "Đã chơi " + report.runs + " trận" + (report.measured ? "" : ", chưa đủ số đo: đang dùng mặc định của chế độ") + "." : "Chưa có trận nào: hồ sơ đang dùng mặc định của chế độ " + MODE_SPECS[settings.mode].label + ".",
+          settings.paceAdapt
+            ? "Trận tới: " + MODE_SPECS[settings.mode].label + ", nhịp ×" + fixed(next.pace, 2) + ", từ " + lo + "–" + hi + " chữ, tự điều trong trận."
+            : "Trận tới: " + MODE_SPECS[settings.mode].label + ", nhịp chuẩn cố định (đã tắt tự điều).",
+          ...(report.suggestionText ? [report.suggestionText] : []),
+        ],
+      };
+    }
     case "settings":
       return { kind: "settings", menu, note: started ? "" : "Đổi tàu hoặc chất lượng hình thì trang tải lại khi bấm Xong." };
     case "armory":
@@ -213,9 +293,15 @@ function view(which: Screen): ScreenView | null {
         words.push({ en: word.en, vi: word.vi });
       }
       const time = Math.min(world.seconds, world.time);
+      const report = skillReport(profile, settings.mode);
+      const counted =
+        settled === null ? "" : settled.accepted ? "Hồ sơ gõ đã cập nhật: " + Math.round(report.view.e) + " WPM, chính xác " + Math.round(report.view.a * 100) + " %." : settled.reason === "short" ? "Trận này ít từ quá, chưa tính vào hồ sơ gõ." : settled.reason === "afk" ? "Bạn rời bàn phím lâu, trận này không tính vào hồ sơ gõ." : "Trận này lệch xa thường lệ, chưa tính vào hồ sơ gõ.";
       return {
         kind: "end",
         menu,
+        mode: MODE_SPECS[world.header.mode].label,
+        advice: report.advice,
+        note: [counted, report.suggestionText].filter(Boolean).join(" "),
         won: world.phase === "won",
         stats: [
           { value: Math.floor(time / 60) + ":" + String(Math.floor(time % 60)).padStart(2, "0"), label: "Thời gian" },
@@ -258,9 +344,12 @@ function setMode(next: Mode): void {
   else show("title");
 }
 
-/** A new page: `autostart` straight into a fight; the settings' ship and quality go in its address. */
+/** A new page: `autostart` straight into a fight; the settings' ship, quality and mode go in its address. */
 function reload(autostart: boolean): void {
+  if (started && mode !== "end") settle("quit");
   const next = new URLSearchParams(params);
+  if (params.has("mode")) next.set("mode", settings.mode);
+  if (params.has("adapt")) next.set("adapt", settings.paceAdapt ? "1" : "0");
   if (autostart) next.set("autostart", "1");
   else next.delete("autostart");
   if (chosen.pilot !== pilot || params.has("pilot")) next.set("pilot", chosen.pilot);
@@ -280,6 +369,8 @@ function adjust(id: string, delta: number): void {
   else if (id === "music") settings.musicVolume = stepVolume(settings.musicVolume, delta);
   else if (id === "shake") settings.screenShake = !settings.screenShake;
   else if (id === "speak") settings.pronunciationEnabled = speech.enabled = !settings.pronunciationEnabled;
+  else if (id === "adapt") settings.paceAdapt = !settings.paceAdapt;
+  else if (id === "mode") settings.mode = cycle(MODES, settings.mode, delta);
   else if (id === "pilot") chosen.pilot = cycle(PILOTS, chosen.pilot, delta);
   else if (id === "quality") chosen.tier = cycle(TIERS, chosen.tier, delta);
   else return;
@@ -287,7 +378,7 @@ function adjust(id: string, delta: number): void {
   applyShake();
   saveSettings();
   audio.ui("move");
-  show("settings", true);
+  show(screen === "title" ? "title" : "settings", true);
 }
 
 function leaveSettings(): void {
@@ -305,10 +396,15 @@ function take(): void {
     else adjust(item.id, 1);
     return;
   }
+  if (item.id === "mode") {
+    adjust("mode", 1);
+    return;
+  }
   audio.ui("select");
   switch (item.id) {
     case "start":
-      if (started) reload(true);
+      // A run's header is fixed when its world is made: another mode or "Nhịp tự điều" takes a new page.
+      if (started || settings.mode !== pageMode || settings.paceAdapt !== pageAdapt) reload(true);
       else setMode("play");
       break;
     case "continue":
@@ -317,11 +413,12 @@ function take(): void {
       break;
     case "settings":
     case "armory":
+    case "profile":
       back = screen;
       show(item.id);
       break;
     case "back":
-      show(back, false, "armory");
+      show(back, false, screen);
       break;
     case "title":
       if (mode === "end") reload(false);
@@ -345,7 +442,8 @@ function act(action: KeyAction): void {
     if (action === "pause") setMode("paused");
     return;
   }
-  if (action === "up" || action === "down" || ((action === "left" || action === "right") && screen !== "settings")) {
+  const valued = menu.current?.value !== undefined;
+  if (action === "up" || action === "down" || ((action === "left" || action === "right") && screen !== "settings" && !valued)) {
     if (menu.move(action === "up" || action === "left" ? -1 : 1)) {
       audio.ui("move");
       drawScreen();
@@ -357,9 +455,9 @@ function act(action: KeyAction): void {
   else if (action === "pause") {
     // Esc: back out of a screen; from the pause screen, back into the fight.
     if (screen === "settings") leaveSettings();
-    else if (screen === "armory") {
+    else if (screen === "armory" || screen === "profile") {
       audio.ui("back");
-      show(back, false, "armory");
+      show(back, false, screen);
     } else if (screen === "pause") setMode("play");
     else if (screen === "end") {
       audio.ui("back");
@@ -508,12 +606,17 @@ installDevHandle({
   models: () => ({ mine: crowd.loaded[0], scout: crowd.loaded[1], ship: ship.loaded }),
   start: () => mode === "start" && setMode("play"),
   mode: () => mode,
-  flags: () => ({ seed: world.seed, tier, pilot, deck: vocab.hash, vocabulary: vocab.source, expected: world.expected }),
+  flags: () => ({ seed: world.seed, tier, pilot, deck: vocab.hash, vocabulary: vocab.source, ...world.header }),
+  /** The run header (mode, pace k, E, director) and the in-run balance: the pace log, the FlowMeter's window and stage so far. */
+  header: () => ({ ...world.header }),
+  pace: () => ({ log: world.director.log.slice(), window: world.meter.window(), flow: world.meter.summary(world.phase === "won" ? "won" : "lost"), spawnScale: world.pace.spawnScale, wave: world.pace.wave, tide: world.plan.tide, strength: Array.from(world.plan.strength) }),
+  /** The stored skill profile, blended (what the "Hồ sơ gõ" panel shows). */
+  profile: () => ({ runs: profile.trend.stages, report: skillReport(profile, settings.mode), settled }),
   send: (command: Parameters<Session["send"]>[0]) => session.send(command),
   flood: (n: number) => session.send({ t: "flood", n }),
   hash: () => hashHex(world),
   /** The run so far, read at one instant: what a Node replay needs (scripts/replay.ts). */
-  snapshot: () => ({ seed: world.seed, tier, deck: vocab.hash, vocabulary: vocab.source, expected: world.expected, tick: world.tick, hash: hashHex(world), log: session.log.slice() }),
+  snapshot: () => ({ seed: world.seed, tier, deck: vocab.hash, vocabulary: vocab.source, ...world.header, tick: world.tick, hash: hashHex(world), log: session.log.slice(), paceLog: world.director.log.slice() }),
   state: () => ({
     tick: world.tick, time: world.time, phase: world.phase, hp: world.hp, foes: world.foes.count, onScreen: onScreen(), bullets: world.bullets.count, shots: world.shots.count,
     mags: Array.from(world.guns.mags), beam: world.guns.beamOn === 1 ? world.guns.beamX : null, stats: { ...world.stats }, spawned: world.spawn.spawned, waiting: world.spawn.waiting,

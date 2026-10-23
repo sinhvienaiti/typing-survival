@@ -40,4 +40,10 @@ export const BLOW = {
   shardSteel: new THREE.Color("#6f7c88"),
   /** Foes spilling out at the gate. */
   spawn: new THREE.Color("#ff6a1a"),
+  /** The near zone leaching the line: a dull red-orange. */
+  drain: new THREE.Color("#ff3d1f"),
+  /** The repair pod: typing teal (help, not a blow). */
+  repair: new THREE.Color("#7ff5e0"),
+  /** A Giáp (armoured) foe's death: gold. */
+  armour: new THREE.Color("#ffd27a"),
 } as const;
