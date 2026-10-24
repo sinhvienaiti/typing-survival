@@ -27,6 +27,8 @@ export function createGuns(kit: RunKit) {
     cap[b] = gun[b]! >= 0 ? FORGE.mags[level[b]! - 1]! : 0;
   }
   return {
+    /** 1 when the kit has no Xung: Tia then holds the line and hunts scouts too (TIA_DUTY). */
+    tiaDuty: kit.guns.includes(GUN.xung) ? 0 : 1,
     /** Per bay: its gun (−1 none), Rèn level, magazines it can hold, magazines held (the firing one included). */
     gun,
     level,
@@ -75,7 +77,7 @@ export function loadMagazine(w: World, bay: number, clean: boolean, fast: boolea
   if (gun < 0 || k >= G.cap[bay]!) return false;
   const spec = GUN_SPECS[gun]!;
   const i = bay * MAG_CAP + k;
-  G.damage[i] = (clean ? QUALITY.cleanDamage : 1) * FORGE.damage[G.level[bay]! - 1]!;
+  G.damage[i] = (clean ? QUALITY.cleanDamage * (w.stage.chapter > 0 ? QUALITY.chapterClean : 1) : 1) * FORGE.damage[G.level[bay]! - 1]!;
   G.crit[i] = spec.crit + (clean ? QUALITY.cleanCrit : 0);
   G.rate[i] = fast ? QUALITY.fastRate : 1;
   G.pierce[i] = spec.armour * (clean ? QUALITY.cleanArmour : 1);

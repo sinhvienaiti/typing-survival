@@ -41,7 +41,7 @@ export const FOES: readonly FoeSpec[] = [
   { hp: 80, armour: 0, speed: 1.9, radius: 0.8, breach: 6, drain: 2, wobble: 0.08, wobbleHz: 0.15, mass: 1, knock: true, shield: 100, elite: false, name: "Khiên" },
   { hp: 42, armour: 0, speed: 2.2, radius: 0.7, breach: 4, drain: 1.5, wobble: 0.5, wobbleHz: 0.45, mass: 1, knock: true, shield: 0, elite: true, name: "Tách" },
   { hp: 9, armour: 0, speed: 3, radius: 0.4, breach: 2, drain: 0.5, wobble: 0.6, wobbleHz: 0.55, mass: 1, knock: true, shield: 0, elite: false, name: "Mảnh" },
-  { hp: 360, armour: 3, speed: 1.1, radius: 1.3, breach: 15, drain: 6, wobble: 0.04, wobbleHz: 0.1, mass: 4, knock: false, shield: 0, elite: false, name: "Đầu Đàn" },
+  { hp: 300, armour: 3, speed: 1.1, radius: 1.3, breach: 15, drain: 6, wobble: 0.04, wobbleHz: 0.1, mass: 4, knock: false, shield: 0, elite: false, name: "Đầu Đàn" },
 ];
 
 /** Above this body radius a foe is big: in its own list, not the grid (whose MAX_RADIUS it is). */

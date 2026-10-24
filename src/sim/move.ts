@@ -168,7 +168,7 @@ export function separate(w: World): void {
   for (let s = 0; s < F.top; s += 1) {
     if (F.alive[s] === 0) continue;
     const rs = RADIUS[F.kind[s]!]!;
-    const reach = rs + MAX_RADIUS;
+    const reach = Math.max(MAX_RADIUS * 2, rs + MAX_RADIUS);
     const c0 = colOf(F.x[s]! - reach);
     const c1 = colOf(F.x[s]! + reach);
     const r0 = rowOf(F.z[s]! - reach);

@@ -70,14 +70,39 @@ export type RunResult = RunRecord & {
   readonly peakFoes: number;
   readonly damage: { readonly drain: number; readonly breach: number; readonly shot: number };
   readonly measured: { readonly e: number | null; readonly a: number | null; readonly cv: number | null };
-  readonly stepMs: readonly number[];
   readonly paceSteps: number;
 };
 
-/** Distinct words before the band is used up and first letters that always differ (the deck's rules), and room to learn (≥ 8 words). */
-const MIN_WORDS = 8;
+/**
+ * Step costs (ms) folded into 0.01 ms bins up to 50 ms. A matrix keeps no
+ * per-step arrays: R1's report pushed every step of ~21 000 runs into one
+ * array and broke V8's array length at 100 seeds (R1 review).
+ */
+export class StepClock {
+  readonly bins = new Float64Array(5001);
+  count = 0;
+  max = 0;
+  add(ms: number): void {
+    const bin = Math.min(5000, Math.floor(ms * 100));
+    this.bins[bin] = this.bins[bin]! + 1;
+    this.count += 1;
+    if (ms > this.max) this.max = ms;
+  }
+  quantile(q: number): number {
+    let sum = 0;
+    for (let bin = 0; bin < this.bins.length; bin += 1) {
+      sum += this.bins[bin]!;
+      if (sum > q * this.count) return (bin + 0.5) / 100;
+    }
+    return this.max;
+  }
+}
 
-export type RunOptions = { director?: boolean; time?: boolean; stage?: string; guns?: readonly GunId[] };
+/** Distinct words before the band is used up and first letters that always differ (the deck's rules), and room to learn: the novice types ≥ 8 words a stage (G5 asks it of Mới only). */
+const MIN_WORDS = 8;
+const LEARNER = "novice";
+
+export type RunOptions = { stage?: string; guns?: readonly GunId[] };
 
 /** The header a bot's profile and tactics set for a stage (its guns: the tactics', or `guns`). */
 export function botHeader(bot: BotRow, mode: Mode, seed: number, stageId: string, guns?: readonly GunId[]): RunHeader {
@@ -87,7 +112,7 @@ export function botHeader(bot: BotRow, mode: Mode, seed: number, stageId: string
   return stageHeader(pace, stage, guns ?? chooseGuns(stage, bot.params.tactics, seed), blendSkill({ ...profile, mode }));
 }
 
-export function runOne(deck: readonly string[], bot: BotRow, mode: Mode, seed: number, director = true, time = false, run: RunOptions = {}): RunResult {
+export function runOne(deck: readonly string[], bot: BotRow, mode: Mode, seed: number, director = true, clock: StepClock | null = null, run: RunOptions = {}): RunResult {
   const header = botHeader(bot, mode, seed, run.stage ?? "s0", run.guns);
   const options = { seed, deck, ...header, director: director && header.director };
   const { session, bot: typist } = typistBot(options, bot.params, 7919 * seed + 13, bot.id.split("@")[0]);
@@ -99,7 +124,6 @@ export function runOne(deck: readonly string[], bot: BotRow, mode: Mode, seed: n
   let read = 0;
   let clash = 0;
   let lastTelegraph = -1e9;
-  const stepMs: number[] = [];
   const check = (world: World): void => {
     const R = world.events;
     for (let i = Math.max(read, R.written - R.size); i < R.written; i += 1) {
@@ -121,12 +145,12 @@ export function runOne(deck: readonly string[], bot: BotRow, mode: Mode, seed: n
       for (let b = a + 1; b < T.word.length; b += 1) if (world.deck[T.word[a]!]![0] === world.deck[T.word[b]!]![0]) sameFirst += 1;
     }
   };
-  if (time) {
+  if (clock !== null) {
     while (w.phase === "play" && w.tick < 60 * 400) {
       typist.act(w);
       const start = performance.now();
       session.tick();
-      stepMs.push(performance.now() - start);
+      clock.add(performance.now() - start);
       check(w);
     }
   } else playOut(session, typist, 60 * 400, check);
@@ -139,7 +163,7 @@ export function runOne(deck: readonly string[], bot: BotRow, mode: Mode, seed: n
     flow,
     pace,
     killSeconds: w.stats.kills > 0 ? w.stats.lifeSum / w.stats.kills : undefined,
-    learnOk: typed ? repeats === 0 && sameFirst === 0 && firstHidden === 0 && w.stats.words >= MIN_WORDS : undefined,
+    learnOk: typed ? repeats === 0 && sameFirst === 0 && firstHidden === 0 && (bot.id !== LEARNER || w.stats.words >= MIN_WORDS) : undefined,
     header,
     stage: header.stage,
     guns: header.kit.guns,
@@ -153,7 +177,6 @@ export function runOne(deck: readonly string[], bot: BotRow, mode: Mode, seed: n
     peakFoes: w.stats.peakFoes,
     damage: { drain: w.stats.drained, breach: w.stats.breachDamage, shot: w.stats.shotDamage },
     measured: { e: sample.wpm ?? null, a: sample.keys !== undefined && sample.keys > 0 ? (sample.correctKeys ?? 0) / sample.keys : null, cv: sample.cv ?? null },
-    stepMs,
     paceSteps: w.director.log.length,
   };
 }
@@ -161,7 +184,9 @@ export function runOne(deck: readonly string[], bot: BotRow, mode: Mode, seed: n
 export type Cell = { readonly bot: BotRow; readonly mode: Mode; readonly director: boolean; readonly stage: string; readonly guns?: readonly GunId[]; readonly runs: readonly RunResult[]; readonly summary: BotModeSummary };
 
 export type MatrixOptions = {
-  seeds: number; bots?: readonly string[]; modes?: readonly Mode[]; directorOff?: readonly string[]; time?: boolean; firstSeed?: number;
+  seeds: number; bots?: readonly string[]; modes?: readonly Mode[]; directorOff?: readonly string[]; firstSeed?: number;
+  /** Times every step into this histogram (off by default). */
+  clock?: StepClock;
   /** Stages ("s0" the trial, "c1-s1" …); the trial alone by default. */
   stages?: readonly string[];
   /** Fixed kits instead of the bots' tactics (G3c: every pair). */
@@ -187,7 +212,7 @@ export function runMatrix(options: MatrixOptions, progress?: (done: number, tota
   const first = options.firstSeed ?? 1;
   jobs.forEach((job, index) => {
     const runs: RunResult[] = [];
-    for (let seed = first; seed < first + options.seeds; seed += 1) runs.push(runOne(deck, job.bot, job.mode, seed, job.director, options.time === true, { stage: job.stage, guns: job.guns }));
+    for (let seed = first; seed < first + options.seeds; seed += 1) runs.push(runOne(deck, job.bot, job.mode, seed, job.director, options.clock ?? null, { stage: job.stage, guns: job.guns }));
     cells.push({ ...job, runs, summary: summarizeRuns(job.bot.id, job.mode as BandMode, runs, job.director) });
     progress?.(index + 1, jobs.length);
   });

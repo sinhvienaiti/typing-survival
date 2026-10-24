@@ -6,7 +6,9 @@
  * back and frees the lock at zero. A finished word loads its bay's gun with
  * the word's quality and the bay takes a new word at once: from the band of
  * E (a heavy gun's band is a letter longer), never one on another bay, none
- * again until its band is used up (one "used" list for every bay).
+ * again until its band is used up. Every deal marks the word used for both
+ * bands; a band used up starts again on its own marks only, so a heavy band
+ * starting over never frees words the plain band has not finished (R1 review).
  * Thiếu chữ hides one letter of a word (two from 7 letters): never the
  * first, never two side by side, drawn from the hide stream (the kit's `ai`
  * stream, which nothing else draws) so the words are dealt exactly as
@@ -35,7 +37,9 @@ export function createTyping(deck: readonly string[], expected: number, heavy: r
     band: bandOf(deck, lengthFor(expected)),
     heavyBand: bandOf(deck, lengthFor(expected, true)),
     heavy: Uint8Array.from(heavy, (on) => (on ? 1 : 0)),
+    /** Words dealt since the plain band (used) and the heavy band (usedHeavy) last started over. */
     used: new Uint8Array(deck.length),
+    usedHeavy: new Uint8Array(deck.length),
     /** The locked bay (−1: none). */
     lock: -1,
     word: new Int32Array(bays).fill(-1),
@@ -99,14 +103,17 @@ function clashes(w: World, slot: number, index: number): boolean {
 /** Deals bay `slot` a word: random start in its band, the first fresh one whose first letter differs from every other bay's. */
 export function dealWord(w: World, slot: number): void {
   const T = w.typing;
-  const band = T.heavy[slot] === 1 ? T.heavyBand : T.band;
+  const heavy = T.heavy[slot] === 1;
+  const band = heavy ? T.heavyBand : T.band;
+  const used = heavy ? T.usedHeavy : T.used;
   const n = band.length;
   for (let pass = 0; pass < 2; pass += 1) {
     const start = w.rng.words.int(0, n - 1);
     for (let k = 0; k < n; k += 1) {
       const index = band[(start + k) % n]!;
-      if (T.used[index] === 1 || clashes(w, slot, index)) continue;
+      if (used[index] === 1 || clashes(w, slot, index)) continue;
       T.used[index] = 1;
+      T.usedHeavy[index] = 1;
       T.word[slot] = index;
       T.typed[slot] = 0;
       T.errors[slot] = 0;
@@ -115,7 +122,7 @@ export function dealWord(w: World, slot: number): void {
       return;
     }
     // The band is used up: start it again.
-    for (let k = 0; k < n; k += 1) T.used[band[k]!] = 0;
+    for (let k = 0; k < n; k += 1) used[band[k]!] = 0;
   }
   T.word[slot] = band[0]!;
   T.dealt[slot] = w.tick;

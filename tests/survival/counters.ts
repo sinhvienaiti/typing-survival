@@ -38,11 +38,16 @@ export const SCENES: Readonly<Record<CounterRow, Scene>> = {
       for (let p = 0; p < 3; p += 1) pack(w, seed, p, -6 + p * 6, mz + 13 + p * 4.5, 10);
     },
   },
-  /** A wall of 30 mines (three packs of 10 side by side) pressing in from 5–8 m. */
+  /**
+   * A stream of 40 mines at the line as in a fight (R1 review: a wall standing
+   * at 5–8 m flattered a gun that only burns what stands still): five packs
+   * of 8 spread across the corridor, fronts at 9–21 m, pressing in one after
+   * another.
+   */
   swarmNear: {
     seconds: 40,
     setup: (w, seed) => {
-      for (let p = 0; p < 3; p += 1) pack(w, seed, p, -6.5 + p * 6.5, mz + 5 + (p % 2) * 1.5, 10);
+      for (let p = 0; p < 5; p += 1) pack(w, seed, p, [-6, 5, -2, 7, 1][p]! + jitter(seed, p + 40) * 3, mz + 9 + p * 3, 8);
     },
   },
   /** 6 scouts walking in from 12–16 m to their firing line (6–9 m), shooting there as in a fight. */
@@ -118,17 +123,34 @@ export function measureCell(row: CounterRow, gun: GunId, seeds: readonly number[
   return total / seeds.length;
 }
 
+/** The gate's seeds (G3m in tests/guns.test.ts and the balance report): 16, as 8 left cells near a threshold flipping with the seed set (R1 review). */
+export const COUNTER_SEEDS: readonly number[] = Array.from({ length: 16 }, (_, i) => i + 1);
+/** A cost within this share of a threshold may carry either mark (a near tie is not a measurement). */
+export const COUNTER_MARGIN = 0.08;
+
 /** No floor: every cost has its seconds. */
 export const COST_FLOOR = 0;
 
-/** The measured table: per row, per gun, its cost and its mark (2 ●, 1 ○, 0 ✕). */
-export function measureCounters(seeds?: readonly number[]): Record<CounterRow, { cost: number[]; mark: number[] }> {
-  const out = {} as Record<CounterRow, { cost: number[]; mark: number[] }>;
+/** The marks a cost ratio (cost / the row's best) allows: one, or two within COUNTER_MARGIN of the 1.25× or 2× threshold. */
+export function marksFor(ratio: number): number[] {
+  const near = (threshold: number) => Math.abs(ratio - threshold) <= threshold * COUNTER_MARGIN;
+  if (near(1.25)) return [2, 1];
+  if (near(2)) return [1, 0];
+  return [ratio >= 2 ? 0 : ratio <= 1.25 ? 2 : 1];
+}
+
+/** The measured table: per row, per gun, its cost, its mark (2 ●, 1 ○, 0 ✕) and the marks it allows. */
+export function measureCounters(seeds: readonly number[] = COUNTER_SEEDS): Record<CounterRow, { cost: number[]; mark: number[]; allowed: number[][] }> {
+  const out = {} as Record<CounterRow, { cost: number[]; mark: number[]; allowed: number[][] }>;
   for (const row of COUNTER_ROWS) {
     const cost = GUN_IDS.map((gun) => measureCell(row, gun, seeds));
     const best = Math.min(...cost) + COST_FLOOR;
     const mark = cost.map((value) => (value + COST_FLOOR >= 2 * best ? 0 : value + COST_FLOOR <= 1.25 * best ? 2 : 1));
-    out[row] = { cost, mark };
+    out[row] = { cost, mark, allowed: cost.map((value) => marksFor((value + COST_FLOOR) / best)) };
   }
   return out;
 }
+
+/** COUNTERS against a measurement: every cell's mark among those its cost allows. */
+export const countersMatch = (measured: ReturnType<typeof measureCounters>, table: Readonly<Record<CounterRow, readonly number[]>>): boolean =>
+  COUNTER_ROWS.every((row) => measured[row].allowed.every((marks, gun) => marks.includes(table[row][gun]!)));
