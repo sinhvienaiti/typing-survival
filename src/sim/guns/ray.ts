@@ -4,26 +4,20 @@
  * read), then fires at once along a 30 m line: it pierces up to 6 foes and
  * shields in order of distance, each one passed taking ×0.85 off the next;
  * armour counts ×0.25 (×0.19 for a clean word); a shield on the line breaks
- * at once. Target: Đầu Đàn, then Trâu, Khiên, a scout, else the line through
- * the most foes. Nobody in reach: the magazine waits.
+ * at once. Target (fire control, ./aim.ts): Đầu Đàn, then Trâu, Khiên, a
+ * scout, else the line through the most foes; on duty the line at the bottom
+ * first. Nobody in reach: the magazine waits.
  */
-import { FOES, KIND } from "../../content/foes";
-import { CRIT_MULT, RAY, RAY_DUTY } from "../../content/guns";
+import { FOES } from "../../content/foes";
+import { CRIT_MULT, RAY } from "../../content/guns";
 import { FIELD } from "../../content/rules";
 import { EV, FLAG } from "../events";
 import { collectNear, nearList } from "../hits";
 import { damageFoe, damageShield } from "../projectiles";
 import { firing, nextMagazine } from "../weapons";
 import type { World } from "../world";
-import { nearEdge } from "./xung";
+import { aimRay } from "./aim";
 
-/** Target classes: who Ray picks first (0: none of these, the busiest line instead). */
-const CLASS: Readonly<Record<number, number>> = { [KIND.leader]: 4, [KIND.brute]: 3, [KIND.shield]: 2, [KIND.scout]: 1 };
-/** Lines through the crowd: slopes (x per metre of depth) in buckets of SLOPE wide, ±SLOPE_MAX. */
-const SLOPE = 0.06;
-const SLOPE_MAX = 3;
-const BUCKETS = Math.ceil((SLOPE_MAX * 2) / SLOPE);
-const lines = new Float64Array(BUCKETS);
 const MAX_CANDIDATES = 160;
 const keys = new Float64Array(MAX_CANDIDATES);
 const ids = new Int32Array(MAX_CANDIDATES);
@@ -43,7 +37,7 @@ export function fireRay(w: World, bay: number, dt: number): void {
   }
   G.cooldown[bay] = G.cooldown[bay]! - dt;
   if (G.cooldown[bay]! > 0 || G.left[bay]! <= 0) return;
-  if (!aim(w, bay)) {
+  if (!aimRay(w, bay)) {
     G.cooldown[bay] = 0;
     return;
   }
@@ -51,76 +45,6 @@ export function fireRay(w: World, bay: number, dt: number): void {
   const ex = G.aimX[bay]! * RAY.range;
   const ez = FIELD.muzzleZ + G.aimZ[bay]! * RAY.range;
   w.events.push(w.tick, EV.charge, bay, G.target[bay]!, ex, ez, G.aimX[bay]!, G.aimZ[bay]!, RAY.charge, G.perfect[firing(bay)] === 1 ? FLAG.perfect : 0);
-}
-
-/** The foe Ray would pick now (−1: none of the priority kinds in reach). */
-export function rayTarget(w: World): number {
-  const F = w.foes;
-  const mz = FIELD.muzzleZ;
-  let best = -1;
-  let bestClass = 0;
-  for (let s = 0; s < F.top; s += 1) {
-    if (F.alive[s] === 0 || nearEdge(w, s) > mz + RAY.range || F.z[s]! < mz + 0.5) continue;
-    const c = CLASS[F.kind[s]!] ?? 0;
-    if (c === 0) continue;
-    if (c > bestClass || (c === bestClass && F.z[s]! < F.z[best]!)) {
-      best = s;
-      bestClass = c;
-    }
-  }
-  return best;
-}
-
-/** The slope (x per metre of depth) of the busiest line through foes between `from` and `to` m from the muzzle; NaN when none. */
-function busiestLine(w: World, from: number, to: number): number {
-  const F = w.foes;
-  const mz = FIELD.muzzleZ;
-  lines.fill(0);
-  let any = false;
-  for (let s = 0; s < F.top; s += 1) {
-    if (F.alive[s] === 0 || F.z[s]! > mz + to || F.z[s]! < mz + from) continue;
-    const slope = F.x[s]! / (F.z[s]! - mz);
-    if (slope <= -SLOPE_MAX || slope >= SLOPE_MAX) continue;
-    const k = Math.floor((slope + SLOPE_MAX) / SLOPE);
-    lines[k] = lines[k]! + 1;
-    if (k > 0) lines[k - 1] = lines[k - 1]! + 0.5;
-    if (k + 1 < BUCKETS) lines[k + 1] = lines[k + 1]! + 0.5;
-    any = true;
-  }
-  if (!any) return NaN;
-  let best = 0;
-  for (let k = 1; k < BUCKETS; k += 1) if (lines[k]! > lines[best]!) best = k;
-  return -SLOPE_MAX + (best + 0.5) * SLOPE;
-}
-
-/** Aims bay `bay`: at a priority target, else along the busiest line; false when nobody is in reach. */
-function aim(w: World, bay: number): boolean {
-  const F = w.foes;
-  const G = w.guns;
-  const mz = FIELD.muzzleZ;
-  const target = rayTarget(w);
-  let dx = 0;
-  let dz = 1;
-  // On duty (a kit with no near gun): the line at the bottom first, a leader alone before it.
-  const duty = G.rayDuty === 1 && (target < 0 || F.kind[target] !== KIND.leader) ? busiestLine(w, 1, RAY_DUTY.zone) : NaN;
-  if (duty === duty) {
-    dx = duty;
-    G.target[bay] = -1;
-  } else if (target >= 0) {
-    dx = F.x[target]!;
-    dz = F.z[target]! - mz;
-    G.target[bay] = target;
-    G.targetId[bay] = F.id[target]!;
-  } else {
-    const slope = busiestLine(w, 1, RAY.range);
-    if (slope !== slope) return false;
-    dx = slope;
-    G.target[bay] = -1;
-  }
-  const length = Math.sqrt(dx * dx + dz * dz) || 1;
-  G.aimX[bay] = dx / length;
-  G.aimZ[bay] = dz / length;
-  return true;
 }
 
 function insert(key: number, id: number): void {

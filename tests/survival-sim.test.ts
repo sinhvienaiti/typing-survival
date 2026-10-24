@@ -7,7 +7,7 @@ import { EV, FLAG } from "../src/sim/events";
 import { hashHex } from "../src/sim/hash";
 import { firstFoeHit, hitT, segmentHit } from "../src/sim/hits";
 import { RADIUS, pressAt } from "../src/sim/move";
-import { aimOf, densest } from "../src/sim/guns/tia";
+import { aimOf, densest } from "../src/sim/guns/aim";
 import { loadMagazine } from "../src/sim/weapons";
 import { isFast } from "../src/sim/words";
 import { rateAt } from "../src/sim/plan";

@@ -14,7 +14,7 @@ import { GUN, TIA } from "../content/guns";
 import { FIELD, type Tier } from "../content/rules";
 import { EV, FLAG } from "../sim/events";
 import { ROUND } from "../sim/stores";
-import { beamEnd } from "../sim/guns/tia";
+import { beamEnd } from "../sim/guns/aim";
 import { bayOf, firing } from "../sim/weapons";
 import type { World } from "../sim/world";
 import type { Crowd } from "./crowd";
