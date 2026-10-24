@@ -27,6 +27,7 @@
 - Nhạc: hai stem cùng nhịp **96 BPM, La thứ**, vòng 8 ô nhịp (20 s) lặp liền, −16 LUFS. `music.calm` và `music.surge` chơi cùng lúc, trộn theo độ đông của bầy quái (`hordeIntensity` trong `music.ts`).
 - Đổi `sounds: {}` trong `ThemeAudio` thành bảng file; mã tổng hợp giữ làm dự phòng khi file chưa tải xong.
 - Prompt dưới đây viết bằng tiếng Anh vì các công cụ tạo âm hiểu tiếng Anh tốt nhất.
+- **Âm hành động** (súng, trúng, nổ, quái chết, quái bắn, tuyến bị đánh; quyết định Q6 của chủ dự án ngày 24/10/2026, ghi ở `tools/audio-lab/DECISIONS.md` của repo cha): đủ các phần mà hành động có (nạp, khóa nòng; đầu tiếng có lực; thân; đuôi vang trong hành lang thép), cỡ âm theo nguồn. Đuôi có thể là lớp dùng chung do mã ghép (đuôi thép của bậc trúng lớn, đuôi khi súng ngừng bắn); lớp sub chỉ làm lớp dưới. Không dùng hướng "bụp, thụp", "pop", "puff", tiếng trầm ngắn đứng riêng, kiểu đồ chơi. Dải 1–4 kHz chỉ ở đầu tiếng.
 
 ## 3. Gõ và nạp đạn
 
@@ -38,7 +39,7 @@
 | `word.perfect` | Gõ xong không lỗi | Như `word.load`, thêm tiếng nạp điện rít lên và vài tia lửa điện: phần thưởng cho gõ chuẩn | Thêm sin 620 → 1.900 Hz, vuông lọc, tiếng tách điện |
 
 - `key.ok` — *Prompt:* "Single mechanical relay click on a heavy steel console, dry, tight, very short (40 ms), industrial keyboard, no reverb, no tail."
-- `key.bad` — *Prompt:* "Muffled dull thud of a knuckle on a thick steel plate, short (70 ms), soft and low, not a buzzer, no ring."
+- `key.bad` — *Prompt:* "Muffled dull knock of a knuckle on a thick steel plate, short (70 ms), soft and low, not a buzzer, no ring."
 - `word.load` — *Prompt:* "Heavy rifle magazine slammed into a steel receiver, two-part 'ka-chunk' with a latch click, close and punchy, 250 ms, industrial, dry."
 - `word.perfect` — *Prompt:* "Heavy magazine slammed home followed by a rising electric charge-up whine and a few tiny electrical sparks, satisfying, 450 ms, industrial sci-fi, dry."
 
@@ -46,14 +47,14 @@
 
 | Id | Khi nào | Cảm giác | Mã hiện tại |
 |---|---|---|---|
-| `gun.xung` | Viên Xung rời nòng (súng bắn 10 viên/s, tiếng phát cho một nửa số viên) | Pháo tự động hạng nặng: cú đấm trầm, tiếng nổ giòn, khóa nòng | Sin 150 → 46 Hz, nhiễu thông cao 1,9 kHz, nhiễu dải 720 Hz |
-| `gun.tia.start` | Tia bật | Hồ quang điện quay lên, kêu ù của máy phát | Răng cưa 70 → 260 Hz qua lọc mở dần, nhiễu dải trượt lên, 7 tiếng tách, ù 55 Hz |
-| `gun.tia.end` | Tia tắt | Máy phát hạ điện, tắt dần | Răng cưa 260 → 48 Hz, lọc đóng lại |
+| `gun.xung` | Viên Xung rời nòng (súng bắn 10 viên/s, tiếng phát cho một nửa số viên) | Pháo tự động hạng nặng: khóa nòng đóng, cú đấm trầm có thân, tiếng nổ giòn; vang hành lang thép rất ngắn (đuôi dài là lớp riêng khi ngừng bắn) | Sin 150 → 46 Hz, nhiễu thông cao 1,9 kHz, nhiễu dải 720 Hz |
+| `gun.tia.start` | Tia bật | Tia bật: máy phát quay lên, hồ quang bắt "xẹt" rồi kêu ù; vang hành lang thép ngắn | Răng cưa 70 → 260 Hz qua lọc mở dần, nhiễu dải trượt lên, 7 tiếng tách, ù 55 Hz |
+| `gun.tia.end` | Tia tắt | Tia tắt: máy phát hạ điện, hồ quang xì tắt, tiếng ù chìm vào vang thép | Răng cưa 260 → 48 Hz, lọc đóng lại |
 | `gun.tia.pulse` | Mỗi nhịp 0,1 s của Tia có trúng quái | Tia điện chích, to dần theo số quái bị cắt | Nhiễu thông cao 4,2 kHz 45 ms, vuông 1.900 → 880 Hz |
 
-- `gun.xung` — *Prompt:* "Heavy autocannon single shot from a steel turret, deep punch with sharp crack and mechanical breech clack, 120 ms, close, no long reverb, industrial."
-- `gun.tia.start` — *Prompt:* "Industrial electric arc ray igniting: generator spin-up, crackling high-voltage arc and a low 55 Hz hum, 600 ms, gritty, no music."
-- `gun.tia.end` — *Prompt:* "High-voltage generator powering down, falling pitch with a short electrical fizzle, 400 ms, industrial, dry."
+- `gun.xung` — *Prompt:* "Heavy autocannon single shot from a steel turret: a breech clack, a deep punch with a sharp crack and a short thick body, a quick slap off the steel corridor, 350 ms, industrial."
+- `gun.tia.start` — *Prompt:* "Industrial electric arc ray igniting: a generator spinning up, a high-voltage arc striking and crackling over a low 55 Hz hum, short steel corridor echo, 600 ms, gritty."
+- `gun.tia.end` — *Prompt:* "High-voltage generator powering down: falling pitch, the arc fizzling out, the hum dying into a short steel corridor echo, 400 ms, industrial."
 - `gun.tia.pulse` — *Prompt:* "Short electric zap of an arc burning through metal, crisp and sizzling, 50 ms, several variations."
 
 ## 5. Trúng, hạ, quái bắn
@@ -63,18 +64,18 @@
 | `hit.t1` | Đạn Xung trúng (bậc T1), gom 38 ms | Tiếng keng ngắn trên vỏ thép | Nhiễu thông cao 3,6 kHz, thép dầm 430 Hz |
 | `hit.t2` | Chí mạng, gõ chuẩn (T2, T3) | Keng nặng hơn, thêm cú thụi trầm | Như T1, thêm sin 115 → 40 Hz |
 | `hit.t4` | Đòn lớn (T4 trở lên) | Thép dầm rung ngân, đuôi dài | Như T2, thêm nhiễu thấp 0,5 s và thép 233 Hz ngân 0,7 s |
-| `kill.swarm` | Quái bầy chết (gom theo ô 3 m mỗi khung) | Kim loại vỡ vụn, một tiếng nổ trầm, một thanh thép gõ lên nốt cao dần khi giết liên tục | Nhiễu dải 1,15 kHz trượt xuống, mảnh vỡ thông cao, sin 150 → 38 Hz, thanh thép 523 Hz × thang ngũ cung |
-| `kill.elite` | Quái tinh nhuệ (lính) chết | Như trên nhưng nặng hơn, thêm phóng điện | Nổ 95 Hz, răng cưa 1.100 → 120 Hz, tiếng tách điện |
-| `foe.shot` | Lính bắn vào tuyến | Cảnh báo: cầu plasma nạp và phụt ra, nghe là biết có thứ đang bay tới | Răng cưa 340 → 880 Hz qua dải trượt, nhiễu dải 2,4 kHz |
-| `foe.shot.down` | Xung bắn rơi đạn của lính | Tiếng bốp kim loại nhỏ | Nhiễu dải 3 kHz, thép 880 Hz |
+| `kill.swarm` | Quái bầy chết (gom theo ô 3 m mỗi khung) | Kim loại vỡ vụn giòn, mảnh văng leng keng, một tiếng nổ trầm nhỏ ở dưới; vang hành lang thép ngắn. Thanh thép leo nốt khi giết liên tục tách riêng | Nhiễu dải 1,15 kHz trượt xuống, mảnh vỡ thông cao, sin 150 → 38 Hz, thanh thép 523 Hz × thang ngũ cung |
+| `kill.elite` | Quái tinh nhuệ (lính) chết | Như trên nhưng nặng hơn: thép xé toạc, nổ trầm có thân, phóng điện lách tách, mảnh rơi; vang hành lang thép | Nổ 95 Hz, răng cưa 1.100 → 120 Hz, tiếng tách điện |
+| `foe.shot` | Lính bắn vào tuyến | Cảnh báo: cầu plasma nạp rít lên, bắn ra có lực rồi lao tới tuyến; vang hành lang thép ngắn | Răng cưa 340 → 880 Hz qua dải trượt, nhiễu dải 2,4 kHz |
+| `foe.shot.down` | Xung bắn rơi đạn của lính | Xung bắn rơi đạn của lính: viên đạn vỡ giữa không trung, tia lửa nhỏ tóe, mảnh kim loại leng keng; vang ngắn | Nhiễu dải 3 kHz, thép 880 Hz |
 
 - `hit.t1` — *Prompt:* "Small metallic bullet impact on a steel hull, short bright clank, 80 ms, several variations, dry."
 - `hit.t2` — *Prompt:* "Heavy bullet impact on thick steel armor, clank with a low thump, 160 ms, punchy, dry."
 - `hit.t4` — *Prompt:* "Massive impact on a steel beam, deep thump and a long ringing metal resonance, 900 ms, industrial."
-- `kill.swarm` — *Prompt:* "Small metal creature shattering: crunchy breaking metal, scattering shards and a low boom, 250 ms, several variations, no voice."
-- `kill.elite` — *Prompt:* "Large armored machine creature exploding: heavy metal tearing, deep boom and an electrical discharge crackle, 500 ms, no voice."
-- `foe.shot` — *Prompt:* "Alien plasma blob charging and spitting out, rising buzzy whoosh, warning-like, 250 ms, sci-fi industrial."
-- `foe.shot.down` — *Prompt:* "Small projectile shot down mid-air: short metallic pop with a tiny spark, 90 ms."
+- `kill.swarm` — *Prompt:* "Small metal creature shattering: crunchy breaking metal, shards scattering and ringing briefly, a low boom underneath, short steel corridor echo, 250 ms, several variations."
+- `kill.elite` — *Prompt:* "Large armored machine creature exploding: heavy metal tearing, a deep boom with body, an electrical discharge crackle, debris falling, steel corridor echo, 500 ms."
+- `foe.shot` — *Prompt:* "Alien plasma blob charging with a rising buzz, then spat out with force and rushing toward you, short steel corridor echo, 250 ms, sci-fi industrial."
+- `foe.shot.down` — *Prompt:* "Small projectile shot down mid-air: a short crisp metallic crack, a tiny spark burst and fragments tinkling, short steel corridor echo, 150 ms."
 
 Chuỗi hạ: thanh thép của `kill.*` leo một nốt ngũ cung mỗi lần hạ cách nhau dưới 1 s (C5 trở lên, tối đa 12 bậc), rồi về gốc. Khi làm file thật, giữ phần "nốt" tách riêng (`kill.chime`) để mã vẫn chỉnh cao độ được.
 
@@ -82,17 +83,17 @@ Chuỗi hạ: thanh thép của `kill.*` leo một nốt ngũ cung mỗi lần h
 
 | Id | Khi nào | Cảm giác | Mã hiện tại |
 |---|---|---|---|
-| `hurt.breach` | Quái chạm vạch đáy | Thân trạm rung: tiếng nổ trầm, thép rên, còi báo hai nốt | Sin 82 → 28 Hz, răng cưa trầm lọc, hai bíp vuông 440 / 330 Hz |
-| `hurt.hull` | Đạn lính trúng tàu | Tiếng thép bị đập mạnh, ngân ngắn | Thép dầm 176 Hz, sin 100 → 38 Hz |
-| `hurt.drain` | Quái trong vùng hút rút giáp tuyến (mỗi điểm giáp, tối đa một tiếng mỗi 420 ms) | Lách tách điện khô trên tấm giáp, nhỏ: nghe là biết tuyến đang bị hút | Tách điện 3,6 kHz, răng cưa 220 → 150 Hz lọc thấp |
+| `hurt.breach` | Quái chạm vạch đáy | Thân trạm rung: tiếng nổ trầm có thân, thép rên, còi báo hai nốt ngắn; vang dội dọc hành lang thép | Sin 82 → 28 Hz, răng cưa trầm lọc, hai bíp vuông 440 / 330 Hz |
+| `hurt.hull` | Đạn lính trúng tàu | Tiếng thép bị đập mạnh: keng to có thân, ngân ngắn, rung trầm; vang hành lang thép | Thép dầm 176 Hz, sin 100 → 38 Hz |
+| `hurt.drain` | Quái trong vùng hút rút giáp tuyến (mỗi điểm giáp, tối đa một tiếng mỗi 420 ms) | Lách tách điện khô trên tấm giáp, nhỏ: hồ quang ký sinh bám vào và hút điện; vang thép rất ngắn | Tách điện 3,6 kHz, răng cưa 220 → 150 Hz lọc thấp |
 | `support.repair` | Bộ điều nhịp thả khoang sửa chữa khi tuyến gần vỡ (+giáp) | Động cơ servo rít lên, chốt khóa sập, xì hơi: được cứu một nhịp | Vuông 180 → 720 Hz, cú đập 150 → 60 Hz, thép thanh 520 Hz, xì cao |
 | `alarm.surge` | Bắt đầu đỉnh tràn (biển "ĐỈNH TRÀN") | Còi báo động của trạm, hai lượt lên xuống, nền ù trầm | Răng cưa 420 ↔ 640 Hz qua lọc thấp, ù 55 Hz 1,25 s |
 | `end.win` | Giữ được 3 phút | Hợp âm máy (power chord) mở dần, xả hơi nước: nhẹ nhõm, nặng nề | Ba răng cưa La 110 / 165 / 220 Hz, lọc mở 380 → 3.200 Hz, hơi xì |
 | `end.lose` | Tuyến vỡ | Hạ điện, kim loại sụp từng mảng | Răng cưa rơi bốn quãng tám, năm tiếng thép thấp dần, nổ trầm |
 
-- `hurt.breach` — *Prompt:* "Station hull breach: deep boom, groaning stressed steel and a short two-tone klaxon, 600 ms, industrial, ominous."
-- `hurt.hull` — *Prompt:* "Heavy blow on a ship's steel hull, loud clang with short ring and low thud, 400 ms."
-- `hurt.drain` — *Prompt:* "Faint dry electrical crackle on steel armour plating, short (150 ms), a parasite sapping power, quiet, no boom."
+- `hurt.breach` — *Prompt:* "Station hull breach: a deep boom with body, groaning stressed steel and a short two-tone klaxon, echoing down a steel corridor, 800 ms, industrial, ominous."
+- `hurt.hull` — *Prompt:* "Heavy blow on a ship's steel hull: a loud clang with a dense body, a short ring and a low rumble, steel corridor echo, 400 ms."
+- `hurt.drain` — *Prompt:* "Faint electrical crackle on steel armour plating: a small parasitic arc latching on and sapping power with a thin sizzle, quiet, short steel echo, 150 ms."
 - `support.repair` — *Prompt:* "Repair pod docking on a steel station: servo whine rising, heavy lock clunk, short hiss of pressure, 900 ms, reassuring, industrial."
 - `alarm.surge` — *Prompt:* "Industrial station siren, two rising and falling sweeps over a low drone, 1.3 s, urgent but not piercing, slightly distorted."
 - `end.win` — *Prompt:* "Triumphant but heavy industrial stinger: distorted power chord in A swelling open with a filter sweep, ending with a hiss of steam, 2 s."
@@ -127,11 +128,11 @@ Mọi id dưới đây đi qua `ThemeAudio.gun(id, pan, now)`: mỗi id có bus 
 
 | Id | Khi nào | Cảm giác | Mã hiện tại |
 |---|---|---|---|
-| `gun.tan.fire` | Tán bắn một loạt 7 viên | Tiếng nổ đanh trên thép, rồi vỏ đạn leng keng | Nhiễu thông cao 1,4 kHz 50 ms, sin 120 → 42 Hz, nhiễu dải 900 → 400 Hz, hai tiếng thép thanh 2,6 và 3,1 kHz |
+| `gun.tan.fire` | Tán bắn một loạt 7 viên | Khóa bơm cạch, nổ đanh có thân trên sàn thép, rồi vỏ đạn leng keng; vang hành lang thép ngắn | Nhiễu thông cao 1,4 kHz 50 ms, sin 120 → 42 Hz, nhiễu dải 900 → 400 Hz, hai tiếng thép thanh 2,6 và 3,1 kHz |
 | `gun.ray.charge` | Ray bắt đầu nạp một phát (0,15 s) | Tụ điện rít lên | Răng cưa 900 → 3.600 Hz qua lọc dải mở dần, sin 1,8 → 7,2 kHz |
 | `gun.ray.fire` | Ray bắn | Tiếng nổ đanh, cú đấm trầm, đuôi ngân dài | Nhiễu thông cao 3 kHz 30 ms, sin 220 → 50 Hz, răng cưa 2,4 kHz → 600 Hz qua lọc đóng dần, thép dầm 740 Hz 0,6 s |
-| `gun.phao.launch` | Pháo Sao bắn một quả | Tiếng thụp của cối, tiếng rít bay lên | Sin 95 → 38 Hz, nhiễu thấp 700 Hz, sin 1,2 → 2,2 kHz mở chậm |
-| `gun.phao.burst` | Quả Pháo Sao nổ | Tiếng nổ trầm, mảnh vỡ rơi lách cách | Sin 70 → 26 Hz 0,42 s, nhiễu thấp 900 → 160 Hz, nhiễu thông cao 4,2 kHz, 6 tiếng tách |
+| `gun.phao.launch` | Pháo Sao bắn một quả | Đạn trượt vào ống cạch, ống thép bắn mạnh có thân, quả đạn rít bay lên xa; vang hành lang thép | Sin 95 → 38 Hz, nhiễu thấp 700 Hz, sin 1,2 → 2,2 kHz mở chậm |
+| `gun.phao.burst` | Quả Pháo Sao nổ | Tiếng nổ trầm có thân, mảnh vỡ rơi lách cách; vang dội hành lang thép | Sin 70 → 26 Hz 0,42 s, nhiễu thấp 900 → 160 Hz, nhiễu thông cao 4,2 kHz, 6 tiếng tách |
 | `hit.armour` | Một đòn bị Vỏ chặn gần hết | Tiếng keng của tấm thép dày | Thép tấm ~1 kHz 0,32 s, nhiễu thông cao 5,2 kHz 20 ms |
 | `shield.hit` | Đạn chạm khiên năng lượng của Khiên | Tiếng ù như thủy tinh, trượt xuống | Tam giác 1.300 → 700 Hz qua lọc dải, nhiễu dải 5,2 kHz |
 | `shield.break` | Khiên vỡ | Thủy tinh vỡ trên tiếng ù sụp xuống | Răng cưa 900 → 120 Hz, 14 tiếng tách 7,2 kHz, nhiễu thông cao 6 → 2,5 kHz |
@@ -142,17 +143,17 @@ Mọi id dưới đây đi qua `ThemeAudio.gun(id, pan, now)`: mỗi id có bus 
 | `rift.open` | Vết nứt mở, bầy tràn ra | Thép bị xé toạc, tia lửa đổ ra | Nhiễu dải 900 → 2.800 Hz 0,5 s, sin 110 → 40 Hz, 12 tiếng tách 4,6 kHz |
 | `star.get` | Một sao ở màn kết ải | Thanh kim loại sáng gõ nhẹ, lấp lánh | Thép thanh 1.046 Hz, tam giác 2.093 Hz |
 
-- `gun.tan.fire` — *Prompt:* "Close-range sci-fi scattergun blast on a steel deck, sharp punchy crack with a low thump, followed by two spent shell casings ringing on metal, 300 ms, dry, industrial."
+- `gun.tan.fire` — *Prompt:* "Close-range sci-fi scattergun blast on a steel deck: a pump clack, a sharp punchy crack with a heavy body, two spent shell casings ringing on metal, short steel corridor echo, 300 ms, industrial."
 - `gun.ray.charge` — *Prompt:* "Short capacitor charge-up whine for a rail gun, rising high-pitched electric whine, 150 ms, clean ending, sci-fi, dry."
-- `gun.ray.fire` — *Prompt:* "Rail gun discharge, extremely sharp crack and deep punch with a long metallic singing tail, 700 ms, powerful, sci-fi industrial, no music."
-- `gun.phao.launch` — *Prompt:* "Mortar launch thump from a steel tube with a short rising whistle of the shell flying away, 500 ms, dry, industrial sci-fi."
-- `gun.phao.burst` — *Prompt:* "Heavy sci-fi mortar shell explosion on a steel deck, deep boom with debris and shrapnel rattling, 600 ms, punchy, no long reverb."
-- `hit.armour` — *Prompt:* "Bullet ricochet off thick armour plate, bright metallic 'keng' ring, 300 ms, several variations, dry."
+- `gun.ray.fire` — *Prompt:* "Rail gun discharge: an extremely sharp crack and a deep punch with weight, a long metallic singing tail ringing down the steel corridor, 700 ms, powerful, sci-fi industrial."
+- `gun.phao.launch` — *Prompt:* "Mortar launch from a steel tube: a shell sliding in with a clank, a strong deep launch blast with a ringing tube body, the shell whistling up and away, short steel corridor echo, 500 ms, industrial sci-fi."
+- `gun.phao.burst` — *Prompt:* "Heavy sci-fi mortar shell explosion on a steel deck: a sharp crack and a deep boom with body, debris and shrapnel rattling, echo rolling down the steel corridor, 600 ms, punchy."
+- `hit.armour` — *Prompt:* "Bullet ricochet off thick armour plate: a bright metallic 'keng' with a solid plate body, the ring fading into the steel corridor, 300 ms, several variations."
 - `shield.hit` — *Prompt:* "Energy shield absorbing a bullet, glassy resonant hum with a soft electric crackle, dipping pitch, 180 ms, several variations, sci-fi."
-- `shield.break` — *Prompt:* "Energy shield shattering like heavy glass with a collapsing electric hum, 500 ms, crisp shards, sci-fi, dry."
-- `foe.split` — *Prompt:* "Chitinous alien shell cracking apart into three pieces that skitter on a steel floor, 250 ms, crunchy, dry."
+- `shield.break` — *Prompt:* "Energy shield shattering: a straining electric whine, a burst like heavy glass breaking, crisp shards falling, the hum collapsing into a short steel corridor echo, 500 ms, sci-fi."
+- `foe.split` — *Prompt:* "Chitinous alien shell cracking apart into three pieces that skitter across a steel floor, crunchy, short steel corridor echo, 250 ms."
 - `leader.horn` — *Prompt:* "Distant low war horn of an alien brute leader, two long notes, heavy and ominous, 1.6 s, with a slight steel-hall echo, no music."
-- `leader.down` — *Prompt:* "Huge armoured beast collapsing in two heavy beats on a steel floor, a dying electric beacon fizzle at the end, 900 ms, weighty, dry."
+- `leader.down` — *Prompt:* "Huge armoured beast collapsing: a last groan, two heavy crashes on a steel floor, a dying electric beacon fizzle, the impact rumbling down the steel corridor, 900 ms, weighty."
 - `rift.warn` — *Prompt:* "Steel wall groaning under heat and pressure, rising rumble and creaks building up for 2.5 seconds, tense, industrial, no music."
-- `rift.open` — *Prompt:* "Thick steel plate tearing open with a burst of sparks pouring out, 700 ms, violent, crackling, industrial."
+- `rift.open` — *Prompt:* "Thick steel plate tearing open: a rising groan, a violent rip with a burst of sparks pouring out, crackling, echo in the steel corridor, 700 ms, industrial."
 - `star.get` — *Prompt:* "Bright reward chime, a struck metal bar with a short shimmer, 500 ms, clean, satisfying, game UI."
