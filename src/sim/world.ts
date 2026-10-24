@@ -100,7 +100,7 @@ export function createWorld(options: WorldOptions) {
     bulletCap: BULLET_CAP[tier] as number,
     expected: header.expected,
     /** One magazine of the kit near the line (the FlowMeter's unit of words owed). */
-    magazine: kitMagazine(header.kit.guns),
+    magazine: kitMagazine(header.kit.guns, stage),
     rng,
     spawn: createSpawn(),
     plan: createPlan(rng.rare, stage),

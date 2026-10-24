@@ -111,23 +111,24 @@ export type GunSpec = {
   /** The English name on a reward card (R2). */
   readonly en: string;
   readonly title: string;
-  /** The magazine in a line (cards and bays). */
+  /** The magazine in a line on a chapter's stage (the loadout's cards); `trial`: how the trial differs ('' when it does not). */
   readonly magazine: string;
+  readonly trial: string;
   readonly range: string;
   readonly heavy: boolean;
   /** Armour a blow meets: 1 full, Ray 0.25. */
   readonly armour: number;
   readonly crit: number;
-  /** One magazine's damage near the line (the FlowMeter's "words owed"). */
+  /** One magazine's damage near the line (the FlowMeter's "words owed") in the trial; Xung's on a chapter's stage: pace.ts kitMagazine. Tia keeps S0's unit (24 × 7) on purpose: its magazine is the same everywhere. */
   readonly nominal: number;
 };
 
 export const GUN_SPECS: readonly GunSpec[] = [
-  { key: "xung", name: "XUNG", en: "pulse", title: "pháo xung liên thanh", magazine: XUNG_CHAPTER.rounds + " viên trong 2,4 s vào con gần vạch nhất", range: "10 m", heavy: false, armour: 1, crit: XUNG.crit, nominal: XUNG.rounds * XUNG.damage },
-  { key: "tia", name: "TIA", en: "beam", title: "tia nhiệt quét", magazine: "tia 12 m cháy 2,5 s, quét về cụm dày", range: "12 m", heavy: false, armour: 1, crit: TIA.crit, nominal: XUNG.rounds * XUNG.damage },
-  { key: "tan", name: "TÁN", en: "scatter", title: "súng chùm đẩy lùi", magazine: "6 loạt × 7 viên xòe, đẩy lùi, chặn đạn lính", range: TAN.range + " m", heavy: false, armour: 1, crit: TAN.crit, nominal: TAN.volleys * 7 * TAN.damage },
-  { key: "ray", name: "RAY", en: "rail", title: "súng ray xuyên hàng", magazine: "3 phát xuyên 6 con, phá khiên", range: "30 m", heavy: true, armour: RAY.armour, crit: RAY.crit, nominal: RAY.shots * RAY.damage },
-  { key: "phao", name: "PHÁO SAO", en: "flak", title: "pháo cối nổ vùng", magazine: "4 quả nổ 2,5 m vào cụm nặng", range: PHAO.near + "–" + PHAO.far + " m", heavy: true, armour: PHAO.armour, crit: PHAO.crit, nominal: PHAO.shells * PHAO.damage * 1.5 },
+  { key: "xung", name: "XUNG", en: "pulse", title: "pháo xung liên thanh", magazine: XUNG_CHAPTER.rounds + " viên trong 2,4 s vào con gần vạch nhất", trial: "Trận thử: " + XUNG.rounds + " viên", range: "10 m", heavy: false, armour: 1, crit: XUNG.crit, nominal: XUNG.rounds * XUNG.damage },
+  { key: "tia", name: "TIA", en: "beam", title: "tia nhiệt quét", magazine: "tia 12 m cháy 2,5 s, quét về cụm dày", trial: "", range: "12 m", heavy: false, armour: 1, crit: TIA.crit, nominal: XUNG.rounds * XUNG.damage },
+  { key: "tan", name: "TÁN", en: "scatter", title: "súng chùm đẩy lùi", magazine: "6 loạt × 7 viên xòe, đẩy lùi, chặn đạn lính", trial: "", range: TAN.range + " m", heavy: false, armour: 1, crit: TAN.crit, nominal: TAN.volleys * 7 * TAN.damage },
+  { key: "ray", name: "RAY", en: "rail", title: "súng ray xuyên hàng", magazine: "3 phát xuyên 6 con, phá khiên", trial: "", range: "30 m", heavy: true, armour: RAY.armour, crit: RAY.crit, nominal: RAY.shots * RAY.damage },
+  { key: "phao", name: "PHÁO SAO", en: "flak", title: "pháo cối nổ vùng", magazine: "4 quả nổ 2,5 m vào cụm nặng", trial: "", range: PHAO.near + "–" + PHAO.far + " m", heavy: true, armour: PHAO.armour, crit: PHAO.crit, nominal: PHAO.shells * PHAO.damage * 1.5 },
 ];
 
 /**

@@ -268,7 +268,7 @@ function view(which: Screen): ScreenView | null {
       return {
         kind: "armory",
         menu,
-        guns: GUN_SPECS.map((gun) => ({ kind: gun.key, name: gun.name, title: gun.title, text: gun.magazine + ", tầm " + gun.range + (gun.heavy ? ", từ dài hơn 1 chữ" : "") + "." })),
+        guns: GUN_SPECS.map((gun) => ({ kind: gun.key, name: gun.name, title: gun.title, text: gun.magazine + (gun.trial ? " (" + gun.trial + ")" : "") + ", tầm " + gun.range + (gun.heavy ? ", từ dài hơn 1 chữ" : "") + "." })),
         learning: [
           "Gõ không lỗi: đòn mạnh hơn, dễ chí mạng, và xuyên Vỏ (Vỏ chỉ chặn 75 %).",
           "Mỗi từ gõ xong được ghi vào sổ học chung của portal (mã typing-survival).",

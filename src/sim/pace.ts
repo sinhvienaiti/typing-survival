@@ -15,18 +15,19 @@
 import { FlowMeter, PaceDirector, type FlowSnapshot, type PaceDecision, type PaceLever } from "../kit/balance";
 import { FLOW_EVERY, WARMUP_TICKS, bandOf, type RunHeader } from "../content/balance";
 import { FOES, KIND, PACK } from "../content/foes";
-import { GUN_SPECS } from "../content/guns";
+import { GUN, GUN_SPECS, XUNG } from "../content/guns";
 import { DRAIN, ELITE, FIELD, NEAR, PATH, SUPPORT } from "../content/rules";
 import { stageSeconds, type Stage } from "../content/stage-rules";
 import { stageFoes } from "../content/stage-s0";
 import { EV } from "./events";
 import { movePeak, moveLull, waveAt } from "./plan";
+import { xungRounds } from "./weapons";
 import type { World } from "./world";
 
-/** The kit's magazine near the line: the mean of its guns' (the unit of "words owed"). */
-export function kitMagazine(guns: readonly number[]): number {
+/** The kit's magazine near the line: the mean of its guns' (the unit of "words owed"); Xung's as the stage loads it. */
+export function kitMagazine(guns: readonly number[], stage: { readonly chapter: number }): number {
   let sum = 0;
-  for (const gun of guns) sum += GUN_SPECS[gun]!.nominal;
+  for (const gun of guns) sum += gun === GUN.xung ? xungRounds(stage) * XUNG.damage : GUN_SPECS[gun]!.nominal;
   return guns.length > 0 ? sum / guns.length : GUN_SPECS[0]!.nominal;
 }
 
