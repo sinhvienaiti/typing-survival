@@ -139,7 +139,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 
 /* Menu items: steel buttons with an LED; the selected one lit hot. */
 .sv-menu { display: flex; flex-direction: column; gap: calc(6px * var(--ui)); margin-top: calc(12px * var(--ui)); text-align: left; }
-.sv-menu.sv-row { flex-direction: row; justify-content: center; }
+/* A row wraps two a line: a stage's end has up to 4 items, wider than the card at 180 px each (R1 review). */
+.sv-menu.sv-row { flex-direction: row; flex-wrap: wrap; justify-content: center; }
 .sv-item { display: flex; align-items: center; gap: calc(12px * var(--ui)); min-height: calc(46px * var(--ui)); padding: calc(6px * var(--ui)) calc(14px * var(--ui)); background-color: var(--panel-raised); background-image: var(--plate-light); border: 1px solid var(--line); border-left: calc(4px * var(--ui)) solid var(--steel-600); cursor: pointer; transition: border-color 0.1s, background-color 0.1s; }
 .sv-item b { display: block; font: 700 calc(18px * var(--ui)) var(--font-title); letter-spacing: 0.04em; line-height: 1.25; color: var(--soft); }
 .sv-item small { display: block; font: 500 calc(12px * var(--ui)) var(--font-battle); color: var(--muted); }
@@ -149,7 +150,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-item.is-on b { color: var(--text); }
 .sv-item.is-on .sv-led { background: var(--hot); box-shadow: 0 0 10px var(--hot); }
 .sv-item.is-off { opacity: 0.45; cursor: default; }
-.sv-menu.sv-row .sv-item { min-width: calc(180px * var(--ui)); }
+.sv-menu.sv-row .sv-item { flex: 1 1 calc(240px * var(--ui)); min-width: 0; max-width: calc(280px * var(--ui)); }
 .sv-value { display: flex; align-items: center; gap: calc(8px * var(--ui)); font: 700 calc(16px * var(--ui)) var(--font-title); color: var(--text); }
 .sv-value b { min-width: 5.2em; text-align: center; font: inherit; color: var(--led); text-shadow: 0 0 8px var(--led-glow); }
 .sv-arrow { color: var(--steel-400); font-size: 0.8em; }

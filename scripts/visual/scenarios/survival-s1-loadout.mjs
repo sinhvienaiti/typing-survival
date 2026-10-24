@@ -58,6 +58,8 @@ export default async function (page) {
     return { gun: slot.querySelector('.sv-gun').textContent, word: word.textContent, px: parseFloat(getComputedStyle(word).fontSize), mags: slot.querySelectorAll('.sv-mags i').length, overflow, width: Math.round(slot.getBoundingClientRect().width) };
   }))()`);
   const learnWidth = await page.eval("Math.round(document.querySelector('.sv-learn').getBoundingClientRect().width)");
+  // The frame is 420 px at 1280×720 and scales with --ui (630 px at 1920×1080; R1 review: the check read 420 at every size).
+  const ui = await page.eval("parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui')) || 1");
   shots.push(await page.shot(out("survival-s1-loadout-fight-" + size + ".png")));
   const checks = {
     titleHasJourney: log[0][1].items[0] === "Hành trình" && log[0][1].items[1] === "Trận thử",
@@ -70,11 +72,11 @@ export default async function (page) {
     baysShowGuns: hud.length === 2 && hud[0].gun === "RAY" && hud[1].gun === "PHÁO SAO",
     wordsAtLeast26px: hud.every((bay) => bay.px >= 26),
     noBayOverflow: hud.every((bay) => bay.overflow.length === 0),
-    learningFrameKept: Math.abs(learnWidth - 420) <= 2,
+    learningFrameKept: Math.abs(learnWidth - 420 * ui) <= 2,
     noConsoleErrors: page.logs.filter((line) => line.startsWith("error")).length === 0,
     noExceptions: page.exceptions.length === 0,
   };
   const pass = Object.values(checks).every(Boolean);
   if (!pass) process.exitCode = 1;
-  return { pass, checks, log, briefing, warnings, hud, learnWidth, shots };
+  return { pass, checks, log, briefing, warnings, hud, learnWidth, ui, shots };
 }

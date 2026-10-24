@@ -2,8 +2,10 @@
 // adds Bão ion and Giếng hấp dẫn): stage 3 until its first rift; frames
 // 100 ms apart from its warning (the wall's crack glowing hotter, the HUD's
 // side warning counting down) through its opening (sparks, smoke, mines
-// pouring out at 9–13 m). Checks: one telegraph on screen at a time, the
-// warning on the rift's side, the mines poured, no console error.
+// pouring out at 11–15 m). Checks: one telegraph on screen at a time, the
+// warning on the rift's side, the mines poured, no console error. The wait
+// for the warning follows the game's clock, not the wall's: on a slow
+// renderer (software WebGL) 45 s of wall time were not 22 s of fight (R1 review).
 //   URL=http://127.0.0.1:3047/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s1-hazards.mjs --width=1280 --height=720
 import { frames, openStage, out, press, sv } from "./survival-s1-lib.mjs";
 
@@ -29,7 +31,9 @@ async function typeUntil(page, code, ms, wpm = 40) {
 export default async function (page) {
   const size = page.width + "x" + page.height;
   const ready = await openStage(page, "c1-s3", ["xung", "tan"], "&director=0");
-  const warned = await typeUntil(page, "t.state().rifts.state === 1", 45000);
+  // Until the first rift warns, or the fight is 5 s past its time without one (a bug); at most 10 min of wall time.
+  await typeUntil(page, "t.state().rifts.state === 1 || t.state().time > t.state().rifts.at[0] + 5", 600000);
+  const warned = (await page.eval(sv("return t.state().rifts.state === 1;"))) === true;
   const warning = await page.eval(sv("return { side: document.querySelector('.sv-warn')?.className ?? '', text: document.querySelector('.sv-warn')?.textContent ?? '', banners: document.querySelectorAll('.sv-banner.is-on').length, rift: t.state().rifts };"));
   const shots = await frames(page, "survival-s1-hazards-rift", 30, 100);
   const after = await page.eval(sv("return { events: t.events(), state: t.state() };"));
