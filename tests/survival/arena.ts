@@ -15,11 +15,12 @@ import { sharedDeck } from "./typist-bot";
 const deck = sharedDeck();
 export const ENDLESS = 1e9;
 
-export function arena(guns: readonly GunId[], options: { levels?: readonly number[]; seed?: number; tier?: "low" | "medium" | "high" | "ultra" } = {}): World {
+export function arena(guns: readonly GunId[], options: { levels?: readonly number[]; seed?: number; tier?: "low" | "medium" | "high" | "ultra"; stage?: string } = {}): World {
   const w = createWorld({
     seed: options.seed ?? 1,
     deck,
     tier: options.tier,
+    stage: options.stage,
     director: false,
     kit: { guns, levels: options.levels ?? guns.map(() => 1), bays: guns.length, armour: 100 },
   });

@@ -99,12 +99,20 @@ function standing(w: World): number {
   return total;
 }
 
+/**
+ * The stage the scenes are fought on: a chapter's (R1 guns), so the table
+ * measures the guns as the chapter fires them (its Xung magazine, the clean
+ * magazine's chapter bonus, the near zone from 14 m); the trial is not in
+ * the chapter and shows no counters.
+ */
+export const COUNTER_STAGE = "c1-s1";
+
 /** One cell's cost (seconds to clear + armour taken), averaged over `seeds`. */
-export function measureCell(row: CounterRow, gun: GunId, seeds: readonly number[] = [1, 2, 3], clean: (n: number) => boolean = (n) => n % 5 !== 4): number {
+export function measureCell(row: CounterRow, gun: GunId, seeds: readonly number[] = [1, 2, 3], clean: (n: number) => boolean = (n) => n % 5 !== 4, stage = COUNTER_STAGE): number {
   const scene = SCENES[row];
   let total = 0;
   for (const seed of seeds) {
-    const w = arena([gun], { seed });
+    const w = arena([gun], { seed, stage });
     scene.setup(w, seed);
     let through = 0;
     const line = scene.line === undefined ? -Infinity : FIELD.muzzleZ + scene.line;
@@ -125,6 +133,12 @@ export function measureCell(row: CounterRow, gun: GunId, seeds: readonly number[
 
 /** The gate's seeds (G3m in tests/guns.test.ts and the balance report): 16, as 8 left cells near a threshold flipping with the seed set (R1 review). */
 export const COUNTER_SEEDS: readonly number[] = Array.from({ length: 16 }, (_, i) => i + 1);
+/**
+ * Every mark must hold on a second set too, seeds 17–32 (R1 guns): with one
+ * set, a cell the margin let through there hid a mark the other set denied
+ * (R1 review pass 2, Xung on swarmNear).
+ */
+export const COUNTER_SEED_SETS: readonly (readonly number[])[] = [COUNTER_SEEDS, COUNTER_SEEDS.map((seed) => seed + 16)];
 /** A cost within this share of a threshold may carry either mark (a near tie is not a measurement). */
 export const COUNTER_MARGIN = 0.08;
 
@@ -140,10 +154,10 @@ export function marksFor(ratio: number): number[] {
 }
 
 /** The measured table: per row, per gun, its cost, its mark (2 ●, 1 ○, 0 ✕) and the marks it allows. */
-export function measureCounters(seeds: readonly number[] = COUNTER_SEEDS): Record<CounterRow, { cost: number[]; mark: number[]; allowed: number[][] }> {
+export function measureCounters(seeds: readonly number[] = COUNTER_SEEDS, stage = COUNTER_STAGE): Record<CounterRow, { cost: number[]; mark: number[]; allowed: number[][] }> {
   const out = {} as Record<CounterRow, { cost: number[]; mark: number[]; allowed: number[][] }>;
   for (const row of COUNTER_ROWS) {
-    const cost = GUN_IDS.map((gun) => measureCell(row, gun, seeds));
+    const cost = GUN_IDS.map((gun) => measureCell(row, gun, seeds, undefined, stage));
     const best = Math.min(...cost) + COST_FLOOR;
     const mark = cost.map((value) => (value + COST_FLOOR >= 2 * best ? 0 : value + COST_FLOOR <= 1.25 * best ? 2 : 1));
     out[row] = { cost, mark, allowed: cost.map((value) => marksFor((value + COST_FLOOR) / best)) };
@@ -151,9 +165,24 @@ export function measureCounters(seeds: readonly number[] = COUNTER_SEEDS): Recor
   return out;
 }
 
-/** COUNTERS against a measurement: every cell's mark among those its cost allows. */
-export const countersMatch = (measured: ReturnType<typeof measureCounters>, table: Readonly<Record<CounterRow, readonly number[]>>): boolean =>
-  COUNTER_ROWS.every((row) => measured[row].allowed.every((marks, gun) => marks.includes(table[row][gun]!)));
+export type Measured = ReturnType<typeof measureCounters>;
+
+/** The cells of `table` some measurement does not allow ("swarmNear xung ● (seeds 17–32: ○)"); [] when it matches them all. */
+export function counterMisfits(sets: readonly Measured[], table: Readonly<Record<CounterRow, readonly number[]>>, labels: readonly string[] = []): string[] {
+  const sign = ["✕", "○", "●"];
+  const out: string[] = [];
+  for (const row of COUNTER_ROWS) {
+    for (const gun of GUN_IDS) {
+      const deny = sets.flatMap((measured, k) => (measured[row].allowed[gun]!.includes(table[row][gun]!) ? [] : [(labels[k] ?? "set " + (k + 1)) + ": " + measured[row].allowed[gun]!.map((m) => sign[m]).join("/")]));
+      if (deny.length > 0) out.push(row + " " + GUN_SPECS[gun]!.key + " " + sign[table[row][gun]!] + " (" + deny.join(", ") + ")");
+    }
+  }
+  return out;
+}
+
+/** COUNTERS against one measurement or several (every seed set): every cell's mark among those each cost allows. */
+export const countersMatch = (measured: Measured | readonly Measured[], table: Readonly<Record<CounterRow, readonly number[]>>): boolean =>
+  counterMisfits(Array.isArray(measured) ? measured : [measured as Measured], table).length === 0;
 
 /** §5.2's three rules on a table, as the misses they find ([] when all hold): no gun ● everywhere; each gun ● on ≥ 2 rows and ✕ on ≥ 2; every pair leaves a row without ●. */
 export function counterRules(table: Readonly<Record<CounterRow, readonly number[]>>): string[] {

@@ -6,7 +6,7 @@
  * its blows meet (the gun's, × 0.75 for a clean word). Each gun empties its
  * magazines by itself (src/sim/guns/*), in bay order.
  */
-import { FORGE, GUN, GUN_SPECS, MAG_CAP, PHAO, QUALITY, RAY, TAN, TIA, XUNG, type GunId } from "../content/guns";
+import { FORGE, GUN, GUN_SPECS, MAG_CAP, PHAO, QUALITY, RAY, TAN, TIA, XUNG, XUNG_CHAPTER, type GunId } from "../content/guns";
 import type { RunKit } from "../content/balance";
 import { firePhao } from "./guns/phao";
 import { fireRay } from "./guns/ray";
@@ -29,6 +29,8 @@ export function createGuns(kit: RunKit) {
   return {
     /** 1 when the kit has no Xung: Tia then holds the line and hunts scouts too (TIA_DUTY). */
     tiaDuty: kit.guns.includes(GUN.xung) ? 0 : 1,
+    /** 1 when the kit has no near gun (Xung, Tia, Tán): Ray takes the line first (RAY_DUTY). */
+    rayDuty: kit.guns.some((g) => g === GUN.xung || g === GUN.tia || g === GUN.tan) ? 0 : 1,
     /** Per bay: its gun (−1 none), Rèn level, magazines it can hold, magazines held (the firing one included). */
     gun,
     level,
@@ -60,8 +62,14 @@ export function createGuns(kit: RunKit) {
 
 export type Guns = ReturnType<typeof createGuns>;
 
-/** One magazine's units by gun: rounds, beam seconds, volleys, shots, shells. */
+/** One magazine's units by gun: rounds, beam seconds, volleys, shots, shells (Xung: the trial's; xungRounds for a world). */
 export const MAGAZINE_UNITS: Readonly<Record<GunId, number>> = { [GUN.xung]: XUNG.rounds, [GUN.tia]: TIA.seconds, [GUN.tan]: TAN.volleys, [GUN.ray]: RAY.shots, [GUN.phao]: PHAO.shells };
+
+/** Xung's rounds a magazine in a world: S0's in the trial, XUNG_CHAPTER's on a chapter's stages. */
+export const xungRounds = (stage: { readonly chapter: number }): number => (stage.chapter > 0 ? XUNG_CHAPTER.rounds : XUNG.rounds);
+
+/** One magazine's units of `gun` on `stage`. */
+export const magazineUnits = (stage: { readonly chapter: number }, gun: GunId): number => (gun === GUN.xung ? xungRounds(stage) : MAGAZINE_UNITS[gun]);
 
 /** The bay holding `gun`, or −1. */
 export function bayOf(w: World, gun: GunId): number {
@@ -83,7 +91,7 @@ export function loadMagazine(w: World, bay: number, clean: boolean, fast: boolea
   G.pierce[i] = spec.armour * (clean ? QUALITY.cleanArmour : 1);
   G.perfect[i] = clean && fast ? 1 : 0;
   G.mags[bay] = k + 1;
-  if (k === 0) G.left[bay] = MAGAZINE_UNITS[gun as GunId];
+  if (k === 0) G.left[bay] = magazineUnits(w.stage, gun as GunId);
   return true;
 }
 

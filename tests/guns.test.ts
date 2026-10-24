@@ -12,7 +12,7 @@ import { damageFoe } from "../src/sim/projectiles";
 import { loadMagazine } from "../src/sim/weapons";
 import { createWorld, step, type World } from "../src/sim/world";
 import { ENDLESS, arena, cleared, feeder, freeze, lost, place, runUntil } from "./survival/arena";
-import { COUNTER_SEEDS, SCENES, counterRules, countersMatch, measureCounters } from "./survival/counters";
+import { COUNTER_SEED_SETS, COUNTER_STAGE, SCENES, counterMisfits, counterRules, countersMatch, measureCounters } from "./survival/counters";
 import { sharedDeck } from "./survival/typist-bot";
 
 /**
@@ -389,18 +389,19 @@ describe("words for the bays (§5.1)", () => {
   });
 });
 
-describe("gate G3: the counters hold in small scenes (§11.4)", () => {
+describe("gate G3: the counters hold in small scenes, as a chapter's stage fires the guns (§11.4)", () => {
   const SEEDS = [1, 2, 3, 4, 5, 6];
+  const stage = COUNTER_STAGE;
   const timeTo = (guns: GunId, setup: (w: World, seed: number) => void, clean: (n: number) => boolean, stand = false) =>
     SEEDS.map((seed) => {
-      const w = arena([guns], { seed });
+      const w = arena([guns], { seed, stage });
       if (stand) freeze(w);
       setup(w, seed);
       return runUntil(w, feeder(clean), cleared, 120);
     }).reduce((a, b) => a + b, 0) / SEEDS.length;
   const armourOf = (gun: GunId, setup: (w: World, seed: number) => void) =>
     SEEDS.map((seed) => {
-      const w = arena([gun], { seed });
+      const w = arena([gun], { seed, stage });
       setup(w, seed);
       runUntil(w, feeder((n) => n % 5 !== 4), cleared, 40);
       return lost(w);
@@ -439,7 +440,7 @@ describe("gate G3: the counters hold in small scenes (§11.4)", () => {
     };
     const cost = (gun: GunId) =>
       SEEDS.map((seed) => {
-        const w = arena([gun], { seed });
+        const w = arena([gun], { seed, stage });
         shards(w, seed);
         const time = runUntil(w, feeder((n) => n % 5 !== 4), cleared, 40);
         return time + lost(w);
@@ -450,29 +451,29 @@ describe("gate G3: the counters hold in small scenes (§11.4)", () => {
   });
 });
 
-describe("gate G3m: COUNTERS is what the scenes measure (§5.2)", () => {
-  const measured = measureCounters(COUNTER_SEEDS);
+describe("gate G3m: COUNTERS is what the scenes measure, on seeds 1–16 and 17–32 (§5.2)", () => {
+  const sets = COUNTER_SEED_SETS.map((seeds) => measureCounters(seeds));
 
-  it("every cell of the table carries a mark its measured cost allows (either mark within COUNTER_MARGIN of a threshold)", () => {
-    for (const row of COUNTER_ROWS) {
-      const ok = measured[row].allowed.map((marks, gun) => marks.includes(COUNTERS[row][gun]!));
-      expect(ok, row + " " + measured[row].cost.map((c) => c.toFixed(1)).join(" ") + " allows " + JSON.stringify(measured[row].allowed)).toEqual([true, true, true, true, true]);
-    }
-    expect(countersMatch(measured, COUNTERS)).toBe(true);
+  it("every cell of the table carries a mark its measured cost allows on each seed set (either mark within COUNTER_MARGIN of a threshold)", () => {
+    sets.forEach((measured, k) => {
+      for (const row of COUNTER_ROWS) {
+        const ok = measured[row].allowed.map((marks, gun) => marks.includes(COUNTERS[row][gun]!));
+        expect(ok, "seeds from " + COUNTER_SEED_SETS[k]![0] + ": " + row + " " + measured[row].cost.map((c) => c.toFixed(1)).join(" ") + " allows " + JSON.stringify(measured[row].allowed)).toEqual([true, true, true, true, true]);
+      }
+    });
+    expect(counterMisfits(sets, COUNTERS)).toEqual([]);
+    expect(countersMatch(sets, COUNTERS)).toBe(true);
   });
 
   /**
-   * G3m fails today on §5.2's rules (R1 review fix, changelog 2026-10-24-s1-r1-fix.md):
-   * Xung is ○ on swarmNear, as both seed sets measure, so it counters one row.
-   * The report prints G3m failed; this pins the miss so any other break, or the
-   * fix (then empty the list), shows here.
+   * No known miss since R1 guns (changelog 2026-10-24-s1-r1-guns.md): Xung's
+   * chapter magazine gives it ● on swarmNear and splitter (R1 review pass 2
+   * had pinned "xung: ● on 1 row(s)" here).
    */
-  const KNOWN_MISSES = ["xung: ● on 1 row(s), not ≥ 2"];
+  const KNOWN_MISSES: string[] = [];
 
-  it("holds §5.2's rules (no gun ● everywhere; each gun ● on ≥ 2 rows and ✕ on ≥ 2; every pair leaves a row without ●) but for the known miss", () => {
+  it("holds §5.2's rules (no gun ● everywhere; each gun ● on ≥ 2 rows and ✕ on ≥ 2; every pair leaves a row without ●)", () => {
     expect(counterRules(COUNTERS)).toEqual(KNOWN_MISSES);
-    // The miss is that one cell: with Xung ● there the rules would hold.
-    expect(counterRules({ ...COUNTERS, swarmNear: [2, ...COUNTERS.swarmNear.slice(1)] })).toEqual([]);
     const xungEverywhere = Object.fromEntries(COUNTER_ROWS.map((row) => [row, [2, ...COUNTERS[row].slice(1)]])) as Record<CounterRow, number[]>;
     expect(counterRules(xungEverywhere)).toEqual(["xung: ● on every row", "xung: ✕ on 0 row(s), not ≥ 2", ...["tia", "tan", "ray", "phao"].map((gun) => "xung+" + gun + ": ● on every row")]);
   });

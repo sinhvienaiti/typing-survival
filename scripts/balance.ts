@@ -7,7 +7,7 @@
  * pick, the pace director on; "standard" also with the director off (B7).
  * Prints the §3 metrics per bot and mode, the guns picked, the gates B1–B9
  * (formatGates) per stage, then S1's gates: G3m (the counter table
- * measured), G5 (learning, every run), G6 (Săn's length), G8 (replays),
+ * measured on seeds 1–16 and 17–32), G5 (learning, every run), G6 (Săn's length), G8 (replays),
  * the attention budget, and with --g3c every pair of guns per stage (G3c;
  * G2 printed provisionally). 100 seeds by default: a win rate's standard
  * error is then about 4 points (24 seeds are not enough for §3's bands).
@@ -21,7 +21,7 @@ import { MODE_SPECS, MODES, type Mode } from "../src/content/balance";
 import { isStageId, stageById } from "../src/content/chapter-1";
 import { COUNTERS, GUN_SPECS } from "../src/content/guns";
 import { gunSets } from "../src/content/threat";
-import { COUNTER_MARGIN, COUNTER_SEEDS, counterRules, countersMatch, measureCounters } from "../tests/survival/counters";
+import { COUNTER_MARGIN, COUNTER_SEED_SETS, counterMisfits, counterRules, measureCounters } from "../tests/survival/counters";
 import { sharedDeck } from "../tests/survival/typist-bot";
 import { StepClock, botRows, gates, replays, runMatrix, type Cell } from "./balance-lib";
 
@@ -138,10 +138,11 @@ if (g3cOnly) {
   process.exit(0);
 }
 const s1: string[] = [];
-const measured = measureCounters(COUNTER_SEEDS);
-const g3m = countersMatch(measured, COUNTERS);
+// G3m on both seed sets (1–16, 17–32): every mark must hold on each.
+const setLabels = COUNTER_SEED_SETS.map((set) => "seed " + set[0] + "–" + set.at(-1));
+const misfits = counterMisfits(COUNTER_SEED_SETS.map((set) => measureCounters(set)), COUNTERS, setLabels);
 const rules = counterRules(COUNTERS);
-s1.push("| G3m | Bảng khắc chế khớp số đo (" + COUNTER_SEEDS.length + " seed mỗi ô; trong ±" + Math.round(COUNTER_MARGIN * 100) + " % quanh ngưỡng thì cả hai dấu đều khớp): " + (g3m ? "khớp" : "không khớp") + "; ràng buộc §5.2: " + (rules.length === 0 ? "đạt" : rules.join(", ")) + " | " + pass(g3m && rules.length === 0) + " |");
+s1.push("| G3m | Bảng khắc chế khớp số đo ở " + setLabels.join(" và ") + " (16 seed mỗi ô; trong ±" + Math.round(COUNTER_MARGIN * 100) + " % quanh ngưỡng thì cả hai dấu đều khớp): " + (misfits.length === 0 ? "khớp" : "không khớp: " + misfits.join("; ")) + "; ràng buộc §5.2: " + (rules.length === 0 ? "đạt" : rules.join(", ")) + " | " + pass(misfits.length === 0 && rules.length === 0) + " |");
 const learning = cells.flatMap((cell) => cell.runs.map((run) => run.learnOk)).filter((ok): ok is boolean => ok !== undefined);
 s1.push("| G5 | Học: không lặp từ, chữ đầu khác nhau, không ẩn chữ đầu, bot Mới ≥ 8 từ (" + learning.length + " trận có gõ) | " + pass(learning.every(Boolean)) + " |");
 const hunts = cells.filter((cell) => cell.bot.id === "standard" && cell.mode === "balanced" && cell.director && stageById(cell.stage).objective.kind === "hunt");

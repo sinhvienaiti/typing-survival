@@ -105,9 +105,9 @@ function spawnOne(w: World, kind: number, x: number, z: number, hpScale = 1, eli
 }
 
 /**
- * A special pack: a Trâu (block of 5 mines behind it) or a Khiên (a wedge of
- * 6 behind its shield) in front, or a group of Tách (plain: it may carry
- * Bọc Thép).
+ * A special pack: a Trâu (block of 5 mines behind it; its hit points × the
+ * mode and k) or a Khiên (a wedge of 6 behind its shield) in front, or a
+ * group of Tách (plain: it may carry Bọc Thép).
  */
 function spawnSpecial(w: World, type: number): number {
   const rng = w.rng.spawn;
@@ -132,7 +132,8 @@ function spawnSpecial(w: World, type: number): number {
   const half = Math.max(FOES[pack.lead]!.radius, halfWidth(pack.shape, pack.follow));
   const room = FIELD.halfW - FIELD.wall - 1 - half;
   const cx = room > 0 ? (rng.float() * 2 - 1) * room : 0;
-  spawnOne(w, pack.lead, cx, front);
+  // A Trâu's hit points × the mode and k, as a Đầu Đàn's (R1 guns: a child in Thư giãn met S1's full Trâu, B3).
+  spawnOne(w, pack.lead, cx, front, name === "brute" ? w.scales.rate : 1);
   const back = front + FOES[pack.lead]!.radius + 1.2;
   for (let i = 0; i < pack.follow; i += 1) {
     slotOf(pack.shape, i, pack.follow, place);

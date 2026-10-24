@@ -1,7 +1,8 @@
 // Tuyến Cuối S1 (docs/BUILD_S1.md §4.2, §16 "survival-s1-loadout"), keyboard
 // only: title → Hành trình → stage 1 → its briefing (foes with their counter
-// tags) → the loadout: keys 4 and 5 pick Ray and Pháo Sao (bay 1, bay 2), the
-// threats the pair leaves open get a yellow mark, → → to the start button,
+// tags) → the loadout: keys 1 and 3 pick Xung and Tán (bay 1, bay 2), the
+// threats the pair leaves open get a yellow mark (Trâu: both ✕; R1 guns:
+// Ray + Pháo Sao no longer leaves a row open on stage 1), → → to the start button,
 // Enter → the fight on stage 1 with those guns on its bays. Then the armory
 // shows the five guns. Checks: the five cards, the warnings, the bays' gun
 // names and words (≥ 26 px, nothing in a bay overflows), no console error.
@@ -36,8 +37,8 @@ export default async function (page) {
   await page.sleep(250);
   log.push(["loadout", await screen()]);
   const cards = await page.eval("document.querySelectorAll('.sv-cards .sv-gun-card').length");
-  await page.key("4", { code: "Digit4" });
-  await page.key("5", { code: "Digit5" });
+  await page.key("1", { code: "Digit1" });
+  await page.key("3", { code: "Digit3" });
   await page.sleep(200);
   const picked = await screen();
   const warnings = await page.eval("[...document.querySelectorAll('.sv-threats span.is-open')].map((n) => n.textContent)");
@@ -66,10 +67,10 @@ export default async function (page) {
     stageList: log[1][1].screen === "journey-stages" && log[1][1].items.length === 5,
     briefingShowsCounters: log[2][1].screen === "journey-briefing" && briefing.some((line) => /Trâu/.test(line) && /khắc: RAY/.test(line)),
     fiveCards: log[3][1].screen === "journey-loadout" && cards === 5,
-    keysPick: JSON.stringify(picked.journey.picked) === "[3,4]" && picked.journey.ready === true,
-    warnsOpenRows: warnings.length > 0 && warnings.some((text) => /sát vạch/.test(text)),
-    fightOnStage: started?.mode === "play" && started.state.stage === "c1-s1" && JSON.stringify(started.state.guns) === '["ray","phao"]',
-    baysShowGuns: hud.length === 2 && hud[0].gun === "RAY" && hud[1].gun === "PHÁO SAO",
+    keysPick: JSON.stringify(picked.journey.picked) === "[0,2]" && picked.journey.ready === true,
+    warnsOpenRows: warnings.length > 0 && warnings.some((text) => /Trâu/.test(text)),
+    fightOnStage: started?.mode === "play" && started.state.stage === "c1-s1" && JSON.stringify(started.state.guns) === '["xung","tan"]',
+    baysShowGuns: hud.length === 2 && hud[0].gun === "XUNG" && hud[1].gun === "TÁN",
     wordsAtLeast26px: hud.every((bay) => bay.px >= 26),
     noBayOverflow: hud.every((bay) => bay.overflow.length === 0),
     learningFrameKept: Math.abs(learnWidth - 420 * ui) <= 2,

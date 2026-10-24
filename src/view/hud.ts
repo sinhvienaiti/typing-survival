@@ -14,17 +14,16 @@
  */
 import type { Rect } from "../kit/feedback";
 import { FOES, KIND } from "../content/foes";
-import { GUN_SPECS, PHAO, RAY, TAN, TIA, XUNG } from "../content/guns";
+import { GUN_SPECS, type GunId } from "../content/guns";
 import { RIFT } from "../content/stage-rules";
 import { STAGE_S0 } from "../content/stage-s0";
 import { peakAt } from "../sim/plan";
+import { magazineUnits } from "../sim/weapons";
 import type { World } from "../sim/world";
 import type { Word } from "../app/vocab";
 
 const DONE_MS = 600;
 const NEW_MS = 2000;
-/** One magazine's units by gun (for the LED's fill): rounds, beam seconds, volleys, shots, shells. */
-const UNITS = [XUNG.rounds, TIA.seconds, TAN.volleys, RAY.shots, PHAO.shells] as const;
 /** Long words shrink down to this share of 32 px (26 px). */
 const MIN_FIT = 26 / 32;
 /** The "new" card per kind a stage teaches. */
@@ -244,7 +243,7 @@ export class Hud {
     slot.root.classList.toggle("is-active", T.lock === s);
     slot.root.classList.toggle("is-dim", T.lock >= 0 && T.lock !== s);
     const mags = w.guns.mags[s]!;
-    const first = w.guns.left[s]! / UNITS[slot.gun]!;
+    const first = w.guns.left[s]! / magazineUnits(w.stage, slot.gun as GunId);
     for (let m = 0; m < slot.mags.length; m += 1) {
       const fill = m < mags - 1 ? 1 : m === mags - 1 ? Math.max(0, Math.min(1, first)) : 0;
       slot.mags[m]!.style.setProperty("--fill", fill.toFixed(3));

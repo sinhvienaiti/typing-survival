@@ -8,7 +8,7 @@
  * the most foes. Nobody in reach: the magazine waits.
  */
 import { FOES, KIND } from "../../content/foes";
-import { CRIT_MULT, RAY } from "../../content/guns";
+import { CRIT_MULT, RAY, RAY_DUTY } from "../../content/guns";
 import { FIELD } from "../../content/rules";
 import { EV, FLAG } from "../events";
 import { collectNear, nearList } from "../hits";
@@ -71,6 +71,28 @@ export function rayTarget(w: World): number {
   return best;
 }
 
+/** The slope (x per metre of depth) of the busiest line through foes between `from` and `to` m from the muzzle; NaN when none. */
+function busiestLine(w: World, from: number, to: number): number {
+  const F = w.foes;
+  const mz = FIELD.muzzleZ;
+  lines.fill(0);
+  let any = false;
+  for (let s = 0; s < F.top; s += 1) {
+    if (F.alive[s] === 0 || F.z[s]! > mz + to || F.z[s]! < mz + from) continue;
+    const slope = F.x[s]! / (F.z[s]! - mz);
+    if (slope <= -SLOPE_MAX || slope >= SLOPE_MAX) continue;
+    const k = Math.floor((slope + SLOPE_MAX) / SLOPE);
+    lines[k] = lines[k]! + 1;
+    if (k > 0) lines[k - 1] = lines[k - 1]! + 0.5;
+    if (k + 1 < BUCKETS) lines[k + 1] = lines[k + 1]! + 0.5;
+    any = true;
+  }
+  if (!any) return NaN;
+  let best = 0;
+  for (let k = 1; k < BUCKETS; k += 1) if (lines[k]! > lines[best]!) best = k;
+  return -SLOPE_MAX + (best + 0.5) * SLOPE;
+}
+
 /** Aims bay `bay`: at a priority target, else along the busiest line; false when nobody is in reach. */
 function aim(w: World, bay: number): boolean {
   const F = w.foes;
@@ -79,29 +101,20 @@ function aim(w: World, bay: number): boolean {
   const target = rayTarget(w);
   let dx = 0;
   let dz = 1;
-  if (target >= 0) {
+  // On duty (a kit with no near gun): the line at the bottom first, a leader alone before it.
+  const duty = G.rayDuty === 1 && (target < 0 || F.kind[target] !== KIND.leader) ? busiestLine(w, 1, RAY_DUTY.zone) : NaN;
+  if (duty === duty) {
+    dx = duty;
+    G.target[bay] = -1;
+  } else if (target >= 0) {
     dx = F.x[target]!;
     dz = F.z[target]! - mz;
     G.target[bay] = target;
     G.targetId[bay] = F.id[target]!;
   } else {
-    lines.fill(0);
-    let any = false;
-    for (let s = 0; s < F.top; s += 1) {
-      if (F.alive[s] === 0 || F.z[s]! > mz + RAY.range || F.z[s]! < mz + 1) continue;
-      const slope = F.x[s]! / (F.z[s]! - mz);
-      if (slope <= -SLOPE_MAX || slope >= SLOPE_MAX) continue;
-      const k = Math.floor((slope + SLOPE_MAX) / SLOPE);
-      lines[k] = lines[k]! + 1;
-      if (k > 0) lines[k - 1] = lines[k - 1]! + 0.5;
-      if (k + 1 < BUCKETS) lines[k + 1] = lines[k + 1]! + 0.5;
-      any = true;
-    }
-    if (!any) return false;
-    let best = 0;
-    for (let k = 1; k < BUCKETS; k += 1) if (lines[k]! > lines[best]!) best = k;
-    dx = -SLOPE_MAX + (best + 0.5) * SLOPE;
-    dz = 1;
+    const slope = busiestLine(w, 1, RAY.range);
+    if (slope !== slope) return false;
+    dx = slope;
     G.target[bay] = -1;
   }
   const length = Math.sqrt(dx * dx + dz * dz) || 1;

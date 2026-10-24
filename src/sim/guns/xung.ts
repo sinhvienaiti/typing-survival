@@ -11,11 +11,12 @@ import { FIELD } from "../../content/rules";
 import { EV, FLAG } from "../events";
 import { firstShieldHit } from "../projectiles";
 import { ROUND } from "../stores";
-import { firing, nextMagazine } from "../weapons";
+import { firing, nextMagazine, xungRounds } from "../weapons";
 import type { World } from "../world";
 
 export function fireXung(w: World, bay: number, dt: number): void {
   const G = w.guns;
+  const rounds = xungRounds(w.stage);
   G.cooldown[bay] = G.cooldown[bay]! - dt;
   while (G.cooldown[bay]! <= 0 && G.left[bay]! > 0) {
     if (!shoot(w, bay)) {
@@ -23,8 +24,8 @@ export function fireXung(w: World, bay: number, dt: number): void {
       return;
     }
     G.left[bay] = G.left[bay]! - 1;
-    G.cooldown[bay] = G.cooldown[bay]! + XUNG.seconds / XUNG.rounds / G.rate[firing(bay)]!;
-    if (G.left[bay] === 0 && nextMagazine(G, bay)) G.left[bay] = XUNG.rounds;
+    G.cooldown[bay] = G.cooldown[bay]! + XUNG.seconds / rounds / G.rate[firing(bay)]!;
+    if (G.left[bay] === 0 && nextMagazine(G, bay)) G.left[bay] = rounds;
   }
   if (G.mags[bay] === 0) G.cooldown[bay] = 0;
 }
