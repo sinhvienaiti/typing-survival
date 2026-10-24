@@ -11,7 +11,13 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   server under WSL on `/mnt/d` does not see edits saved from Windows:
   restart it after an edit, before a browser scenario. Headless Chrome
   there has software WebGL only (SwiftShader, 2–4 frames a second in a
-  fight): frame budgets and waits on wall time do not hold on that machine.
+  fight): frame budgets and waits on wall time do not hold in WSL. Run perf
+  and timing scenarios in Windows Chrome on the real GPU (RTX 3050 Ti,
+  ANGLE D3D11) with a portable Windows Node
+  (`D:\_tools\node-v24.11.0-win-x64\node.exe src/kit/tools/cdp-run.mjs …`,
+  `URL` the WSL dev server on 127.0.0.1:3007, one GPU measurement at a time
+  across agents: `D:\_tools\gpu.lock`); parts that spawn `tsx` (the keys
+  scenario's replay) fail there and run in WSL on the saved JSON.
 - Commands: `pnpm dev`, `pnpm test`, `pnpm build`, `pnpm check`,
   `pnpm survival:balance [--stages=s0,c1-s1,c1-s2,c1-s3,c1-s4] [--g3c]`,
   `pnpm survival:replay <replay.json>`,
@@ -25,7 +31,9 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `docs/changelog/2026-10-24-s1-r1-fix.md`; the R1 gate of §14 is not met
   yet, see that changelog's "Còn lại"): guns in `src/content/guns.ts`
   (COUNTERS is the measured table: `node --import tsx scripts/counters.ts`,
-  16 seeds, gate G3m in `tests/guns.test.ts`), foes in `src/content/foes.ts`, stages
+  16 seeds, and every mark must hold on `--first=17` too; gate G3m in
+  `tests/guns.test.ts` pins its one known miss, Xung ● on one row only),
+  foes in `src/content/foes.ts`, stages
   in `src/content/stage-rules.ts` + `chapter-1.ts` (the trial is stage
   `s0`, `stage-s0.ts`), threat scoring for bots and the briefing in
   `src/content/threat.ts`; sim per gun in `src/sim/guns/`, objectives in
@@ -47,7 +55,8 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `survival.skill`) before the world is made and goes into every replay.
   `pnpm survival:balance` (default 100 seeds; one Node process) prints the
   §3 metrics per bot × mode and gates B1–B9, each stage as it ends;
-  stages 1–4 with `--g3c --time` are 14 400 runs, 26–30 min on the Dell
+  stages 1–4 with `--g3c --time` are 18 400 runs (14 400 bot cells, 4 000
+  for G3c), 26–30 min on the Dell
   laptop (WSL, shared with other agents): run it in the background. While
   tuning use `--seeds=40`, one stage a process (at most 4 at once). Bots
   (`tests/survival/typist-bot.ts`) type through `installKeys`. Retune data,
@@ -80,9 +89,10 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   sound id has an entry in `docs/audio/THEME_SOUND_LIST.md`; add one there
   with each new id.
 - Each update gets `docs/changelog/<date>-<topic>.md` (Vietnamese).
-- Next: close the R1 gate (B1, B3, B4, B7, G3c's "best ≤ 97 %" miss, and
-  §17 perf measured on the Mac: `docs/changelog/2026-10-24-s1-r1-fix.md`
-  "Còn lại"), then S1 R2 (chapter flow,
+- Next: close the R1 gate (B1, B3, B4, B7, G3m's "● on ≥ 2 rows" for
+  Xung, G3c's "best ≤ 97 %" miss: `docs/changelog/2026-10-24-s1-r1-fix.md`
+  "Còn lại"; §17 frame budgets pass on the Dell GPU, the Mac M4 is not
+  measured), then S1 R2 (chapter flow,
   doors, Lõi, Mốc, stages 5–9, Bão ion, Giếng, Nghĩa) and R3 (the boss),
   `docs/BUILD_S1.md` §14.
 - The design docs live in `docs/`; the parent repo's
