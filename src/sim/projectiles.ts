@@ -43,7 +43,9 @@ export function damageFoe(w: World, s: number, damage: number, flags: number, dx
   w.stats.kills += 1;
   if (scout !== 0) w.stats.scoutKills += 1;
   if (elite !== 0) w.stats.eliteKills += 1;
-  w.stats.lifeSum += w.time - (F.reached[s]! >= 0 ? F.reached[s]! : F.born[s]!);
+  // Seconds it lived in the near zone; a foe killed before it got there never threatened the line: 0
+  // (R1 guns: counted from its birth, a far kill was the slowest of all and B4 read range, not typing).
+  w.stats.lifeSum += F.reached[s]! >= 0 ? w.time - F.reached[s]! : 0;
   noteKill(w, F.z[s]!);
   w.events.push(w.tick, EV.kill, s, F.id[s]!, F.x[s]!, F.z[s]!, dx, dz, F.maxHp[s]!, (flags & ~(FLAG.kill | FLAG.knock)) | scout | elite);
   if (kind === KIND.splitter) queueSplit(w, s);
