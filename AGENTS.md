@@ -28,12 +28,13 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `npx vite --host 127.0.0.1 --port 3047 --strictPort` and set `URL`).
 - S1 "Chương 1 · Hành Lang VC-7" (`docs/BUILD_S1.md`; R1 built:
   `docs/changelog/2026-10-24-s1-r1.md`, reviewed and fixed:
-  `docs/changelog/2026-10-24-s1-r1-fix.md`; the R1 gate of §14 is not met
-  yet, see that changelog's "Còn lại"): guns in `src/content/guns.ts`
-  (COUNTERS is the measured table: `node --import tsx scripts/counters.ts`,
-  16 seeds, and every mark must hold on `--first=17` too; gate G3m in
-  `tests/guns.test.ts` pins its one known miss, Xung ● on one row only),
-  foes in `src/content/foes.ts`, stages
+  `docs/changelog/2026-10-24-s1-r1-fix.md`, guns reworked:
+  `docs/changelog/2026-10-24-s1-r1-guns.md`; the R1 gate of §14 is not met
+  yet, see that last changelog's "Còn lại"): guns in `src/content/guns.ts`
+  (COUNTERS is the measured table, scenes fought on a chapter stage:
+  `node --import tsx scripts/counters.ts` prints seeds 1–16 and 17–32, and
+  every mark must hold on both; gate G3m in `tests/guns.test.ts` has no
+  known miss), foes in `src/content/foes.ts`, stages
   in `src/content/stage-rules.ts` + `chapter-1.ts` (the trial is stage
   `s0`, `stage-s0.ts`), threat scoring for bots and the briefing in
   `src/content/threat.ts`; sim per gun in `src/sim/guns/`, objectives in
@@ -56,8 +57,9 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `pnpm survival:balance` (default 100 seeds; one Node process) prints the
   §3 metrics per bot × mode and gates B1–B9, each stage as it ends;
   stages 1–4 with `--g3c --time` are 18 400 runs (14 400 bot cells, 4 000
-  for G3c), 26–30 min on the Dell
-  laptop (WSL, shared with other agents): run it in the background. While
+  for G3c), 15–30 min on the Dell
+  laptop (WSL, shared with other agents; 15.5 min on 24/10 with the machine
+  quiet, 30 min when busy): run it in the background. While
   tuning use `--seeds=40`, one stage a process (at most 4 at once). Bots
   (`tests/survival/typist-bot.ts`) type through `installKeys`. Retune data,
   then rerun the report and the tests.
@@ -89,10 +91,16 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   sound id has an entry in `docs/audio/THEME_SOUND_LIST.md`; add one there
   with each new id.
 - Each update gets `docs/changelog/<date>-<topic>.md` (Vietnamese).
-- Next: close the R1 gate (B1, B3, B4, B7, G3m's "● on ≥ 2 rows" for
-  Xung, G3c's "best ≤ 97 %" miss: `docs/changelog/2026-10-24-s1-r1-fix.md`
-  "Còn lại"; §17 frame budgets pass on the Dell GPU, the Mac M4 is not
-  measured), then S1 R2 (chapter flow,
+- R1 gate state (100-seed report on `49ba852`, 24/10): passes `pnpm check`,
+  B2–B5, B8, G3, G3m, G5, G6, G8; fails B1 and B7 on stages 1–4 (most bots
+  keep 79–96 % armour on stages 1–3) and G3c's "best ≤ 97 %" on stages 1, 2, 4
+  (G3c's two "no trap" parts pass). Stage-wide levers (pace, storms, start
+  armour, repair pod) widen the gap between kits: the weak pairs break first.
+- Next: close the R1 gate (B1, B7, G3c's "best ≤ 97 %": the strongest pairs
+  first, Tia on duty with Tán or Ray; then the chapter's clean bonus back to
+  × 1 with Ray near 110; then the pace of stages 1–3:
+  `docs/changelog/2026-10-24-s1-r1-guns.md` "Còn lại"; §17 frame budgets
+  pass on the Dell GPU, the Mac M4 is not measured), then S1 R2 (chapter flow,
   doors, Lõi, Mốc, stages 5–9, Bão ion, Giếng, Nghĩa) and R3 (the boss),
   `docs/BUILD_S1.md` §14.
 - The design docs live in `docs/`; the parent repo's
