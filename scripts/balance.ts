@@ -21,7 +21,7 @@ import { MODE_SPECS, MODES, type Mode } from "../src/content/balance";
 import { isStageId, stageById } from "../src/content/chapter-1";
 import { COUNTERS, GUN_SPECS } from "../src/content/guns";
 import { gunSets } from "../src/content/threat";
-import { COUNTER_MARGIN, COUNTER_SEEDS, countersMatch, measureCounters } from "../tests/survival/counters";
+import { COUNTER_MARGIN, COUNTER_SEEDS, counterRules, countersMatch, measureCounters } from "../tests/survival/counters";
 import { sharedDeck } from "../tests/survival/typist-bot";
 import { StepClock, botRows, gates, replays, runMatrix, type Cell } from "./balance-lib";
 
@@ -140,7 +140,8 @@ if (g3cOnly) {
 const s1: string[] = [];
 const measured = measureCounters(COUNTER_SEEDS);
 const g3m = countersMatch(measured, COUNTERS);
-s1.push("| G3m | Bảng khắc chế khớp số đo (" + COUNTER_SEEDS.length + " seed mỗi ô; trong ±" + Math.round(COUNTER_MARGIN * 100) + " % quanh ngưỡng thì cả hai dấu đều khớp) | " + pass(g3m) + " |");
+const rules = counterRules(COUNTERS);
+s1.push("| G3m | Bảng khắc chế khớp số đo (" + COUNTER_SEEDS.length + " seed mỗi ô; trong ±" + Math.round(COUNTER_MARGIN * 100) + " % quanh ngưỡng thì cả hai dấu đều khớp): " + (g3m ? "khớp" : "không khớp") + "; ràng buộc §5.2: " + (rules.length === 0 ? "đạt" : rules.join(", ")) + " | " + pass(g3m && rules.length === 0) + " |");
 const learning = cells.flatMap((cell) => cell.runs.map((run) => run.learnOk)).filter((ok): ok is boolean => ok !== undefined);
 s1.push("| G5 | Học: không lặp từ, chữ đầu khác nhau, không ẩn chữ đầu, bot Mới ≥ 8 từ (" + learning.length + " trận có gõ) | " + pass(learning.every(Boolean)) + " |");
 const hunts = cells.filter((cell) => cell.bot.id === "standard" && cell.mode === "balanced" && cell.director && stageById(cell.stage).objective.kind === "hunt");

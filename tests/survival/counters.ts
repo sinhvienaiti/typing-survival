@@ -11,7 +11,7 @@
  * ● within 1.25× the row's best, ✕ from 2×, ○ between.
  */
 import { FOES, KIND } from "../../src/content/foes";
-import { COUNTER_ROWS, GUN_IDS, type CounterRow, type GunId } from "../../src/content/guns";
+import { COUNTER_ROWS, GUN_IDS, GUN_SPECS, type CounterRow, type GunId } from "../../src/content/guns";
 import { FIELD, SCOUT, SPAWN } from "../../src/content/rules";
 import type { World } from "../../src/sim/world";
 import { arena, cleared, feeder, lost, place, runUntil } from "./arena";
@@ -154,3 +154,18 @@ export function measureCounters(seeds: readonly number[] = COUNTER_SEEDS): Recor
 /** COUNTERS against a measurement: every cell's mark among those its cost allows. */
 export const countersMatch = (measured: ReturnType<typeof measureCounters>, table: Readonly<Record<CounterRow, readonly number[]>>): boolean =>
   COUNTER_ROWS.every((row) => measured[row].allowed.every((marks, gun) => marks.includes(table[row][gun]!)));
+
+/** §5.2's three rules on a table, as the misses they find ([] when all hold): no gun ● everywhere; each gun ● on ≥ 2 rows and ✕ on ≥ 2; every pair leaves a row without ●. */
+export function counterRules(table: Readonly<Record<CounterRow, readonly number[]>>): string[] {
+  const misses: string[] = [];
+  for (const gun of GUN_IDS) {
+    const marks = COUNTER_ROWS.map((row) => table[row][gun]!);
+    const counters = marks.filter((mark) => mark === 2).length;
+    const poor = marks.filter((mark) => mark === 0).length;
+    if (counters === marks.length) misses.push(GUN_SPECS[gun]!.key + ": ● on every row");
+    if (counters < 2) misses.push(GUN_SPECS[gun]!.key + ": ● on " + counters + " row(s), not ≥ 2");
+    if (poor < 2) misses.push(GUN_SPECS[gun]!.key + ": ✕ on " + poor + " row(s), not ≥ 2");
+  }
+  for (const a of GUN_IDS) for (const b of GUN_IDS) if (a < b && !COUNTER_ROWS.some((row) => table[row][a] !== 2 && table[row][b] !== 2)) misses.push(GUN_SPECS[a]!.key + "+" + GUN_SPECS[b]!.key + ": ● on every row");
+  return misses;
+}

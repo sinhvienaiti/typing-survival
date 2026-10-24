@@ -119,8 +119,11 @@ export const GUN_SPECS: readonly GunSpec[] = [
  * scripts/counters.ts`) runs every cell and fails when this table differs.
  * Where it differs from §5.2's guess, the measurement won (R1 changelog).
  * Re-measured in the R1 review (16 seeds; a cost within COUNTER_MARGIN of
- * a threshold allows either mark, and the mark seeds 17–32 agree with was
- * taken): Tia on duty, the new swarmNear scene, Mảnh 7 HP.
+ * a threshold allows either mark): Tia on duty, the new swarmNear scene,
+ * Mảnh 7 HP. Every mark is one both seeds 1–16 (the gate) and 17–32
+ * (`--first=17`) allow. Xung on swarmNear is ○ (1.30× and 1.41× Tán's
+ * cost; it was written ●, which seeds 17–32 do not allow), so Xung counters
+ * one row and G3m's "● on ≥ 2 rows" misses for it (R1 review fix changelog).
  */
 export const COUNTER_ROWS = ["swarmFar", "swarmNear", "scout", "armoured", "shield", "splitter"] as const;
 export type CounterRow = (typeof COUNTER_ROWS)[number];
@@ -134,7 +137,7 @@ export const COUNTER_LABELS: Readonly<Record<CounterRow, string>> = {
 };
 export const COUNTERS: Readonly<Record<CounterRow, readonly [number, number, number, number, number]>> = {
   swarmFar: [0, 1, 1, 0, 2],
-  swarmNear: [2, 0, 2, 0, 0],
+  swarmNear: [1, 0, 2, 0, 0],
   scout: [2, 1, 0, 2, 0],
   armoured: [0, 0, 0, 2, 0],
   shield: [0, 2, 0, 0, 2],
