@@ -50,8 +50,9 @@ export type Stage = {
   /** Scouts in the back rows of plain packs: their share of the members, from `from` s. */
   readonly scouts: { readonly share: number; readonly from: number };
   readonly packs: { readonly [P in SpecialPack]?: PackShare };
-  /** Where the near zone's drain starts (m; rules.ts DRAIN.from when absent: the trial's 16). */
+  /** Where the near zone's drain starts (m; rules.ts DRAIN.from when absent: the trial's 16), and its rate × DRAIN.perFoe (1 when absent). */
   readonly drainFrom?: number;
+  readonly drainRate?: number;
   /** What the stage teaches (first appearances: foe kinds and mechanics, §7.5). */
   readonly teach: readonly string[];
   readonly kit: StageKit;

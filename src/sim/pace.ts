@@ -139,7 +139,7 @@ export function pressure(w: World, dt: number): void {
   P.nearHp = hp;
   P.nearShots = shots;
   if (leech === 0 || w.phase !== "play" || w.objective.retreat >= 0) return;
-  P.drainOwed += DRAIN.perFoe * Math.min(leech, DRAIN.maxLeech) * w.scales.drain * dt;
+  P.drainOwed += DRAIN.perFoe * (w.stage.drainRate ?? 1) * Math.min(leech, DRAIN.maxLeech) * w.scales.drain * dt;
   while (P.drainOwed >= 1 && w.hp > 0) {
     P.drainOwed -= 1;
     w.hp = Math.max(0, w.hp - 1);
