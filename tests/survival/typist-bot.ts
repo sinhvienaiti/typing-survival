@@ -99,7 +99,8 @@ export function gunNeeds(w: World, out: Float64Array): Float64Array {
   }
   for (let s = 0; s < w.shots.top; s += 1) if (w.shots.alive[s] === 1) shots += 1;
   out[GUN.xung] = 1 + 2 * close + 2 * shots + xung / 2;
-  out[GUN.tia] = 1 + tia / 2;
+  // Tia on duty (no Xung in the kit) holds the line and hunts scouts: the bot counts that as Xung's work.
+  out[GUN.tia] = w.guns.tiaDuty === 1 ? 1 + 2 * close + 2 * shots + tia / 2 : 1 + tia / 2;
   out[GUN.tan] = 1 + 2 * tanClose + tanNear / 2;
   out[GUN.ray] = 1 + ray / 2;
   out[GUN.phao] = 1 + phao / 2;

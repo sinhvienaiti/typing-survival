@@ -11,29 +11,34 @@
  * the attention budget, and with --g3c every pair of guns per stage (G3c;
  * G2 printed provisionally). 100 seeds by default: a win rate's standard
  * error is then about 4 points (24 seeds are not enough for §3's bands).
- *   node --import tsx scripts/balance.ts [--stages=s0,c1-s1,c1-s2,c1-s3,c1-s4] [--seeds=100] [--bots=standard,fast]
- *     [--modes=balanced] [--off=standard] [--g3c] [--json=out.json]
+ *   node --import tsx scripts/balance.ts [--stages=s0,c1-s1,c1-s2,c1-s3,c1-s4] [--seeds=100] [--first=1]
+ *     [--bots=standard,fast] [--modes=balanced] [--off=standard] [--g3c] [--time] [--json=out.json] [--out=report.md]
+ * Each stage prints as it ends; --time times every step (a histogram).
  */
 import { writeFileSync } from "node:fs";
 import { BANDS, METRIC_LABELS, formatGates, pct, rangeText, scoreBand, type BandMetric } from "../src/kit/balance";
 import { MODE_SPECS, MODES, type Mode } from "../src/content/balance";
 import { isStageId, stageById } from "../src/content/chapter-1";
-import { COUNTERS, COUNTER_ROWS, GUN_SPECS } from "../src/content/guns";
+import { COUNTERS, GUN_SPECS } from "../src/content/guns";
 import { gunSets } from "../src/content/threat";
-import { measureCounters } from "../tests/survival/counters";
+import { COUNTER_MARGIN, COUNTER_SEEDS, countersMatch, measureCounters } from "../tests/survival/counters";
 import { sharedDeck } from "../tests/survival/typist-bot";
-import { botRows, gates, replays, runMatrix, type Cell } from "./balance-lib";
+import { StepClock, botRows, gates, replays, runMatrix, type Cell } from "./balance-lib";
 
 const arg = (name: string): string | undefined => process.argv.find((value) => value.startsWith("--" + name + "="))?.slice(name.length + 3);
 const list = (name: string): string[] | undefined => arg(name)?.split(",").filter(Boolean);
 const seeds = Number(arg("seeds") ?? 100);
+const firstSeed = Number(arg("first") ?? 1);
 const modes = (list("modes") ?? [...MODES]).filter((mode): mode is Mode => (MODES as readonly string[]).includes(mode));
 const stages = (list("stages") ?? ["s0"]).filter(isStageId);
+const g3c = process.argv.includes("--g3c") || arg("g3c") === "only";
+/** --g3c=only: the pairs alone, no bot matrix (tuning). */
+const g3cOnly = arg("g3c") === "only";
+const clock = process.argv.includes("--time") ? new StepClock() : undefined;
 const started = performance.now();
-const cells = runMatrix({ seeds, bots: list("bots"), modes, directorOff: list("off") ?? ["standard"], time: true, stages }, (done, total) => {
-  if (process.stderr.isTTY) process.stderr.write("\r" + done + "/" + total);
-});
-if (process.stderr.isTTY) process.stderr.write("\r");
+const progress = (done: number, total: number): void => {
+  if (process.stderr.isTTY) process.stderr.write("\r" + done + "/" + total + " ");
+};
 
 const fixed = (value: number | null | undefined, digits = 2): string => (value === null || value === undefined ? "—" : value.toFixed(digits).replace(".", ","));
 const median = (values: number[]): number | null => {
@@ -89,28 +94,55 @@ function cellLine(cell: Cell): string {
 }
 
 const header = ["Bot", "Chế độ", "k", "E từ", ...METRICS.map((metric) => METRIC_LABELS[metric]), "Hạ quái (s)", "Bậc/đợt (khoảng sinh)", "Mất giáp: rỉ/chạm/đạn", "Quái tối đa", "E · a đo · từ/phút", "Học", "Dài (s)", "Súng chọn"];
-const lines: string[] = [];
-lines.push("# Tuyến Cuối: báo cáo cân bằng (" + seeds + " seed mỗi ô)", "");
-lines.push("Dải đích (BALANCE.md §3):", "");
-lines.push("| Chế độ | " + METRICS.map((metric) => METRIC_LABELS[metric]).join(" | ") + " |", "|" + "---|".repeat(METRICS.length + 1));
-for (const mode of modes) lines.push("| " + MODE_SPECS[mode].label + " | " + METRICS.map((metric) => rangeText(metric, BANDS[mode][metric])).join(" | ") + " |");
+const out: string[] = [];
+/** Prints at once (a long run shows each stage as it ends) and keeps the text for --out. */
+const print = (...lines: string[]): void => {
+  if (process.stderr.isTTY) process.stderr.write("\r");
+  console.log(lines.join("\n"));
+  out.push(...lines);
+};
+const pass = (ok: boolean): string => (ok ? "đạt" : "TRƯỢT");
+const name = (cell: Cell): string => (cell.guns ?? []).map((gun) => GUN_SPECS[gun]!.name).join("+");
+print("# Tuyến Cuối: báo cáo cân bằng (" + seeds + " seed mỗi ô, seed " + firstSeed + "–" + (firstSeed + seeds - 1) + ")", "", "Dải đích (BALANCE.md §3):", "");
+print("| Chế độ | " + METRICS.map((metric) => METRIC_LABELS[metric]).join(" | ") + " |", "|" + "---|".repeat(METRICS.length + 1));
+for (const mode of modes) print("| " + MODE_SPECS[mode].label + " | " + METRICS.map((metric) => rangeText(metric, BANDS[mode][metric])).join(" | ") + " |");
+
+// Stage by stage: each prints when it ends, its G3c with it (every pair of guns, standard bot, Cân bằng).
+const cells: Cell[] = [];
+const g3cLines: string[] = [];
+const best: string[] = [];
 for (const stage of stages) {
-  const own = cells.filter((cell) => cell.stage === stage);
-  lines.push("", "## " + (stage === "s0" ? "Trận thử (s0)" : stage + " · " + stageById(stage).name), "");
-  lines.push("| " + header.join(" | ") + " |", "|" + "---|".repeat(header.length));
-  for (const mode of modes) for (const cell of own.filter((c) => c.mode === mode)) lines.push("| " + cellLine(cell) + " |");
-  lines.push("", formatGates(gates(own)));
+  print("", "## " + (stage === "s0" ? "Trận thử (s0)" : stage + " · " + stageById(stage).name), "");
+  if (!g3cOnly) {
+    const own = runMatrix({ seeds, firstSeed, bots: list("bots"), modes, directorOff: list("off") ?? ["standard"], stages: [stage], clock }, progress);
+    cells.push(...own);
+    print("| " + header.join(" | ") + " |", "|" + "---|".repeat(header.length));
+    for (const mode of modes) for (const cell of own.filter((c) => c.mode === mode)) print("| " + cellLine(cell) + " |");
+    print("", formatGates(gates(own)));
+  }
+  if (!g3c || stage === "s0") continue;
+  const pairs = runMatrix({ seeds, firstSeed, bots: ["standard"], modes: ["balanced"], stages: [stage], kits: gunSets(2), directorOff: [] }, progress).sort((a, b) => b.summary.win - a.summary.win);
+  const top = pairs[0]!.summary.win;
+  const low = pairs.at(-1)!.summary.win;
+  best.push(name(pairs[0]!));
+  const line = "| G3c | " + stage + ": " + pairs.map((cell) => name(cell) + " " + pct(cell.summary.win)).join(", ") + " · kém nhất ≥ 60 %, cách tốt nhất ≤ 30 điểm, tốt nhất ≤ 97 % | " + pass(low >= 600 && top - low <= 300 && top <= 970) + " |";
+  g3cLines.push(line);
+  print("", "G3c (bot Chuẩn, Cân bằng, mọi bộ 2 súng):", "", "| Bộ | Thắng | Biên S | P | I |", "|---|---|---|---|---|");
+  for (const cell of pairs) print("| " + name(cell) + " | " + pct(cell.summary.win) + " | " + pct(cell.summary.s) + " | " + pct(cell.summary.p) + " | " + pct(cell.summary.i) + " |");
 }
-lines.push("", "↓ / ↑: dưới / trên dải đích của chế độ (thắng, S, P, I, O). Mất giáp: trung bình mỗi trận, rỉ ở vòng gần / quái chạm vạch / đạn lính.", "");
+print("", "↓ / ↑: dưới / trên dải đích của chế độ (thắng, S, P, I, O). Mất giáp: trung bình mỗi trận, rỉ ở vòng gần / quái chạm vạch / đạn lính.", "");
 
 // S1's gates (docs/BUILD_S1.md §11.4).
+if (g3cOnly) {
+  print(...g3cLines);
+  process.exit(0);
+}
 const s1: string[] = [];
-const pass = (ok: boolean): string => (ok ? "đạt" : "TRƯỢT");
-const measured = measureCounters([1, 2, 3, 4, 5, 6, 7, 8]);
-const g3m = COUNTER_ROWS.every((row) => measured[row].mark.every((mark, gun) => mark === COUNTERS[row][gun]));
-s1.push("| G3m | Bảng khắc chế khớp số đo (8 seed mỗi ô) | " + pass(g3m) + " |");
+const measured = measureCounters(COUNTER_SEEDS);
+const g3m = countersMatch(measured, COUNTERS);
+s1.push("| G3m | Bảng khắc chế khớp số đo (" + COUNTER_SEEDS.length + " seed mỗi ô; trong ±" + Math.round(COUNTER_MARGIN * 100) + " % quanh ngưỡng thì cả hai dấu đều khớp) | " + pass(g3m) + " |");
 const learning = cells.flatMap((cell) => cell.runs.map((run) => run.learnOk)).filter((ok): ok is boolean => ok !== undefined);
-s1.push("| G5 | Học: không lặp từ, chữ đầu khác nhau, không ẩn chữ đầu, ≥ 8 từ (" + learning.length + " trận có gõ) | " + pass(learning.every(Boolean)) + " |");
+s1.push("| G5 | Học: không lặp từ, chữ đầu khác nhau, không ẩn chữ đầu, bot Mới ≥ 8 từ (" + learning.length + " trận có gõ) | " + pass(learning.every(Boolean)) + " |");
 const hunts = cells.filter((cell) => cell.bot.id === "standard" && cell.mode === "balanced" && cell.director && stageById(cell.stage).objective.kind === "hunt");
 for (const cell of hunts) {
   const length = median(cell.runs.map((run) => run.seconds)) ?? 0;
@@ -122,29 +154,13 @@ const deck = sharedDeck();
 const standard = botRows().find((bot) => bot.id === "standard")!;
 const replayed = stages.flatMap((stage) => [1, 2].map((seed) => replays(deck, standard, "balanced", seed, stage)));
 s1.push("| G8 | Chạy lại từ nhật ký phím ra cùng mã băm (" + replayed.length + " trận, Node) | " + pass(replayed.every(Boolean)) + " |");
-if (process.argv.includes("--g3c")) {
-  const chapter = stages.filter((stage) => stage !== "s0");
-  const pairCells = runMatrix({ seeds, bots: ["standard"], modes: ["balanced"], stages: chapter, kits: gunSets(2), directorOff: [] });
-  const best: string[] = [];
-  for (const stage of chapter) {
-    const own = pairCells.filter((cell) => cell.stage === stage).sort((a, b) => b.summary.win - a.summary.win);
-    const top = own[0]!.summary.win;
-    const low = own.at(-1)!.summary.win;
-    const name = (cell: Cell) => (cell.guns ?? []).map((gun) => GUN_SPECS[gun]!.name).join("+");
-    best.push(name(own[0]!));
-    s1.push("| G3c | " + stage + ": " + own.map((cell) => name(cell) + " " + pct(cell.summary.win)).join(", ") + " · kém nhất ≥ 60 %, cách tốt nhất ≤ 30 điểm, tốt nhất ≤ 97 % | " + pass(low >= 600 && top - low <= 300 && top <= 970) + " |");
-  }
-  const counts = new Map<string, number>();
-  for (const name of best) counts.set(name, (counts.get(name) ?? 0) + 1);
-  s1.push("| G2 (tạm) | Bộ đứng nhất theo ải: " + best.join(", ") + " (chỉ in số ở R1) | — |");
-}
-lines.push("## Cổng S1", "", "| # | Kiểm | Kết quả |", "|---|---|---|", ...s1, "");
-const steps = cells.flatMap((cell) => cell.runs.flatMap((run) => run.stepMs)).sort((a, b) => a - b);
+s1.push(...g3cLines);
+if (g3c) s1.push("| G2 (tạm) | Bộ đứng nhất theo ải: " + best.join(", ") + " (chỉ in số ở R1) | — |");
+print("## Cổng S1", "", "| # | Kiểm | Kết quả |", "|---|---|---|", ...s1, "");
 const peak = Math.max(...cells.flatMap((cell) => cell.runs.map((run) => run.peakFoes)));
-lines.push(
-  "Bước sim (Node, mọi trận): trung vị " + fixed(steps[steps.length >> 1] ?? 0, 3) + " ms, p95 " + fixed(steps[Math.floor(steps.length * 0.95)] ?? 0, 3) + " ms, tối đa " + fixed(steps.at(-1) ?? 0, 2) + " ms; quái trên sân tối đa " + peak + ". " +
-    cells.reduce((sum, cell) => sum + cell.runs.length, 0) + " trận trong " + ((performance.now() - started) / 1000).toFixed(0) + " s.",
-);
-console.log(lines.join("\n"));
+const timing = clock === undefined ? "Bước sim không đo (thêm --time)" : "Bước sim (Node, mọi trận): trung vị " + fixed(clock.quantile(0.5), 3) + " ms, p95 " + fixed(clock.quantile(0.95), 3) + " ms, tối đa " + fixed(clock.max, 2) + " ms";
+print(timing + "; quái trên sân tối đa " + peak + ". " + cells.reduce((sum, cell) => sum + cell.runs.length, 0) + " trận trong " + ((performance.now() - started) / 1000).toFixed(0) + " s.");
 const json = arg("json");
-if (json !== undefined) writeFileSync(json, JSON.stringify(cells.map((cell) => ({ bot: cell.bot.id, mode: cell.mode, director: cell.director, summary: cell.summary, header: cell.runs[0]!.header })), null, 1));
+if (json !== undefined) writeFileSync(json, JSON.stringify(cells.map((cell) => ({ stage: cell.stage, bot: cell.bot.id, mode: cell.mode, director: cell.director, summary: cell.summary, header: cell.runs[0]!.header })), null, 1));
+const md = arg("out");
+if (md !== undefined) writeFileSync(md, out.join("\n") + "\n");

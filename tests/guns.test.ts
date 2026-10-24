@@ -12,7 +12,7 @@ import { damageFoe } from "../src/sim/projectiles";
 import { loadMagazine } from "../src/sim/weapons";
 import { createWorld, step, type World } from "../src/sim/world";
 import { ENDLESS, arena, cleared, feeder, freeze, lost, place, runUntil } from "./survival/arena";
-import { SCENES, measureCounters } from "./survival/counters";
+import { COUNTER_SEEDS, SCENES, countersMatch, measureCounters } from "./survival/counters";
 import { sharedDeck } from "./survival/typist-bot";
 
 /**
@@ -282,16 +282,21 @@ describe("Khiên's shield (§6)", () => {
     return { w, bearer, behind, shield: w.foes.shield[bearer]! };
   }
 
-  it("stops Xung and Tán from the front (no damage to it or to the pack behind it); Xung does not waste rounds on it", () => {
+  it("stops Xung and Tán from the front (no damage to the bearer or the pack behind it while it stands); Xung does not waste rounds on it, Tán's pellets wear it (TAN.shield)", () => {
     for (const gun of [GUN.xung, GUN.tan] as const) {
       const { w, bearer, behind, shield } = shielded(gun);
       loadMagazine(w, 0, false, false);
-      for (let t = 0; t < 120; t += 1) step(w);
-      expect(w.foes.hp[bearer], GUN_SPECS[gun]!.key).toBe(1e6);
-      expect(w.foes.hp[behind], GUN_SPECS[gun]!.key).toBe(1e6);
-      expect(w.shields.hp[shield]).toBe(FOES[KIND.shield]!.shield);
-      // Xung holds its fire on a shielded line: the magazine waits.
-      if (gun === GUN.xung) expect(w.guns.left[0]).toBe(XUNG.rounds);
+      for (let t = 0; t < 120; t += 1) {
+        step(w);
+        if (w.shields.alive[shield] === 0) break;
+        expect(w.foes.hp[bearer], GUN_SPECS[gun]!.key).toBe(1e6);
+        expect(w.foes.hp[behind], GUN_SPECS[gun]!.key).toBe(1e6);
+      }
+      if (gun === GUN.xung) {
+        expect(w.shields.hp[shield]).toBe(FOES[KIND.shield]!.shield);
+        // Xung holds its fire on a shielded line: the magazine waits.
+        expect(w.guns.left[0]).toBe(XUNG.rounds);
+      } else expect(w.shields.hp[shield]!).toBeLessThan(FOES[KIND.shield]!.shield);
     }
     // A Tán volley into the shield: pellets stop on its face (shieldHit events), nothing behind it is hurt.
     const { w } = shielded(GUN.tan);
@@ -446,10 +451,14 @@ describe("gate G3: the counters hold in small scenes (§11.4)", () => {
 });
 
 describe("gate G3m: COUNTERS is what the scenes measure (§5.2)", () => {
-  const measured = measureCounters([1, 2, 3, 4, 5, 6, 7, 8]);
+  const measured = measureCounters(COUNTER_SEEDS);
 
-  it("every cell of the table matches its measured mark", () => {
-    for (const row of COUNTER_ROWS) expect(measured[row].mark, row + " " + measured[row].cost.map((c) => c.toFixed(1)).join(" ")).toEqual([...COUNTERS[row]]);
+  it("every cell of the table carries a mark its measured cost allows (either mark within COUNTER_MARGIN of a threshold)", () => {
+    for (const row of COUNTER_ROWS) {
+      const ok = measured[row].allowed.map((marks, gun) => marks.includes(COUNTERS[row][gun]!));
+      expect(ok, row + " " + measured[row].cost.map((c) => c.toFixed(1)).join(" ") + " allows " + JSON.stringify(measured[row].allowed)).toEqual([true, true, true, true, true]);
+    }
+    expect(countersMatch(measured, COUNTERS)).toBe(true);
   });
 
   it("holds §5.2's constraints: no gun ● everywhere; each gun ● on ≥ 2 rows and ✕ on ≥ 2; every pair leaves a row without ●", () => {

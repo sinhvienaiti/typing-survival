@@ -15,7 +15,13 @@ import { STAGE_S0, TRIAL } from "./stage-s0";
 
 const surge = (at: number): Surge => ({ at, seconds: 8, rate: 8.5, lull: 4, lullRate: 1.5 });
 const calm = (rate: number, to: number) => [{ from: 0, to, rate }];
-const common = { chapter: 1, vanguard: STAGE_S0.vanguard, tide: STAGE_S0.tide, surgeSpread: STAGE_S0.surgeSpread } as const;
+/**
+ * Chapter stages drain from 14 m, not the trial's 16 (R1 review, G3c): a kit
+ * of near guns (Xung + Tán reach 11.7 m) bled armour from foes it could not
+ * touch, while a kit of far guns lost little; the band only it could not
+ * answer is now 2 m narrower.
+ */
+const common = { chapter: 1, vanguard: STAGE_S0.vanguard, tide: STAGE_S0.tide, surgeSpread: STAGE_S0.surgeSpread, drainFrom: 14 } as const;
 const storm = (chance: number) => ({ chance, spread: STAGE_S0.storm.spread });
 
 export const CHAPTER_1: readonly Stage[] = [
@@ -27,7 +33,7 @@ export const CHAPTER_1: readonly Stage[] = [
     objective: { kind: "hold", seconds: 150 },
     hazard: null,
     learn: "standard",
-    calm: calm(3.6, 150),
+    calm: calm(4.4, 150),
     storm: storm(0.15),
     surges: [surge(50), surge(115)],
     scouts: { share: 0.12, from: 12 },
@@ -61,7 +67,7 @@ export const CHAPTER_1: readonly Stage[] = [
     objective: { kind: "hold", seconds: 165 },
     hazard: { kind: "rift", period: 30, first: 25 },
     learn: "standard",
-    calm: calm(3.2, 165),
+    calm: calm(3.9, 165),
     storm: storm(0.15),
     surges: [surge(55), surge(140)],
     scouts: { share: 0.12, from: 12 },
@@ -78,7 +84,7 @@ export const CHAPTER_1: readonly Stage[] = [
     objective: { kind: "hold", seconds: 165 },
     hazard: null,
     learn: "missing",
-    calm: calm(3.2, 165),
+    calm: calm(3.8, 165),
     storm: storm(0.25),
     surges: [surge(55), surge(140)],
     scouts: { share: 0.12, from: 12 },

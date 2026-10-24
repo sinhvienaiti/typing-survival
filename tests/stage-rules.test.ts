@@ -299,7 +299,8 @@ describe("guns for a stage (§11.2)", () => {
       expect(Object.values(weights).reduce((a, b) => a + b, 0)).toBeCloseTo(1, 9);
       expect(gunSets(2)).toHaveLength(10);
       const best = gunSets(2).reduce((a, b) => (kitScore(b, weights) > kitScore(a, weights) ? b : a));
-      expect(kitScore(best, weights)).toBeLessThanOrEqual(1);
+      // A kit can cover every row a stage has (c1-s4: Xung + Pháo Sao); the sum of weights is 1 up to rounding.
+      expect(kitScore(best, weights)).toBeLessThanOrEqual(1 + 1e-9);
       expect([...chooseGuns(stage, "good", 1)].sort()).toEqual([...best].sort());
       expect(chooseGuns(stage, "poor", 1)).toEqual([GUN.xung, GUN.tia]);
     }

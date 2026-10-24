@@ -118,14 +118,15 @@ export function pressure(w: World, dt: number): void {
   let hp = 0;
   let nearest = -1;
   let leech = 0;
-  const span = DRAIN.from - FIELD.bottomZ;
+  const from = w.stage.drainFrom ?? DRAIN.from;
+  const span = from - FIELD.bottomZ;
   for (let s = 0; s < F.top; s += 1) {
     if (F.alive[s] === 0) continue;
     const z = F.z[s]!;
-    if (z >= DRAIN.from) continue;
+    if (z >= from) continue;
     if (F.reached[s]! < 0) F.reached[s] = w.time;
     const drain = FOES[F.kind[s]!]!.drain;
-    leech += (drain * (DRAIN.from - z)) / span;
+    leech += (drain * (from - z)) / span;
     if (nearest < 0 || z < F.z[nearest]!) nearest = s;
     if (z > NEAR.z) continue;
     weight += drain;

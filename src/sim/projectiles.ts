@@ -110,12 +110,12 @@ export function dropShield(w: World, s: number, dx: number, dz: number): void {
   F.mark[s] = F.mark[s]! | MARK.shieldGone;
 }
 
-/** Deals `damage` to shield `k` (Tia burns it); it breaks at 0. */
-export function damageShield(w: World, k: number, damage: number, dx: number, dz: number, x: number, z: number): void {
+/** Deals `damage` to shield `k` (Tia burns it, Tán's pellets wear it); it breaks at 0. */
+export function damageShield(w: World, k: number, damage: number, dx: number, dz: number, x: number, z: number, flags = 0): void {
   const H = w.shields;
   H.hp[k] = H.hp[k]! - damage;
   const s = H.owner[k]!;
-  w.events.push(w.tick, EV.shieldHit, s, H.ownerId[k]!, x, z, dx, dz, Math.max(0, H.hp[k]! / H.maxHp[k]!), 0);
+  w.events.push(w.tick, EV.shieldHit, s, H.ownerId[k]!, x, z, dx, dz, Math.max(0, H.hp[k]! / H.maxHp[k]!), flags);
   if (H.hp[k]! <= 0) dropShield(w, s, dx, dz);
 }
 
@@ -187,10 +187,13 @@ export function moveBullets(w: World, dt: number): void {
     const foe = firstFoeHit(w.grid, w.foes, RADIUS, x0, z0, x1, z1, pellet ? TAN.radius : XUNG.radius);
     const foeT = foe >= 0 ? hitT : 2;
     if (wall >= 0 && wallT <= shotT && wallT <= foeT) {
-      // Stopped by the shield's face: no damage.
+      // Stopped by the shield's face: nothing behind it is hurt; a pellet wears the shield (TAN.shield), a Xung round does not.
       const H = w.shields;
       const speed = Math.sqrt(B.vx[b]! * B.vx[b]! + B.vz[b]! * B.vz[b]!) || 1;
-      w.events.push(w.tick, EV.shieldHit, H.owner[wall]!, H.ownerId[wall]!, x0 + (x1 - x0) * wallT, z0 + (z1 - z0) * wallT, B.vx[b]! / speed, B.vz[b]! / speed, H.hp[wall]! / H.maxHp[wall]!, B.flags[b]!);
+      const x = x0 + (x1 - x0) * wallT;
+      const z = z0 + (z1 - z0) * wallT;
+      if (pellet) damageShield(w, wall, B.damage[b]! * TAN.shield, B.vx[b]! / speed, B.vz[b]! / speed, x, z, B.flags[b]!);
+      else w.events.push(w.tick, EV.shieldHit, H.owner[wall]!, H.ownerId[wall]!, x, z, B.vx[b]! / speed, B.vz[b]! / speed, H.hp[wall]! / H.maxHp[wall]!, B.flags[b]!);
       release(w, b);
       continue;
     }

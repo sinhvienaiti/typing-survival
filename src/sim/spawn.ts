@@ -143,11 +143,15 @@ function spawnSpecial(w: World, type: number): number {
   return n;
 }
 
-/** A Đầu Đàn and its escort walk in: 8 mines ahead, the leader behind them, its horn a telegraph. */
+/**
+ * A Đầu Đàn and its escort walk in: 8 mines ahead (× the mode and k, 4–12),
+ * the leader behind them with its hit points × the mode and k (R1 review:
+ * a child in Thư giãn met the full leader), its horn a telegraph.
+ */
 function spawnLeader(w: World): void {
   const rng = w.rng.spawn;
   const front = FIELD.gateZ + 1;
-  const n = PACK.leader.escort;
+  const n = Math.max(SPAWN.groupMin, Math.min(SPAWN.groupMax, Math.round(PACK.leader.escort * w.scales.rate)));
   const half = halfWidth(2, n);
   const room = FIELD.halfW - FIELD.wall - 1.5 - half;
   const cx = room > 0 ? (rng.float() * 2 - 1) * room : 0;
@@ -156,7 +160,7 @@ function spawnLeader(w: World): void {
     spawnOne(w, KIND.mine, cx + place[0]! * SPAWN.spacing, front + place[1]! * SPAWN.spacing);
   }
   const z = front + 2 * SPAWN.spacing + FOES[KIND.leader]!.radius + 0.6;
-  const s = spawnOne(w, KIND.leader, cx, z);
+  const s = spawnOne(w, KIND.leader, cx, z, w.scales.rate);
   w.spawn.spawned += n + 1;
   w.events.push(w.tick, EV.telegraph, TELEGRAPH.horn, s, cx, z, 0, 0, 2, 0);
   w.events.push(w.tick, EV.leader, s, s >= 0 ? w.foes.id[s]! : 0, cx, z, 0, 0, w.objective.next, 0);

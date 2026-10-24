@@ -424,7 +424,8 @@ describe("the stage plays", () => {
       // Continuous pressure (BALANCE.md §5): even a won run loses armour to the near zone.
       expect(run.drained).toBeGreaterThan(5);
     }
-  });
+    // Eight whole runs: ~2.5 s alone, past vitest's 5 s default on a shared, loaded machine (R1 review, Dell laptop).
+  }, 30000);
 
   it("an idle ship loses: foes breach the bottom line and hurt it", () => {
     const w = world(1);

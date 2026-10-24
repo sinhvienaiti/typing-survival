@@ -6,7 +6,8 @@
  * the rest of its time. S1: a shield across the ray takes the pulse (Tia
  * burns it) and hides what stands behind it until it breaks.
  */
-import { CRIT_MULT, TIA } from "../../content/guns";
+import { KIND } from "../../content/foes";
+import { CRIT_MULT, TIA, TIA_DUTY } from "../../content/guns";
 import { FIELD, SCOUT } from "../../content/rules";
 import { EV, FLAG } from "../events";
 import { MAX_RADIUS, colOf, rowOf } from "../hits";
@@ -21,15 +22,29 @@ import type { World } from "../world";
  */
 const AIM_MAX = 3 * TIA.length;
 const STRIPS = Math.ceil((AIM_MAX * 2) / TIA.strip);
-const weight = new Float64Array(STRIPS);
+const narrowWeight = new Float64Array(STRIPS);
+/**
+ * On duty Tia turns to ≈ 84° (tan 9.5): the line's flanks, where S0's ±72°
+ * never reached. Its strips are then even in angle, by tan(θ/2) = aim / (L +
+ * √(aim² + L²)) (no trigonometry), so the flanks are not spread thin.
+ */
+const WIDE_MAX = 9.5 * TIA.length;
+const HALF_MAX = 0.9;
+const HALF_STEP = 0.05;
+const WIDE_STRIPS = Math.ceil((HALF_MAX * 2) / HALF_STEP);
+const wideWeight = new Float64Array(WIDE_STRIPS);
+const halfOf = (aim: number): number => aim / (TIA.length + Math.sqrt(aim * aim + TIA.length * TIA.length));
+/** The aim of a half-angle tangent t: L · 2t / (1 − t²). */
+const aimOfHalf = (t: number): number => (TIA.length * 2 * t) / (1 - t * t);
 
-/** The aim (far-line x) whose ray crosses (x, z), or NaN when the point is out of the ray's reach (`r`: its radius). */
-export function aimOf(x: number, z: number, r: number): number {
+/** The aim (far-line x) whose ray crosses (x, z), or NaN when the point is out of the ray's reach (`r`: its radius; `wide`: on duty). */
+export function aimOf(x: number, z: number, r: number, wide = false): number {
   const dz = z - FIELD.muzzleZ;
   const reach = TIA.length + r;
   if (dz < 0.3 || x * x + dz * dz > reach * reach) return NaN;
   const aim = (x * TIA.length) / dz;
-  return aim < -AIM_MAX ? -AIM_MAX : aim > AIM_MAX ? AIM_MAX : aim;
+  const max = wide ? WIDE_MAX : AIM_MAX;
+  return aim < -max ? -max : aim > max ? max : aim;
 }
 
 /** The far end of the ray aimed at `aim` (sim x, z), into `out`. */
@@ -40,9 +55,16 @@ export function beamEnd(aim: number, out: Float64Array): Float64Array {
   return out;
 }
 
-/** The centre of the densest strip of aims (foes near the ship weigh more), at least `away` from `from`; NaN when no foe is in reach. */
+/**
+ * The centre of the densest strip of aims (foes near the ship weigh more;
+ * on duty, foes at the line and holding scouts much more), at least `away`
+ * from `from`; NaN when no foe is in reach.
+ */
 export function densest(w: World, from: number, away: number): number {
   const F = w.foes;
+  const duty = w.guns.tiaDuty === 1;
+  if (duty) return densestWide(w, from, away);
+  const weight = narrowWeight;
   weight.fill(0);
   for (let s = 0; s < F.top; s += 1) {
     if (F.alive[s] === 0) continue;
@@ -58,6 +80,32 @@ export function densest(w: World, from: number, away: number): number {
     if (best < 0 || weight[strip]! > weight[best]!) best = strip;
   }
   return best < 0 ? NaN : -AIM_MAX + (best + 0.5) * TIA.strip;
+}
+
+/** densest on duty: strips even in angle, foes at the line and holding scouts weigh more (TIA_DUTY). */
+function densestWide(w: World, from: number, away: number): number {
+  const F = w.foes;
+  wideWeight.fill(0);
+  for (let s = 0; s < F.top; s += 1) {
+    if (F.alive[s] === 0) continue;
+    const aim = aimOf(F.x[s]!, F.z[s]!, RADIUS[F.kind[s]!]!, true);
+    if (aim !== aim) continue;
+    const strip = Math.min(WIDE_STRIPS - 1, Math.max(0, Math.floor((halfOf(aim) + HALF_MAX) / HALF_STEP)));
+    const close = (TIA_DUTY.zone - F.z[s]!) / (TIA_DUTY.zone - FIELD.bottomZ);
+    let value = 1 + (FIELD.gateZ - F.z[s]!) / 30;
+    if (close > 0) value += TIA_DUTY.near * (close < 1 ? close : 1);
+    if (F.kind[s] === KIND.scout && F.state[s] === 1) value += TIA_DUTY.scout;
+    wideWeight[strip] = wideWeight[strip]! + value;
+  }
+  const at = halfOf(from);
+  const apart = away / (2 * TIA.length);
+  let best = -1;
+  for (let strip = 0; strip < WIDE_STRIPS; strip += 1) {
+    const t = -HALF_MAX + (strip + 0.5) * HALF_STEP;
+    if (wideWeight[strip] === 0 || Math.abs(t - at) < apart) continue;
+    if (best < 0 || wideWeight[strip]! > wideWeight[best]!) best = strip;
+  }
+  return best < 0 ? NaN : aimOfHalf(-HALF_MAX + (best + 0.5) * HALF_STEP);
 }
 
 const END = new Float64Array(2);
@@ -84,7 +132,14 @@ export function fireTia(w: World, bay: number, dt: number): void {
     w.events.push(w.tick, EV.beamStart, bay, 0, END[0]!, END[1]!, 0, 0, start, G.perfect[i] === 1 ? FLAG.perfect : 0);
   }
   const gap = G.beamTo[bay]! - G.beamX[bay]!;
-  const move = TIA.sweep * dt;
+  // On duty the sweep is faster and keeps its angular pace at wide aims (the far line stretches there).
+  const aim = G.beamX[bay]! / TIA.length;
+  const move = G.tiaDuty === 1 ? TIA_DUTY.sweep * TIA.sweep * dt * (1 + aim * aim) : TIA.sweep * dt;
+  // On duty it turns to the heaviest strip every few ticks (a foe at the line cannot wait for the sweep).
+  if (G.tiaDuty === 1 && w.tick % TIA_DUTY.retarget === 0) {
+    const best = densest(w, NaN, -1);
+    if (best === best) G.beamTo[bay] = best;
+  }
   if (Math.abs(gap) <= move) {
     G.beamX[bay] = G.beamTo[bay]!;
     const next = densest(w, G.beamX[bay]!, TIA.away);

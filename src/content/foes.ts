@@ -4,7 +4,10 @@
  * into three shards), its Mảnh, and Đầu Đàn (the hunt's leader, of the
  * Trâu family). Metres, seconds, hit points. Armour (Vỏ) comes off every
  * blow, which keeps at least 1. Big foes (radius above BIG_RADIUS) live in
- * their own list beside the grid (sim/hits.ts).
+ * their own list beside the grid (sim/hits.ts). R1 review: Mảnh 7 HP (§6
+ * had 9: a Xung round or a Tán pellet then took two hits a shard, and Tán,
+ * the gun meant to clear them, had one ● in the counter table; §5.2 asks
+ * two). Đầu Đàn 300 HP (§6 had 360), × the mode and k as it spawns.
  */
 export const KIND = { mine: 0, scout: 1, brute: 2, shield: 3, splitter: 4, shard: 5, leader: 6 } as const;
 export type FoeKind = (typeof KIND)[keyof typeof KIND];
@@ -40,8 +43,8 @@ export const FOES: readonly FoeSpec[] = [
   { hp: 220, armour: 5, speed: 1.25, radius: 1.1, breach: 12, drain: 4, wobble: 0.06, wobbleHz: 0.12, mass: 4, knock: false, shield: 0, elite: false, name: "Trâu" },
   { hp: 80, armour: 0, speed: 1.9, radius: 0.8, breach: 6, drain: 2, wobble: 0.08, wobbleHz: 0.15, mass: 1, knock: true, shield: 100, elite: false, name: "Khiên" },
   { hp: 42, armour: 0, speed: 2.2, radius: 0.7, breach: 4, drain: 1.5, wobble: 0.5, wobbleHz: 0.45, mass: 1, knock: true, shield: 0, elite: true, name: "Tách" },
-  { hp: 9, armour: 0, speed: 3, radius: 0.4, breach: 2, drain: 0.5, wobble: 0.6, wobbleHz: 0.55, mass: 1, knock: true, shield: 0, elite: false, name: "Mảnh" },
-  { hp: 360, armour: 3, speed: 1.1, radius: 1.3, breach: 15, drain: 6, wobble: 0.04, wobbleHz: 0.1, mass: 4, knock: false, shield: 0, elite: false, name: "Đầu Đàn" },
+  { hp: 7, armour: 0, speed: 3, radius: 0.4, breach: 2, drain: 0.5, wobble: 0.6, wobbleHz: 0.55, mass: 1, knock: true, shield: 0, elite: false, name: "Mảnh" },
+  { hp: 300, armour: 3, speed: 1.1, radius: 1.3, breach: 15, drain: 6, wobble: 0.04, wobbleHz: 0.1, mass: 4, knock: false, shield: 0, elite: false, name: "Đầu Đàn" },
 ];
 
 /** Above this body radius a foe is big: in its own list, not the grid (whose MAX_RADIUS it is). */

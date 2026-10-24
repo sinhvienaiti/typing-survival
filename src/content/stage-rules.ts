@@ -50,6 +50,8 @@ export type Stage = {
   /** Scouts in the back rows of plain packs: their share of the members, from `from` s. */
   readonly scouts: { readonly share: number; readonly from: number };
   readonly packs: { readonly [P in SpecialPack]?: PackShare };
+  /** Where the near zone's drain starts (m; rules.ts DRAIN.from when absent: the trial's 16). */
+  readonly drainFrom?: number;
   /** What the stage teaches (first appearances: foe kinds and mechanics, §7.5). */
   readonly teach: readonly string[];
   readonly kit: StageKit;
@@ -79,9 +81,10 @@ export const MISSING = { short: 6 } as const;
  * Vết nứt (§7.2): every `period` s from `first`, warned `warn` s ahead by a
  * crack glowing on the left or right wall at z `zMin`–`zMax`, then `foes`
  * mines (× the mode and k, `min`–`max`) pour out over `spill` s, inside the
- * guns' reach.
+ * guns' reach. R1 review: z 9–13 → 11–15 (G3c tuning: at 9–13 they poured
+ * out almost at the line).
  */
-export const RIFT = { warn: 2.5, zMin: 9, zMax: 13, foes: 6, min: 4, max: 12, spill: 1 } as const;
+export const RIFT = { warn: 2.5, zMin: 11, zMax: 15, foes: 6, min: 4, max: 12, spill: 1 } as const;
 
 /**
  * The attention budget (§7.6): one telegraph at a time (a surge's banner, a

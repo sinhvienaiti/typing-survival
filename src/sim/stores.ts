@@ -51,7 +51,7 @@ export class Foes extends Pool {
   readonly elite = new Uint8Array(this.cap);
   readonly mark = new Uint8Array(this.cap);
   readonly maxHp = new Float64Array(this.cap);
-  /** World seconds at spawn, and when it came within the guns' reach (DRAIN.from; −1 not yet): how long it lived under fire (BALANCE.md §7 B4). */
+  /** World seconds at spawn, and when it came within the guns' reach (the stage's drain start, DRAIN.from in the trial; −1 not yet): how long it lived under fire (BALANCE.md §7 B4). */
   readonly born = new Float64Array(this.cap);
   readonly reached = new Float64Array(this.cap);
   readonly x = new Float64Array(this.cap);
