@@ -27,7 +27,8 @@
 - Nhạc: hai stem cùng nhịp **96 BPM, La thứ**, vòng 8 ô nhịp (20 s) lặp liền, −16 LUFS. `music.calm` và `music.surge` chơi cùng lúc, trộn theo độ đông của bầy quái (`hordeIntensity` trong `music.ts`).
 - Đổi `sounds: {}` trong `ThemeAudio` thành bảng file; mã tổng hợp giữ làm dự phòng khi file chưa tải xong.
 - Prompt dưới đây viết bằng tiếng Anh vì các công cụ tạo âm hiểu tiếng Anh tốt nhất.
-- **Âm hành động** (súng, trúng, nổ, quái chết, quái bắn, tuyến bị đánh; quyết định Q6 của chủ dự án ngày 24/10/2026, ghi ở `tools/audio-lab/DECISIONS.md` của repo cha): đủ các phần mà hành động có (nạp, khóa nòng; đầu tiếng có lực; thân; đuôi vang trong hành lang thép), cỡ âm theo nguồn. Đuôi có thể là lớp dùng chung do mã ghép (đuôi thép của bậc trúng lớn, đuôi khi súng ngừng bắn); lớp sub chỉ làm lớp dưới. Không dùng hướng "bụp, thụp", "pop", "puff", tiếng trầm ngắn đứng riêng, kiểu đồ chơi. Dải 1–4 kHz chỉ ở đầu tiếng.
+- **Âm hành động** (súng, trúng, nổ, quái chết, quái bắn, tuyến bị đánh; quyết định Q6 của chủ dự án ngày 24/10/2026, ghi ở `tools/audio-lab/DECISIONS.md` của repo cha): đủ các phần mà hành động có (nạp, khóa nòng; đầu tiếng có lực; thân; đuôi vang trong hành lang thép), cỡ âm theo nguồn. Lớp sub chỉ làm lớp dưới. Không dùng hướng "bụp, thụp", "pop", "puff", tiếng trầm ngắn đứng riêng, kiểu đồ chơi. Dải 1–4 kHz chỉ ở đầu tiếng; đuôi nằm dưới 1 kHz hoặc trên 4 kHz.
+- **Mỗi file tự có thân và đuôi.** `theme-audio.ts` phát một tiếng cho mỗi bậc trúng (`flush`) và mỗi phát súng, không ghép lớp nào lúc chạy. Các lớp dùng chung hit.sub, hit.tail, gun.xung.tail mới là đề xuất của Audio Lab (`AUDIO_PIPELINE.md` §6.3 #3; §16 #6 còn mở). Audio Lab có ghép lớp thì ghép sẵn vào file của từng id.
 
 ## 3. Gõ và nạp đạn
 
@@ -47,7 +48,7 @@
 
 | Id | Khi nào | Cảm giác | Mã hiện tại |
 |---|---|---|---|
-| `gun.xung` | Viên Xung rời nòng (súng bắn 10 viên/s, tiếng phát cho một nửa số viên) | Pháo tự động hạng nặng: khóa nòng đóng, cú đấm trầm có thân, tiếng nổ giòn; vang hành lang thép rất ngắn (đuôi dài là lớp riêng khi ngừng bắn) | Sin 150 → 46 Hz, nhiễu thông cao 1,9 kHz, nhiễu dải 720 Hz |
+| `gun.xung` | Viên Xung rời nòng (súng bắn 10 viên/s, tiếng phát cho một nửa số viên) | Pháo tự động hạng nặng: khóa nòng đóng, cú đấm trầm có thân, tiếng nổ giòn; vang hành lang thép rất ngắn trong file (đuôi dài khi ngừng bắn là đề xuất gun.xung.tail, mã chưa có) | Sin 150 → 46 Hz, nhiễu thông cao 1,9 kHz, nhiễu dải 720 Hz |
 | `gun.tia.start` | Tia bật | Tia bật: máy phát quay lên, hồ quang bắt "xẹt" rồi kêu ù; vang hành lang thép ngắn | Răng cưa 70 → 260 Hz qua lọc mở dần, nhiễu dải trượt lên, 7 tiếng tách, ù 55 Hz |
 | `gun.tia.end` | Tia tắt | Tia tắt: máy phát hạ điện, hồ quang xì tắt, tiếng ù chìm vào vang thép | Răng cưa 260 → 48 Hz, lọc đóng lại |
 | `gun.tia.pulse` | Mỗi nhịp 0,1 s của Tia có trúng quái | Tia điện chích, to dần theo số quái bị cắt | Nhiễu thông cao 4,2 kHz 45 ms, vuông 1.900 → 880 Hz |
@@ -61,17 +62,17 @@
 
 | Id | Khi nào | Cảm giác | Mã hiện tại |
 |---|---|---|---|
-| `hit.t1` | Đạn Xung trúng (bậc T1), gom 38 ms | Tiếng keng ngắn trên vỏ thép | Nhiễu thông cao 3,6 kHz, thép dầm 430 Hz |
-| `hit.t2` | Chí mạng, gõ chuẩn (T2, T3) | Keng nặng hơn, thêm cú thụi trầm | Như T1, thêm sin 115 → 40 Hz |
-| `hit.t4` | Đòn lớn (T4 trở lên) | Thép dầm rung ngân, đuôi dài | Như T2, thêm nhiễu thấp 0,5 s và thép 233 Hz ngân 0,7 s |
+| `hit.t1` | Đạn Xung trúng (bậc T1), gom 38 ms | Keng nhỏ, sáng trên vỏ thép: đầu tiếng giòn, thân thép gọn, ngân tắt nhanh vào vang hành lang thép ngắn và thấp. Phát tới 10 lần mỗi giây nên nhỏ, gọn, đuôi nối các phát thành loạt | Nhiễu thông cao 3,6 kHz, thép dầm 430 Hz |
+| `hit.t2` | Chí mạng, gõ chuẩn (T2, T3) | Chí mạng: keng nặng hơn T1, nứt giòn ở đầu, thân thép dày, một lớp trầm nhẹ bên dưới (ít sub), ngân tắt vào vang hành lang thép ngắn | Như T1, thêm sin 115 → 40 Hz |
+| `hit.t4` | Đòn lớn (T4 trở lên) | Đòn lớn: nện nặng vào dầm thép, nứt giòn, thân thép dày có trọng lượng, lớp trầm bên dưới, dầm ngân dài lăn dọc hành lang thép | Như T2, thêm nhiễu thấp 0,5 s và thép 233 Hz ngân 0,7 s |
 | `kill.swarm` | Quái bầy chết (gom theo ô 3 m mỗi khung) | Kim loại vỡ vụn giòn, mảnh văng leng keng, một tiếng nổ trầm nhỏ ở dưới; vang hành lang thép ngắn. Thanh thép leo nốt khi giết liên tục tách riêng | Nhiễu dải 1,15 kHz trượt xuống, mảnh vỡ thông cao, sin 150 → 38 Hz, thanh thép 523 Hz × thang ngũ cung |
 | `kill.elite` | Quái tinh nhuệ (lính) chết | Như trên nhưng nặng hơn: thép xé toạc, nổ trầm có thân, phóng điện lách tách, mảnh rơi; vang hành lang thép | Nổ 95 Hz, răng cưa 1.100 → 120 Hz, tiếng tách điện |
 | `foe.shot` | Lính bắn vào tuyến | Cảnh báo: cầu plasma nạp rít lên, bắn ra có lực rồi lao tới tuyến; vang hành lang thép ngắn | Răng cưa 340 → 880 Hz qua dải trượt, nhiễu dải 2,4 kHz |
 | `foe.shot.down` | Xung bắn rơi đạn của lính | Xung bắn rơi đạn của lính: viên đạn vỡ giữa không trung, tia lửa nhỏ tóe, mảnh kim loại leng keng; vang ngắn | Nhiễu dải 3 kHz, thép 880 Hz |
 
-- `hit.t1` — *Prompt:* "Small metallic bullet impact on a steel hull, short bright clank, 80 ms, several variations, dry."
-- `hit.t2` — *Prompt:* "Heavy bullet impact on thick steel armor, clank with a low thump, 160 ms, punchy, dry."
-- `hit.t4` — *Prompt:* "Massive impact on a steel beam, deep thump and a long ringing metal resonance, 900 ms, industrial."
+- `hit.t1` — *Prompt:* "Small bullet striking a steel hull plate: a bright crisp clank, a small tight steel body, the ring dying fast into a short low echo down the steel corridor, 140 ms, several variations."
+- `hit.t2` — *Prompt:* "Heavy bullet striking thick steel armour: a hard bright crack, a dense steel clang with a solid body and a light low layer underneath, the ring fading into a short echo down the steel corridor, 260 ms, punchy."
+- `hit.t4` — *Prompt:* "Massive blow on a steel beam: a hard crack, a heavy clang with a thick steel body and a deep layer underneath, a long ringing beam resonance rolling down the steel corridor, 900 ms, industrial."
 - `kill.swarm` — *Prompt:* "Small metal creature shattering: crunchy breaking metal, shards scattering and ringing briefly, a low boom underneath, short steel corridor echo, 250 ms, several variations."
 - `kill.elite` — *Prompt:* "Large armored machine creature exploding: heavy metal tearing, a deep boom with body, an electrical discharge crackle, debris falling, steel corridor echo, 500 ms."
 - `foe.shot` — *Prompt:* "Alien plasma blob charging with a rising buzz, then spat out with force and rushing toward you, short steel corridor echo, 250 ms, sci-fi industrial."
