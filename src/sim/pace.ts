@@ -34,10 +34,7 @@ export function kitMagazine(guns: readonly number[], stage: { readonly chapter: 
 const KILL_BUFFER = 1024;
 const ELITE_QUEUE = 16;
 export const LEVER_INDEX: Readonly<Record<PaceLever, number>> = { spawn: 0, elite: 1, peak: 2, lull: 3, support: 4 };
-/**
- * The stage's W: foes it spawns at the run's rate × their mean hit points
- * (plain packs: mines and the stage's scouts; special packs by their share).
- */
+/** The stage's W: foes it spawns at the run's rate × their mean hit points (plain packs: mines and the stage's scouts; special packs by their share). */
 export function stageWork(stage: Stage, scaleRate: number): number {
   const scouts = stage.scouts.share;
   const plain = FOES[KIND.mine]!.hp * (1 - scouts) + FOES[KIND.scout]!.hp * scouts;
