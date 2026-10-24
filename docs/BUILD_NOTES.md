@@ -225,10 +225,12 @@ Trận 180 s (đồng hồ giữ, người gõ 35 WPM trong trang), đo heap sau
 
 ### 9.1 R1 "Súng và khắc chế"
 
-Chi tiết, lệch đặc tả, bảng khắc chế đo được và số cân bằng: [`changelog/2026-10-24-s1-r1.md`](changelog/2026-10-24-s1-r1.md).
+Chi tiết, lệch đặc tả, bảng khắc chế đo được và số cân bằng: [`changelog/2026-10-24-s1-r1.md`](changelog/2026-10-24-s1-r1.md) (đợt làm) và [`changelog/2026-10-24-s1-r1-fix.md`](changelog/2026-10-24-s1-r1-fix.md) (phản biện và sửa: mục review đã xử lý, chỉnh G3c, báo cáo 100 seed).
 
 - Chơi được ải 1–4 từ màn chính: Hành trình → chọn ải → bảng tin → nạp súng (2 trong 5) → trận với bộ đồ tham chiếu của ải → kết ải 3 sao. Trận thử (ải S0) vẫn ở màn chính.
 - Súng mới: Tán, Ray, Pháo Sao. Có Vỏ, Băng Chuẩn xuyên Vỏ, khiên, Tách. Quái mới: Trâu, Khiên, Tách (cùng mảnh của nó), Đầu Đàn. Luật ải: Trụ vững, Săn, Vết nứt, Thiếu chữ.
-- Trận thử giữ đúng vết sự kiện của `00ed734` (18 trận vàng). `COUNTERS` là bảng đo được.
-- Lệch chính: Tán 7 sát thương, tầm 9 m; Pháo Sao 4 quả, 22 → 9, bán kính 2,5 m; Ray 75; Trâu 220 máu; nhịp các ải nâng lên; Đầu Đàn đến cách nhau 35 s. Lý do ở changelog.
-- Còn mở: G3c trượt, vì các cặp không có súng giữ vạch (Tia + Ray, Tia + Pháo Sao) và Xung + Tán ở ải khiên thua nhiều. Hướng sửa ở changelog.
+- Trận thử giữ đúng vết sự kiện của `00ed734` (18 trận vàng, vẫn khớp sau lượt sửa). `COUNTERS` là bảng đo được: 16 seed, ô nằm trong ±8 % quanh ngưỡng nhận cả hai dấu (đã chọn theo đề xuất).
+- Lệch chính của đợt làm: Tán 7 sát thương, tầm 9 m; Pháo Sao 4 quả, 22 → 9, bán kính 2,5 m; Ray 75; Trâu 220 máu; Đầu Đàn đến cách nhau 38 s.
+- Lệch thêm của lượt sửa: Tia trực tuyến khi bộ không có Xung; viên Tán mài khiên × 0,5 (vế khiên của G3 đổi, đã chọn theo đề xuất); Pháo Sao tầm gần 6 m; Vết nứt ở 11–15 m; Băng Chuẩn × 1,15 ở ải chương; Đầu Đàn 300 máu × chế độ × k; vùng hút giáp của ải chương từ 14 m; Mảnh 7 máu; nhịp thường 4,4 / 3,4 / 3,9 / 3,8. Lý do ở changelog.
+- Báo cáo 100 seed ải 1–4 (laptop Dell, 30 phút): đạt B2, B5, B8, G3, G3m, G5, G6, G8 và ngân sách chú ý. G3c: bộ kém nhất 82 / 78 / 69 / 77 % (bản đã commit: 25 / 0 / 1 / 17 %), cách bộ tốt nhất ≤ 28 điểm; vế "tốt nhất ≤ 97 %" còn trượt ở ải 1, 2, 4.
+- **Cổng R1 chưa đạt:** B1 (bot giỏi thắng và dư giáp quá nhiều), B3 (Trẻ em ở Thư giãn 63–76 % ở ải 1–3), B4 (ải 1, 4), B7 (ải 1, 2, 4), G3c (vế tốt nhất). Hiệu năng §17 chưa đo lại trên M4; trên Dell, Chrome headless chỉ có WebGL phần mềm (SwiftShader), số không so được với ngân sách. Chi tiết và hướng làm ở changelog, mục "Còn lại".

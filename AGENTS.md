@@ -6,7 +6,12 @@ guns that hold a corridor against a horde. It was split out of Space Typing
 
 - Port 3007, host `survival.typing-game.local`, learning `gameId`
   `typing-survival`. Run from the parent repo checkout
-  (`/Users/toandx/htdocs/typing-game/games/typing-survival`).
+  (`<parent repo>/games/typing-survival`; on the Dell laptop the toolchain
+  lives only in WSL: `source ../../scripts/local-env.sh` first). A dev
+  server under WSL on `/mnt/d` does not see edits saved from Windows:
+  restart it after an edit, before a browser scenario. Headless Chrome
+  there has software WebGL only (SwiftShader, 2–4 frames a second in a
+  fight): frame budgets and waits on wall time do not hold on that machine.
 - Commands: `pnpm dev`, `pnpm test`, `pnpm build`, `pnpm check`,
   `pnpm survival:balance [--stages=s0,c1-s1,c1-s2,c1-s3,c1-s4] [--g3c]`,
   `pnpm survival:replay <replay.json>`,
@@ -15,10 +20,12 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `frames`, `balance`; S1: `survival-s1-loadout`, `-guns` (frame
   sequences), `-stage`, `-hazards`, `-perf`; agents run a dev server with
   `npx vite --host 127.0.0.1 --port 3047 --strictPort` and set `URL`).
-- S1 "Chương 1 · Hành Lang VC-7" (`docs/BUILD_S1.md`; R1 done:
-  `docs/changelog/2026-10-24-s1-r1.md`): guns in `src/content/guns.ts`
+- S1 "Chương 1 · Hành Lang VC-7" (`docs/BUILD_S1.md`; R1 built:
+  `docs/changelog/2026-10-24-s1-r1.md`, reviewed and fixed:
+  `docs/changelog/2026-10-24-s1-r1-fix.md`; the R1 gate of §14 is not met
+  yet, see that changelog's "Còn lại"): guns in `src/content/guns.ts`
   (COUNTERS is the measured table: `node --import tsx scripts/counters.ts`,
-  gate G3m in `tests/guns.test.ts`), foes in `src/content/foes.ts`, stages
+  16 seeds, gate G3m in `tests/guns.test.ts`), foes in `src/content/foes.ts`, stages
   in `src/content/stage-rules.ts` + `chapter-1.ts` (the trial is stage
   `s0`, `stage-s0.ts`), threat scoring for bots and the briefing in
   `src/content/threat.ts`; sim per gun in `src/sim/guns/`, objectives in
@@ -34,12 +41,17 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `src/sim/pace.ts`; the run's timeline: `src/sim/plan.ts`). Every balance
   number is data in `src/content/balance.ts` (modes, pace k, step table),
   `src/content/stage-s0.ts` (rates, surges, storms) and `src/content/rules.ts`
-  (near zone, drain, Giáp, repair pod). The run header (mode, pace k, E,
+  (near zone, drain, Giáp, repair pod); a stage may set `drainFrom`
+  (chapter stages drain from 14 m, the trial from 16). The run header (mode, pace k, E,
   director) is set from the skill profile (`src/app/skill.ts`, key
   `survival.skill`) before the world is made and goes into every replay.
-  `pnpm survival:balance` (default 100 seeds, ~3 min) prints the §3 metrics
-  per bot × mode and gates B1–B9; bots (`tests/survival/typist-bot.ts`) type
-  through `installKeys`. Retune data, then rerun the report and the tests.
+  `pnpm survival:balance` (default 100 seeds; one Node process) prints the
+  §3 metrics per bot × mode and gates B1–B9, each stage as it ends;
+  stages 1–4 with `--g3c --time` are 14 400 runs, 26–30 min on the Dell
+  laptop (WSL, shared with other agents): run it in the background. While
+  tuning use `--seeds=40`, one stage a process (at most 4 at once). Bots
+  (`tests/survival/typist-bot.ts`) type through `installKeys`. Retune data,
+  then rerun the report and the tests.
 - Layout: `src/sim`, `src/content` (deterministic rules: no DOM, clock,
   `Math.random`, locale or trigonometry; same seed and log give the same
   hash in Node and Chrome), `src/view` (three.js), `src/app` (page, input,
@@ -68,7 +80,10 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   sound id has an entry in `docs/audio/THEME_SOUND_LIST.md`; add one there
   with each new id.
 - Each update gets `docs/changelog/<date>-<topic>.md` (Vietnamese).
-- Next: S1 R2 (chapter flow, doors, Lõi, Mốc, stages 5–9, Bão ion,
-  Giếng, Nghĩa) and R3 (the boss), `docs/BUILD_S1.md` §14.
+- Next: close the R1 gate (B1, B3, B4, B7, G3c's "best ≤ 97 %" miss, and
+  §17 perf measured on the Mac: `docs/changelog/2026-10-24-s1-r1-fix.md`
+  "Còn lại"), then S1 R2 (chapter flow,
+  doors, Lõi, Mốc, stages 5–9, Bão ion, Giếng, Nghĩa) and R3 (the boss),
+  `docs/BUILD_S1.md` §14.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.
