@@ -119,6 +119,42 @@ describe("Vỏ and the clean magazine (§5.1)", () => {
     expect(w.guns.pierce[MAG_CAP]).toBe(RAY.armour);
     expect(w.guns.pierce[MAG_CAP + 1]).toBeCloseTo(RAY.armour * QUALITY.cleanArmour, 9);
   });
+
+  it("a clean magazine adds no damage on a chapter's stage (R1 close: chapterCleanDamage 1) and ×1.06 in the trial; Rèn still multiplies", () => {
+    expect([QUALITY.chapterCleanDamage, QUALITY.cleanDamage]).toEqual([1, 1.06]);
+    const chapter = arena([GUN.xung, GUN.ray], { stage: COUNTER_STAGE, levels: [1, 2] });
+    const trial = arena([GUN.xung, GUN.tia]);
+    loadMagazine(chapter, 0, true, false);
+    loadMagazine(chapter, 1, true, false);
+    loadMagazine(chapter, 1, false, false);
+    loadMagazine(trial, 0, true, false);
+    loadMagazine(trial, 0, false, false);
+    expect(chapter.guns.damage[0]).toBe(1);
+    expect(chapter.guns.damage[MAG_CAP]).toBe(FORGE.damage[1]);
+    expect(chapter.guns.damage[MAG_CAP + 1]).toBe(FORGE.damage[1]);
+    expect([trial.guns.damage[0], trial.guns.damage[1]]).toEqual([QUALITY.cleanDamage, 1]);
+    // The clean reward that stays on a chapter's stage: Vỏ × 0.75 and +4 % crit.
+    expect(chapter.guns.pierce[0]).toBe(QUALITY.cleanArmour);
+    expect(chapter.guns.crit[0]).toBeCloseTo(XUNG.crit + QUALITY.cleanCrit, 9);
+  });
+
+  it("Tia burns 7 a pulse on a chapter's stage (TIA_CHAPTER) and S0's 6 in the trial, clean or not", () => {
+    for (const [stage, damage] of [[COUNTER_STAGE, 7], ["s0", 6]] as const) {
+      for (const clean of [false, true]) {
+        const w = arena([GUN.xung, GUN.tia], { stage });
+        freeze(w);
+        for (let k = 0; k < 6; k += 1) place(w, KIND.scout, -1 + (k % 3), mz + 5 + Math.floor(k / 3));
+        const before = w.events.written;
+        loadMagazine(w, 1, clean, false);
+        for (let t = 0; t < 40; t += 1) step(w);
+        const hits = eventsSince(w, before, EV.hit).filter((i) => (w.events.flags[i]! & FLAG.tia) !== 0);
+        const plain = hits.filter((i) => (w.events.flags[i]! & FLAG.crit) === 0).map((i) => w.events.value[i]!);
+        expect(plain.length, stage).toBeGreaterThan(10);
+        const expected = damage * (clean && stage === "s0" ? QUALITY.cleanDamage : 1);
+        for (const value of plain) expect(value, stage).toBeCloseTo(expected, 6);
+      }
+    }
+  });
 });
 
 describe("big foes and reach (§5.1, §6)", () => {

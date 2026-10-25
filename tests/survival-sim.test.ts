@@ -187,7 +187,7 @@ describe("magazines (BUILD_S0 §5)", () => {
     expect(w.guns.mags[0]).toBe(0);
   });
 
-  it("quality: Chuẩn ×1.15 damage and +10 % crit, Nhanh ×1.15 rate, both mark the magazine perfect", () => {
+  it("quality in the trial: Chuẩn ×1.06 damage and +4 % crit, Nhanh ×1.15 rate, both mark the magazine perfect (a chapter's stage: tests/guns.test.ts)", () => {
     const w = world(2);
     loadMagazine(w, 0, true, true);
     expect(w.guns.damage[0]).toBe(QUALITY.cleanDamage);
@@ -477,8 +477,11 @@ describe("step cost (BUILD_S0 §8, BUILD_S1 §17)", () => {
   /**
    * BUILD_S1 §17 on a chapter stage: stage 4, three bays firing (Xung, Ray,
    * Pháo Sao; magazines topped up every step), 32 shields, ≥ 700 foes with 60
-   * inside Xung's 10 m, ~1,900 rounds and 56 shells kept in the air (room left
-   * for the guns' own).
+   * inside Xung's 10 m. Before every step 2,000 rounds and 63 shells are in
+   * the air: §17's 2,000 and 64, the 64th the slot Pháo Sao's own launch
+   * needs (a full store drops it); the 48 spare rounds take Xung's. `least`
+   * is the fewest at a step's start, `after` at its end (what landed,
+   * expired or hit is gone: printed, the stores refill before the next).
    */
   function measureChapter(seed: number) {
     const w = world(seed, { stage: "c1-s4", director: false, kit: { guns: [GUN.xung, GUN.ray, GUN.phao], levels: [1, 1, 1], bays: 3, armour: 100 } });
@@ -488,39 +491,48 @@ describe("step cost (BUILD_S0 §8, BUILD_S1 §17)", () => {
     const costs: number[] = [];
     const loads = [0, 0, 0];
     const least = { foes: Infinity, rounds: Infinity, shells: Infinity, shields: Infinity };
+    const after = { ...least };
+    let launches = 0;
     for (let t = 0; t < 240; t += 1) {
       for (let i = w.shields.count; i < SHIELD.max; i += 1) placeFoe(w, KIND.shield, -10 + (i % 8) * 2.8, 18 + Math.floor(i / 8) * 3);
       let inside = 0;
       for (let s = 0; s < w.foes.cap; s += 1) if (w.foes.alive[s] && w.foes.z[s]! < 11) inside += 1;
       for (let i = inside; i < 60; i += 1) placeFoe(w, KIND.mine, -9 + (i % 10) * 2, 6 + Math.floor(i / 10) * 0.8);
       flood(w, 700 - w.foes.count);
-      for (let b = w.bullets.count; b < STORE.bullets - 148; b += 1) w.bullets.add(((b * 37) % 220) / 10 - 11, 2 + (b % 44), 0, XUNG.speed, XUNG.damage, XUNG.life, 0, -1, 0);
-      for (let s = w.shells.count; s < STORE.shells - 8; s += 1) w.shells.add(((s * 53) % 200) / 10 - 10, 10 + (s % 14), PHAO.flight * (0.3 + ((s + t) % 7) / 10), PHAO.damage, 1, 0, 2);
+      for (let b = w.bullets.count; b < 2000; b += 1) w.bullets.add(((b * 37) % 220) / 10 - 11, 2 + (b % 44), 0, XUNG.speed, XUNG.damage, XUNG.life, 0, -1, 0);
+      for (let s = w.shells.count; s < STORE.shells - 1; s += 1) w.shells.add(((s * 53) % 200) / 10 - 10, 10 + (s % 14), PHAO.flight * (0.3 + ((s + t) % 7) / 10), PHAO.damage, 1, 0, 2);
       for (let b = 0; b < 3; b += 1) while (w.guns.mags[b]! < w.guns.cap[b]! && loadMagazine(w, b, b === 0, false)) if (t >= 40) loads[b]! += 1;
-      if (t >= 40) {
-        least.foes = Math.min(least.foes, w.foes.count);
-        least.rounds = Math.min(least.rounds, w.bullets.count);
-        least.shells = Math.min(least.shells, w.shells.count);
-        least.shields = Math.min(least.shields, w.shields.count);
-      }
+      const keep = (into: typeof least): void => {
+        into.foes = Math.min(into.foes, w.foes.count);
+        into.rounds = Math.min(into.rounds, w.bullets.count);
+        into.shells = Math.min(into.shells, w.shells.count);
+        into.shields = Math.min(into.shields, w.shields.count);
+      };
+      if (t >= 40) keep(least);
+      const before = w.events.written;
       const start = performance.now();
       step(w);
-      if (t >= 40) costs.push(performance.now() - start);
+      if (t < 40) continue;
+      costs.push(performance.now() - start);
+      keep(after);
+      for (let i = before; i < w.events.written; i += 1) if (w.events.kind[i % w.events.size] === EV.launch) launches += 1;
     }
     costs.sort((a, b) => a - b);
-    return { median: costs[costs.length >> 1]!, p95: costs[Math.floor(costs.length * 0.95)]!, loads, least };
+    return { median: costs[costs.length >> 1]!, p95: costs[Math.floor(costs.length * 0.95)]!, loads, least, after, launches };
   }
 
-  it("steps a chapter stage's peak (700 foes, ~1,900 rounds, 56 shells, 32 shields, 3 bays firing) in ≤ 1.5 ms (§17)", () => {
+  it("steps a chapter stage's peak (700 foes, 2,000 rounds, 63 shells + Pháo Sao's own, 32 shields, 3 bays firing) in ≤ 1.5 ms (§17)", () => {
     let best = measureChapter(31);
     for (let attempt = 1; attempt < 3 && best.median > 1.5; attempt += 1) {
       const again = measureChapter(31 + attempt);
       if (again.median < best.median) best = again;
     }
     expect(best.loads.every((n) => n >= 1), "every bay fired: " + best.loads.join(" ")).toBe(true);
-    expect(best.least).toEqual({ foes: best.least.foes, rounds: 1900, shells: 56, shields: 32 });
+    expect(best.launches, "Pháo Sao's own shells got into the air").toBeGreaterThan(0);
+    // Every measured step starts at §17's numbers (a full store would drop the fill: checked, not assumed).
+    expect(best.least).toEqual({ foes: best.least.foes, rounds: 2000, shells: STORE.shells - 1, shields: 32 });
     expect(best.least.foes).toBeGreaterThanOrEqual(700);
-    console.log("survival chapter step (" + JSON.stringify(best.least) + "): median " + best.median.toFixed(3) + " ms, p95 " + best.p95.toFixed(3) + " ms");
+    console.log("survival chapter step (before " + JSON.stringify(best.least) + ", fewest after " + JSON.stringify(best.after) + ", launches " + best.launches + "): median " + best.median.toFixed(3) + " ms, p95 " + best.p95.toFixed(3) + " ms");
     expect(best.median).toBeLessThanOrEqual(1.5);
   });
 });
