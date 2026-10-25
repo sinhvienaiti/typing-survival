@@ -4,12 +4,16 @@
 // `flood(700)` with both bays firing. Measures the page's own update and draw
 // times per frame (window.__survival.costs) and the draw calls.
 // Targets (High tier, vsync locked): mean ≤ 6 ms, p95 ≤ 10 ms at a peak of
-// ~150 foes; flood p95 ≤ 14 ms; draw calls ≤ 160.
+// ~150 foes; flood p95 ≤ 14 ms; draw calls ≤ 160. §17's "frame" is that JS
+// time, as S0 measures it: what the screen showed is reported beside it, not
+// checked (the frame intervals' p95 and max, the frames that missed a
+// refresh, i.e. came > 1.5 refreshes after the one before, and frames a
+// second), since the GPU and a busy machine set those too.
 // R1 review: the first version idled 52 s (the ship fell before its window)
 // and kept one frame of the cost ring (its length stops at 1200). Now both
 // bays are typed throughout (~100 ms a key), the peak is held at ~150 foes
 // with the dev flood (§17), and a rAF counter picks exactly the window's frames.
-//   URL=http://127.0.0.1:3047/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s1-perf.mjs --width=1280 --height=720
+//   URL=http://127.0.0.1:3007/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s1-perf.mjs --width=1280 --height=720
 import { openStage, out, press, sv } from "./survival-s1-lib.mjs";
 import { stats } from "./survival-s0-lib.mjs";
 
@@ -55,7 +59,10 @@ async function play(page, seconds, { measure = false, hold = 0 } = {}) {
   const n = costs.update.length;
   const keep = Math.min(n, frames);
   const frame = costs.update.map((u, k) => u + costs.draw[k]).slice(n - keep);
-  return { phase, frames, frame: stats(frame), interval: stats(costs.interval.slice(n - keep)), calls, foes: seen };
+  const intervals = costs.interval.slice(n - keep);
+  const refresh = stats(intervals).median;
+  const shown = { missed: intervals.filter((v) => v > refresh * 1.5).length, perSecond: Math.round((frames / seconds) * 10) / 10 };
+  return { phase, frames, frame: stats(frame), interval: stats(intervals), shown, calls, foes: seen };
 }
 
 export default async function (page) {

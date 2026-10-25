@@ -6,7 +6,7 @@
 // warning on the rift's side, the mines poured, no console error. The wait
 // for the warning follows the game's clock, not the wall's: on a slow
 // renderer (software WebGL) 45 s of wall time were not 22 s of fight (R1 review).
-//   URL=http://127.0.0.1:3047/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s1-hazards.mjs --width=1280 --height=720
+//   URL=http://127.0.0.1:3007/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s1-hazards.mjs --width=1280 --height=720
 import { frames, openStage, out, press, sv } from "./survival-s1-lib.mjs";
 
 const EV = { telegraph: 28, rift: 31 };

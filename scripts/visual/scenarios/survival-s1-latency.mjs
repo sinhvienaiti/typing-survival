@@ -15,19 +15,34 @@
 // (16.7 ms) plus the frame that runs it: §17's "≤ 1 khung" (vsync 60 Hz)
 // is read here as ≤ one step + one measured frame interval + 2 ms of the
 // frame's own update and draw.
+// Review of the R1 report: with 20 words p95 was the slowest word, and the
+// one long frame of a run (83–383 ms) failed it 2 times in 11. A
+// long-animation-frame probe named that frame: the first keydown starts the
+// audio (AudioContext, bus inserts, the noise bed), ~107 ms on the Apple M4.
+// In play the first key falls on the title screen; here the page opens
+// straight into the fight, so a key the sim ignores (Shift) starts the audio
+// first, as the menus would. Two fights of 20 Xung words each (stage 1 lasts
+// 150 s; a word takes ~3.7 s) give 40 words, so p95 is no longer the slowest
+// one. Long frames are kept with the scripts that ran in them.
 //   URL=http://127.0.0.1:3007/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s1-latency.mjs --width=1280 --height=720
 import { KIND, openStage, out, press, sv, until } from "./survival-s1-lib.mjs";
 import { stats } from "./survival-s0-lib.mjs";
 
+const RUNS = 2;
 const SHOTS = 20;
 const KEY_MS = 110;
 const STEP_MS = 1000 / 60;
-const LIMIT_MS = 150000;
+const LIMIT_MS = 140000;
 
 const INSTALL = `(() => {
   const t = window.__survival;
-  const L = (window.__lat = { keys: [], frames: [] });
+  const L = (window.__lat = { keys: [], frames: [], loaf: [] });
   addEventListener("keydown", (e) => { if (e.key.length === 1) L.keys.push(performance.now()); }, true);
+  try {
+    new PerformanceObserver((list) => {
+      for (const e of list.getEntries()) L.loaf.push({ at: Math.round(e.startTime), ms: Math.round(e.duration), scripts: (e.scripts || []).map((x) => x.invoker + " " + Math.round(x.duration) + " ms") });
+    }).observe({ type: "long-animation-frame" });
+  } catch (error) { L.loafError = String(error); }
   const loop = (raf) => {
     const s = t.state();
     L.frames.push({ at: performance.now(), raf, taken: s.stats.keysOk + s.stats.keysBad, bullets: s.bullets });
@@ -48,9 +63,12 @@ async function typeWord(page, bay) {
   return { bay, word, firstKey, keys: word.length };
 }
 
-export default async function (page) {
-  const size = page.width + "x" + page.height;
+/** One fight: 20 Xung words (Ray's between them); its keys' and words' latencies and its long frames. */
+async function fight(page, size, run) {
   const ready = await openStage(page, "c1-s1", ["xung", "ray"], "&director=0");
+  // The audio starts on the first gesture (in play: on the title screen), before the measured keys.
+  await page.key("Shift", { code: "ShiftLeft" });
+  const audio = await until(page, "t.sounds().ready", 3000);
   await page.sleep(800);
   await page.eval(INSTALL);
   const shotWords = [];
@@ -70,7 +88,7 @@ export default async function (page) {
   await page.sleep(400);
   const data = await page.eval("window.__lat");
   const final = await page.eval(sv("return { phase: t.state().phase, hp: t.state().hp };"));
-  const shot = await page.shot(out("survival-s1-latency-" + size + ".png"));
+  const shot = await page.shot(out("survival-s1-latency-" + size + (run > 0 ? "-run" + (run + 1) : "") + ".png"));
   const F = data.frames;
   /** The last frame drawn before `at` (its index; −1 none). */
   const before = (at) => {
@@ -96,14 +114,23 @@ export default async function (page) {
     if (f) keyToShot.push(f.at - last);
   }
   const intervals = F.slice(1).map((f, i) => f.raf - F[i].raf);
-  const interval = stats(intervals);
-  const key = stats(keyToFrame);
-  const shotStats = stats(keyToShot);
+  const long = F.slice(1).flatMap((f, i) => (f.raf - F[i].raf > 50 ? [{ at: Math.round(f.raf), gap: Math.round(f.raf - F[i].raf), scripts: data.loaf.filter((e) => Math.abs(e.at + e.ms - f.raf) < 120).flatMap((e) => e.scripts) }] : []));
+  return { ready, audio, keys: data.keys.length, shotWords: shotWords.length, skipped, missed, final, keyToFrame, keyToShot, intervals, long, loafError: data.loafError, shot };
+}
+
+export default async function (page) {
+  const size = page.width + "x" + page.height;
+  const runs = [];
+  for (let run = 0; run < RUNS; run += 1) runs.push(await fight(page, size, run));
+  const all = (field) => runs.flatMap((r) => r[field]);
+  const interval = stats(all("intervals"));
+  const key = stats(all("keyToFrame"));
+  const shotStats = stats(all("keyToShot"));
   const checks = {
-    ready,
-    stayedInPlay: final.phase === "play",
-    allShots: shotWords.length === SHOTS && keyToShot.length === SHOTS,
-    everyKeyTaken: missed.length === 0 && data.keys.length >= SHOTS * 6,
+    ready: runs.every((r) => r.ready),
+    stayedInPlay: runs.every((r) => r.final.phase === "play"),
+    allShots: runs.every((r) => r.shotWords === SHOTS && r.keyToShot.length === SHOTS),
+    everyKeyTaken: runs.every((r) => r.missed.length === 0 && r.keys >= SHOTS * 6),
     keyToFrameP95: key.p95 <= STEP_MS + interval.median + 2,
     keyToShotP95: shotStats.p95 <= 50,
     noConsoleErrors: page.logs.filter((line) => line.startsWith("error")).length === 0,
@@ -111,5 +138,9 @@ export default async function (page) {
   };
   const pass = Object.values(checks).every(Boolean);
   if (!pass) process.exitCode = 1;
-  return { pass, checks, keys: data.keys.length, shotWords: shotWords.length, skipped, missed, final, keyToFrame: key, keyToShot: shotStats, interval, longFrames: intervals.filter((v) => v > 50).length, shot };
+  const shots = all("keyToShot");
+  return {
+    pass, checks, keyToFrame: key, keyToShot: shotStats, slowShots: { over50: shots.filter((v) => v > 50).length, over70: shots.filter((v) => v > 70).length }, interval,
+    runs: runs.map(({ keyToFrame, keyToShot, intervals, ...r }) => ({ ...r, keyToFrame: stats(keyToFrame), keyToShot: stats(keyToShot), interval: stats(intervals), longFrames: r.long.length })),
+  };
 }

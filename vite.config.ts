@@ -26,6 +26,9 @@ export default defineConfig({
     host: env("DEV_HOST") ?? "127.0.0.1",
     port: 3007,
     strictPort: true,
+    // tmp/ holds evidence and other agents' scratch trees: a tsconfig or
+    // index.html written there must not force a full reload mid-scenario.
+    watch: { ignored: ["**/tmp/**"] },
     allowedHosts: (env("DEV_ALLOWED_HOSTS") ?? "survival.typing-game.local")
       .split(",")
       .map((value) => value.trim())

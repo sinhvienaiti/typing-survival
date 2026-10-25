@@ -7,7 +7,7 @@
 // Tách splitting under Tia; Đầu Đàn's beacon and a Trâu's stomp. Checks: the
 // events happened (volley, rail, launch/burst, shield hit/break, split), no
 // console error.
-//   URL=http://127.0.0.1:3047/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s1-guns.mjs --width=1280 --height=720
+//   URL=http://127.0.0.1:3007/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s1-guns.mjs --width=1280 --height=720
 import { KIND, frames, openStage, out, sv, typeBay, until } from "./survival-s1-lib.mjs";
 
 const EV = { hit: 2, kill: 3, volley: 20, charge: 21, rail: 22, launch: 23, burst: 24, shieldHit: 25, shieldBreak: 26, split: 27 };

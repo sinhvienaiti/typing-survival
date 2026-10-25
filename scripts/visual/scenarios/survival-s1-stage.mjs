@@ -5,8 +5,11 @@
 // enough fall), hidden letters show as "_" and never the first, no damage
 // number over a protected rectangle (the learning frame, the bays, the
 // armour, the objective's plate), no console error, and the page's command
-// log replays in Node to its hash. Pictures: mid-fight and the end screen.
-//   URL=http://127.0.0.1:3047/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s1-stage.mjs --width=1280 --height=720
+// log replays in Node to its hash. Both fights must end (won or lost) on the
+// page they started on: a reload mid-fight (the tick going back) fails the
+// run, and a replay counts only with commands in it, run to the last tick
+// read. Pictures: mid-fight and the end screen.
+//   URL=http://127.0.0.1:3007/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s1-stage.mjs --width=1280 --height=720
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -34,6 +37,8 @@ async function play(page, stage, guns, wpm, size) {
   let goal = "";
   let mid = null;
   let state = null;
+  let reloaded = false;
+  let lastTick = -1;
   for (;;) {
     const at = Date.now();
     const look = await page.eval(sv(`
@@ -41,6 +46,11 @@ async function play(page, stage, guns, wpm, size) {
       const words = [...document.querySelectorAll('.sv-slot .sv-word')].map((w) => w.textContent);
       return { slots: t.slots(), state: t.state(), overlaps: n.overlaps, mode: t.mode(), words, goal: document.querySelector('.sv-goal')?.textContent ?? '' };`));
     if (look === null) break;
+    if (look.state.tick < lastTick) {
+      reloaded = true;
+      break;
+    }
+    lastTick = look.state.tick;
     state = look.state;
     overlaps += look.overlaps;
     goal = look.goal || goal;
@@ -63,7 +73,8 @@ async function play(page, stage, guns, wpm, size) {
   } catch (error) {
     replay = { match: false, error: String(error.stdout || error.message).trim() };
   }
-  return { ready, final: state, overlaps, firstHidden, masked, goal, replay, shots: [mid, end] };
+  const replayed = replay?.match === true && replay.commands > 0 && replay.tick >= lastTick;
+  return { ready, final: state, reloaded, lastTick, overlaps, firstHidden, masked, goal, replay, replayed, shots: [mid, end] };
 }
 
 export default async function (page) {
@@ -72,13 +83,14 @@ export default async function (page) {
   const missing = await play(page, "c1-s4", ["phao", "xung"], 45, size);
   const checks = {
     ready: hunt.ready && missing.ready,
-    huntEnded: hunt.final?.phase === "won" || hunt.final?.phase === "lost",
+    huntEnded: !hunt.reloaded && (hunt.final?.phase === "won" || hunt.final?.phase === "lost"),
+    missingEnded: !missing.reloaded && (missing.final?.phase === "won" || missing.final?.phase === "lost"),
     huntPlateCounts: /^ĐẦU ĐÀN \d\/3 · LỌT \d\/2$|^BẦY RÚT LUI$/.test(hunt.goal) && (hunt.final?.objective?.done ?? 0) + (hunt.final?.objective?.leaked ?? 0) > 0,
     huntRetreatsWhenWon: hunt.final?.phase !== "won" || hunt.final?.objective?.retreat >= 0,
     hiddenLettersShown: missing.masked > 0,
     neverFirstHidden: missing.firstHidden === 0 && hunt.firstHidden === 0,
     noNumberOverProtected: hunt.overlaps === 0 && missing.overlaps === 0,
-    nodeReplaysToBrowserHash: hunt.replay?.match === true && missing.replay?.match === true,
+    nodeReplaysToBrowserHash: hunt.replayed && missing.replayed,
     noConsoleErrors: page.logs.filter((line) => line.startsWith("error")).length === 0,
     noExceptions: page.exceptions.length === 0,
   };

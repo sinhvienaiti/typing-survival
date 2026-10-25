@@ -1,12 +1,15 @@
 // Tuyến Cuối S1 (docs/BUILD_S1.md §4.2, §16 "survival-s1-loadout"), keyboard
 // only: title → Hành trình → stage 1 → its briefing (foes with their counter
 // tags) → the loadout: keys 1 and 3 pick Xung and Tán (bay 1, bay 2), the
-// threats the pair leaves open get a yellow mark (Trâu: both ✕; R1 guns:
-// Ray + Pháo Sao no longer leaves a row open on stage 1), → → to the start button,
-// Enter → the fight on stage 1 with those guns on its bays. Then the armory
-// shows the five guns. Checks: the five cards, the warnings, the bays' gun
-// names and words (≥ 26 px, nothing in a bay overflows), no console error.
-//   URL=http://127.0.0.1:3047/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s1-loadout.mjs --width=1280 --height=720
+// threats the pair leaves open get a yellow mark (Trâu: both ✕; every pair
+// leaves a row open, §5.2: Ray + Pháo Sao leaves Bầy sát vạch), → → to the
+// start button, Enter → the fight on stage 1 with those guns on its bays.
+// Then, from a fresh title screen, the armory (↑ to its item, Enter) shows
+// the five guns with the trial's Xung magazine named. Checks: the five cards
+// on both screens, the warnings, the bays' gun names and words (≥ 26 px,
+// nothing in a bay overflows), the armory's cards inside their boxes, no
+// console error.
+//   URL=http://127.0.0.1:3007/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s1-loadout.mjs --width=1280 --height=720
 import { DEV_URL, out } from "./common.mjs";
 import { sv } from "./survival-s0-lib.mjs";
 
@@ -62,6 +65,22 @@ export default async function (page) {
   // The frame is 420 px at 1280×720 and scales with --ui (630 px at 1920×1080; R1 review: the check read 420 at every size).
   const ui = await page.eval("parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui')) || 1");
   shots.push(await page.shot(out("survival-s1-loadout-fight-" + size + ".png")));
+  // The armory from the title screen (its item is the menu's last: ↑ wraps to it).
+  await page.goto(DEV_URL.replace(/\/$/, "") + "/index.html?seed=2", { settle: 300 });
+  for (let w = 0; w < 80; w += 1) {
+    if ((await page.eval(sv("return t.ready();"))) === true) break;
+    await page.sleep(250);
+  }
+  await key(page, "ArrowUp");
+  await key(page, "Enter");
+  await page.sleep(400);
+  const armory = await page.eval(sv(`return { screen: t.screen(), cards: [...document.querySelectorAll('.sv-guns .sv-gun-card')].map((card) => {
+    const box = card.getBoundingClientRect();
+    const all = [card, ...card.querySelectorAll('*')];
+    const out = all.filter((n) => { const b = n.getBoundingClientRect(); return b.width > 0 && (b.right > box.right + 1 || b.bottom > box.bottom + 1); }).length;
+    return { text: card.innerText.replace(/\\n+/g, ' | '), out, overflow: all.filter((n) => n.scrollWidth > n.clientWidth + 1 && n.clientWidth > 0).length };
+  }) };`));
+  shots.push(await page.shot(out("survival-s1-loadout-armory-" + size + ".png")));
   const checks = {
     titleHasJourney: log[0][1].items[0] === "Hành trình" && log[0][1].items[1] === "Trận thử",
     stageList: log[1][1].screen === "journey-stages" && log[1][1].items.length === 5,
@@ -74,10 +93,12 @@ export default async function (page) {
     wordsAtLeast26px: hud.every((bay) => bay.px >= 26),
     noBayOverflow: hud.every((bay) => bay.overflow.length === 0),
     learningFrameKept: Math.abs(learnWidth - 420 * ui) <= 2,
+    armoryFiveGuns: armory.screen === "armory" && armory.cards.length === 5 && armory.cards.some((card) => /Trận thử: 24 viên/.test(card.text)),
+    armoryFits: armory.cards.every((card) => card.out === 0 && card.overflow === 0),
     noConsoleErrors: page.logs.filter((line) => line.startsWith("error")).length === 0,
     noExceptions: page.exceptions.length === 0,
   };
   const pass = Object.values(checks).every(Boolean);
   if (!pass) process.exitCode = 1;
-  return { pass, checks, log, briefing, warnings, hud, learnWidth, ui, shots };
+  return { pass, checks, log, briefing, warnings, hud, learnWidth, ui, armory, shots };
 }
