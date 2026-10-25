@@ -37,11 +37,9 @@ export const FORGE = { damage: [1, 1.2, 1.4], mags: [MAG_MAX, MAG_MAX, MAG_CAP],
  */
 export const XUNG = { rounds: 24, seconds: 2.4, damage: 7, coneCos: 0.9063, speed: 46, radius: 0.15, life: 1.3, crit: 0.05, shotGuard: 16, range: 10, spread: 0.08 } as const;
 /**
- * Xung on a chapter's stages (R1 guns): `rounds` a magazine in the same
- * 2.4 s. With S0's 24 (two rounds a mine: at most 12 mines a word) it was
- * the weakest gun of every pair and countered one row only (G3m: Tán
- * cleared the swarm at the line 1.3–1.4× faster); the trial keeps S0's
- * magazine (its trace is golden).
+ * Xung on a chapter's stages (R1 guns): `rounds` a magazine in the same 2.4 s
+ * (with S0's 24 it was the weakest gun of every pair, G3m); the trial keeps
+ * S0's magazine (its trace is golden).
  */
 export const XUNG_CHAPTER = { rounds: 27 } as const;
 /** Tia: a 1.4 m wide ray `length` m long for 2.5 s, 6 a pulse every 0.1 s to every foe it crosses, sweeping 3 m/s. S0 numbers. */
@@ -59,13 +57,10 @@ export const tiaDamage = (stage: { readonly chapter: number }): number => (stage
 export const TIA_DUTY = { zone: 10, near: 4, scout: 3, sweep: 1.5, retarget: 15 } as const;
 /**
  * Tán: 6 volleys in 2.3 s, 7 pellets fanned ±18° each, a 9 m radius, 7 a
- * pellet (§5.1 started at 5: three pellets a mine, it did not hold a wave:
- * gate G3), every pellet that hits pushes its foe back `knock` m (§5.1 had
- * 0.35; never the heavy kinds) or knocks a scout shot out of the air.
- * Pellets are short-lived rounds: a shield stops them and nothing behind it
- * is hurt, but each wears the shield by `shield` × its damage (R1 review:
- * Xung + Tán had no way past a shield, G3c; R1 close 0.5 → 0.8). R1 guns: 2 → 2.3 s, so the
- * swarm at the line is not Tán's alone (G3m) and Tia keeps Tách (G3m).
+ * pellet; a pellet that hits pushes its foe back `knock` m (never the heavy
+ * kinds) or knocks a scout shot down. A shield stops pellets (nothing behind
+ * it is hurt) but each wears it by `shield` × its damage (R1 close 0.8).
+ * Why each number moved (§5.1 had 5 a pellet, 0.35 m, 2 s): the R1 changelogs.
  */
 export const TAN = { volleys: 6, seconds: 2.3, damage: 7, range: 9, speed: 40, radius: 0.12, knock: 0.6, crit: 0.05, shield: 0.8 } as const;
 /** The fan's directions as (cos, sin) of −18°, −12°, −6°, 0°, 6°, 12°, 18° (written out: no trigonometry in the sim). */
@@ -107,9 +102,10 @@ export const PHAO = { shells: 4, seconds: 3, flight: 0.7, radius: 2.5, damage: 2
 /**
  * Heavy guns (Ray, Pháo Sao) take words `short` / `long` letters longer at the
  * band's ends, at most `cap`; R1 close: the long end only (a letter more on
- * every word cost a sloppy typist far more than one key).
+ * every word cost a sloppy typist far more than one key); what the cap
+ * refuses goes to the short end × `spill` (lengthFor).
  */
-export const HEAVY = { short: 0, long: 1, cap: 10 } as const;
+export const HEAVY = { short: 0, long: 1, cap: 10, spill: 1 } as const;
 
 export type GunSpec = {
   readonly key: GunKey;
@@ -126,29 +122,25 @@ export type GunSpec = {
   /** Armour a blow meets: 1 full, Ray 0.25. */
   readonly armour: number;
   readonly crit: number;
-  /** One magazine's damage near the line (the FlowMeter's "words owed") in the trial; Xung's on a chapter's stage: pace.ts kitMagazine. Tia keeps S0's unit (24 × 7) on purpose: its magazine is the same everywhere. */
+  /** One magazine's damage near the line (the FlowMeter's "words owed") in the trial; Xung's on a chapter's stage: pace.ts kitMagazine. Tia keeps S0's unit (24 × 7) on every stage: a beam's damage depends on what it crosses, and the chapter's 7 a pulse (TIA_CHAPTER) is not folded in, so the director reads a chapter Tia magazine as worth the trial's. */
   readonly nominal: number;
 };
 
 export const GUN_SPECS: readonly GunSpec[] = [
-  { key: "xung", name: "XUNG", en: "pulse", title: "pháo xung liên thanh", magazine: XUNG_CHAPTER.rounds + " viên trong 2,4 s vào con gần vạch nhất", trial: "Trận thử: " + XUNG.rounds + " viên", range: "10 m", heavy: false, armour: 1, crit: XUNG.crit, nominal: XUNG.rounds * XUNG.damage },
-  { key: "tia", name: "TIA", en: "beam", title: "tia nhiệt quét", magazine: "tia 12 m cháy 2,5 s, quét về cụm dày", trial: "", range: "12 m", heavy: false, armour: 1, crit: TIA.crit, nominal: XUNG.rounds * XUNG.damage },
-  { key: "tan", name: "TÁN", en: "scatter", title: "súng chùm đẩy lùi", magazine: "6 loạt × 7 viên xòe, đẩy lùi, chặn đạn lính", trial: "", range: TAN.range + " m", heavy: false, armour: 1, crit: TAN.crit, nominal: TAN.volleys * 7 * TAN.damage },
-  { key: "ray", name: "RAY", en: "rail", title: "súng ray xuyên hàng", magazine: "3 phát xuyên 6 con, phá khiên", trial: "", range: "30 m", heavy: true, armour: RAY.armour, crit: RAY.crit, nominal: RAY.shots * RAY.damage },
-  { key: "phao", name: "PHÁO SAO", en: "flak", title: "pháo cối nổ vùng", magazine: "4 quả nổ 2,5 m vào cụm nặng", trial: "", range: PHAO.near + "–" + PHAO.far + " m", heavy: true, armour: PHAO.armour, crit: PHAO.crit, nominal: PHAO.shells * PHAO.damage * 1.5 },
+  { key: "xung", name: "XUNG", en: "pulse", title: "pháo xung liên thanh", magazine: XUNG_CHAPTER.rounds + " viên trong 2,4\u00a0s vào con gần vạch nhất", trial: "Trận thử: " + XUNG.rounds + " viên", range: "10\u00a0m", heavy: false, armour: 1, crit: XUNG.crit, nominal: XUNG.rounds * XUNG.damage },
+  { key: "tia", name: "TIA", en: "beam", title: "tia nhiệt quét", magazine: "tia 12\u00a0m cháy 2,5\u00a0s, quét về cụm dày", trial: "", range: "12\u00a0m", heavy: false, armour: 1, crit: TIA.crit, nominal: XUNG.rounds * XUNG.damage },
+  { key: "tan", name: "TÁN", en: "scatter", title: "súng chùm đẩy lùi", magazine: "6 loạt × 7 viên xòe, đẩy lùi, chặn đạn lính", trial: "", range: TAN.range + "\u00a0m", heavy: false, armour: 1, crit: TAN.crit, nominal: TAN.volleys * 7 * TAN.damage },
+  { key: "ray", name: "RAY", en: "rail", title: "súng ray xuyên hàng", magazine: "3 phát xuyên 6 con, phá khiên", trial: "", range: "30\u00a0m", heavy: true, armour: RAY.armour, crit: RAY.crit, nominal: RAY.shots * RAY.damage },
+  { key: "phao", name: "PHÁO SAO", en: "flak", title: "pháo cối nổ vùng", magazine: "4 quả nổ 2,5\u00a0m vào cụm nặng", trial: "", range: PHAO.near + "\u2060–\u2060" + PHAO.far + "\u00a0m", heavy: true, armour: PHAO.armour, crit: PHAO.crit, nominal: PHAO.shells * PHAO.damage * 1.5 },
 ];
 
 /**
  * The counter table (docs/BUILD_S1.md §5.2): per row of foes, per gun, 2 ●
- * (counters), 1 ○ (does), 0 ✕ (poor), as measured: tests/guns.test.ts
- * (G3m, scenes in tests/survival/counters.ts, `node --import tsx
- * scripts/counters.ts`) runs every cell and fails when this table differs.
- * Where it differs from §5.2's guess, the measurement won (R1 changelog).
- * Re-measured in the R1 review (16 seeds; a cost within COUNTER_MARGIN of
- * a threshold allows either mark) and again for R1 guns, on a chapter's
- * stage (the scenes fire the guns as the chapter does) and on both seed
- * sets the gate checks, 1–16 and 17–32 (changelog 2026-10-24-s1-r1-guns.md);
- * R1 close (changelog 2026-10-25-s1-r1-mac.md): Tia ○ swarmFar, Pháo Sao ✕ swarmNear, Xung ○ splitter.
+ * (counters), 1 ○ (does), 0 ✕ (poor), as measured on a chapter's stage on
+ * seeds 1–16 and 17–32: tests/guns.test.ts (G3m; `node --import tsx
+ * scripts/counters.ts`) fails when this table differs (a cost within
+ * COUNTER_MARGIN of a threshold allows either mark). Last changed: the R1
+ * close (changelog 2026-10-25-s1-r1-mac.md).
  */
 export const COUNTER_ROWS = ["swarmFar", "swarmNear", "scout", "armoured", "shield", "splitter"] as const;
 export type CounterRow = (typeof COUNTER_ROWS)[number];

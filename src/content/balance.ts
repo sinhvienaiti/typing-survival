@@ -31,16 +31,16 @@ export const MODE_SPECS: { readonly [M in Mode]: ModeSpec } = {
 };
 
 export const DEFAULT_MODE: Mode = "balanced";
-
 export const isMode = (value: unknown): value is Mode => typeof value === "string" && (MODES as readonly string[]).includes(value);
 
 export const bandOf = (mode: Mode): Band => BANDS[mode];
 
-/** The word length band for a typist at E (LENGTH_BY_E) and its mean ℓ̄; a heavy gun's is longer by HEAVY.short / HEAVY.long at its ends, at most HEAVY.cap. */
+/** E's word length band (LENGTH_BY_E) and its mean ℓ̄; a heavy gun's is HEAVY.short / HEAVY.long longer at its ends, at most HEAVY.cap, and what the cap refuses at the long end goes to the short end (× HEAVY.spill; E ≥ 60: 7–10, review of the R1 close). */
 export function lengthFor(e: number, heavy = false): readonly [number, number] {
   let len: readonly [number, number] = LENGTH_BY_E[0].len;
   for (const entry of LENGTH_BY_E) if (e >= entry.minE) len = entry.len;
-  return heavy ? [Math.min(HEAVY.cap, len[0] + HEAVY.short), Math.min(HEAVY.cap, len[1] + HEAVY.long)] : len;
+  const hi = Math.min(HEAVY.cap, len[1] + HEAVY.long);
+  return heavy ? [Math.min(hi, len[0] + HEAVY.short + HEAVY.spill * (len[1] + HEAVY.long - hi)), hi] : len;
 }
 export const meanLength = (e: number): number => {
   const [lo, hi] = lengthFor(e);

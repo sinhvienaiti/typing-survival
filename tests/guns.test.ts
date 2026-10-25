@@ -364,12 +364,15 @@ describe("Tách (§6)", () => {
 });
 
 describe("words for the bays (§5.1)", () => {
-  it("heavy guns take words up to a letter longer (HEAVY: the long end since the R1 close), never past 10 letters; every shown word starts with its own letter", () => {
+  it("heavy guns take words a letter longer at the long end (R1 close), at the short end where the cap of 10 stops it (E ≥ 60); every shown word starts with its own letter", () => {
+    const heavy: Record<number, readonly [number, number]> = { 15: [3, 6], 25: [3, 7], 35: [3, 7], 50: [4, 8], 70: [7, 10] };
     for (const e of [15, 25, 35, 50, 70]) {
       const [lo, hi] = lengthFor(e);
       const [hlo, hhi] = lengthFor(e, true);
-      expect([hlo, hhi]).toEqual([Math.min(HEAVY.cap, lo + HEAVY.short), Math.min(HEAVY.cap, hi + HEAVY.long)]);
-      expect(hhi).toBeLessThanOrEqual(10);
+      expect([hlo, hhi], "E " + e).toEqual(heavy[e]);
+      expect(hhi).toBeLessThanOrEqual(HEAVY.cap);
+      // A heavy word costs more keys at every E (review: E ≥ 60 had the light guns' 6–10).
+      expect(hlo + hhi, "E " + e).toBe(lo + hi + 1);
     }
     const deck = sharedDeck();
     const w = createWorld({ seed: 3, deck, expected: 35, kit: { guns: [GUN.xung, GUN.ray, GUN.phao], levels: [1, 1, 1], bays: 3, armour: 100 } });
