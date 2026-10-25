@@ -225,7 +225,7 @@ Trận 180 s (đồng hồ giữ, người gõ 35 WPM trong trang), đo heap sau
 
 ### 9.1 R1 "Súng và khắc chế"
 
-Chi tiết, lệch đặc tả, bảng khắc chế đo được và số cân bằng: [`changelog/2026-10-24-s1-r1.md`](changelog/2026-10-24-s1-r1.md) (đợt làm), [`changelog/2026-10-24-s1-r1-fix.md`](changelog/2026-10-24-s1-r1-fix.md) (phản biện và sửa: mục review đã xử lý, chỉnh G3c, báo cáo 100 seed; lượt 2: ô Xung ở "Bầy sát vạch", hiệu năng trên GPU thật) , [`changelog/2026-10-24-s1-r1-guns.md`](changelog/2026-10-24-s1-r1-guns.md) (làm lại sức súng, §9.2) và [`changelog/2026-10-25-s1-r1-close.md`](changelog/2026-10-25-s1-r1-close.md) (review lượt súng, chỉnh tiếp, §9.3). Các gạch đầu dòng dưới là trạng thái sau lượt sửa; trạng thái hiện tại ở §9.3.
+Chi tiết, lệch đặc tả, bảng khắc chế đo được và số cân bằng: [`changelog/2026-10-24-s1-r1.md`](changelog/2026-10-24-s1-r1.md) (đợt làm), [`changelog/2026-10-24-s1-r1-fix.md`](changelog/2026-10-24-s1-r1-fix.md) (phản biện và sửa: mục review đã xử lý, chỉnh G3c, báo cáo 100 seed; lượt 2: ô Xung ở "Bầy sát vạch", hiệu năng trên GPU thật) , [`changelog/2026-10-24-s1-r1-guns.md`](changelog/2026-10-24-s1-r1-guns.md) (làm lại sức súng, §9.2) và [`changelog/2026-10-25-s1-r1-close.md`](changelog/2026-10-25-s1-r1-close.md) (review lượt súng, chỉnh tiếp, §9.3), [`changelog/2026-10-25-s1-r1-mac.md`](changelog/2026-10-25-s1-r1-mac.md) (hai luật §5.1, rỉ giáp từng ải, §17 trên M4, §9.4). Các gạch đầu dòng dưới là trạng thái sau lượt sửa; trạng thái hiện tại ở §9.4.
 
 - Chơi được ải 1–4 từ màn chính: Hành trình → chọn ải → bảng tin → nạp súng (2 trong 5) → trận với bộ đồ tham chiếu của ải → kết ải 3 sao. Trận thử (ải S0) vẫn ở màn chính.
 - Súng mới: Tán, Ray, Pháo Sao. Có Vỏ, Băng Chuẩn xuyên Vỏ, khiên, Tách. Quái mới: Trâu, Khiên, Tách (cùng mảnh của nó), Đầu Đàn. Luật ải: Trụ vững, Săn, Vết nứt, Thiếu chữ.
@@ -257,3 +257,23 @@ Chi tiết, bảng các vòng chỉnh và chẩn đoán: [`changelog/2026-10-25-
 - **Núm `drainRate`** của ải (nhân tốc rỉ giáp, mặc định 1, chưa ải nào dùng): đòn bẩy "mòn giáp" đã đo.
 - **Sáu vòng chỉnh mỗi họ cổng (40 seed), không vòng nào vào mã:** nâng nhịp làm Ẩu, Mới, Trẻ em gãy trước khi bot mạnh vào dải; rỉ giáp hạ S êm và giữ B3, B4 nhưng thắng giảm chậm, Khá, Nhanh vẫn nhàn 13–14 %, ải 3 không chịu được rỉ × 2 (Vết nứt mở trong vùng hút giáp). Chẩn đoán ải 1: cách S giữa Chậm chắc và Ẩu là 50 điểm (Trận thử 9), do phần sát thương thêm của băng Chuẩn (bỏ hết: 18) và từ dài hơn 1 chữ của súng nặng (bỏ: 32), cả hai là luật §5.1. Bộ số gần nhất cho G3c (`i6`: Ray trực tuyến 8 m, Tán mài khiên × 0,8, rỉ giáp × 2 / 2,5 / 1 / 2,5, Khiên ở ải 4 10 %) đạt ba vế ở ải 2 và 3, trượt "tốt nhất ≤ 97 %" ở ải 1 và 4 (Tán + Ray, Tán + Pháo Sao 39/40).
 - **Cổng R1 vẫn chưa đạt:** B1, B7 trượt cả 4 ải, G3c trượt vế "tốt nhất ≤ 97 %". Đề xuất chờ chủ dự án: băng Chuẩn ở ải chương không thêm sát thương, từ của súng nặng chỉ dài hơn ở đầu dài của dải. R2 chưa bắt đầu.
+
+### 9.4 R1 trên Mac: hai luật §5.1 theo đề xuất, rỉ giáp từng ải, §17 trên Apple M4 (25/10/2026)
+
+Chi tiết, các vòng chỉnh, bảng 100 seed đầy đủ: [`changelog/2026-10-25-s1-r1-mac.md`](changelog/2026-10-25-s1-r1-mac.md). Commit `53da6ff`, `1264940`, `f20c073`, `cf42a26` và commit tài liệu. Máy Mac mini M4; mọi số đo trong mục này là số Apple M4.
+
+- **Hai luật §5.1, đã chọn theo đề xuất:** ở ải chương băng Chuẩn không thêm sát thương (phần thưởng là xuyên Vỏ và chí mạng; Trận thử giữ × 1,06); súng nặng lấy từ dài hơn 1 chữ chỉ ở đầu dài của dải.
+- **Bù cho súng:** Tia ở ải chương 7 mỗi nhịp, Ray 112, Pháo Sao 23, Vỏ của Trâu 4, Tán mài khiên × 0,8, Ray trực tuyến 8 m. `COUNTERS` đo lại (3 ô).
+- **Số của ải:** rỉ giáp × 2 ở ải 1 và 4 (ải 2, 3 giữ 1); toán Khiên ở ải 4 10 %; Vết nứt 13–17 m, 5 bầy.
+- **Công cụ:** `--set` cho `scripts/balance.ts` và `scripts/counters.ts` (`scripts/overrides.ts`, có test). Kịch bản G3/G3m rỉ giáp theo mức gốc của chương: `drainRate` của ải 1 không làm lệch bảng khắc chế.
+- **Báo cáo 100 seed trên `cf42a26`** (12 phút 21 giây, một tiến trình):
+  - đạt B2–B5, B8, G3, G3m, G5, G6 (112 s), G8, §7.6;
+  - G3c đủ ba vế ở ải 1 và 3;
+  - B1 còn 42 chỉ số lệch dải (trước 52); Mới và Ẩu trong dải ở ải 1 và 4;
+  - B6 (chỉ đo) đạt ở ải 2 và 4.
+- **Vẫn trượt:**
+  - B1 và B7 ở cả 4 ải;
+  - G3c vế "tốt nhất ≤ 97 %" ở ải 2 (99 %) và 4 (100 %).
+  - Lý do: ải 2 xong ở 112 s nên S 94–96 %; Khá và Nhanh nhàn 12–16 % vì súng không nhận thêm băng (nạp 32 từ/phút, như Chuẩn 30); ải 3 giữ rỉ × 1.
+- **§17 trên Apple M4** (lần đầu, khung khóa 60 Hz): đạt khung (đỉnh khoảng 150 quái TB 0,8–1,3 ms, `flood(700)` p95 2,1–2,6 ms), draw call 38–40, phím tới hình (p95 17,4–17,7 ms), phím tới đạn (p95 18,5–20,4 ms) ở 1280×720 và 1920×1080. Còn bước sim với 700 quái và bộ nhớ một chương (chờ R2).
+- Đòn bẩy tiếp theo, R2 chưa bắt đầu: changelog, mục "Còn lại".

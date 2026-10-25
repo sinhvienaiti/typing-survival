@@ -30,8 +30,10 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `docs/changelog/2026-10-24-s1-r1.md`, reviewed and fixed:
   `docs/changelog/2026-10-24-s1-r1-fix.md`, guns reworked:
   `docs/changelog/2026-10-24-s1-r1-guns.md`, its review handled and the
-  gate tuned on: `docs/changelog/2026-10-25-s1-r1-close.md`; the R1 gate of
-  §14 is not met yet, see that last changelog's "Còn lại"): guns in `src/content/guns.ts`
+  gate tuned on: `docs/changelog/2026-10-25-s1-r1-close.md`; the two §5.1
+  rules taken as proposed, drain per stage, §17 on the Apple M4:
+  `docs/changelog/2026-10-25-s1-r1-mac.md`; the R1 gate of §14 is not met
+  yet, see that last changelog's "Còn lại"): guns in `src/content/guns.ts`
   (COUNTERS is the measured table, scenes fought on a chapter stage:
   `node --import tsx scripts/counters.ts` prints seeds 1–16 and 17–32, and
   every mark must hold on both; gate G3m in `tests/guns.test.ts` has no
@@ -54,19 +56,23 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `src/content/stage-s0.ts` (rates, surges, storms) and `src/content/rules.ts`
   (near zone, drain, Giáp, repair pod); a stage may set `drainFrom`
   (chapter stages drain from 14 m, the trial from 16) and `drainRate` (× the
-  drain; 1, no stage sets it yet). The run header (mode, pace k, E,
+  drain; stages 1 and 4 set 2, the rest 1; G3/G3m scenes drain at the
+  chapter's base rate, `tests/survival/arena.ts`). The run header (mode, pace k, E,
   director) is set from the skill profile (`src/app/skill.ts`, key
   `survival.skill`) before the world is made and goes into every replay.
   `pnpm survival:balance` (default 100 seeds; one Node process) prints the
   §3 metrics per bot × mode and gates B1–B9, each stage as it ends;
   stages 1–4 with `--g3c --time` are 18 400 runs (14 400 bot cells, 4 000
-  for G3c), 15–30 min on the Dell
-  laptop (WSL, shared with other agents; 15.5 min on 24/10 with the machine
-  quiet, 30 min when busy): run it in the background. While
-  tuning use `--seeds=40`, one stage a process (at most 4 at once); a
-  trimmed cell set (the gates' Cân bằng bots, Chuẩn without the director,
-  Trẻ em in Thư giãn) and `--set` variants are in the R1 close changelog's
-  scripts (`tmp/dell-2026-10-25/scripts/`, not in Git). Bots
+  for G3c), 12 min on the Mac mini M4 (one process, other lanes busy,
+  25/10), 15–30 min on the Dell laptop: run it in the background, through
+  the parent's `.local/bin/heavy.sh`. Tuning numbers at run time:
+  `--set=RAY.damage=110,c1-s1.drainRate=2,…` on `scripts/balance.ts` and
+  `scripts/counters.ts` (`scripts/overrides.ts`; quote it in zsh). While
+  tuning use `--seeds=40`, one stage a process; the trimmed cell set (the
+  gates' Cân bằng bots, Chuẩn without the director, Trẻ em in Thư giãn) and
+  the round runner and grader of the Mac pass are in
+  `tmp/mac-2026-10-25/scripts/` (not in Git; `round.ts`, `grade.ts`,
+  `hashes.ts`, `g3.ts`). Bots
   (`tests/survival/typist-bot.ts`) type through `installKeys`. Retune data,
   then rerun the report and the tests.
 - Layout: `src/sim`, `src/content` (deterministic rules: no DOM, clock,
@@ -97,22 +103,20 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   sound id has an entry in `docs/audio/THEME_SOUND_LIST.md`; add one there
   with each new id.
 - Each update gets `docs/changelog/<date>-<topic>.md` (Vietnamese).
-- R1 gate state (100-seed report on `abe5993`, 25/10; every win, S, P, I
-  and G3c number equals the `49ba852` report): passes `pnpm check`, B2–B5,
-  B8, G3, G3m, G5, G6, G8; fails B1 and B7 on stages 1–4 and G3c's "best ≤
-  97 %" on stages 1, 2, 4 (its two "no trap" parts pass). Six tuning rounds
-  a gate family (40 seeds) found no set that closes a gate and keeps the
-  passing ones; the closest G3c set and the B1 diagnosis are in the R1
-  close changelog.
-  §17 is only partly measured: frame cost and draw calls pass on the Dell GPU
-  (`survival-s1-perf`), key to frame and key to shot are measured by
-  `survival-s1-latency` (Dell GPU), the Apple M4 is not measured.
-- Next: close the R1 gate from the R1 close changelog's "Còn lại" (G3c's
-  "best ≤ 97 %" on stages 1 and 4 from its closest set `i6`: Tán with a far
-  gun is now the strongest pair; B1/B7: the gap between careful and sloppy
-  typists comes from the clean magazine's extra damage and the heavy guns'
-  longer words, both §5.1 rules: an owner choice is pending; then the drain
-  per stage, then the pace for the fast typists' idle time), then S1 R2
+- R1 gate state (100-seed report on `cf42a26`, Mac mini M4, 25/10): passes
+  `pnpm check`, B2–B5, B8, G3, G3m, G5, G6, G8, §7.6, G3c in full on
+  stages 1 and 3 (its two "no trap" parts on all four); fails B1 and B7 on
+  stages 1–4 (B1: 42 band misses, 52 before) and G3c's "best ≤ 97 %" on
+  stages 2 and 4. Six 40-seed rounds a gate family were spent (r1–r6 in
+  the Mac changelog). §17 on the Apple M4 (60 Hz locked): frames, draw
+  calls, key to frame and key to shot pass (peak ~150 foes 0.8–1.3 ms mean);
+  a sim step at 700 foes has no scenario yet, a chapter's 30-minute memory
+  waits for R2.
+- Next: close the R1 gate from the Mac changelog's "Còn lại" (Khá and
+  Nhanh idle 12–16 % because the guns take no more magazines, not for want
+  of foes: a §5.1 rule for a full bay; stage 2, the hunt, ends at 112 s
+  with S 94–96 %; G3c's "best" on stages 2 and 4 is now Tia on duty with
+  Tán or Ray), then S1 R2
   (chapter flow, doors, Lõi, Mốc, stages 5–9, Bão ion, Giếng, Nghĩa) and R3
   (the boss), `docs/BUILD_S1.md` §14.
 - The design docs live in `docs/`; the parent repo's
