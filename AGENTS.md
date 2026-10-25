@@ -24,8 +24,9 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `pnpm visual scripts/visual/scenarios/survival-s0-boot.mjs --width=1280 --height=720`
   (S0 scenarios on the trial: `boot`, `menu`, `fight`, `perf`, `keys`,
   `frames`, `balance`; S1: `survival-s1-loadout`, `-guns` (frame
-  sequences), `-stage`, `-hazards`, `-perf`, `-latency`; agents run a dev server with
-  `npx vite --host 127.0.0.1 --port 3047 --strictPort` and set `URL`).
+  sequences), `-stage`, `-hazards`, `-perf`, `-latency`; agents run the dev
+  server with `pnpm dev` (port 3007, strict; Vite ignores `tmp/`) and set
+  `URL=http://127.0.0.1:3007/`; stop it when done).
 - S1 "Chương 1 · Hành Lang VC-7" (`docs/BUILD_S1.md`; R1 built:
   `docs/changelog/2026-10-24-s1-r1.md`, reviewed and fixed:
   `docs/changelog/2026-10-24-s1-r1-fix.md`, guns reworked:
@@ -34,12 +35,16 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   rules taken as proposed, drain per stage, §17 on the Apple M4:
   `docs/changelog/2026-10-25-s1-r1-mac.md`; the 100-seed report rerun on
   the committed code, the browser scenarios at both sizes and a chapter
-  step test: `docs/changelog/2026-10-25-s1-r1-report.md`; the R1 gate of
-  §14 is not met yet, see the Mac changelog's "Còn lại"): guns in `src/content/guns.ts`
+  step test: `docs/changelog/2026-10-25-s1-r1-report.md`; the independent
+  review of those handled, both seed sets, the latency source:
+  `docs/changelog/2026-10-26-s1-r1-review-fix.md`; the R1 gate of §14 is
+  not met yet, see its "Còn lại"): guns in `src/content/guns.ts`
   (COUNTERS is the measured table, scenes fought on a chapter stage:
   `node --import tsx scripts/counters.ts` prints seeds 1–16 and 17–32, and
   every mark must hold on both; gate G3m in `tests/guns.test.ts` has no
-  known miss), foes in `src/content/foes.ts`, stages
+  known miss, but Tia's second ✕, the swarm at the line, is 1.96× / 1.93×
+  of Tán: it holds on the ±8 % margin only; remeasure after any Tia or
+  Tán change), foes in `src/content/foes.ts`, stages
   in `src/content/stage-rules.ts` + `chapter-1.ts` (the trial is stage
   `s0`, `stage-s0.ts`), threat scoring for bots and the briefing in
   `src/content/threat.ts`; sim per gun in `src/sim/guns/` (where Tia and
@@ -66,9 +71,11 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   §3 metrics per bot × mode and gates B1–B9, each stage as it ends;
   stages 1–4 with `--g3c --time` are 18 400 runs (14 400 bot cells, 4 000
   for G3c), 12 min on the Mac mini M4 (12:21 and 12:12, one process,
-  other lanes busy, 25/10), 15–30 min on the Dell laptop (four runs,
-  15:31 to 30:29): run it in the background, through
-  the parent's `.local/bin/heavy.sh`. Tuning numbers at run time:
+  other lanes busy, 25/10; 15:15 and 15:28 with two reports at once,
+  26/10), 15–30 min on the Dell laptop (four runs, 15:31 to 30:29): run it
+  in the background, through the parent's `.local/bin/heavy.sh`; add
+  `--first=101` for the second seed set. The report ends with B6 pooled
+  over the stages and the B1/B7 cells to rerun on the next seeds. Tuning numbers at run time:
   `--set=RAY.damage=110,c1-s1.drainRate=2,…` on `scripts/balance.ts` and
   `scripts/counters.ts` (`scripts/overrides.ts`; quote it in zsh). While
   tuning use `--seeds=40`, one stage a process; the trimmed cell set (the
@@ -106,26 +113,36 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   sound id has an entry in `docs/audio/THEME_SOUND_LIST.md`; add one there
   with each new id.
 - Each update gets `docs/changelog/<date>-<topic>.md` (Vietnamese).
-- R1 gate state (100-seed report on `cf42a26`, rerun on `a4376a0` with the
-  same numbers, Mac mini M4, 25/10): passes
-  `pnpm check`, B2–B5, B8, G3, G3m, G5, G6, G8, §7.6, G3c in full on
-  stages 1 and 3 (its two "no trap" parts on all four); fails B1 and B7 on
-  stages 1–4 (B1: 42 band misses, 52 before) and G3c's "best ≤ 97 %" on
-  stages 2 and 4. Six 40-seed rounds a gate family were spent (r1–r6 in
-  the Mac changelog). §17 on the Apple M4 (60 Hz locked, busy machine,
-  preliminary): frames, draw calls, key to frame and key to shot pass
-  (peak ~150 foes 0.7–1.3 ms mean, `flood(700)` p95 1.2–2.6 ms); a chapter
-  stage's sim step at 700 foes, 32 shields and three bays is a test in
-  `tests/survival-sim.test.ts` (median 0.83–0.85 ms of 1.5); a chapter's
-  30-minute memory waits for R2. The five S1/S0 browser scenarios pass at
-  1280×720 and 1920×1080 (`-latency` at 1920 on its second run: the
-  first hit a 14 s page stall).
-- Next: close the R1 gate from the Mac changelog's "Còn lại" (Khá and
-  Nhanh idle 12–16 % because the guns take no more magazines, not for want
-  of foes: a §5.1 rule for a full bay; stage 2, the hunt, ends at 112 s
-  with S 94–96 %; G3c's "best" on stages 2 and 4 is now Tia on duty with
-  Tán or Ray), then S1 R2
-  (chapter flow, doors, Lõi, Mốc, stages 5–9, Bão ion, Giếng, Nghĩa) and R3
-  (the boss), `docs/BUILD_S1.md` §14.
+- R1 gate state (100-seed reports on the committed code, seeds 1–100
+  and 101–200, Mac mini M4, 26/10, `docs/changelog/2026-10-26-s1-r1-review-fix.md`):
+  passes on both seed sets `pnpm check`, B2–B5, B6 pooled over the stages
+  (+11.0 / +11.3), B8, G3, G3m, G3c on stages 1 and 3, G5, G6, G8, §7.6;
+  fails B1 and B7 on stages 1–4 (B1: 43 / 40 band misses) and G3c's "best
+  ≤ 97 %" on stages 2 and 4. The two seed sets differ by up to 16 win
+  points in one direction (stages 1 and 3 harder on 101–200): confirm
+  every tuning round on seeds 101–200. Heavy words keep their extra letter
+  where the cap of 10 stops the long end (`HEAVY.spill`, E ≥ 60: 7–10).
+  §17 on the Apple M4 (60 Hz locked, busy machine): frames, draw calls and
+  key to frame pass; key to shot passes since the latency scenario starts
+  the audio before it measures (a page's first key builds the AudioContext,
+  ~107 ms; in play that key is on the title screen) and pools 40 words:
+  six runs, p95 18–20 ms, at most 32 ms, no long frame. A chapter stage's sim step (700 foes, 2,000
+  rounds, 63 + 1 shells, 32 shields, three bays) is a test in
+  `tests/survival-sim.test.ts` (median 0.88–0.91 ms of 1.5; 1.39–1.40 ms with
+  the machine at load 8–60, so move it out of `pnpm check` if it starts to
+  fail on load); a chapter's
+  30-minute memory waits for R2. The S1/S0 browser scenarios pass at
+  1280×720 and 1920×1080.
+- Next: close the R1 gate from the review-fix changelog's "Còn lại": the
+  coordinator sets how many variants a tuning round may hold; Khá and
+  Nhanh idle on stages 1, 2, 4 because the guns take no more magazines (a
+  §5.1 rule for a full bay); stage 3 loses in a cliff when the first
+  surge's crowd reaches the line at 60–90 s (guns loaded but swamped; a
+  third surge would add a cliff): spread it and pay the strong bots back
+  with steady pressure; G3c's "best" on stage 2 is always Tia on duty
+  (damp `TIA_DUTY` with Tán or Ray), on stage 4 pairs without Tia pass
+  97 % too (stage-wide pressure, or Pháo Sao where shields stand); then S1
+  R2 (chapter flow, doors, Lõi, Mốc, stages 5–9, Bão ion, Giếng, Nghĩa)
+  and R3 (the boss), `docs/BUILD_S1.md` §14.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.

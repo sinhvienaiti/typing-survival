@@ -289,3 +289,15 @@ Chi tiết, đủ bảng §3 từng ải và bảng cổng: [`changelog/2026-10-
 - **Bước sim của ải chương** có test mới (`tests/survival-sim.test.ts`): ải 4, 700 quái, khoảng 1.900 viên, 56 quả, 32 khiên, 3 bến cùng bắn; trung vị 0,83–0,85 ms (trần 1,5). Còn mở: bộ nhớ một chương (chờ R2).
 - **Mục 6.A của file process:** G3m đo seed 17–32 trong test từ `49ba852`; thời gian báo cáo trong `AGENTS.md` theo số đo hai máy (Mac 12 phút, Dell 15–30 phút).
 - Việc kế: lượt chỉnh mới theo "Còn lại" của changelog bước 1 (luật bến đầy, sức ép ải 2, đỉnh tràn ải 3, hãm `TIA_DUTY`), ngân sách 6 vòng mỗi họ cổng.
+
+### 9.6 R1: sửa sau phản biện độc lập (26/10/2026)
+
+Chi tiết, bảng 25 mục phản biện và số đo: [`changelog/2026-10-26-s1-r1-review-fix.md`](changelog/2026-10-26-s1-r1-review-fix.md). Commit `777a137`, `84136f2`, `8f2ae2d`, `931a2b9`, `cbdcc16`, `ccb34e2`, `a697e45`, `d5f20ca` (chữ của Kho súng) và commit tài liệu. Số Apple M4.
+
+- **Cổng R1 vẫn chưa đạt**, nay chấm trên cả seed 1–100 và 101–200: B1 (43 / 40 chỉ số lệch) và B7 trượt ở cả 4 ải; G3c vế "tốt nhất ≤ 97 %" trượt ở ải 2 và 4. Đạt trên cả hai bộ: `pnpm check` (124 test), B2–B5, B6 gộp ải (+11,0 / +11,3), B8, G3, G3m, G3c ở ải 1 và 3, G5, G6, G8, §7.6.
+- **Luật (b) ở trần** ("đã chọn theo đề xuất" của phản biện): chữ thêm mà trần 10 không nhận ở đầu dài sang đầu ngắn (`HEAVY.spill`); E ≥ 60 lấy 7–10, không còn bằng súng nhẹ. Nhàn của Nhanh giảm ở cả 8 ô. Đây là thay đổi sim duy nhất của lượt: 152 trận chương trên HEAD với `HEAVY.spill=0` băm trùng `7e53835`; như commit chỉ 8 trận của Nhanh đổi; vết vàng Trận thử không đổi.
+- **§17 phím tới đạn:** khung dài duy nhất của mỗi lần chạy là phím đầu tiên khởi động âm thanh (106–107 ms, dò bằng long-animation-frame). Kịch bản khởi động âm trước khi đo và gộp 40 từ: sáu lần chạy, 0 khung dài, p95 18,2–19,8 ms, tối đa 31,7 ms (trần 50).
+- **Chẩn đoán sửa lại:** G3c ải 4 có cặp không Tia vượt trần (Tán + Pháo Sao 97 / 98); ải 3 thua kiểu vực vì đoàn đỉnh tràn giây 55 tới vạch ở giây 60–90 (súng còn băng nhưng ngộp), không vì Vết nứt; hai bộ seed chênh thắng tới 16 điểm và cùng hướng.
+- **Công cụ:** `--set` chép object dùng chung trước khi ghi; báo cáo in B6 gộp và ô B1/B7 cần chạy lại (`scripts/rollup.ts`); `--g3c=only` ghi file. Kịch bản: `-stage` bắt trang tải lại và replay rỗng, `-loadout` mở Kho súng, `-perf` in khoảng khung; Vite bỏ qua `tmp/`.
+- **Chữ:** luật gõ chuẩn dạy đúng ở màn chính và Kho súng; chữ thẻ và bảng tin 12–13 px ở 1280×720; số và đơn vị không ngắt dòng.
+- Việc kế: ngân sách vòng (coordinator chốt số biến thể một vòng), luật bến đầy cho nhàn của Khá / Nhanh, ải 3 dàn đỉnh tràn kèm bù sức ép, G3c ải 2 hãm `TIA_DUTY`, ải 4 sức ép chung.
