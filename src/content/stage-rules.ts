@@ -83,9 +83,10 @@ export const MISSING = { short: 6 } as const;
  * crack glowing on the left or right wall at z `zMin`–`zMax`, then `foes`
  * mines (× the mode and k, `min`–`max`) pour out over `spill` s, inside the
  * guns' reach. R1 review: z 9–13 → 11–15 (G3c tuning: at 9–13 they poured
- * out almost at the line).
+ * out almost at the line). R1 close: 13–17 m and 5 mines, once the clean
+ * magazine lost its extra damage (Mới, Trẻ em and Tia + Pháo Sao on stage 3).
  */
-export const RIFT = { warn: 2.5, zMin: 11, zMax: 15, foes: 6, min: 4, max: 12, spill: 1 } as const;
+export const RIFT = { warn: 2.5, zMin: 13, zMax: 17, foes: 5, min: 4, max: 12, spill: 1 } as const;
 
 /**
  * The attention budget (§7.6): one telegraph at a time (a surge's banner, a

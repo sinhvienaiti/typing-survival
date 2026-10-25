@@ -145,7 +145,7 @@ function killFoe(w: World, s: number): void {
 }
 
 describe("Vết nứt (§7.2)", () => {
-  it("warns RIFT.warn s ahead on a wall at 9–13 m (a telegraph), then pours its mines there over a second", () => {
+  it("warns RIFT.warn s ahead on a wall at RIFT.zMin–zMax m (a telegraph), then pours its mines there over a second", () => {
     const w = world("c1-s3", 6, { director: false });
     w.hp = 1e9;
     w.foeCap = 120;

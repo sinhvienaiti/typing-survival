@@ -22,6 +22,15 @@ const calm = (rate: number, to: number) => [{ from: 0, to, rate }];
  * answer is now 2 m narrower.
  */
 const common = { chapter: 1, vanguard: STAGE_S0.vanguard, tide: STAGE_S0.tide, surgeSpread: STAGE_S0.surgeSpread, drainFrom: 14 } as const;
+/**
+ * drainRate (R1 close, 40-seed rounds): the near zone bleeds twice as fast
+ * on stages 1 and 4, so S falls into §3's band for most bots without a
+ * pack more (more foes broke Ẩu, Mới and Trẻ em first). Stage 3 keeps 1
+ * (its rifts pour foes inside the zone), stage 2 too: the hunt ends near
+ * 110 s, and more drain only sank the pairs without Ray (G3c). Stage 4's
+ * Khiên packs 13 → 10 %: at k 1.2–1.25 Khá and Nhanh, whose Xung + Pháo Sao
+ * has nothing for a shield inside 6 m, lost 70 armour of 100 there.
+ */
 const storm = (chance: number) => ({ chance, spread: STAGE_S0.storm.spread });
 
 export const CHAPTER_1: readonly Stage[] = [
@@ -41,6 +50,7 @@ export const CHAPTER_1: readonly Stage[] = [
     teach: ["brute"],
     kit: { bays: 2, levels: [1, 1], armour: 100 },
     pace: PACE_HOLD,
+    drainRate: 2,
   },
   {
     ...common,
@@ -88,10 +98,11 @@ export const CHAPTER_1: readonly Stage[] = [
     storm: storm(0.25),
     surges: [surge(55), surge(140)],
     scouts: { share: 0.12, from: 12 },
-    packs: { shield: { share: 0.13, from: 20 } },
+    packs: { shield: { share: 0.1, from: 20 } },
     teach: ["shield", "missing"],
     kit: { bays: 2, levels: [2, 1], armour: 100 },
     pace: PACE_HOLD,
+    drainRate: 2,
   },
 ];
 
