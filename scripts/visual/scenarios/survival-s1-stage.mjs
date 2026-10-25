@@ -45,8 +45,8 @@ async function play(page, stage, guns, wpm, size) {
       const n = t.numbers();
       const words = [...document.querySelectorAll('.sv-slot .sv-word')].map((w) => w.textContent);
       return { slots: t.slots(), state: t.state(), overlaps: n.overlaps, mode: t.mode(), words, goal: document.querySelector('.sv-goal')?.textContent ?? '' };`));
-    if (look === null) break;
-    if (look.state.tick < lastTick) {
+    // The dev handle gone (null) or the tick going back: the page reloaded under the fight.
+    if (look === null || look.state.tick < lastTick) {
       reloaded = true;
       break;
     }
