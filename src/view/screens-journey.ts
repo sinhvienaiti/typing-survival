@@ -91,7 +91,7 @@ export function renderJourney(journey: Journey): string {
               '<section class="sv-gun-card sv-' + card.key + (card.on ? " is-on" : "") + (card.picked >= 0 ? " is-picked" : "") + '" data-card="' + n + '">' +
               '<header><kbd>' + (n + 1) + "</kbd><b>" + escapeHtml(card.name) + "</b>" + (card.picked >= 0 ? '<em>BẾN ' + (card.picked + 1) + (card.level > 1 ? " · RÈN " + card.level : "") + "</em>" : "") + "</header>" +
               "<small>" + escapeHtml(card.title) + "</small>" +
-              "<p>" + escapeHtml(card.magazine) + " · tầm " + escapeHtml(card.range) + (card.heavy ? " · từ dài tới +1 chữ" : "") + "</p>" +
+              "<p>" + escapeHtml(card.magazine) + " · tầm\u00a0" + escapeHtml(card.range) + (card.heavy ? " · từ dài tới +1 chữ" : "") + "</p>" +
               '<p class="sv-good">khắc: ' + escapeHtml(card.good || "—") + "</p>" +
               '<p class="sv-poor">kém: ' + escapeHtml(card.poor || "—") + "</p>" +
               "</section>",

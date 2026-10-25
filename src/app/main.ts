@@ -257,7 +257,7 @@ function view(which: Screen): ScreenView | null {
       return {
         kind: "title",
         menu,
-        lead: "Bầy Hố Đen tràn ra từ mép hố đen. Gõ từ trên hai bến súng để nạp đạn; súng tự bắn. Gõ không lỗi thì đòn mạnh hơn.",
+        lead: "Bầy Hố Đen tràn ra từ mép hố đen. Gõ từ trên hai bến súng để nạp đạn; súng tự bắn. Gõ không lỗi thì đạn xuyên Vỏ và dễ chí mạng.",
         status: "TÀU " + PILOT_NAMES[pilot].toUpperCase() + " · HÌNH " + TIER_NAMES[tier].toUpperCase() + " · " + MODE_SPECS[settings.mode].label.toUpperCase(),
       };
     case "profile":
@@ -268,9 +268,9 @@ function view(which: Screen): ScreenView | null {
       return {
         kind: "armory",
         menu,
-        guns: GUN_SPECS.map((gun) => ({ kind: gun.key, name: gun.name, title: gun.title, text: gun.magazine + (gun.trial ? " (" + gun.trial + ")" : "") + ", tầm " + gun.range + (gun.heavy ? ", từ có thể dài hơn 1 chữ" : "") + "." })),
+        guns: GUN_SPECS.map((gun) => ({ kind: gun.key, name: gun.name, title: gun.title, text: gun.magazine + (gun.trial ? " (" + gun.trial + ")" : "") + ", tầm\u00a0" + gun.range + (gun.heavy ? ", từ có thể dài hơn 1 chữ" : "") + "." })),
         learning: [
-          "Gõ không lỗi: đòn mạnh hơn, dễ chí mạng, và xuyên Vỏ (Vỏ chỉ chặn 75 %).",
+          "Gõ không lỗi: xuyên Vỏ (Vỏ chỉ chặn 75 %) và dễ chí mạng; ở Trận thử đòn mạnh thêm 6 %.",
           "Mỗi từ gõ xong được ghi vào sổ học chung của portal (mã typing-survival).",
         ],
       };
@@ -630,7 +630,7 @@ installDevHandle({
   /** Sounds started so far by id (docs/audio/THEME_SOUND_LIST.md), and whether audio runs. */
   sounds: () => ({ ready: audio.ready, played: Object.fromEntries(audio.played) }),
   screen: () => screen,
-  info: () => ({ calls, triangles, geometries: stage.renderer.info.memory.geometries, textures: stage.renderer.info.memory.textures, drawn: crowd.drawn(), glows: combat.glows.count, sparks: combat.sparks.count, debris: combat.debris.live, numbers: combat.numbers.live, stops: combat.stopsAsked }),
+  info: () => ({ calls, triangles, geometries: stage.renderer.info.memory.geometries, textures: stage.renderer.info.memory.textures, programs: stage.renderer.info.programs?.length ?? 0, drawn: crowd.drawn(), glows: combat.glows.count, sparks: combat.sparks.count, debris: combat.debris.live, numbers: combat.numbers.live, stops: combat.stopsAsked }),
   numbers: () => numberBoxes(combat.numbers),
   rects: () => hud.protectedRects(),
   /** The shake settings and the camera's shake offset now (px). */
