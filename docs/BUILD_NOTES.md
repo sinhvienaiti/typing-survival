@@ -277,3 +277,15 @@ Chi tiết, các vòng chỉnh, bảng 100 seed đầy đủ: [`changelog/2026-1
   - Lý do: ải 2 xong ở 112 s nên S 94–96 %; Khá và Nhanh nhàn 12–16 % vì súng không nhận thêm băng (nạp 32 từ/phút, như Chuẩn 30); ải 3 giữ rỉ × 1.
 - **§17 trên Apple M4** (lần đầu, khung khóa 60 Hz): đạt khung (đỉnh khoảng 150 quái TB 0,8–1,3 ms, `flood(700)` p95 2,1–2,6 ms), draw call 38–40, phím tới hình (p95 17,4–17,7 ms), phím tới đạn (p95 18,5–20,4 ms) ở 1280×720 và 1920×1080. Còn bước sim với 700 quái và bộ nhớ một chương (chờ R2).
 - Đòn bẩy tiếp theo, R2 chưa bắt đầu: changelog, mục "Còn lại".
+
+### 9.5 R1: báo cáo 100 seed trên mã đã commit, kịch bản hai cỡ, §17 trên Apple M4 (25/10/2026)
+
+Chi tiết, đủ bảng §3 từng ải và bảng cổng: [`changelog/2026-10-25-s1-r1-report.md`](changelog/2026-10-25-s1-r1-report.md). Commit `aff1045` và commit tài liệu. Lượt báo cáo, không đổi số cân bằng. Mọi số đo là số Apple M4, đo khi máy còn bận (sơ bộ).
+
+- **Báo cáo 100 seed trên `a4376a0`** (12 phút 12 giây, một tiến trình): đúng từng chữ báo cáo trên `cf42a26`, trừ dòng thời gian; JSON 144 ô trùng. `aff1045` chỉ thêm test.
+- **Cổng R1 vẫn chưa đạt:** B1 (42 chỉ số lệch dải) và B7 trượt ở cả 4 ải; G3c vế "tốt nhất ≤ 97 %" trượt ở ải 2 (99 %) và 4 (100 %). Đạt: `pnpm check`, B2–B5, B8, G3, G3m, G5, G6 (112 s), G8, §7.6.
+- **Kịch bản trình duyệt** ở 1280×720 và 1920×1080: `survival-s1-loadout`, `-stage`, `-perf`, `-latency`, `survival-s0-fight` đạt. `-latency` ở 1920×1080 đạt ở lần chạy thứ hai; lần đầu có một khung dài 14 133 ms (chưa rõ nguyên nhân).
+- **§17:** khung đỉnh khoảng 150 quái TB 0,74–1,21 ms, `flood(700)` p95 1,2–2,2 ms, draw call 38–40, phím tới hình p95 16,6–17,7 ms, phím tới đạn p95 16,7–20,1 ms (khung khóa 60 Hz).
+- **Bước sim của ải chương** có test mới (`tests/survival-sim.test.ts`): ải 4, 700 quái, khoảng 1.900 viên, 56 quả, 32 khiên, 3 bến cùng bắn; trung vị 0,83–0,85 ms (trần 1,5). Còn mở: bộ nhớ một chương (chờ R2).
+- **Mục 6.A của file process:** G3m đo seed 17–32 trong test từ `49ba852`; thời gian báo cáo trong `AGENTS.md` theo số đo hai máy (Mac 12 phút, Dell 15–30 phút).
+- Việc kế: lượt chỉnh mới theo "Còn lại" của changelog bước 1 (luật bến đầy, sức ép ải 2, đỉnh tràn ải 3, hãm `TIA_DUTY`), ngân sách 6 vòng mỗi họ cổng.

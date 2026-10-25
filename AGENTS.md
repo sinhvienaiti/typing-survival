@@ -24,7 +24,7 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `pnpm visual scripts/visual/scenarios/survival-s0-boot.mjs --width=1280 --height=720`
   (S0 scenarios on the trial: `boot`, `menu`, `fight`, `perf`, `keys`,
   `frames`, `balance`; S1: `survival-s1-loadout`, `-guns` (frame
-  sequences), `-stage`, `-hazards`, `-perf`; agents run a dev server with
+  sequences), `-stage`, `-hazards`, `-perf`, `-latency`; agents run a dev server with
   `npx vite --host 127.0.0.1 --port 3047 --strictPort` and set `URL`).
 - S1 "Chương 1 · Hành Lang VC-7" (`docs/BUILD_S1.md`; R1 built:
   `docs/changelog/2026-10-24-s1-r1.md`, reviewed and fixed:
@@ -32,8 +32,10 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `docs/changelog/2026-10-24-s1-r1-guns.md`, its review handled and the
   gate tuned on: `docs/changelog/2026-10-25-s1-r1-close.md`; the two §5.1
   rules taken as proposed, drain per stage, §17 on the Apple M4:
-  `docs/changelog/2026-10-25-s1-r1-mac.md`; the R1 gate of §14 is not met
-  yet, see that last changelog's "Còn lại"): guns in `src/content/guns.ts`
+  `docs/changelog/2026-10-25-s1-r1-mac.md`; the 100-seed report rerun on
+  the committed code, the browser scenarios at both sizes and a chapter
+  step test: `docs/changelog/2026-10-25-s1-r1-report.md`; the R1 gate of
+  §14 is not met yet, see the Mac changelog's "Còn lại"): guns in `src/content/guns.ts`
   (COUNTERS is the measured table, scenes fought on a chapter stage:
   `node --import tsx scripts/counters.ts` prints seeds 1–16 and 17–32, and
   every mark must hold on both; gate G3m in `tests/guns.test.ts` has no
@@ -63,8 +65,9 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `pnpm survival:balance` (default 100 seeds; one Node process) prints the
   §3 metrics per bot × mode and gates B1–B9, each stage as it ends;
   stages 1–4 with `--g3c --time` are 18 400 runs (14 400 bot cells, 4 000
-  for G3c), 12 min on the Mac mini M4 (one process, other lanes busy,
-  25/10), 15–30 min on the Dell laptop: run it in the background, through
+  for G3c), 12 min on the Mac mini M4 (12:21 and 12:12, one process,
+  other lanes busy, 25/10), 15–30 min on the Dell laptop (four runs,
+  15:31 to 30:29): run it in the background, through
   the parent's `.local/bin/heavy.sh`. Tuning numbers at run time:
   `--set=RAY.damage=110,c1-s1.drainRate=2,…` on `scripts/balance.ts` and
   `scripts/counters.ts` (`scripts/overrides.ts`; quote it in zsh). While
@@ -103,15 +106,20 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   sound id has an entry in `docs/audio/THEME_SOUND_LIST.md`; add one there
   with each new id.
 - Each update gets `docs/changelog/<date>-<topic>.md` (Vietnamese).
-- R1 gate state (100-seed report on `cf42a26`, Mac mini M4, 25/10): passes
+- R1 gate state (100-seed report on `cf42a26`, rerun on `a4376a0` with the
+  same numbers, Mac mini M4, 25/10): passes
   `pnpm check`, B2–B5, B8, G3, G3m, G5, G6, G8, §7.6, G3c in full on
   stages 1 and 3 (its two "no trap" parts on all four); fails B1 and B7 on
   stages 1–4 (B1: 42 band misses, 52 before) and G3c's "best ≤ 97 %" on
   stages 2 and 4. Six 40-seed rounds a gate family were spent (r1–r6 in
-  the Mac changelog). §17 on the Apple M4 (60 Hz locked): frames, draw
-  calls, key to frame and key to shot pass (peak ~150 foes 0.8–1.3 ms mean);
-  a sim step at 700 foes has no scenario yet, a chapter's 30-minute memory
-  waits for R2.
+  the Mac changelog). §17 on the Apple M4 (60 Hz locked, busy machine,
+  preliminary): frames, draw calls, key to frame and key to shot pass
+  (peak ~150 foes 0.7–1.3 ms mean, `flood(700)` p95 1.2–2.6 ms); a chapter
+  stage's sim step at 700 foes, 32 shields and three bays is a test in
+  `tests/survival-sim.test.ts` (median 0.83–0.85 ms of 1.5); a chapter's
+  30-minute memory waits for R2. The five S1/S0 browser scenarios pass at
+  1280×720 and 1920×1080 (`-latency` at 1920 on its second run: the
+  first hit a 14 s page stall).
 - Next: close the R1 gate from the Mac changelog's "Còn lại" (Khá and
   Nhanh idle 12–16 % because the guns take no more magazines, not for want
   of foes: a §5.1 rule for a full bay; stage 2, the hunt, ends at 112 s
