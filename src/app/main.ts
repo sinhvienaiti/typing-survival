@@ -270,7 +270,7 @@ function view(which: Screen): ScreenView | null {
         menu,
         guns: GUN_SPECS.map((gun) => ({ kind: gun.key, name: gun.name, title: gun.title, text: gun.magazine + (gun.trial ? " (" + gun.trial + ")" : "") + ", tầm\u00a0" + gun.range + (gun.heavy ? ", từ có thể dài hơn 1 chữ" : "") + "." })),
         learning: [
-          "Gõ không lỗi: xuyên Vỏ (Vỏ chỉ chặn 75 %) và dễ chí mạng; ở Trận thử đòn mạnh thêm 6 %.",
+          "Gõ không lỗi: xuyên Vỏ (Vỏ chỉ chặn 75\u00a0%) và dễ chí mạng; ở Trận thử đòn mạnh thêm 6\u00a0%.",
           "Mỗi từ gõ xong được ghi vào sổ học chung của portal (mã typing-survival).",
         ],
       };
