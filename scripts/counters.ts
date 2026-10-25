@@ -2,11 +2,12 @@
  * Prints the measured counter table (gate G3m, tests/survival/counters.ts)
  * next to content/guns.ts COUNTERS, on both of the gate's seed sets (1–16
  * and 17–32; a cell shows its cost on each), or on one with --first:
- *   node --import tsx scripts/counters.ts [--first=1 [--seeds=16]]
+ *   node --import tsx scripts/counters.ts [--first=1 [--seeds=16]] [--set=…: scripts/overrides.ts]
  * A mark in brackets: the marks the costs allow on every set (more than one
  * when a cost sits within COUNTER_MARGIN of a threshold). "(bảng ●)": the
  * table's mark is not among them.
  */
+import "./overrides";
 import { COUNTERS, COUNTER_LABELS, COUNTER_ROWS, GUN_SPECS } from "../src/content/guns";
 import { COUNTER_SEED_SETS, counterRules, measureCounters } from "../tests/survival/counters";
 

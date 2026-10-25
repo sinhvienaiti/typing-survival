@@ -12,9 +12,10 @@
  * G2 printed provisionally). 100 seeds by default: a win rate's standard
  * error is then about 4 points (24 seeds are not enough for §3's bands).
  *   node --import tsx scripts/balance.ts [--stages=s0,c1-s1,c1-s2,c1-s3,c1-s4] [--seeds=100] [--first=1]
- *     [--bots=standard,fast] [--modes=balanced] [--off=standard] [--g3c] [--time] [--json=out.json] [--out=report.md]
- * Each stage prints as it ends; --time times every step (a histogram).
+ *     [--bots=standard,fast] [--modes=balanced] [--off=standard] [--g3c] [--time] [--json=out.json] [--out=report.md] [--set=RAY.damage=110,…]
+ * Each stage prints as it ends; --time times every step (a histogram); --set: scripts/overrides.ts.
  */
+import "./overrides";
 import { writeFileSync } from "node:fs";
 import { BANDS, METRIC_LABELS, formatGates, pct, rangeText, scoreBand, type BandMetric } from "../src/kit/balance";
 import { MODE_SPECS, MODES, type Mode } from "../src/content/balance";
@@ -103,7 +104,7 @@ const print = (...lines: string[]): void => {
 };
 const pass = (ok: boolean): string => (ok ? "đạt" : "TRƯỢT");
 const name = (cell: Cell): string => (cell.guns ?? []).map((gun) => GUN_SPECS[gun]!.name).join("+");
-print("# Tuyến Cuối: báo cáo cân bằng (" + seeds + " seed mỗi ô, seed " + firstSeed + "–" + (firstSeed + seeds - 1) + ")", "", "Dải đích (BALANCE.md §3):", "");
+print("# Tuyến Cuối: báo cáo cân bằng (" + seeds + " seed mỗi ô, seed " + firstSeed + "–" + (firstSeed + seeds - 1) + (arg("set") ? "; --set=" + arg("set") : "") + ")", "", "Dải đích (BALANCE.md §3):", "");
 print("| Chế độ | " + METRICS.map((metric) => METRIC_LABELS[metric]).join(" | ") + " |", "|" + "---|".repeat(METRICS.length + 1));
 for (const mode of modes) print("| " + MODE_SPECS[mode].label + " | " + METRICS.map((metric) => rangeText(metric, BANDS[mode][metric])).join(" | ") + " |");
 
