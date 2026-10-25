@@ -368,7 +368,7 @@ describe("words for the bays (§5.1)", () => {
     for (const e of [15, 25, 35, 50, 70]) {
       const [lo, hi] = lengthFor(e);
       const [hlo, hhi] = lengthFor(e, true);
-      expect([hlo, hhi]).toEqual([Math.min(HEAVY.cap, lo + 1), Math.min(HEAVY.cap, hi + 1)]);
+      expect([hlo, hhi]).toEqual([Math.min(HEAVY.cap, lo + HEAVY.short), Math.min(HEAVY.cap, hi + HEAVY.long)]);
       expect(hhi).toBeLessThanOrEqual(10);
     }
     const deck = sharedDeck();

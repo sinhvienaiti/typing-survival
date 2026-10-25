@@ -101,8 +101,8 @@ export const RAY_DUTY = { zone: 6 } as const;
  */
 export const PHAO = { shells: 4, seconds: 3, flight: 0.7, radius: 2.5, damage: 22, edge: 9, near: 6, far: 24, cell: 3, armour: 0.5, crit: 0.05 } as const;
 
-/** Heavy guns (Ray, Pháo Sao) take words one letter longer at both ends of the band, at most `cap` letters. */
-export const HEAVY = { extra: 1, cap: 10 } as const;
+/** Heavy guns (Ray, Pháo Sao) take words `short` letters longer at the band's short end and `long` at its long end, at most `cap` letters. */
+export const HEAVY = { short: 1, long: 1, cap: 10 } as const;
 
 export type GunSpec = {
   readonly key: GunKey;

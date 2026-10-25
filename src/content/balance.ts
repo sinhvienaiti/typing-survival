@@ -36,11 +36,11 @@ export const isMode = (value: unknown): value is Mode => typeof value === "strin
 
 export const bandOf = (mode: Mode): Band => BANDS[mode];
 
-/** The word length band for a typist at E (LENGTH_BY_E) and its mean ℓ̄; a heavy gun's is a letter longer at both ends, at most HEAVY.cap. */
+/** The word length band for a typist at E (LENGTH_BY_E) and its mean ℓ̄; a heavy gun's is longer by HEAVY.short / HEAVY.long at its ends, at most HEAVY.cap. */
 export function lengthFor(e: number, heavy = false): readonly [number, number] {
   let len: readonly [number, number] = LENGTH_BY_E[0].len;
   for (const entry of LENGTH_BY_E) if (e >= entry.minE) len = entry.len;
-  return heavy ? [Math.min(HEAVY.cap, len[0] + HEAVY.extra), Math.min(HEAVY.cap, len[1] + HEAVY.extra)] : len;
+  return heavy ? [Math.min(HEAVY.cap, len[0] + HEAVY.short), Math.min(HEAVY.cap, len[1] + HEAVY.long)] : len;
 }
 export const meanLength = (e: number): number => {
   const [lo, hi] = lengthFor(e);
