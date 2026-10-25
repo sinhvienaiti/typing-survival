@@ -7,7 +7,10 @@
  * their own list beside the grid (sim/hits.ts). R1 review: Mảnh 7 HP (§6
  * had 9: a Xung round or a Tán pellet then took two hits a shard, and Tán,
  * the gun meant to clear them, had one ● in the counter table; §5.2 asks
- * two). Đầu Đàn 300 HP (§6 had 360), × the mode and k as it spawns.
+ * two). Đầu Đàn 300 HP (§6 had 360), × the mode and k as it spawns. R1
+ * close: Trâu Vỏ 5 → 4, as the clean magazine lost its extra damage on a
+ * chapter's stage (a clean Xung round: 8.5 − 3.75 → 7 − 3: small blows kept
+ * a way through Vỏ; Trẻ em on stage 3, Xung + Tán on stage 2).
  */
 export const KIND = { mine: 0, scout: 1, brute: 2, shield: 3, splitter: 4, shard: 5, leader: 6 } as const;
 export type FoeKind = (typeof KIND)[keyof typeof KIND];
@@ -40,7 +43,7 @@ export type FoeSpec = {
 export const FOES: readonly FoeSpec[] = [
   { hp: 14, armour: 0, speed: 2.6, radius: 0.5, breach: 3, drain: 1, wobble: 0.55, wobbleHz: 0.32, mass: 1, knock: true, shield: 0, elite: true, name: "Bầy" },
   { hp: 56, armour: 0, speed: 1.8, radius: 0.8, breach: 6, drain: 2, wobble: 0.15, wobbleHz: 0.2, mass: 1, knock: true, shield: 0, elite: true, name: "Lính" },
-  { hp: 220, armour: 5, speed: 1.25, radius: 1.1, breach: 12, drain: 4, wobble: 0.06, wobbleHz: 0.12, mass: 4, knock: false, shield: 0, elite: false, name: "Trâu" },
+  { hp: 220, armour: 4, speed: 1.25, radius: 1.1, breach: 12, drain: 4, wobble: 0.06, wobbleHz: 0.12, mass: 4, knock: false, shield: 0, elite: false, name: "Trâu" },
   { hp: 80, armour: 0, speed: 1.9, radius: 0.8, breach: 6, drain: 2, wobble: 0.08, wobbleHz: 0.15, mass: 1, knock: true, shield: 100, elite: false, name: "Khiên" },
   { hp: 42, armour: 0, speed: 2.2, radius: 0.7, breach: 4, drain: 1.5, wobble: 0.5, wobbleHz: 0.45, mass: 1, knock: true, shield: 0, elite: true, name: "Tách" },
   { hp: 7, armour: 0, speed: 3, radius: 0.4, breach: 2, drain: 0.5, wobble: 0.6, wobbleHz: 0.55, mass: 1, knock: true, shield: 0, elite: false, name: "Mảnh" },

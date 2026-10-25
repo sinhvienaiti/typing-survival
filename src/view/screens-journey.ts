@@ -4,7 +4,7 @@
  * select with stars, a stage's briefing (objective with its numbers, the
  * hazard and how it warns, the learning rule, the foes with their counter
  * tags, what is new), and the loadout: five gun cards (magazine, reach,
- * what it counters and where it is poor, "+1 chữ" for the heavy guns, the
+ * what it counters and where it is poor, "dài tới +1 chữ" for the heavy guns, the
  * Rèn level the stage gives), the stage's threats with a yellow mark where
  * the picked guns answer nothing, and the start button.
  */
@@ -91,7 +91,7 @@ export function renderJourney(journey: Journey): string {
               '<section class="sv-gun-card sv-' + card.key + (card.on ? " is-on" : "") + (card.picked >= 0 ? " is-picked" : "") + '" data-card="' + n + '">' +
               '<header><kbd>' + (n + 1) + "</kbd><b>" + escapeHtml(card.name) + "</b>" + (card.picked >= 0 ? '<em>BẾN ' + (card.picked + 1) + (card.level > 1 ? " · RÈN " + card.level : "") + "</em>" : "") + "</header>" +
               "<small>" + escapeHtml(card.title) + "</small>" +
-              "<p>" + escapeHtml(card.magazine) + " · tầm " + escapeHtml(card.range) + (card.heavy ? " · từ +1 chữ" : "") + "</p>" +
+              "<p>" + escapeHtml(card.magazine) + " · tầm " + escapeHtml(card.range) + (card.heavy ? " · từ dài tới +1 chữ" : "") + "</p>" +
               '<p class="sv-good">khắc: ' + escapeHtml(card.good || "—") + "</p>" +
               '<p class="sv-poor">kém: ' + escapeHtml(card.poor || "—") + "</p>" +
               "</section>",

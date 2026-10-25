@@ -364,7 +364,7 @@ describe("Tách (§6)", () => {
 });
 
 describe("words for the bays (§5.1)", () => {
-  it("heavy guns take words a letter longer at both ends, never past 10 letters; every shown word starts with its own letter", () => {
+  it("heavy guns take words up to a letter longer (HEAVY: the long end since the R1 close), never past 10 letters; every shown word starts with its own letter", () => {
     for (const e of [15, 25, 35, 50, 70]) {
       const [lo, hi] = lengthFor(e);
       const [hlo, hhi] = lengthFor(e, true);

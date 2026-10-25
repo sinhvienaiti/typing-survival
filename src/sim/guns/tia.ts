@@ -7,7 +7,7 @@
  * shield across the ray takes the pulse (Tia burns it) and hides what stands
  * behind it until it breaks.
  */
-import { CRIT_MULT, TIA } from "../../content/guns";
+import { CRIT_MULT, TIA, tiaDamage } from "../../content/guns";
 import { FIELD, SCOUT } from "../../content/rules";
 import { EV, FLAG } from "../events";
 import { MAX_RADIUS, colOf, rowOf } from "../hits";
@@ -141,7 +141,7 @@ function pulse(w: World, bay: number, side: number): void {
   }
   if (wall >= 0 && stop !== Infinity && w.shields.alive[wall] === 1) {
     const crit = w.rng.crit.chance(G.crit[i]!);
-    damageShield(w, wall, TIA.damage * G.damage[i]! * (crit ? CRIT_MULT : 1), bx, bz, ux * stop, FIELD.muzzleZ + uz * stop);
+    damageShield(w, wall, tiaDamage(w.stage) * G.damage[i]! * (crit ? CRIT_MULT : 1), bx, bz, ux * stop, FIELD.muzzleZ + uz * stop);
   }
 }
 
@@ -154,6 +154,6 @@ function burn(w: World, s: number, ux: number, uz: number, half: number, L: numb
   // Behind a shield across the ray: hidden from it.
   if (RAY[0]! - r > stop) return;
   const crit = w.rng.crit.chance(G.crit[i]!);
-  const damage = TIA.damage * G.damage[i]! * (crit ? CRIT_MULT : 1);
+  const damage = tiaDamage(w.stage) * G.damage[i]! * (crit ? CRIT_MULT : 1);
   damageFoe(w, s, damage, FLAG.tia | perfect | (crit ? FLAG.crit : 0), bx, bz, G.pierce[i]!);
 }

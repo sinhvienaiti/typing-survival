@@ -3,7 +3,9 @@
  * §5.2, §11.4): a world with chosen guns on its bays, no horde of its own
  * (no vanguard, no spawns), endless armour, foes placed by hand (standing
  * still or walking), and magazines fed at a typist's letter rate (a heavy
- * gun's words are a letter longer, so the same letters load it less often).
+ * gun's words are longer, so the same letters load it less often). The near
+ * zone drains at the chapter's base rate: a stage's drainRate tunes that
+ * stage, it is not a property of the guns the scenes measure (R1 close).
  */
 import { lengthFor } from "../../src/content/balance";
 import { GUN_SPECS, type GunId } from "../../src/content/guns";
@@ -26,6 +28,7 @@ export function arena(guns: readonly GunId[], options: { levels?: readonly numbe
   });
   w.spawn.packs = 1;
   w.spawn.owed = -1e12;
+  w.scales = { ...w.scales, drain: w.scales.drain / (w.stage.drainRate ?? 1) };
   w.hp = ENDLESS;
   w.seconds = 1e9;
   return w;

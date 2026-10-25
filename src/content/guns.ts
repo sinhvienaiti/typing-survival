@@ -21,11 +21,11 @@ export const CRIT_MULT = 2;
 /**
  * Typing quality of the loading word (S0's numbers): Chuẩn (0 errors) ×1.06
  * damage, +4 % crit; Nhanh (≤ 0.7 of the expected time) ×1.15 fire rate. New
- * in S1, "Băng Chuẩn xuyên Vỏ": a clean magazine meets armour × 0.75, and on
- * a chapter's stages hits `chapterClean` × harder (R1 review, gate B4: a
- * clean typist must kill faster than a sloppy one; the trial keeps S0's).
+ * in S1, "Băng Chuẩn xuyên Vỏ": a clean magazine meets armour × 0.75. On a
+ * chapter's stages it hits `chapterCleanDamage` × (R1 close: 1, no extra
+ * damage; its reward is the Vỏ it pierces and the crit). The trial keeps ×1.06.
  */
-export const QUALITY = { cleanDamage: 1.06, cleanCrit: 0.04, fastShare: 0.7, fastRate: 1.15, cleanArmour: 0.75, chapterClean: 1.15 } as const;
+export const QUALITY = { cleanDamage: 1.06, cleanCrit: 0.04, fastShare: 0.7, fastRate: 1.15, cleanArmour: 0.75, chapterCleanDamage: 1 } as const;
 
 /** Rèn: damage per blow by level (1–3), magazines held by level. */
 export const FORGE = { damage: [1, 1.2, 1.4], mags: [MAG_MAX, MAG_MAX, MAG_CAP], max: 3 } as const;
@@ -46,6 +46,9 @@ export const XUNG = { rounds: 24, seconds: 2.4, damage: 7, coneCos: 0.9063, spee
 export const XUNG_CHAPTER = { rounds: 27 } as const;
 /** Tia: a 1.4 m wide ray `length` m long for 2.5 s, 6 a pulse every 0.1 s to every foe it crosses, sweeping 3 m/s. S0 numbers. */
 export const TIA = { seconds: 2.5, width: 1.4, sweep: 3, pulse: 0.1, damage: 6, crit: 0.05, strip: 1.2, away: 2.4, length: 12 } as const;
+/** Tia on a chapter's stages (R1 close): 7 a pulse, a mine (14) in two pulses for every typist, not only clean ones; tiaDamage: the stage's. */
+export const TIA_CHAPTER = { damage: 7 } as const;
+export const tiaDamage = (stage: { readonly chapter: number }): number => (stage.chapter > 0 ? TIA_CHAPTER.damage : TIA.damage);
 /**
  * Tia's fire control (R1 review, G3c): in a kit without Xung, Tia takes
  * Xung's work too. Its aim weighs foes inside `zone` m (up to +`near` at the
@@ -61,10 +64,10 @@ export const TIA_DUTY = { zone: 10, near: 4, scout: 3, sweep: 1.5, retarget: 15 
  * 0.35; never the heavy kinds) or knocks a scout shot out of the air.
  * Pellets are short-lived rounds: a shield stops them and nothing behind it
  * is hurt, but each wears the shield by `shield` × its damage (R1 review:
- * Xung + Tán had no way past a shield, G3c). R1 guns: 2 → 2.3 s, so the
+ * Xung + Tán had no way past a shield, G3c; R1 close 0.5 → 0.8). R1 guns: 2 → 2.3 s, so the
  * swarm at the line is not Tán's alone (G3m) and Tia keeps Tách (G3m).
  */
-export const TAN = { volleys: 6, seconds: 2.3, damage: 7, range: 9, speed: 40, radius: 0.12, knock: 0.6, crit: 0.05, shield: 0.5 } as const;
+export const TAN = { volleys: 6, seconds: 2.3, damage: 7, range: 9, speed: 40, radius: 0.12, knock: 0.6, crit: 0.05, shield: 0.8 } as const;
 /** The fan's directions as (cos, sin) of −18°, −12°, −6°, 0°, 6°, 12°, 18° (written out: no trigonometry in the sim). */
 export const TAN_FAN: readonly (readonly [number, number])[] = [
   [0.9510565162951535, -0.3090169943749474],
@@ -77,32 +80,36 @@ export const TAN_FAN: readonly (readonly [number, number])[] = [
 ];
 /**
  * Ray: 3 shots in 2.4 s, each charged 0.15 s and then instant; it pierces up
- * to 6 foes on one line (×0.85 for each one passed), 30 m, 95 a foe, armour
+ * to 6 foes on one line (×0.85 for each one passed), 30 m, 112 a foe, armour
  * counts ×0.25; a shield on the line breaks at once (and counts as one).
- * R1 guns: 75 → 95, two clean shots a Trâu (three at 75), so Ray still
- * brings Trâu down twice as fast as a clean Xung on a chapter's stage (G3).
+ * R1 guns 75 → 95, R1 close 112: two shots a Trâu (220 at k = 1; 2 × 111 =
+ * 222), clean or not, twice as fast as a clean Xung (G3).
  */
-export const RAY = { shots: 3, seconds: 2.4, charge: 0.15, damage: 95, falloff: 0.85, pierce: 6, range: 30, width: 0.2, armour: 0.25, crit: 0.05 } as const;
+export const RAY = { shots: 3, seconds: 2.4, charge: 0.15, damage: 112, falloff: 0.85, pierce: 6, range: 30, width: 0.2, armour: 0.25, crit: 0.05 } as const;
 /**
  * Ray's fire control in a kit with no near gun (Ray + Pháo Sao; R1 guns, as
  * Tia's TIA_DUTY): the busiest line through foes within `zone` m comes
  * first, a Đầu Đàn alone before it. Without it Ray kept to scouts and Trâu
- * far out while the swarm walked into the line (G3c: 55–70 % on stages 1, 3).
+ * far out while the swarm walked into the line (G3c: 55–70 % on stages 1, 3); R1 close 6 → 8 m.
  */
-export const RAY_DUTY = { zone: 6 } as const;
+export const RAY_DUTY = { zone: 8 } as const;
 /**
  * Pháo Sao: 4 shells in 3 s, each flying 0.7 s to the heaviest cluster (by
- * hit points still standing) 6–24 m out, bursting 2.5 m round: 22 at the
+ * hit points still standing) 6–24 m out, bursting 2.5 m round: 23 at the
  * centre falling to 9 at the edge. Shells fall from above: shields do not
  * stop them, and Vỏ meets them × 0.5 (the thin top). §5.1 started at 6
  * shells, 3 m, 26 → 13: a pack died to a shell and every kit with Pháo Sao
  * swept the stages (R1 balance, changelog). R1 review: the near edge 8 → 6 m
- * (G3c tuning: a kit with Pháo Sao and no near gun lost at the line).
+ * (G3c tuning: a kit with Pháo Sao and no near gun lost at the line); R1 close 22 → 23.
  */
-export const PHAO = { shells: 4, seconds: 3, flight: 0.7, radius: 2.5, damage: 22, edge: 9, near: 6, far: 24, cell: 3, armour: 0.5, crit: 0.05 } as const;
+export const PHAO = { shells: 4, seconds: 3, flight: 0.7, radius: 2.5, damage: 23, edge: 9, near: 6, far: 24, cell: 3, armour: 0.5, crit: 0.05 } as const;
 
-/** Heavy guns (Ray, Pháo Sao) take words `short` letters longer at the band's short end and `long` at its long end, at most `cap` letters. */
-export const HEAVY = { short: 1, long: 1, cap: 10 } as const;
+/**
+ * Heavy guns (Ray, Pháo Sao) take words `short` / `long` letters longer at the
+ * band's ends, at most `cap`; R1 close: the long end only (a letter more on
+ * every word cost a sloppy typist far more than one key).
+ */
+export const HEAVY = { short: 0, long: 1, cap: 10 } as const;
 
 export type GunSpec = {
   readonly key: GunKey;
@@ -140,8 +147,8 @@ export const GUN_SPECS: readonly GunSpec[] = [
  * Re-measured in the R1 review (16 seeds; a cost within COUNTER_MARGIN of
  * a threshold allows either mark) and again for R1 guns, on a chapter's
  * stage (the scenes fire the guns as the chapter does) and on both seed
- * sets the gate checks, 1–16 and 17–32: Xung's chapter magazine gives it ●
- * on swarmNear and splitter, Ray 95 ○ on shields (changelog 2026-10-24-s1-r1-guns.md).
+ * sets the gate checks, 1–16 and 17–32 (changelog 2026-10-24-s1-r1-guns.md);
+ * R1 close (changelog 2026-10-25-s1-r1-mac.md): Tia ○ swarmFar, Pháo Sao ✕ swarmNear, Xung ○ splitter.
  */
 export const COUNTER_ROWS = ["swarmFar", "swarmNear", "scout", "armoured", "shield", "splitter"] as const;
 export type CounterRow = (typeof COUNTER_ROWS)[number];
@@ -154,10 +161,10 @@ export const COUNTER_LABELS: Readonly<Record<CounterRow, string>> = {
   splitter: "Tách và mảnh",
 };
 export const COUNTERS: Readonly<Record<CounterRow, readonly [number, number, number, number, number]>> = {
-  swarmFar: [1, 0, 1, 0, 2],
-  swarmNear: [2, 0, 2, 0, 1],
+  swarmFar: [1, 1, 1, 0, 2],
+  swarmNear: [2, 0, 2, 0, 0],
   scout: [2, 1, 0, 2, 0],
   armoured: [0, 0, 0, 2, 0],
   shield: [0, 2, 0, 1, 2],
-  splitter: [2, 2, 2, 0, 0],
+  splitter: [1, 2, 2, 0, 0],
 };

@@ -37,7 +37,7 @@ import { installKeys } from "../../src/app/input";
 import { Session } from "../../src/app/session";
 import { buildDeck } from "../../src/content/deck";
 import { FOES, KIND } from "../../src/content/foes";
-import { GUN, GUN_SPECS, PHAO, RAY, TAN, TIA, XUNG } from "../../src/content/guns";
+import { GUN, GUN_SPECS, PHAO, RAY, TAN, TIA, XUNG, tiaDamage } from "../../src/content/guns";
 import { FIELD, NEAR } from "../../src/content/rules";
 import { LEARN_RULES } from "../../src/content/stage-rules";
 import type { World, WorldOptions } from "../../src/sim/world";
@@ -48,8 +48,8 @@ const XUNG_Z = FIELD.muzzleZ + XUNG.range;
 const REACH_Z = FIELD.muzzleZ + TIA.length + 1;
 const CLOSE_Z = NEAR.z + 2;
 const BAND = [FIELD.muzzleZ + PHAO.near, FIELD.muzzleZ + PHAO.far] as const;
-/** A blow's base damage by gun (how much of it Vỏ leaves). */
-const BASE = [XUNG.damage, TIA.damage, TAN.damage, RAY.damage, PHAO.damage] as const;
+/** A blow's base damage by gun (how much of it Vỏ leaves); Tia's is the stage's (gunNeeds sets it). */
+const BASE: number[] = [XUNG.damage, TIA.damage, TAN.damage, RAY.damage, PHAO.damage];
 /** Misremembered hidden letters by bot (Thiếu chữ), the standard bot's for the rest. */
 const RECALL: Readonly<Record<string, number>> = { standard: 0.2, novice: 0.3, child: 0.4 };
 
@@ -62,12 +62,12 @@ function through(gun: number, kind: number, shielded: boolean): number {
 }
 
 /**
- * What a magazine of each gun is worth now (BUILD_S1 §11.2 gunValue), in
- * S0's units: Xung and Tia exactly as S0's bot (1 + 2·close + 2·shots +
- * in range / 2; 1 + in reach / 2) when nothing has Vỏ or a shield; Đầu Đàn
- * count ×4 everywhere.
+ * What a magazine of each gun is worth now (BUILD_S1 §11.2 gunValue), in S0's units: Xung and Tia
+ * exactly as S0's bot (1 + 2·close + 2·shots + in range / 2; 1 + in reach / 2) when nothing has Vỏ
+ * or a shield; Đầu Đàn count ×4 everywhere.
  */
 export function gunNeeds(w: World, out: Float64Array): Float64Array {
+  BASE[GUN.tia] = tiaDamage(w.stage);
   const F = w.foes;
   let xung = 0;
   let tia = 0;

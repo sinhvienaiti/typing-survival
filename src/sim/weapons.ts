@@ -85,7 +85,7 @@ export function loadMagazine(w: World, bay: number, clean: boolean, fast: boolea
   if (gun < 0 || k >= G.cap[bay]!) return false;
   const spec = GUN_SPECS[gun]!;
   const i = bay * MAG_CAP + k;
-  G.damage[i] = (clean ? QUALITY.cleanDamage * (w.stage.chapter > 0 ? QUALITY.chapterClean : 1) : 1) * FORGE.damage[G.level[bay]! - 1]!;
+  G.damage[i] = (clean ? (w.stage.chapter > 0 ? QUALITY.chapterCleanDamage : QUALITY.cleanDamage) : 1) * FORGE.damage[G.level[bay]! - 1]!;
   G.crit[i] = spec.crit + (clean ? QUALITY.cleanCrit : 0);
   G.rate[i] = fast ? QUALITY.fastRate : 1;
   G.pierce[i] = spec.armour * (clean ? QUALITY.cleanArmour : 1);
