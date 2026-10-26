@@ -51,8 +51,9 @@
   --gun: var(--xung);
   --gun-glow: var(--xung-glow);
 
-  /* Text. */
+  /* Text; white-hot: a letter just typed, before it cools to its gun's colour. */
   --text: #f4f1eb;
+  --white-hot: #fff0d8;
   --soft: #cdd2d6;
   --muted: #98a1a9;
   --ink: #050607;
@@ -67,6 +68,9 @@
   --panel: rgba(19, 22, 26, 0.97);
   --panel-raised: rgba(37, 43, 50, 0.97);
   --screen: rgba(7, 9, 11, 0.97);
+  /* The word line and the bays over the deck (FEEL_PASS_S1 §2.3): solid enough for 7 : 1 over the brightest 1 % of the view behind (bays 0.64, not 0.6: bay 2 meets the wall's stripes, p99 0.70). */
+  --strip: rgba(7, 9, 11, 0.72);
+  --bay-glass: rgba(7, 9, 11, 0.64);
   --line: rgba(150, 165, 178, 0.24);
   --line-strong: rgba(190, 200, 210, 0.42);
   --bevel-hi: rgba(255, 255, 255, 0.075);

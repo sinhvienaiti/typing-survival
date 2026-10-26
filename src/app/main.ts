@@ -27,6 +27,7 @@ import { Stage } from "../view/scene";
 import { renderScreen, type ScreenView } from "../view/screens";
 import { renderJourney, starRow } from "../view/screens-journey";
 import { Ship, type Pilot } from "../view/ship";
+import { TypeFeel } from "../view/typing-feel";
 import { FrameCosts, bays, eventCounts, installDevHandle, numberBoxes, runState, snapshot } from "./dev";
 import { Journey, NEXT_KEY, recordStage, starsOf, takeChoice, type RunChoice } from "./journey";
 import { countedText, profileView, runStats, runWords } from "./results";
@@ -152,7 +153,6 @@ let lastPeak = 0;
 const combat = new Combat(stage, crowd, ship, pilot, tier, audio, {
   stop: (ms) => session.stop(ms),
   wordDone(slot, index, perfect, seconds, recognize, errors) {
-    hud.finished(slot, index, perfect, clock);
     const word = wordOf(index);
     const text = world.deck[index] ?? "";
     tallyWord(tally, history.finished(text), text.length, seconds, recognize, errors === 0);
@@ -195,7 +195,8 @@ const applyShake = (): void => {
   combat.trauma.scale = settings.screenShake && shakeAllowed ? 1 : 0;
 };
 applyShake();
-combat.trauma.reduced = motionReduced();
+combat.trauma.reduced = hud.reduced = motionReduced();
+const typing = (combat.typing = new TypeFeel(hud, stage, ship, combat.glows, combat.strips, combat.sparks, audio));
 
 const percent = (value: number): string => Math.round(value * 100) + " %";
 const onOff = (on: boolean): string => (on ? "Bật" : "Tắt");
@@ -504,10 +505,11 @@ installAutoPause(window, document, () => {
 });
 
 function resize(): void {
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-  document.documentElement.style.setProperty("--ui", Math.max(0.8, Math.min(1.6, Math.min(width / 1280, height / 720))).toFixed(3));
+  const [width, height] = [window.innerWidth, window.innerHeight];
+  const ui = Math.max(0.8, Math.min(1.6, Math.min(width / 1280, height / 720)));
+  document.documentElement.style.setProperty("--ui", ui.toFixed(3));
   stage.resize(width, height);
+  hud.layout(stage, ui);
   combat.resize(height, hud.protectedRects());
 }
 window.addEventListener("resize", resize);
@@ -529,7 +531,9 @@ function update(now: number): void {
   session.paused = mode !== "play";
   session.frame(now);
   combat.read(world, now);
+  typing.read(world, now);
   hud.update(world, combat.killsWithin(now, 3000), now);
+  typing.land(now);
   hud.setNotice(imeNotice.on(now) ? "Tắt bộ gõ tiếng Việt để gõ" : vocab.source === "fallback" ? "Từ dự phòng (máy chủ không có từ vựng)" : "");
   // The floor glows red as the press reaches the ship (inside the guns' reach and closing); the music rises with the horde.
   let near = 0;
@@ -630,7 +634,7 @@ installDevHandle({
   /** Sounds started so far by id (docs/audio/THEME_SOUND_LIST.md), and whether audio runs. */
   sounds: () => ({ ready: audio.ready, played: Object.fromEntries(audio.played) }),
   screen: () => screen,
-  info: () => ({ calls, triangles, geometries: stage.renderer.info.memory.geometries, textures: stage.renderer.info.memory.textures, programs: stage.renderer.info.programs?.length ?? 0, drawn: crowd.drawn(), glows: combat.glows.count, sparks: combat.sparks.count, debris: combat.debris.live, numbers: combat.numbers.live, stops: combat.stopsAsked }),
+  info: () => ({ calls, triangles, geometries: stage.renderer.info.memory.geometries, textures: stage.renderer.info.memory.textures, programs: stage.renderer.info.programs?.length ?? 0, drawn: crowd.drawn(), glows: combat.glows.count, sparks: combat.sparks.count, debris: combat.debris.live, numbers: combat.numbers.live, stops: combat.stopsAsked, feel: typing.probe() }),
   numbers: () => numberBoxes(combat.numbers),
   rects: () => hud.protectedRects(),
   /** The shake settings and the camera's shake offset now (px). */

@@ -1,29 +1,40 @@
 /**
- * The HUD (docs/BUILD_S0.md §7, docs/BUILD_S1.md §10), DOM outside the
- * shaking canvas, dressed as the station's steel consoles (theme.css,
- * survival.css). Bottom: `[bay 3][bay 1] [learning frame 420] [bay 2][bay 4]`
- * (bays 190 px at 1280×720; the frame keeps S0's size and place). A live bay
- * shows its gun (name, colour, magazine LEDs: 2, or 3 at Rèn 3), its word
- * (32 px, long words shrink to no less than 26 px; Thiếu chữ's hidden letters
- * as "_" until typed or shown) and meaning; a bay without a gun is a dark
- * plate ("MỞ Ở MỐC" for bay 3 in the chapter, a lock for bay 4). The frame:
- * the word being typed, its IPA and meaning ("word · meaning ✓" for 0.6 s).
- * Top: armour, clock, kills, the objective's plate (Săn: "ĐẦU ĐÀN 1/3"),
- * a rift's warning on its wall's side, a 2 s card when something new first
+ * The HUD (docs/BUILD_S0.md §7, docs/BUILD_S1.md §10, docs/FEEL_PASS_S1.md
+ * §2), DOM outside the shaking canvas, dressed as the station's steel
+ * consoles (theme.css, survival.css). The word being typed sits on a line
+ * just above the ship's nose (strip.ts); the bays sit on the floor beside
+ * the ship, under the bottom line: `[bay 3][bay 1] ship [bay 2][bay 4]`
+ * (bays 1–2 230 px, 3–4 208 px, 100 px tall at 1280×720), both placed from
+ * the still camera's view of the bottom line (layout()). A live bay shows
+ * its gun (name, colour, magazine LEDs: 2, or 3 at Rèn 3; a top stripe that
+ * fills as its word is typed), its word (32 px, long words shrink to no less
+ * than 26 px; Thiếu chữ's hidden letters as "_" until typed or shown) and
+ * meaning, with the IPA while it is the bay being typed; a bay without a gun
+ * is a dark plate ("MỞ Ở MỐC" for bay 3 in the chapter, a lock for bay 4).
+ * Top: armour, clock, kills, the objective's plate (Săn: "ĐẦU ĐÀN 1/3"), a
+ * rift's warning on its wall's side, a 2 s card when something new first
  * appears. It publishes the rectangles damage numbers must not cover.
  */
+import * as THREE from "three";
 import type { Rect } from "../kit/feedback";
 import { FOES, KIND } from "../content/foes";
 import { GUN_SPECS, type GunId } from "../content/guns";
+import { FIELD } from "../content/rules";
 import { RIFT } from "../content/stage-rules";
 import { STAGE_S0 } from "../content/stage-s0";
 import { peakAt } from "../sim/plan";
 import { magazineUnits } from "../sim/weapons";
 import type { World } from "../sim/world";
 import type { Word } from "../app/vocab";
+import type { Stage } from "./scene";
+import { firstBounce, WordStrip } from "./strip";
+import { fullBlink } from "./type-rules";
 
 const DONE_MS = 600;
 const NEW_MS = 2000;
+/** Bay columns at 1280×720: bay 3, bay 1, the ship's gap, bay 2, bay 4 (gaps of 12). */
+const COLUMNS = [208, 230, 324, 230, 208] as const;
+const BAY_COLUMN = [2, 4, 1, 5] as const;
 /** Long words shrink down to this share of 32 px (26 px). */
 const MIN_FIT = 26 / 32;
 /** The "new" card per kind a stage teaches. */
@@ -43,7 +54,7 @@ function el<T extends HTMLElement>(tag: string, className: string, parent: HTMLE
   return node;
 }
 
-type Slot = { root: HTMLElement; line: HTMLElement; typed: HTMLElement; rest: HTMLElement; mean: HTMLElement; mags: HTMLElement[]; gun: number; key: string };
+type Slot = { root: HTMLElement; line: HTMLElement; typed: HTMLElement; head: HTMLElement; rest: HTMLElement; mean: HTMLElement; mags: HTMLElement[]; gun: number; key: string; fullAt: number; loadAt: number; doneMean: string; doneUntil: number; bounced: boolean; blink: boolean };
 
 /** A word as shown: the typed part, then the rest with hidden letters as "_" (shown ones as letters). */
 function masked(word: string, from: number, hidden: number, shown: number): string {
@@ -65,16 +76,19 @@ export class Hud {
   private readonly goal: HTMLElement;
   private readonly fresh: HTMLElement;
   private readonly warn: HTMLElement;
-  private readonly learn: HTMLElement;
-  private readonly learnWord: { line: HTMLElement; typed: HTMLElement; rest: HTMLElement };
-  private readonly learnIpa: HTMLElement;
-  private readonly learnMean: HTMLElement;
+  private readonly bottom: HTMLElement;
+  readonly strip: WordStrip;
   private readonly hp: HTMLElement;
   private readonly slots: Slot[] = [];
   readonly overlay: HTMLElement;
   readonly vignette: HTMLElement;
-  private done: { text: string; until: number } | null = null;
-  private last = { hp: -1, time: "", kills: -1, total: -1, learn: "", peak: 0, goal: "", warn: "" };
+  private last = { hp: -1, time: "", kills: -1, total: -1, peak: 0, goal: "", warn: "" };
+  private bounceAt = -1e9;
+  private streakHot = false;
+  private readonly at = new THREE.Vector3();
+  reduced = false;
+  /** Where layout() put things (CSS px): the stripes' far edge, the red line's glow edge, Xung's reach (z 11.7 m). */
+  readonly placed = { stripes: 0, glow: 0, reach: 0 };
   private bannerUntil = 0;
   private freshUntil = 0;
   private readonly met = new Set<number>();
@@ -106,63 +120,99 @@ export class Hud {
     this.fresh = el("div", "sv-fresh", root);
     this.warn = el("div", "sv-warn", root);
     this.notice = el("div", "sv-notice", root);
-    const bottom = el("div", "sv-bottom", root);
+    this.bottom = el("div", "sv-bottom", root);
+    this.strip = new WordStrip(root);
     const kit = w.header.kit;
     const chapter = w.stage.id !== "s0";
-    // Columns: bay 3, bay 1, the frame, bay 2, bay 4.
-    const cell = (bay: number): void => {
+    // Columns: bay 3, bay 1, the ship's gap, bay 2, bay 4.
+    for (let bay = 0; bay < 4; bay += 1) {
       const gun = bay < kit.bays ? (w.guns.gun[bay] ?? -1) : -1;
       if (gun < 0) {
-        const plate = el("section", "sv-bay-lock sv-panel", bottom);
+        const plate = el("section", "sv-bay-lock sv-panel", this.bottom);
         plate.dataset.bay = String(bay + 1);
+        plate.style.gridArea = "1 / " + BAY_COLUMN[bay];
         if (bay === 2 && chapter) el("span", "", plate, "MỞ Ở MỐC");
         else el("i", "sv-lock", plate);
-        return;
+        continue;
       }
       const spec = GUN_SPECS[gun]!;
-      const root = el("section", "sv-slot sv-panel sv-" + spec.key, bottom);
+      const root = el("section", "sv-slot sv-panel sv-" + spec.key, this.bottom);
       root.dataset.bay = String(bay + 1);
+      root.style.gridArea = "1 / " + BAY_COLUMN[bay];
       const head = el("header", "", root);
       el("span", "sv-gun", head, spec.name);
       const mags = el("div", "sv-mags", head);
       const line = el("div", "sv-word", root);
-      const slot: Slot = { root, line, typed: el("span", "sv-typed", line), rest: el("span", "", line), mean: el("div", "sv-mean", root), mags: [], gun, key: "" };
+      const slot: Slot = { root, line, typed: el("span", "sv-typed", line), head: el("span", "sv-head", line), rest: el("span", "", line), mean: el("div", "sv-mean", root), mags: [], gun, key: "", fullAt: -1e9, loadAt: -1e9, doneMean: "", doneUntil: -1e9, bounced: false, blink: false };
       for (let m = 0; m < w.guns.cap[bay]!; m += 1) slot.mags.push(el("i", "", mags));
       this.slots[bay] = slot;
-    };
-    cell(2);
-    cell(0);
-    this.learn = el("section", "sv-learn sv-panel", bottom);
-    cell(1);
-    cell(3);
-    const learnWord = el("div", "sv-learn-word", this.learn);
-    this.learnWord = { line: learnWord, typed: el("span", "sv-typed", learnWord), rest: el("span", "", learnWord) };
-    this.learnIpa = el("div", "sv-learn-ipa", this.learn);
-    this.learnMean = el("div", "sv-learn-mean", this.learn);
+    }
     this.overlay = el("div", "sv-overlay", root);
     this.teach = new Set(w.stage.teach.map((thing) => TEACH_KIND[thing]).filter((kind): kind is number => kind !== undefined));
   }
 
-  /** The rectangles no damage number may cover (CSS px), with a small margin: the frame, the armour, the bays, the objective's plate. */
-  protectedRects(): Rect[] {
-    const nodes = [this.learn, this.hp, ...this.slots.filter(Boolean).map((slot) => slot.root)];
-    if (!this.goal.hidden) nodes.push(this.goal);
-    return nodes.map((node) => {
-      const box = node.getBoundingClientRect();
-      return { x: box.left - 6, y: box.top - 6, w: box.width + 12, h: box.height + 12 };
-    });
+  /**
+   * Places the word line and the bays from the still camera (FEEL_PASS_S1
+   * §2.1): the line's bottom 4 px above the far edge of the bottom line's
+   * stripes (the projection puts that edge at 476 px at 720p, so the line
+   * sits at 416–472 as §2.1 draws it and 90 px under Xung's reach), the
+   * bays' top where the red line's glow ends. Call on resize.
+   */
+  layout(stage: Stage, ui: number): void {
+    const stripes = (this.placed.stripes = stage.project(0, FIELD.bottomZ + 1.05, 0, this.at, true).y);
+    const glow = (this.placed.glow = stage.project(0, FIELD.bottomZ - 0.32, 0, this.at, true).y);
+    this.placed.reach = stage.project(0, 11.7, 0, this.at, true).y;
+    this.bottom.style.top = glow + "px";
+    this.bottom.style.gridTemplateColumns = COLUMNS.map((px) => px * ui + "px").join(" ");
+    this.strip.layout(stage, stripes - 4 * ui, ui);
   }
 
-  /** A word finished on `slot`: the slot flashes, the frame shows "word · meaning ✓". */
-  finished(slot: number, index: number, perfect: boolean, now: number): void {
+  /** The rectangles no damage number may cover (CSS px), with a small margin: the word line (at its widest), the armour, the bays, the objective's plate. */
+  protectedRects(): Rect[] {
+    const nodes = [this.hp, ...this.slots.filter(Boolean).map((slot) => slot.root)];
+    if (!this.goal.hidden) nodes.push(this.goal);
+    const line = this.strip.rect();
+    return [{ x: line.x - 6, y: line.y - 6, w: line.w + 12, h: line.h + 12 }, ...nodes.map((node) => {
+      const box = node.getBoundingClientRect();
+      return { x: box.left - 6, y: box.top - 6, w: box.width + 12, h: box.height + 12 };
+    })];
+  }
+
+  /** A wrong key: in the locked word (`slot` ≥ 0) the letter due is marked; a stray key ghosts and every bay's first letter bounces. */
+  keyBad(slot: number, due: number, letter: string, now: number): void {
+    if (slot >= 0) this.strip.miss(due, now);
+    else {
+      this.strip.stray(letter, now);
+      this.bounceAt = now;
+    }
+  }
+
+  /** A word finished on `slot` (`full`: its bay took no magazine): the line shows it, the bay flashes (or its LEDs blink when full). */
+  wordDone(slot: number, index: number, perfect: boolean, full: boolean, now: number): void {
     const word = this.words(index);
-    this.done = { text: word.en + " · " + word.vi + " ✓", until: now + DONE_MS };
-    const root = this.slots[slot]?.root;
-    if (root === undefined) return;
+    const fits = this.strip.finished(word.en, word.vi, this.slots[slot]?.gun ?? 0, full, now);
+    const bay = this.slots[slot];
+    if (bay === undefined) return;
+    if (!fits) {
+      bay.doneMean = word.vi + " ✓";
+      bay.doneUntil = now + DONE_MS;
+    }
+    if (full) {
+      bay.fullAt = now;
+      return;
+    }
+    bay.loadAt = now;
+    const root = bay.root;
     root.classList.toggle("is-perfect", perfect);
     root.classList.remove("is-loaded");
     void root.offsetWidth;
     root.classList.add("is-loaded");
+  }
+
+  /** The clean streak (n words), the streak a wrong key broke, its tier (3: the line's edge takes the gun's colour). */
+  streak(n: number, broke: number, tier: number, now: number): void {
+    this.strip.streak(n, broke, now);
+    this.streakHot = tier >= 3;
   }
 
   showBanner(text: string, now: number): void {
@@ -222,26 +272,43 @@ export class Hud {
     this.updateGoal(w);
     this.updateWarn(w);
     this.updateFresh(w, now);
-    for (let s = 0; s < this.slots.length; s += 1) if (this.slots[s] !== undefined) this.updateSlot(w, s);
-    this.updateLearn(w, now);
+    for (let s = 0; s < this.slots.length; s += 1) if (this.slots[s] !== undefined) this.updateSlot(w, s, now);
+    this.strip.reduced = this.reduced;
+    this.strip.update(w, now, this.streakHot);
   }
 
-  private updateSlot(w: World, s: number): void {
+  private updateSlot(w: World, s: number, now: number): void {
     const slot = this.slots[s]!;
     const T = w.typing;
     const index = T.word[s]!;
     const word = index >= 0 ? w.deck[index]! : "";
-    const typed = T.lock === s ? T.typed[s]! : 0;
-    const key = index + ":" + typed + ":" + T.shown[s];
+    const locked = T.lock === s;
+    const typed = locked ? T.typed[s]! : 0;
+    const meaning = now < slot.doneUntil;
+    const key = index + ":" + typed + ":" + T.shown[s] + ":" + (locked ? 1 : 0) + (meaning ? "m" : "");
     if (key !== slot.key) {
-      if (!slot.key.startsWith(index + ":")) slot.mean.textContent = index >= 0 ? this.words(index).vi : "";
       slot.key = key;
+      const info = index >= 0 ? this.words(index) : null;
+      // The bay being typed shows the IPA beside the meaning (the line above the ship shows only the word).
+      slot.mean.textContent = meaning ? slot.doneMean : info === null ? "" : locked && info.ipa !== "" ? info.ipa + " · " + info.vi : info.vi;
+      slot.mean.classList.toggle("is-ipa", locked && !meaning);
       slot.typed.textContent = word.slice(0, typed);
-      slot.rest.textContent = masked(word, typed, T.hidden[s]!, T.shown[s]!);
+      const rest = masked(word, typed, T.hidden[s]!, T.shown[s]!);
+      slot.head.textContent = typed === 0 ? rest.slice(0, 1) : "";
+      slot.rest.textContent = typed === 0 ? rest.slice(1) : rest;
       if (typed === 0) this.fit(slot.line, slot.root);
+      // The top stripe fills as the word is typed.
+      slot.root.style.setProperty("--load", word.length > 0 ? (typed / word.length).toFixed(3) : "0");
     }
-    slot.root.classList.toggle("is-active", T.lock === s);
-    slot.root.classList.toggle("is-dim", T.lock >= 0 && T.lock !== s);
+    slot.root.classList.toggle("is-active", locked);
+    slot.root.classList.toggle("is-dim", T.lock >= 0 && !locked);
+    slot.root.classList.toggle("is-charged", now - slot.loadAt < 350);
+    // A stray key: every bay's first letter bounces (200 ms).
+    const k = firstBounce(now - this.bounceAt, this.reduced);
+    if (k !== 1 || slot.bounced) {
+      slot.head.style.transform = k === 1 ? "" : "scale(" + k.toFixed(3) + ")";
+      slot.bounced = k !== 1;
+    }
     const mags = w.guns.mags[s]!;
     const first = w.guns.left[s]! / magazineUnits(w.stage, slot.gun as GunId);
     for (let m = 0; m < slot.mags.length; m += 1) {
@@ -250,6 +317,12 @@ export class Hud {
     }
     slot.root.classList.toggle("is-firing", mags > 0);
     slot.root.classList.toggle("is-full", mags >= w.guns.cap[s]!);
+    // A word into a full bay: its magazine LEDs blink urgent twice.
+    const blink = fullBlink(now - slot.fullAt);
+    if (blink !== slot.blink) {
+      slot.blink = blink;
+      slot.root.classList.toggle("is-overfull", blink);
+    }
   }
 
   /** A long word shrinks to fit its bay (never under 26 px). */
@@ -309,54 +382,5 @@ export class Hud {
       }
     }
     if (now > this.freshUntil) this.fresh.classList.remove("is-on");
-  }
-
-  private updateLearn(w: World, now: number): void {
-    const T = w.typing;
-    let key: string;
-    if (T.lock >= 0) {
-      const index = T.word[T.lock]!;
-      const word = this.words(index);
-      const text = w.deck[index]!;
-      const typed = T.typed[T.lock]!;
-      key = "w" + index + ":" + typed + ":" + T.shown[T.lock];
-      if (key !== this.last.learn) {
-        this.learnWord.typed.textContent = text.slice(0, typed);
-        this.learnWord.rest.textContent = masked(text, typed, T.hidden[T.lock]!, T.shown[T.lock]!);
-        this.learnIpa.textContent = word.ipa;
-        this.learnMean.textContent = word.vi;
-        this.learn.className = "sv-learn sv-panel is-typing sv-" + (GUN_SPECS[w.guns.gun[T.lock]!]?.key ?? "xung");
-      }
-    } else if (this.done !== null && now < this.done.until) {
-      key = "d" + this.done.text;
-      if (key !== this.last.learn) {
-        this.learnWord.typed.textContent = "";
-        this.learnWord.rest.textContent = this.done.text;
-        this.learnIpa.textContent = "";
-        this.learnMean.textContent = "";
-        this.learn.className = "sv-learn sv-panel is-done";
-      }
-    } else {
-      key = "idle";
-      if (key !== this.last.learn) {
-        this.learnWord.typed.textContent = "";
-        this.learnWord.rest.textContent = "";
-        this.learnIpa.textContent = "";
-        this.learnMean.textContent = "Gõ chữ đầu của một bến súng để nạp đạn";
-        this.learn.className = "sv-learn sv-panel is-idle";
-      }
-    }
-    if (key !== this.last.learn) this.fitLearnWord();
-    this.last.learn = key;
-  }
-
-  /** The frame's big line shrinks to fit its panel ("word · a long meaning ✓" never spills over the gun slots). */
-  private fitLearnWord(): void {
-    const line = this.learnWord.line;
-    line.style.setProperty("--fit", "1");
-    const style = getComputedStyle(this.learn);
-    const room = this.learn.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-    const need = line.scrollWidth;
-    if (room > 0 && need > room) line.style.setProperty("--fit", Math.max(0.5, room / need).toFixed(3));
   }
 }

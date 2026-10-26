@@ -26,7 +26,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-hazard { height: calc(8px * var(--ui)); background: var(--hazard); border-top: 1px solid var(--bevel-lo); border-bottom: 1px solid var(--bevel-lo); }
 
 /* While the title (or its menus) shows, the fight's HUD steps aside (hidden, still laid out: the number field keeps its rectangles). */
-.sv-hud[data-mode="start"] .sv-top, .sv-hud[data-mode="start"] .sv-bottom, .sv-hud[data-mode="start"] .sv-banner, .sv-hud[data-mode="start"] .sv-notice { visibility: hidden; }
+.sv-hud[data-mode="start"] .sv-top, .sv-hud[data-mode="start"] .sv-bottom, .sv-hud[data-mode="start"] .sv-strip, .sv-hud[data-mode="start"] .sv-streak, .sv-hud[data-mode="start"] .sv-marks, .sv-hud[data-mode="start"] .sv-banner, .sv-hud[data-mode="start"] .sv-notice { visibility: hidden; }
 
 /* Top: armour, clock, kills. */
 .sv-top { position: absolute; top: calc(12px * var(--ui)); left: calc(14px * var(--ui)); right: calc(14px * var(--ui)); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
@@ -67,50 +67,75 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-fresh { position: absolute; top: calc(70px * var(--ui)); left: 50%; transform: translateX(-50%); padding: calc(4px * var(--ui)) calc(14px * var(--ui)); font: 700 calc(13px * var(--ui)) var(--font-title); letter-spacing: 0.12em; color: var(--text); background: var(--banner-band); border: 1px solid var(--urgent); opacity: 0; transition: opacity 0.2s; }
 .sv-fresh.is-on { opacity: 1; }
 
-/* Bottom: [bay 3][bay 1] [learning frame] [bay 2][bay 4] (BUILD_S1 §10); the frame keeps S0's size and place. */
-.sv-bottom { position: absolute; left: 50%; bottom: calc(12px * var(--ui)); transform: translateX(-50%); display: grid; grid-template-columns: calc(190px * var(--ui)) calc(190px * var(--ui)) calc(420px * var(--ui)) calc(190px * var(--ui)) calc(190px * var(--ui)); gap: calc(12px * var(--ui)); align-items: end; }
+/* Bottom: the bays on the floor beside the ship, [bay 3][bay 1] ship [bay 2][bay 4] (FEEL_PASS_S1 §2.1); hud.ts places the row under the bottom line and sets its columns. */
+.sv-bottom { position: absolute; left: 50%; top: 508px; transform: translateX(-50%); display: grid; grid-template-columns: 208px 230px 324px 230px 208px; column-gap: calc(12px * var(--ui)); align-items: start; }
 /* Each bay's gun colour: --gun and --gun-glow. */
 .sv-xung { --gun: var(--xung); --gun-glow: var(--xung-glow); }
 .sv-tia { --gun: var(--tia); --gun-glow: var(--tia-glow); }
 .sv-tan { --gun: var(--tan); --gun-glow: var(--tan-glow); }
 .sv-ray { --gun: var(--ray); --gun-glow: var(--ray-glow); }
 .sv-phao { --gun: var(--phao); --gun-glow: var(--phao-glow); }
-.sv-slot { position: relative; min-width: 0; height: calc(118px * var(--ui)); padding: calc(13px * var(--ui)) calc(16px * var(--ui)) calc(10px * var(--ui)); display: flex; flex-direction: column; gap: calc(4px * var(--ui)); transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; }
-.sv-slot::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: calc(5px * var(--ui)); background: var(--hazard-gun); opacity: 0.55; }
+.sv-slot { --load: 0; position: relative; min-width: 0; height: calc(100px * var(--ui)); padding: calc(11px * var(--ui)) calc(14px * var(--ui)) calc(7px * var(--ui)); display: flex; flex-direction: column; gap: calc(2px * var(--ui)); background-color: var(--bay-glass); transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; }
+/* The top stripe: dim, and lit from the left as the word is typed (full for a moment when it loads). */
+.sv-slot::before, .sv-slot::after { content: ""; position: absolute; left: 0; top: 0; height: calc(5px * var(--ui)); background: var(--hazard-gun); }
+.sv-slot::before { right: 0; opacity: 0.35; }
+.sv-slot::after { width: calc(var(--load) * 100%); }
+.sv-slot.is-charged::after { width: 100%; }
 .sv-slot header { display: flex; align-items: center; gap: calc(6px * var(--ui)); min-width: 0; }
 .sv-gun { font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.12em; white-space: nowrap; color: var(--gun); }
 .sv-slot .sv-typed { color: var(--gun); }
+.sv-head { display: inline-block; transform-origin: 50% 85%; }
 .sv-mags { margin-left: auto; display: flex; gap: calc(3px * var(--ui)); color: var(--gun); }
 .sv-mags i { --fill: 0; position: relative; width: calc(22px * var(--ui)); height: calc(9px * var(--ui)); background: var(--track); border: 1px solid var(--bevel-lo); overflow: hidden; }
 .sv-mags i::after { content: ""; position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--fill)); background: currentColor; -webkit-mask: var(--segments); mask: var(--segments); }
+/* A word into a full bay: the magazine LEDs blink urgent (hud.ts times it on the frame clock). */
+.sv-slot.is-overfull .sv-mags { color: var(--urgent); filter: drop-shadow(0 0 6px var(--urgent)); }
+.sv-slot.is-overfull .sv-mags i { border-color: var(--urgent); }
 .sv-word { --fit: 1; font: 800 calc(32px * var(--ui) * var(--fit)) var(--font-battle); letter-spacing: 0.02em; line-height: 1.15; white-space: nowrap; color: var(--text); }
 .sv-mean { font: 600 calc(15px * var(--ui)) var(--font-battle); color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sv-mean.is-ipa { font-family: var(--font-ipa); }
 .sv-slot.is-active { border-color: var(--gun); box-shadow: inset 0 1px 0 var(--bevel-hi), 0 0 0 2px var(--gun), 0 0 26px var(--gun-glow); }
 /* A bay without a gun: a dark steel plate (bay 3 opens at the Mốc, bay 4 later). */
-.sv-bay-lock { height: calc(118px * var(--ui)); display: grid; place-items: center; background-color: var(--screen); font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.16em; color: var(--steel-400); }
+.sv-bay-lock { height: calc(100px * var(--ui)); display: grid; place-items: center; background-color: var(--bay-glass); font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.16em; color: var(--steel-400); opacity: 0.8; }
 .sv-lock { width: calc(16px * var(--ui)); height: calc(12px * var(--ui)); border: 2px solid var(--steel-500); border-radius: 2px; position: relative; }
 .sv-lock::before { content: ""; position: absolute; left: 50%; bottom: 100%; width: calc(10px * var(--ui)); height: calc(8px * var(--ui)); transform: translateX(-50%); border: 2px solid var(--steel-500); border-bottom: 0; border-radius: 6px 6px 0 0; }
 .sv-slot.is-active .sv-word { color: var(--text); }
-.sv-slot.is-active::before { opacity: 1; }
-/* The other bay steps back: its words dim, the plate stays solid (the deck never shows through). */
+/* The other bay steps back: its words dim, the plate stays solid. */
 .sv-slot.is-dim > * { opacity: 0.72; }
 .sv-slot.is-full .sv-mags { filter: drop-shadow(0 0 6px currentColor); }
 .sv-slot.is-loaded { animation: sv-load 0.35s ease-out; }
 .sv-slot.is-loaded.is-perfect { animation: sv-perfect 0.5s ease-out; }
-/* A loaded magazine flashes the plate from inside (the plate itself stays opaque: the deck never shows through). */
+/* A loaded magazine flashes the plate from inside. */
 @keyframes sv-load { 0% { box-shadow: inset 0 0 0 300px var(--flash-load); } 100% { box-shadow: inset 0 0 0 300px transparent; } }
 @keyframes sv-perfect { 0% { box-shadow: inset 0 0 0 300px var(--flash-perfect); } 100% { box-shadow: inset 0 0 0 300px transparent; } }
 
-/* The learning frame: a recessed screen in the console. Nothing is drawn over it. */
-.sv-learn { height: calc(118px * var(--ui)); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: calc(8px * var(--ui)) calc(16px * var(--ui)); background-color: var(--screen); box-shadow: inset 0 2px 10px var(--shadow), inset 0 0 0 1px var(--bevel-lo), 0 8px 22px var(--shadow); }
-.sv-learn-word { --fit: 1; font: 800 calc(42px * var(--ui) * var(--fit)) var(--font-battle); line-height: 1.1; white-space: nowrap; max-width: 100%; color: var(--text); }
-.sv-learn.is-typing .sv-typed { color: var(--gun); }
-.sv-learn.is-typing { border-color: var(--gun); }
-.sv-learn-ipa { font: 500 calc(19px * var(--ui)) var(--font-ipa); color: var(--soft); min-height: 1.2em; }
-.sv-learn-mean { font: 600 calc(16px * var(--ui)) var(--font-battle); color: var(--soft); min-height: 1.2em; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sv-learn.is-done .sv-learn-word { font-size: calc(30px * var(--ui) * var(--fit)); color: var(--typing); }
-.sv-learn.is-done .sv-learn-ipa, .sv-learn.is-done .sv-learn-mean { display: none; }
-.sv-learn.is-idle .sv-learn-mean { color: var(--muted); }
+/* The word line above the ship's nose (strip.ts): the word being typed, on a plate that hugs it. Nothing is drawn over it. */
+.sv-strip { position: absolute; left: 50%; top: 416px; height: calc(56px * var(--ui)); max-width: calc(420px * var(--ui)); padding: 0 calc(16px * var(--ui)); display: flex; align-items: center; justify-content: center; background: var(--strip); border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 6px 18px var(--shadow); opacity: 0; transform: translateX(-50%); transform-origin: 50% 50%; }
+.sv-strip.is-bad { border-color: var(--danger); box-shadow: 0 0 0 1px var(--danger), 0 0 16px var(--danger-glow); }
+.sv-strip.is-streak { border-color: var(--gun); }
+.sv-strip-word { --fit: 1; font: 800 calc(42px * var(--ui) * var(--fit)) var(--font-battle); line-height: 1; white-space: nowrap; color: var(--text); transform-origin: 50% 60%; }
+.sv-strip-word i { position: relative; display: inline-block; font-style: normal; transform-origin: 50% 100%; }
+.sv-strip-word i.is-typed { color: var(--gun); }
+/* A typed letter: white-hot to the gun's colour (--k), its glow (--g), a sweep line under it (--sw, --swo); strip.ts drives them each frame. */
+.sv-strip-word i.is-pop { color: color-mix(in srgb, var(--gun) calc(var(--k) * 100%), var(--white-hot)); text-shadow: 0 0 calc(12px * var(--ui)) color-mix(in srgb, var(--gun-glow) calc(var(--g) * 100%), transparent); }
+.sv-strip-word i::after { content: ""; position: absolute; left: 0; right: 0; bottom: calc(-3px * var(--ui)); height: calc(2px * var(--ui)); background: var(--gun); transform-origin: left; transform: scaleX(var(--sw, 0)); opacity: var(--swo, 0); }
+.sv-strip-word i.is-hot { color: var(--white-hot); text-shadow: 0 0 calc(14px * var(--ui)) var(--gun-glow); }
+/* A wrong key: the letter due gets a red underline and glow (220 ms). */
+.sv-strip-word i.is-miss { text-shadow: 0 0 calc(10px * var(--ui)) var(--danger-glow); }
+.sv-strip-word i.is-miss::after { height: calc(3px * var(--ui)); background: var(--danger); transform: scaleX(1); opacity: 1; }
+.sv-strip-done { --fit: 1; font: 700 calc(26px * var(--ui) * var(--fit)) var(--font-battle); line-height: 1; white-space: nowrap; color: var(--typing); transform-origin: 50% 60%; }
+.sv-strip-done b { color: var(--urgent); font-weight: 800; }
+.sv-strip-sweep { position: absolute; left: calc(16px * var(--ui)); right: calc(16px * var(--ui)); bottom: calc(6px * var(--ui)); height: calc(2px * var(--ui)); background: var(--gun); transform-origin: left; transform: scaleX(0); opacity: 0; }
+/* A stray key ghosts in red at the line's centre. */
+.sv-strip-ghost { position: absolute; left: 50%; height: calc(56px * var(--ui)); display: flex; align-items: center; transform: translateX(-50%); font: 800 calc(42px * var(--ui)) var(--font-battle); line-height: 1; color: var(--danger); opacity: 0; }
+/* The clean streak's LED beside the line. */
+.sv-streak { position: absolute; height: calc(22px * var(--ui)); padding: 0 calc(8px * var(--ui)); display: flex; align-items: center; font: 700 calc(13px * var(--ui)) var(--font-title); letter-spacing: 0.12em; white-space: nowrap; color: var(--led); text-shadow: 0 0 8px var(--led-glow); background: var(--screen); border: 1px solid var(--bevel-lo); visibility: hidden; transform-origin: 0 50%; }
+.sv-streak.is-on { visibility: visible; }
+.sv-streak.is-broken { color: var(--muted); text-shadow: none; }
+/* Near foes the line hides: a red tick under it at each one's x. */
+.sv-marks { position: absolute; left: 0; top: 469px; width: 0; height: 0; }
+.sv-marks i { position: absolute; left: 0; top: 0; width: calc(24px * var(--ui)); height: calc(3px * var(--ui)); background: var(--danger); box-shadow: 0 0 6px var(--danger-glow); visibility: hidden; }
+.sv-marks i.is-on { visibility: visible; }
 
 .sv-vignette { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, transparent 55%, var(--danger-glow) 100%); }
 .sv-vignette.is-hurt { animation: sv-hurt 0.45s ease-out; }

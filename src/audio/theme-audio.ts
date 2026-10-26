@@ -21,6 +21,7 @@ import { PRONUNCIATION_EVENT } from "../kit/speech";
 import { GUN_SOUNDS, GUN_SOUND_IDS, type GunSoundId } from "./gun-audio";
 import { Music } from "./music";
 import { crackle, noise, steel, STEEL, tone, type Voice } from "./synth";
+import { keyBad, keyOk, streakUp, TYPE_SOUND_IDS, wordFull, wordLoad } from "./type-audio";
 
 export type Bus = "keys" | "guns" | "impacts" | "kills" | "alerts" | "ui" | "music";
 
@@ -41,6 +42,7 @@ export const SOUND_IDS = [
   "key.bad",
   "word.load",
   "word.perfect",
+  ...TYPE_SOUND_IDS,
   "gun.xung",
   "gun.tia.start",
   "gun.tia.end",
@@ -89,7 +91,6 @@ const GUN_BUS: Readonly<Record<GunSoundId, { bus: Bus; gap: number }>> = {
 const HIT_GATHER_MS = 38;
 const BURSTS = { max: 4, windowMs: 120 } as const;
 const CHAIN_MS = 1000;
-const KEY_PITCH = [1, 1.06, 0.94, 1.12, 0.89] as const;
 const DRAIN_GAP_MS = 420;
 
 export type ThemeAudioOptions = { sfx: number; music: number };
@@ -180,36 +181,30 @@ export class ThemeAudio {
     GUN_SOUNDS[id](v);
   }
 
-  /** A typed key (a relay on steel), `letter` 0–25; a wrong key is a muffled thud, never a buzzer. */
-  key(ok: boolean, letter: number): void {
-    if (!ok) {
-      const v = this.voice("keys", 0, "key.bad");
-      if (v === null) return;
-      tone(v, 0, 0.07, 0.2, 105, 72);
-      noise(v, 0, 0.045, 0.07, "lowpass", 420);
-      return;
-    }
+  /** A right key (type-audio.ts): the relay and the `typed`-th letter's note; `octave` from the clean streak's tier 2. */
+  key(typed: number, letter: number, octave: boolean): void {
     const v = this.voice("keys", 0, "key.ok");
-    if (v === null) return;
-    const p = KEY_PITCH[letter % KEY_PITCH.length]! * (1 + (Math.random() - 0.5) * 0.06);
-    noise(v, 0, 0.014, 0.17, "bandpass", 2700 * p, 2.6);
-    tone(v, 0, 0.028, 0.06, 240 * p, 150 * p, { type: "square", filter: "lowpass", cutoff: 1400 });
-    tone(v, 0.001, 0.018, 0.025, 3300 * p, 3200 * p, { type: "triangle" });
+    if (v !== null) keyOk(v, typed, letter, octave);
   }
 
-  /** A word done: a magazine slammed home (ka-chunk); a perfect word also charges up with a rising whine. */
-  word(perfect: boolean, pan = 0): void {
-    const v = this.voice("alerts", pan, perfect ? "word.perfect" : "word.load");
+  /** A wrong key after `typed` right ones; `stray`: no bay starts with it. Never a buzzer. */
+  keyBad(typed: number, stray: boolean): void {
+    const v = this.voice("keys", 0, "key.bad");
+    if (v !== null) keyBad(v, typed, stray);
+  }
+
+  /** A word done (`length` letters): its magazine slammed home (load, perfect) or a latch that does not lock (full). */
+  word(kind: "load" | "perfect" | "full", length: number, pan = 0): void {
+    const v = this.voice("alerts", pan, kind === "full" ? "word.full" : kind === "perfect" ? "word.perfect" : "word.load");
     if (v === null) return;
-    noise(v, 0, 0.02, 0.22, "highpass", 3200);
-    noise(v, 0.055, 0.06, 0.3, "lowpass", 1300);
-    tone(v, 0.055, 0.14, 0.38, 170, 52);
-    steel(v, 0.06, 0.09, 0.07, 1380, STEEL.plate);
-    if (perfect) {
-      tone(v, 0.09, 0.22, 0.07, 620, 1900, { attack: 0.03 });
-      tone(v, 0.09, 0.2, 0.018, 1240, 3800, { type: "square", attack: 0.03, filter: "lowpass", cutoff: 5000 });
-      crackle(v, 0.12, 0.14, 4, 0.05, 6500);
-    }
+    if (kind === "full") wordFull(v);
+    else wordLoad(v, length, kind === "perfect");
+  }
+
+  /** The clean streak reached a tier (3, 6, 10, 20). */
+  streak(): void {
+    const v = this.voice("alerts", 0, "streak.up");
+    if (v !== null) streakUp(v);
   }
 
   /** A Xung round: a heavy autocannon (a low punch, a crack, the breech). */

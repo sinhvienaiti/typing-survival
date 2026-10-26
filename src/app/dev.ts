@@ -80,7 +80,7 @@ export class FrameCosts {
 
 /** The damage numbers on screen and their boxes (the scenarios check none covers the protected rectangles). */
 export function numberBoxes(N: { alive: ArrayLike<number>; live: number; dropped: number; protected: readonly object[]; overlaps(): number; box(i: number, out: { x: number; y: number; w: number; h: number }): { x: number; y: number; w: number; h: number }; text(i: number): string }) {
-  const boxes: { x: number; y: number; w: number; h: number; text: string }[] = [];
-  for (let i = 0; i < N.alive.length; i += 1) if (N.alive[i] === 1) boxes.push({ ...N.box(i, { x: 0, y: 0, w: 0, h: 0 }), text: N.text(i) });
+  const boxes: { x: number; y: number; w: number; h: number; text: string; i: number }[] = [];
+  for (let i = 0; i < N.alive.length; i += 1) if (N.alive[i] === 1) boxes.push({ ...N.box(i, { x: 0, y: 0, w: 0, h: 0 }), text: N.text(i), i });
   return { live: N.live, overlaps: N.overlaps(), dropped: N.dropped, rects: N.protected.slice(), boxes };
 }

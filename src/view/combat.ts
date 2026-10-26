@@ -74,6 +74,8 @@ export class Combat {
   private forcedAt = -1e9;
   stopsAsked = 0;
   private punchAt = -1e9;
+  /** The typing feel (typing-feel.ts): keys and words are its; it draws into this frame's glows and strips. */
+  typing: { draw(w: World, time: number): void } | null = null;
 
   constructor(private readonly stage: Stage, private readonly crowd: Crowd, private readonly ship: Ship, pilot: Pilot, tierName: Tier, audio: ThemeAudio, private readonly hooks: CombatHooks) {
     const spec = VIEW_TIERS[tierName];
@@ -213,13 +215,6 @@ export class Combat {
           this.glows.burst(CELL.star8, x, 1, -z, 0.6, 2, 0.16, C.ember, 2.6);
           this.spark(x, 1, z, 0, 1, 8, 6, C.ember, 0.22, 0.35);
           this.audio.shotDown(pan);
-          break;
-        case EV.keyOk:
-        case EV.keyBad:
-          this.audio.key(kind === EV.keyOk, R.ref[i]!);
-          break;
-        case EV.load:
-          this.audio.word((flags & FLAG.perfect) !== 0, R.slot[i] === 0 ? -0.35 : 0.35);
           break;
         case EV.word:
           this.hooks.wordDone(R.slot[i]!, R.ref[i]!, (flags & FLAG.perfect) !== 0, R.dx[i]!, R.dz[i]!, R.x[i]!);
@@ -426,6 +421,7 @@ export class Combat {
       }
     }
     this.gunfx.draw(w, dt, time, lead);
+    this.typing?.draw(w, time);
     this.walls.update(w, time, lead);
     this.cracks.update(time);
     this.strips.end();

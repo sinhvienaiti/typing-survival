@@ -278,6 +278,8 @@ export class Stage {
   private readonly look = new THREE.Vector3();
   private readonly camQuat = new THREE.Quaternion();
   private readonly titleQuat = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(TITLE_EYE, TITLE_AT, new THREE.Vector3(0, 1, 0)));
+  /** The fight's view held still (no shake, roll or title swing): the HUD lays out against it. */
+  private readonly still = new THREE.PerspectiveCamera(FOV, 16 / 9, 1, 2500);
   private readonly ahead = new THREE.Vector3();
   /** 1 in the title's view, 0 in the fight's; eases toward `titleTarget`. */
   private titleBlend = 0;
@@ -419,6 +421,9 @@ export class Stage {
     this.camera.position.copy(this.camPos);
     this.camera.lookAt(this.look);
     this.camQuat.copy(this.camera.quaternion);
+    this.still.copy(this.camera);
+    this.still.clearViewOffset();
+    this.still.updateMatrixWorld();
     this.camera.updateProjectionMatrix();
     // The backdrop faces the camera and fills its view (with room for the shake).
     const tall = 2 * SKY_DISTANCE * tanHalf * SKY_OVER;
@@ -454,11 +459,19 @@ export class Stage {
     else this.renderer.render(this.scene, this.camera);
   }
 
-  /** Screen position (CSS px) of sim point (x, z) at height y. */
-  project(x: number, z: number, y: number, out: THREE.Vector3): THREE.Vector3 {
-    out.set(x, y, -z).project(this.camera);
+  /** Screen position (CSS px) of sim point (x, z) at height y; `still`: through the fight's view held still. */
+  project(x: number, z: number, y: number, out: THREE.Vector3, still = false): THREE.Vector3 {
+    out.set(x, y, -z).project(still ? this.still : this.camera);
     out.x = (out.x * 0.5 + 0.5) * this.width;
     out.y = (0.5 - out.y * 0.5) * this.height;
     return out;
+  }
+
+  /** The world point at height `y` under screen point (sx, sy) (CSS px), in the fight's view held still. */
+  unproject(sx: number, sy: number, y: number, out: THREE.Vector3): THREE.Vector3 {
+    const eye = this.still.position;
+    out.set((sx / this.width) * 2 - 1, 1 - (sy / this.height) * 2, 0.5).unproject(this.still);
+    const k = (y - eye.y) / (out.y - eye.y || 1e-6);
+    return out.set(eye.x + (out.x - eye.x) * k, y, eye.z + (out.z - eye.z) * k);
   }
 }

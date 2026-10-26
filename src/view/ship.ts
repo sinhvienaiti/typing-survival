@@ -35,6 +35,8 @@ export class Ship {
   private kick = 0;
   private hurtFlash = 0;
   private readonly tip = new THREE.Vector3();
+  /** The engine's glow × this (the clean streak's tier 3, FEEL_PASS_S1 §3.6). */
+  boost = 1;
   loaded = false;
 
   constructor(scene: THREE.Scene, readonly pilot: Pilot) {
@@ -79,6 +81,12 @@ export class Ship {
     return out.set(Math.sin(-this.yaw) * 1.4, 0.95, -FIELD.muzzleZ + 0.2);
   }
 
+  /** The ship's core (FX_CORE) in world space; the hull's centre without the model. */
+  core(out: THREE.Vector3): THREE.Vector3 {
+    if (this.hero !== null) return this.hero.socketWorld(this.hero.sockets.core, out, [0, 0, 0]);
+    return out.set(this.fallback.position.x, this.root.position.y + 0.15, this.fallback.position.z);
+  }
+
   /** A round fired: a small kick (`strength`: Tán's blast kicks harder). */
   fired(strength = 0.35): void {
     this.kick = Math.min(1, this.kick + strength);
@@ -99,7 +107,7 @@ export class Ship {
     if (this.hero !== null) {
       this.hero.turnYaw = this.yaw;
       this.hero.update(dt, time, 0, 0);
-      this.hero.setLook(this.hurtFlash, 0.4 + this.kick * 0.6, 1);
+      this.hero.setLook(this.hurtFlash, 0.4 * this.boost + this.kick * 0.6, 1);
       // Engine trails stream back toward the camera: the ship holds still in a flowing field.
       this.hero.tips.forEach((tip, index) => {
         const ribbon = this.hero!.ribbons[index];
