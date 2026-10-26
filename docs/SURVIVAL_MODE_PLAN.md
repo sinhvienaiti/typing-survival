@@ -226,7 +226,7 @@ Không thể tự tay thiết kế 600 ải. Mỗi ải là **một tổ hợp**
 
 Chủ dự án chốt (23/10): game mạnh về đồ họa và chiến đấu, **quái phải đông, đánh phải đã tay**. Một từ chỉ ra một phát là không đủ để quét hàng trăm quái. Vì vậy: **gõ một từ là nạp một băng đạn**, súng tự xả băng vào đám đông trong vài giây.
 
-- Hai bên đáy có **bến súng**: đầu chương 2 ô, mở dần tới 6 ô (mục 4.0).
+- Hai bên **tàu**, trên sàn dưới vạch đáy, có **bến súng**: đầu chương 2 ô, mở dần tới 6 ô (mục 4.0). (Lượt cảm giác 26/10, `docs/FEEL_PASS_S1.md` §2: trước đây "hai bên đáy", cạnh khung học.)
 - Mỗi ô: **tên súng** (nhỏ), **từ đang học** (to), **nghĩa tiếng Việt** (nhỏ, theo luật mục 6.3), **thanh đạn**.
 - **Gõ xong từ của ô = nạp đầy một băng** cho súng đó. Ô lập tức lấy từ mới, và từ mới gõ được ngay, kể cả khi súng còn đạn.
 - **Súng tự bắn** khi còn đạn, tự chọn mục tiêu theo kiểu của súng. Hết đạn thì súng im. Muốn súng nào bắn liên tục thì phải gõ đều từ của ô đó.
@@ -430,7 +430,8 @@ TỪ ĐANG GÕ  >  ô súng sẵn sàng  >  đòn nguy hiểm của quái  >  t�
 
 ### 6.2 Khung học (lớp riêng, không rung)
 
-- Ở **giữa đáy**, giữa hai dãy ô súng. Khi đang gõ một từ, khung hiện:
+- **Từ lượt cảm giác (26/10, `docs/FEEL_PASS_S1.md` §2):** từ đang gõ nằm trên một **dòng mỏng ngay trên mũi tàu**, gần chỗ đạn trúng quái (mắt → đòn trung vị 355 → 200 px ở 720p theo study C); IPA và nghĩa xuống **bến đang gõ**. Phần dưới đây là bản gốc (khung ở giữa đáy), giữ để đối chiếu.
+- ~~Ở **giữa đáy**, giữa hai dãy ô súng.~~ Khi đang gõ một từ, khung hiện:
 
 ```text
         SHELTER            ← to nhất, chữ đã gõ sáng dần

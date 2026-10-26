@@ -144,11 +144,24 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   97 % too (stage-wide pressure, or Pháo Sao where shields stand); then S1
   R2 (chapter flow, doors, Lõi, Mốc, stages 5–9, Bão ion, Giếng, Nghĩa)
   and R3 (the boss), `docs/BUILD_S1.md` §14.
-- Feel pass (the owner's verdict of 26/10, not built yet): `docs/FEEL_PASS_S1.md`
-  (the word line above the ship's nose with the bays beside the ship, each
+- Feel pass (the owner's verdict of 26/10): `docs/FEEL_PASS_S1.md` (the
+  word line above the ship's nose with the bays beside the ship, each
   letter charging the ship's core, 3D bolts and light pools per gun, kill
   chunks, the ship's view-only drift, sounds by Q6; budgets and frame
   sequence checks). It touches no sim file: chapter runs and the trial
-  golden must hash the same (its §1.1, §7.1).
+  golden must hash the same (its §1.1, §7.1; `scripts/chapter-hashes.ts`
+  prints the 152 chapter runs, diff it against the commit before).
+  Build 1 done (`docs/changelog/2026-10-26-feel-pass-s1.md`): the layout
+  (§2: `src/view/strip.ts` the word line, `hud.ts` the bays placed from the
+  still camera, `Stage.project(…, still)`) and the typing feel (§3:
+  `src/view/typing-feel.ts` reads the typing events with its own cursor and
+  drives the line, the core, shards, rings and the sounds; numbers in
+  `type-rules.ts`; sounds in `src/audio/type-audio.ts`). Frame sequences:
+  `scripts/visual/scenarios/survival-feel.mjs`
+  (`SCENES=f1,f2,f4,f9,layout,marks,rate,audio,f8`, ~10 min a size with
+  f8). Open from build 1: the eye to each new number is 238 / 229 px (720p
+  px, both stages pooled, target 210; stage 1 205–215, stage 4 with Pháo
+  Sao 305–315); Ray's armed bolt, the first shot's flash and the ship's lunge wait
+  for F3 and F5. Next: F3 guns (§4.1–§4.4, §4.6), F4 chunks, F5 the ship.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.

@@ -16,7 +16,7 @@
 | `guns` | 0,42 | ×0,5 | `gun.xung`, `gun.tia.start`, `gun.tia.end`, `gun.tan.fire`, `gun.ray.*`, `gun.phao.launch` |
 | `impacts` | 0,6 | ×0,5 | `hit.*`, `gun.tia.pulse`, `foe.shot.down`, `gun.phao.burst`, `shield.*` |
 | `kills` | 0,55 | ×0,56 | `kill.*`, `foe.split`, `leader.down` |
-| `alerts` | 0,8 | ×0,8 | `word.*`, `foe.shot`, `hurt.*`, `support.repair`, `alarm.surge`, `end.*`, `leader.horn`, `rift.*` |
+| `alerts` | 0,8 | ×0,8 | `word.*`, `streak.up`, `foe.shot`, `hurt.*`, `support.repair`, `alarm.surge`, `end.*`, `leader.horn`, `rift.*` |
 | `ui` | 0,55 | ×0,7 | `ui.*`, `star.get` |
 | `music` | 0,9 | ×0,63 | `music.calm`, `music.surge` |
 
@@ -32,17 +32,30 @@
 
 ## 3. Gõ và nạp đạn
 
+Lượt cảm giác S1 (`docs/FEEL_PASS_S1.md` §3.5, 26/10) làm lại cả nhóm này theo Q6 (`src/audio/type-audio.ts`). Mỗi từ là một câu "tụ lực rồi xả": phím là phần chuẩn bị, mỗi phím một nốt đi lên thang ngũ cung La thứ (hợp nhạc nền 96 BPM La thứ), từ xong về La5 (880 Hz). Dải 1–4 kHz chỉ ở đầu mỗi cú đánh (tắt ≤ 30 ms); thân và đuôi nằm dưới 1 kHz hoặc trên 4 kHz, để từ được đọc ngay sau vẫn rõ.
+
+| Chữ thứ | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | Xong từ |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Nốt | La3 | Đô4 | Rê4 | Mi4 | Sol4 | La4 | Đô5 | Rê5 | Mi5 | Sol5 | La5 |
+| Hz | 220 | 261,6 | 293,7 | 329,6 | 392 | 440 | 523,3 | 587,3 | 659,3 | 784 | 880 |
+
 | Id | Khi nào | Cảm giác | Mã hiện tại |
 |---|---|---|---|
-| `key.ok` | Mỗi phím đúng | Rơ-le đóng trên bàn phím thép: khô, ngắn, chắc tay; 5 cao độ xoay vòng ±3 % | Nhiễu dải 2,7 kHz 14 ms, "thock" vuông lọc thấp, tiếng tách kim loại 3,3 kHz |
-| `key.bad` | Phím sai | Tiếng đục bị bóp, như gõ vào tấm thép dày; không còi, không chê | Sin 105 → 72 Hz, nhiễu lọc thấp 420 Hz |
-| `word.load` | Gõ xong một từ: một băng đạn nạp vào súng | "Cạch-chắc": băng đạn đóng sập vào ổ, chốt khóa | Tiếng tách cao, rồi cú đập trầm 170 → 52 Hz và tiếng thép tấm |
-| `word.perfect` | Gõ xong không lỗi | Như `word.load`, thêm tiếng nạp điện rít lên và vài tia lửa điện: phần thưởng cho gõ chuẩn | Thêm sin 620 → 1.900 Hz, vuông lọc, tiếng tách điện |
+| `key.ok` | Mỗi phím đúng | Rơ-le đóng trên bàn phím thép, rồi một nốt nạp ở cao độ của chữ đó và bàn thép ngân khẽ một quãng tám dưới. Chuỗi sạch từ 6 từ: thêm bội âm quãng tám | Nhiễu dải 2,7 kHz 12 ms, tách 3,3 kHz 18 ms (rơ-le, 5 cao độ xoay vòng ±3 % như cũ); nốt tam giác lọc thấp 1 kHz, lên 4 ms, tắt 64 ms, −14 dB so với rơ-le; sin nửa cao độ 90 ms, −20 dB. Bỏ tiếng "thock" vuông 240 Hz cũ (tiếng trầm ngắn đứng riêng) |
+| `key.bad` | Phím sai | Rơ-le đóng mà không ăn, xì điện một chút, nốt của chữ trước tụt nửa cung. Không còi, không chê. Phím lạc (không bến nào bắt đầu bằng nó): nhỏ hơn 3 dB, không nốt | Nhiễu lọc thấp 1,2 kHz 14 ms (−6 dB), 3 hạt tách thông cao 5 kHz trong 25 ms (−18 dB), nốt trước trượt xuống nửa cung trong 30 ms. Thay sin 105 → 72 Hz cũ |
+| `word.load` | Gõ xong một từ: một băng đạn nạp vào súng | Chốt khóa, luồng năng lượng trượt lên La5, băng đạn đóng sập, đuôi vang ngắn trong hành lang thép | Nhiễu thông cao 3,2 kHz 20 ms; răng cưa lọc thấp 900 Hz trượt từ nốt của phím cuối lên 880 Hz trong 90 ms; ở 90 ms: nhiễu lọc thấp 900 Hz, sin 170 → 52 Hz, thép tấm gốc 310 Hz (cũ 1.380 Hz, nằm trong dải giọng); đuôi: nhiễu lọc thấp 800 → 300 Hz và thép dầm 233 Hz, 350 ms, −10 dB |
+| `word.perfect` | Gõ xong không lỗi và nhanh | Như `word.load`, thêm tiếng rít nạp điện vượt qua dải giọng trong 25 ms đầu rồi ngân trên 4 kHz, vài tia lửa điện | Như trên + sin 1 → 4,6 kHz trong 25 ms, sin 4,6 → 6,4 kHz 200 ms, 4 tiếng tách 6,5 kHz. Cũ: 620 → 1.900 Hz trong 220 ms, nằm trọn dải giọng |
+| `word.full` | Gõ xong một từ khi bến đã đầy (không nạp) | Chốt va mà không khóa, lò xo rung; không có đuôi | Nhiễu dải 2,2 kHz 15 ms và tách tam giác 2,2 kHz; tam giác 900 → 600 Hz lọc thấp 1 kHz 80 ms, sin 760 → 640 Hz 70 ms; −6 dB so với `word.load`; bus `alerts` |
+| `streak.up` | Chuỗi gõ sạch đạt 3, 6, 10, 20 từ | Hai thanh thép nhỏ gõ liền, La5 rồi Mi6, thân tắt ngay, ngân trên 4 kHz | Hai cú cách 60 ms: tam giác 880 / 1.318,5 Hz tắt 30 ms, bội 6,02× và 8,98× (5,3 / 7,9 kHz và 7,9 / 11,8 kHz) ngân 180–200 ms; −12 dB so với `word.load`; bus `alerts` |
 
-- `key.ok` — *Prompt:* "Single mechanical relay click on a heavy steel console, dry, tight, very short (40 ms), industrial keyboard, no reverb, no tail."
-- `key.bad` — *Prompt:* "Muffled dull knock of a knuckle on a thick steel plate, short (70 ms), soft and low, not a buzzer, no ring."
-- `word.load` — *Prompt:* "Heavy rifle magazine slammed into a steel receiver, two-part 'ka-chunk' with a latch click, close and punchy, 250 ms, industrial, dry."
-- `word.perfect` — *Prompt:* "Heavy magazine slammed home followed by a rising electric charge-up whine and a few tiny electrical sparks, satisfying, 450 ms, industrial sci-fi, dry."
+Kiểm dải giọng (§7.5 của đặc tả; kịch bản `survival-feel` cảnh `audio`, dựng từng âm trong `OfflineAudioContext` của Chrome): năng lượng 1–4 kHz ngoài 30 ms sau mỗi cú đánh phải ≤ −20 dB so với khung 10 ms to nhất của chính âm đó. Số đo nằm trong changelog `docs/changelog/2026-10-26-feel-pass-s1.md`.
+
+- `key.ok` — *Prompt:* "Single mechanical relay click on a heavy steel console followed by a soft, short charging tone (one pitched note, sine-like, under 1 kHz, 60 ms) and a faint low steel-desk resonance, dry, tight, 120 ms total; record 10 pitches A3 C4 D4 E4 G4 A4 C5 D5 E5 G5."
+- `key.bad` — *Prompt:* "A heavy relay closing without catching: a muffled steel click, a tiny electric fizz, a short pitch sag, 60 ms, soft, no buzzer, no ring, not a toy sound."
+- `word.load` — *Prompt:* "Energy surging up into a weapon (a quick filtered rising tone to A5, 90 ms), then a heavy rifle magazine slammed into a steel receiver with a latch click, and a short low echo down a steel corridor, 450 ms, industrial, punchy, the tail under 1 kHz."
+- `word.perfect` — *Prompt:* "Same as a heavy magazine slammed home after a rising energy surge, plus a very fast electric charge-up whine that sweeps up past 4 kHz in 25 ms and rings on high and thin with a few tiny sparks, satisfying, 500 ms, industrial sci-fi."
+- `word.full` — *Prompt:* "A steel latch striking a full magazine well and failing to lock: a sharp metal click and a short spring rattle, 100 ms, dry, no echo, quieter than a reload."
+- `streak.up` — *Prompt:* "Two tiny steel bars struck in quick succession (A5 then E6, 60 ms apart), the body dying at once and a bright high shimmer ringing above 4 kHz for 200 ms, delicate, rewarding, not a chime toy."
 
 ## 4. Súng
 
