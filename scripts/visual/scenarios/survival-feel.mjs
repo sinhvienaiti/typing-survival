@@ -20,7 +20,12 @@
 //   f8   chapter stages 1 and 4 typed at 40 WPM on the held clock: the eye
 //        (the word line's centre) to each new damage number, numbers over
 //        protected boxes, ticks for near foes behind the line, frames with the
-//        HUD hidden every 2 s for the contrast under the line and the bays.
+//        HUD hidden every 2 s for the contrast under the line and the bays,
+//        and how much the effects wash out (the balance pass of the ship
+//        build): foes ≤ 25 m whose body and its ring of 1–2 body radii are
+//        both bright (body p50 ≥ 0.8, ring mean ≥ 0.6) sit inside a cloud of
+//        light, not a hit flash on a dark deck (≤ 10 % of foe samples), and
+//        the share of the field above the word line brighter than 0.9.
 //   layout  the line's bottom ≤ the stripes − 4 px, its top ≥ 90 px under
 //        Xung's reach, the bays under the red line, nothing in a bay
 //        overflowing with 3 magazine LEDs.
@@ -31,6 +36,7 @@
 //        the 1–4 kHz band ≤ −20 dB of the sound's peak outside 30 ms after
 //        each attack (§7.5, Q6).
 //   URL=http://127.0.0.1:3007/ OUT_DIR=… SCENES=f1,f2,f4,f9,f8,layout,marks,rate,audio node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-feel.mjs --width=1280 --height=720
+import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { OUT_DIR } from "./common.mjs";
@@ -299,7 +305,8 @@ async function fight(page, dir, stage, guns, seconds) {
   await page.sleep(500);
   const size = page.width + "x" + page.height;
   const keyMs = 60000 / (40 * 5);
-  const eye = await page.eval(sv("const r = t.rects()[0]; return { x: r.x + r.w / 2, y: r.y + r.h / 2 };"));
+  const eye = await page.eval(sv("const r = t.rects()[0]; return { x: r.x + r.w / 2, y: r.y + r.h / 2, top: r.y };"));
+  const washes = [];
   const seen = new Set();
   const spawns = [];
   let overlaps = 0;
@@ -339,6 +346,7 @@ async function fight(page, dir, stage, guns, seconds) {
       await page.shot(file);
       await page.eval("document.querySelector('.sv-hud').style.visibility = ''; true");
       clean.push(file);
+      washes.push(wash(file, (await page.eval(sv("return t.foes ? t.foes() : [];"))) ?? [], page, eye.top));
     }
     if (time >= burstAt && burst.length < 30) {
       const file = join(dir, stage + "-" + size + "-burst-" + String(burst.length).padStart(2, "0") + ".png");
@@ -358,11 +366,67 @@ async function fight(page, dir, stage, guns, seconds) {
   const sorted = [...spawns].sort((a, b) => a - b);
   const ui = page.height / 720;
   const sheets = burst.length > 0 ? [sheet(burst, join(dir, "sheet-f8-" + stage + "-" + size + ".jpg"), { x: 0, y: 0, w: page.width, h: page.height }, 6, 420)] : [];
+  const foeSamples = washes.reduce((n, w) => n + w.foes, 0);
+  const drowned = washes.reduce((n, w) => n + w.drowned, 0);
+  const near = washes.reduce((n, w) => n + w.near, 0);
+  const nearDrowned = washes.reduce((n, w) => n + w.nearDrowned, 0);
+  const field = washes.map((w) => w.field).sort((a, b) => a - b);
+  const washed = { frames: washes.length, foeSamples, drowned, share: +(drowned / Math.max(1, foeSamples)).toFixed(3), near, nearShare: +(nearDrowned / Math.max(1, near)).toFixed(3), fieldBright: { p50: field[field.length >> 1] ?? 0, p95: field[Math.floor(field.length * 0.95)] ?? 0, max: field.at(-1) ?? 0 }, worst: [...washes].sort((a, b) => b.drowned - a.drowned).slice(0, 3).map((w) => ({ file: w.file, drowned: w.drowned, foes: w.foes })) };
   return {
-    stage, guns, ready, time: final?.time, phase: final?.phase, hp: final?.hp, samples, overlaps, lineShown: +(lineShown / Math.max(1, samples)).toFixed(3), maxMarks: marks, markFrames,
+    stage, guns, ready, time: final?.time, phase: final?.phase, hp: final?.hp, samples, overlaps, lineShown: +(lineShown / Math.max(1, samples)).toFixed(3), maxMarks: marks, markFrames, washed,
     eyeToHit: { n: sorted.length, median: Math.round(median(sorted)), median720: Math.round(median(sorted) / ui), within10deg1080: +(sorted.filter((d) => d / ui * 1.5 <= 10 * 37.9).length / Math.max(1, sorted.length)).toFixed(3) },
     at720: sorted.map((d) => d / ui), clean, sheets,
   };
+}
+
+/**
+ * How much light covers the horde on one frame with the HUD hidden: each foe
+ * (≤ 25 m, on screen, above the word line's top) is drowned when its body
+ * (a disc of 0.6 body radius, ≥ 3 px) has a median ≥ 0.8 and the ring round
+ * it (1–2 body radii) a mean ≥ 0.6: a cloud of light, not a hit's own white
+ * flash on a dark deck. `near`: within 9 m. The field: the share of pixels
+ * above the word line brighter than 0.9.
+ */
+function wash(file, foes, page, top) {
+  const W = page.width;
+  const H = page.height;
+  const raw = execFileSync("magick", [file, "-resize", W + "x" + H + "!", "-grayscale", "Rec709Luma", "-depth", "8", "gray:-"], { maxBuffer: 1 << 27 });
+  const at = (x, y) => raw[y * W + x] / 255;
+  let bright = 0;
+  let all = 0;
+  for (let y = 0; y < Math.min(H, Math.floor(top)); y += 2) for (let x = 0; x < W; x += 2) {
+    all += 1;
+    if (at(x, y) > 0.9) bright += 1;
+  }
+  let n = 0;
+  let drowned = 0;
+  let near = 0;
+  let nearDrowned = 0;
+  for (const [cx, cy, rpx, z] of foes) {
+    if (z > 25 || cx < 4 || cy < 4 || cx >= W - 4 || cy >= top) continue;
+    const r = Math.max(3, rpx);
+    const inner = [];
+    let ring = 0;
+    let ringN = 0;
+    const R = Math.ceil(2 * r);
+    for (let y = Math.max(0, cy - R); y <= Math.min(H - 1, cy + R); y += 1) for (let x = Math.max(0, cx - R); x <= Math.min(W - 1, cx + R); x += 1) {
+      const d = Math.hypot(x - cx, y - cy);
+      if (d <= Math.max(3, 0.6 * r)) inner.push(at(x, y));
+      else if (d >= r && d <= 2 * r) {
+        ring += at(x, y);
+        ringN += 1;
+      }
+    }
+    inner.sort((a, b) => a - b);
+    const wet = (inner[inner.length >> 1] ?? 0) >= 0.8 && ring / Math.max(1, ringN) >= 0.6;
+    n += 1;
+    if (wet) drowned += 1;
+    if (z <= 9) {
+      near += 1;
+      if (wet) nearDrowned += 1;
+    }
+  }
+  return { file: file.split("/").pop(), foes: n, drowned, near, nearDrowned, field: +(bright / Math.max(1, all)).toFixed(4) };
 }
 
 async function f8(page, dir) {
@@ -389,6 +453,7 @@ async function f8(page, dir) {
   return {
     runs: runs.map(({ clean, at720, ...run }) => ({ ...run, cleanFrames: clean.length })), contrast, pooled,
     checks: {
+      foesNotDrowned: runs.every((run) => run.washed.share <= 0.1),
       noNumberOnProtected: runs.every((run) => run.overlaps === 0),
       eyeToHitMedian210: pooled.median720 <= 210,
       contrastLine7: contrast.line.at99 >= 7,
