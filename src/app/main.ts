@@ -27,6 +27,7 @@ import { Stage } from "../view/scene";
 import { renderScreen, type ScreenView } from "../view/screens";
 import { renderJourney, starRow } from "../view/screens-journey";
 import { Ship, type Pilot } from "../view/ship";
+import { foesOnScreen, shipProbe } from "../view/probes";
 import { TypeFeel } from "../view/typing-feel";
 import { warmPrograms } from "../view/warm";
 import { FrameCosts, bays, eventCounts, installDevHandle, numberBoxes, runState, snapshot } from "./dev";
@@ -645,8 +646,8 @@ installDevHandle({
   info: () => ({ calls, triangles, geometries: stage.renderer.info.memory.geometries, textures: stage.renderer.info.memory.textures, programs: stage.renderer.info.programs?.length ?? 0, drawn: crowd.drawn(), glows: combat.glows.count, sparks: combat.sparks.count, debris: combat.debris.live, numbers: combat.numbers.live, stops: combat.stopsAsked, feel: typing.probe(), ...combat.probe() }),
   numbers: () => numberBoxes(combat.numbers),
   /** The ship's pose (cheap enough for every frame); live foes on screen with their body radius (CSS px; the balance pass's wash-out). */
-  ship: () => combat.shipProbe(),
-  foes: () => combat.foesOnScreen(world),
+  ship: () => shipProbe(stage, ship),
+  foes: () => foesOnScreen(stage, world),
   rects: () => hud.protectedRects(),
   /** The shake settings and the camera's shake offset now (px). */
   motion: () => ({ scale: combat.trauma.scale, reduced: combat.trauma.reduced, trauma: combat.trauma.trauma, offset: Math.hypot(stage.shakeX, stage.shakeY) }),

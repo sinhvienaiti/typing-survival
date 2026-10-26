@@ -14,7 +14,6 @@ import type { ThemeAudio } from "../audio/theme-audio";
 import { Debris, HitStop, NumberField, NumberSprites, STOP_GAP_MS, STYLE, Trauma, tier, type Rect } from "../kit/feedback";
 import { ParticlePool, textures } from "../kit/three";
 import { GUN, TIA } from "../content/guns";
-import { FOES } from "../content/foes";
 import { FIELD, type Tier } from "../content/rules";
 import { EV, FLAG } from "../sim/events";
 import { bayOf } from "../sim/weapons";
@@ -115,39 +114,9 @@ export class Combat {
     return this.bolts.ready && this.warmed;
   }
 
-  /** The scenarios' probe (info()): bolts drawn by kind, chunks, lights lit, the shake (px), the muzzles on screen (centre, left, right, core; CSS px), the ship. */
-  probe(): { bolts: number[]; chunks: number; chunk: [number, number]; lights: number; shake: number; muzzles: number[][]; ship: ReturnType<Combat["shipProbe"]> } {
-    return { bolts: this.bolts.counts(), chunks: this.chunks.live, chunk: this.chunks.watch(), lights: this.lights.lit, shake: Math.round(Math.hypot(this.trauma.offsetX, this.trauma.offsetY) * 100) / 100, muzzles: this.shots.muzzles(), ship: this.shipProbe() };
-  }
-
-  /**
-   * Live foes the camera shows (sim z ≤ 30): screen centre and body radius in
-   * CSS px (the live view), depth, kind. The balance pass reads how many the
-   * effects wash out (survival-feel f8).
-   */
-  foesOnScreen(w: World): number[][] {
-    const F = w.foes;
-    const out: number[][] = [];
-    for (let s = 0; s < F.top; s += 1) {
-      if (F.alive[s] !== 1 || F.z[s]! > 30) continue;
-      const r = FOES[F.kind[s]!]?.radius ?? 0.5;
-      const c = this.stage.project(F.x[s]!, F.z[s]!, r, this.screen);
-      const cx = c.x;
-      const cy = c.y;
-      const edge = this.stage.project(F.x[s]! + r, F.z[s]!, r, this.screen).x;
-      out.push([Math.round(cx), Math.round(cy), Math.round(Math.abs(edge - cx) * 10) / 10, Math.round(F.z[s]! * 10) / 10, F.kind[s]!]);
-    }
-    return out;
-  }
-
-  /** The ship's pose (ship.ts), where its root stands on screen through the still view and where it would stand undrifted (CSS px): the motion scenarios read it. */
-  shipProbe(): Ship["pose"] & { sx: number; sy: number; cx: number } {
-    const r = this.ship.root.position;
-    const round = (v: number): number => Math.round(v * 10000) / 10000;
-    const cx = Math.round(this.stage.project(0, -r.z, r.y, this.screen, true).x * 10) / 10;
-    const p = this.stage.project(r.x, -r.z, r.y, this.screen, true);
-    const pose = this.ship.pose;
-    return { ...(Object.fromEntries(Object.entries(pose).map(([k, v]) => [k, round(v)])) as Ship["pose"]), sx: Math.round(p.x * 10) / 10, sy: Math.round(p.y * 10) / 10, cx };
+  /** The scenarios' probe (info()): bolts drawn by kind, chunks, lights lit, the shake (px), the muzzles on screen (centre, left, right, core; CSS px). */
+  probe(): { bolts: number[]; chunks: number; chunk: [number, number]; lights: number; shake: number; muzzles: number[][] } {
+    return { bolts: this.bolts.counts(), chunks: this.chunks.live, chunk: this.chunks.watch(), lights: this.lights.lit, shake: Math.round(Math.hypot(this.trauma.offsetX, this.trauma.offsetY) * 100) / 100, muzzles: this.shots.muzzles() };
   }
 
   /** Point sprites are sized in world units: px per unit at distance 1. */
