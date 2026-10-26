@@ -144,5 +144,11 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   97 % too (stage-wide pressure, or Pháo Sao where shields stand); then S1
   R2 (chapter flow, doors, Lõi, Mốc, stages 5–9, Bão ion, Giếng, Nghĩa)
   and R3 (the boss), `docs/BUILD_S1.md` §14.
+- Feel pass (the owner's verdict of 26/10, not built yet): `docs/FEEL_PASS_S1.md`
+  (the word line above the ship's nose with the bays beside the ship, each
+  letter charging the ship's core, 3D bolts and light pools per gun, kill
+  chunks, the ship's view-only drift, sounds by Q6; budgets and frame
+  sequence checks). It touches no sim file: chapter runs and the trial
+  golden must hash the same (its §1.1, §7.1).
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.
