@@ -61,8 +61,8 @@ export default async function (page) {
     const overflow = [...slot.querySelectorAll('*')].filter((n) => n.scrollWidth > n.clientWidth + 1 && getComputedStyle(n).overflow !== 'hidden').map((n) => n.className);
     return { gun: slot.querySelector('.sv-gun').textContent, word: word.textContent, px: parseFloat(getComputedStyle(word).fontSize), mags: slot.querySelectorAll('.sv-mags i').length, overflow, width: Math.round(slot.getBoundingClientRect().width) };
   }))()`);
-  const learnWidth = await page.eval("Math.round(document.querySelector('.sv-learn').getBoundingClientRect().width)");
-  // The frame is 420 px at 1280×720 and scales with --ui (630 px at 1920×1080; R1 review: the check read 420 at every size).
+  // The word line above the ship (FEEL_PASS_S1 §2.1) hugs its word up to 420 px at 1280×720, scaled with --ui (630 px at 1920×1080).
+  const learnWidth = await page.eval("Math.round(parseFloat(getComputedStyle(document.querySelector('.sv-strip')).maxWidth))");
   const ui = await page.eval("parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui')) || 1");
   shots.push(await page.shot(out("survival-s1-loadout-fight-" + size + ".png")));
   // The armory from the title screen (its item is the menu's last: ↑ wraps to it).
@@ -92,7 +92,7 @@ export default async function (page) {
     baysShowGuns: hud.length === 2 && hud[0].gun === "XUNG" && hud[1].gun === "TÁN",
     wordsAtLeast26px: hud.every((bay) => bay.px >= 26),
     noBayOverflow: hud.every((bay) => bay.overflow.length === 0),
-    learningFrameKept: Math.abs(learnWidth - 420 * ui) <= 2,
+    wordLineAt420: Math.abs(learnWidth - 420 * ui) <= 2,
     armoryFiveGuns: armory.screen === "armory" && armory.cards.length === 5 && armory.cards.some((card) => /Trận thử: 24 viên/.test(card.text)),
     armoryFits: armory.cards.every((card) => card.out === 0 && card.overflow === 0),
     noConsoleErrors: page.logs.filter((line) => line.startsWith("error")).length === 0,

@@ -1,8 +1,9 @@
 // Sinh Tồn S0 (docs/BUILD_S0.md §9): a whole 180 s stage typed for
 // real at 45 WPM through CDP. Pictures: a calm stretch, the first surge, the
 // second surge, the end screen. Checks: foes die, damage numbers and debris
-// show, no number ever covers the learning frame (the page's own count and
-// the DOM rectangle of .sv-learn against every live number's box), no
+// show, no number ever covers the word line (the page's own count and the
+// line's rectangle at its widest, t.rects()[0], against every live number's
+// box; FEEL_PASS_S1 §2.5), no
 // console error; and the page's command log replays in Node to its hash.
 //   URL=http://127.0.0.1:3007/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s0-fight.mjs --width=1280 --height=720
 import { execFileSync } from "node:child_process";
@@ -42,7 +43,8 @@ export default async function (page) {
     const at = Date.now();
     const look = await page.eval(sv(`
       const n = t.numbers();
-      const learn = document.querySelector(".sv-learn").getBoundingClientRect();
+      const r = t.rects()[0];
+      const learn = { left: r.x + 6, right: r.x + r.w - 6, top: r.y + 6, bottom: r.y + r.h - 6 };
       const hit = n.boxes.filter((b) => b.x < learn.right && b.x + b.w > learn.left && b.y < learn.bottom && b.y + b.h > learn.top).length;
       return { slots: t.slots(), state: t.state(), info: t.info(), overlaps: n.overlaps, live: n.live, hit, mode: t.mode() };`));
     if (look === null) break;

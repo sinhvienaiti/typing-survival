@@ -3,14 +3,18 @@
 // Chơi tiếp, Chế độ, Hồ sơ gõ, Cài đặt, Kho súng; ↓ ↓ skips the disabled
 // "Chơi tiếp", ↑ comes back; the title font has every Vietnamese letter; a key
 // starts the audio and the music), then Trận thử (↓ Enter), the HUD with its health bar, clock and kill counter, and two gun
-// slots that each show a word (≥ 26 px at 1280×720, contrast ≥ 7 : 1 on the
-// panel) with its meaning; the learning frame; no console error. S0 review:
+// slots that each show a word (≥ 26 px at 1280×720) with its meaning, the
+// word line above the ship (hidden until a key locks a bay; FEEL_PASS_S1
+// §2.6: 4 protected boxes), contrast ≥ 7 : 1 measured on the real frame: the
+// brightest 1 % of the view behind each bay and the line (the HUD hidden for
+// one picture) through the plate's own alpha; no console error. S0 review:
 // a window that loses focus pauses the fight (Esc goes on); with the screen
 // shake off (?shake=0) or reduced motion (survival.motion) the
 // camera never shakes, however hard the hits.
 //   URL=http://127.0.0.1:3007/ OUT_DIR=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-s0-boot.mjs --width=1280 --height=720
 import { DEV_URL, out } from "./common.mjs";
 import { open, sv, typeSlot } from "./survival-s0-lib.mjs";
+import { contrastOver, luma } from "./survival-feel-lib.mjs";
 
 export default async function (page) {
   const size = page.width + "x" + page.height;
@@ -46,28 +50,28 @@ export default async function (page) {
   await page.sleep(1200);
   const hud = await page.eval(`(() => {
     const t = window.__survival;
-    const lum = (rgb) => {
-      const [r, g, b] = rgb.match(/[\\d.]+/g).slice(0, 3).map((v) => { const c = Number(v) / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
-      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    };
-    // The panel over the darkest the canvas gets behind it (its own colour on black is the worst case for light text: the best contrast; take the canvas's brightest, white at 10 % through the 90 % panel).
-    const panel = getComputedStyle(document.querySelector(".sv-slot")).backgroundColor;
-    const [pr, pg, pb, pa] = panel.match(/[\\d.]+/g).map(Number);
-    const over = (c) => c * pa + 255 * (1 - pa);
-    const background = lum("rgb(" + over(pr) + "," + over(pg) + "," + over(pb) + ")");
+    const alpha = (node) => Number(getComputedStyle(node).backgroundColor.match(/[\\d.]+/g)[3] ?? 1);
+    const box = (node) => { const r = node.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; };
     const slots = [...document.querySelectorAll(".sv-slot")].map((slot) => {
       const word = slot.querySelector(".sv-word");
       const style = getComputedStyle(word);
-      const contrast = (lum(style.color) + 0.05) / (background + 0.05);
-      return { word: word.textContent, px: parseFloat(style.fontSize), contrast: Math.round(contrast * 10) / 10, meaning: slot.querySelector(".sv-mean").textContent };
+      return { word: word.textContent, px: parseFloat(style.fontSize), alpha: alpha(slot), box: box(slot), color: style.color, meaning: slot.querySelector(".sv-mean").textContent };
     });
+    const strip = document.querySelector(".sv-strip");
+    const line = t.rects()[0];
     return {
       mode: t.mode(), slots, sim: t.slots(),
       hp: document.querySelector(".sv-hp b")?.textContent, clock: document.querySelector(".sv-clock b")?.textContent, kills: document.querySelector(".sv-kills b")?.textContent,
-      learn: !!document.querySelector(".sv-learn"), rects: t.rects().length, models: t.models(),
+      learn: strip !== null && getComputedStyle(strip).opacity === "0", line: { x: line.x + 6, y: line.y + 6, w: line.w - 12, h: line.h - 12, alpha: alpha(strip) }, rects: t.rects().length, models: t.models(),
     };
   })()`);
   const shot = await page.shot(out("survival-s0-boot-" + size + ".png"));
+  // The same instant without the HUD: the brightest 1 % behind each plate, through the plate's alpha (+2.2 % white of its brushing).
+  await page.eval(sv("t.hold(true); document.querySelector('.sv-hud').style.visibility = 'hidden'; return true;"));
+  const bare = await page.shot(out("survival-s0-boot-bare-" + size + ".png"));
+  await page.eval(sv("document.querySelector('.sv-hud').style.visibility = ''; t.hold(false); return true;"));
+  for (const slot of hud.slots) slot.contrast = contrastOver(luma([bare], slot.box).p99, slot.alpha, 0.022);
+  hud.line.contrast = contrastOver(luma([bare], hud.line).p99, hud.line.alpha);
   const sounds = await page.eval(sv("return t.sounds();"));
   // Focus lost: paused; Esc: on again.
   await page.eval("window.dispatchEvent(new Event('blur')); true");
@@ -109,7 +113,7 @@ export default async function (page) {
     twoSlotsWithWords: hud.slots.length === 2 && hud.slots.every((slot, k) => slot.word === hud.sim[k].text && slot.word.length >= 3 && slot.meaning.length > 0),
     firstLettersDiffer: hud.sim[0].text[0] !== hud.sim[1].text[0],
     wordAtLeast26px: hud.slots.every((slot) => slot.px >= 26),
-    contrastAtLeast7: hud.slots.every((slot) => slot.contrast >= 7),
+    contrastAtLeast7: hud.slots.every((slot) => slot.contrast >= 7) && hud.line.contrast >= 7 && hud.slots.every((slot) => /244, 241, 235/.test(slot.color)),
     hudShown: hud.hp === "100" && /^\d:\d\d$/.test(hud.clock ?? "") && /^×\d+$/.test(hud.kills ?? "") && hud.learn && hud.rects === 4,
     blurPauses: blurred === "paused" && resumed === "play",
     controlShakes: shaking.ready && shaking.worst > 0,

@@ -3,7 +3,7 @@
 // (the guns a good player picks: Ray + Tia on 2, Pháo Sao + Xung on 4).
 // Checks: the objective's plate counts leaders (and the horde pulls back once
 // enough fall), hidden letters show as "_" and never the first, no damage
-// number over a protected rectangle (the learning frame, the bays, the
+// number over a protected rectangle (the word line, the bays, the
 // armour, the objective's plate), no console error, and the page's command
 // log replays in Node to its hash. Both fights must end (won or lost) on the
 // page they started on: a reload mid-fight (the tick going back) fails the
