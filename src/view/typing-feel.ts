@@ -193,8 +193,8 @@ export class TypeFeel {
         this.sx[s] = this.tip.x + (Math.random() - 0.5) * 0.25;
         this.sy[s] = this.tip.y;
         this.sz[s] = this.tip.z;
-        // The first leaves on the key's own frame (f0), the others staggered by up to 25 ms.
-        this.t0[s] = seconds + (k === 0 ? 0 : Math.random() * 0.025);
+        // Two leave on the key's own frame (f0), the others staggered by up to 25 ms.
+        this.t0[s] = seconds + (k < 2 ? 0 : Math.random() * 0.025);
         this.life[s] = 0.07 + Math.random() * 0.03;
         this.mode[s] = this.pAside[p]!;
         this.ax[s] = (k % 2 === 0 ? -1 : 1) * (2.5 + Math.random() * 2);
