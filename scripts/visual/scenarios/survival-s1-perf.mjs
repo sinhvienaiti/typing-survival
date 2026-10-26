@@ -9,6 +9,10 @@
 // checked (the frame intervals' p95 and max, the frames that missed a
 // refresh, i.e. came > 1.5 refreshes after the one before, and frames a
 // second), since the GPU and a busy machine set those too.
+// Feel pass (FEEL_PASS_S1 §6): a third window, chapter stage 1 with Xung +
+// Tán at ~150 foes (the guns with the most 3D bolts, up to 32 + 28), and the
+// most triangles and the shader programs at each window's start and end
+// (none new after the fight's first seconds: programsSteady).
 // R1 review: the first version idled 52 s (the ship fell before its window)
 // and kept one frame of the cost ring (its length stops at 1200). Now both
 // bays are typed throughout (~100 ms a key), the peak is held at ~150 foes
@@ -37,6 +41,10 @@ async function play(page, seconds, { measure = false, hold = 0 } = {}) {
   const first = await page.eval("window.__perfFrames");
   const end = Date.now() + seconds * 1000;
   let calls = 0;
+  let triangles = 0;
+  let programs = 0;
+  let programsFrom = -1;
+  let memory = null;
   let phase = "play";
   const foes = [];
   while (Date.now() < end) {
@@ -45,6 +53,10 @@ async function play(page, seconds, { measure = false, hold = 0 } = {}) {
     phase = look.state.phase;
     if (phase !== "play") break;
     calls = Math.max(calls, look.info.calls);
+    triangles = Math.max(triangles, look.info.triangles ?? 0);
+    programs = look.info.programs ?? 0;
+    if (programsFrom < 0) programsFrom = programs;
+    memory = { geometries: look.info.geometries, textures: look.info.textures };
     foes.push(look.state.foes);
     if (hold > 0 && look.state.foes < hold * 0.92) await page.eval(sv("t.flood(" + (hold - look.state.foes) + "); return true;"));
     const ch = nextLetter(look.slots);
@@ -53,7 +65,7 @@ async function play(page, seconds, { measure = false, hold = 0 } = {}) {
   }
   foes.sort((a, b) => a - b);
   const seen = { min: foes[0] ?? 0, median: foes[foes.length >> 1] ?? 0, max: foes.at(-1) ?? 0 };
-  if (!measure) return { phase, foes: seen };
+  if (!measure) return { phase, foes: seen, programsFrom, programs };
   const frames = (await page.eval("window.__perfFrames")) - first;
   const costs = await page.eval(sv("return t.costs();"));
   const n = costs.update.length;
@@ -62,7 +74,7 @@ async function play(page, seconds, { measure = false, hold = 0 } = {}) {
   const intervals = costs.interval.slice(n - keep);
   const refresh = stats(intervals).median;
   const shown = { missed: intervals.filter((v) => v > refresh * 1.5).length, perSecond: Math.round((frames / seconds) * 10) / 10 };
-  return { phase, frames, frame: stats(frame), interval: stats(intervals), shown, calls, foes: seen };
+  return { phase, frames, frame: stats(frame), interval: stats(intervals), shown, calls, triangles, programsFrom, programs, memory, foes: seen };
 }
 
 export default async function (page) {
@@ -82,17 +94,24 @@ export default async function (page) {
   await page.sleep(400);
   result.rifts.flood = await play(page, 6, { measure: true });
   result.rifts.shot = await page.shot(out("survival-s1-perf-flood-" + size + ".png"));
-  const windows = [result.shields.peak, result.rifts.peak, result.rifts.flood];
+  result.bolts = { ready: await openStage(page, "c1-s1", ["xung", "tan"], "&director=0") };
+  await countFrames(page);
+  result.bolts.warm = await play(page, 15);
+  result.bolts.peak = await play(page, 10, { measure: true, hold: 150 });
+  result.bolts.shot = await page.shot(out("survival-s1-perf-bolts-" + size + ".png"));
+  const windows = [result.shields.peak, result.rifts.peak, result.rifts.flood, result.bolts.peak];
   const checks = {
-    ready: result.shields.ready && result.rifts.ready,
+    ready: result.shields.ready && result.rifts.ready && result.bolts.ready,
     playedThrough: windows.every((w) => w.phase === "play"),
     wholeWindows: windows.every((w) => w.frame.frames >= 200),
-    peakHeld: result.shields.peak.foes.median >= 135 && result.rifts.peak.foes.median >= 135,
+    peakHeld: [result.shields, result.rifts, result.bolts].every((r) => r.peak.foes.median >= 135),
     floodHeld: result.rifts.flood.foes.median >= 600,
-    peakMean: result.shields.peak.frame.mean <= 6 && result.rifts.peak.frame.mean <= 6,
-    peakP95: result.shields.peak.frame.p95 <= 10 && result.rifts.peak.frame.p95 <= 10,
+    peakMean: [result.shields, result.rifts, result.bolts].every((r) => r.peak.frame.mean <= 6),
+    peakP95: [result.shields, result.rifts, result.bolts].every((r) => r.peak.frame.p95 <= 10),
     floodP95: result.rifts.flood.frame.p95 <= 14,
     drawCalls: Math.max(...windows.map((w) => w.calls)) <= 160,
+    // §6: no shader program compiled inside a measured window (each starts ≥ 15 s into its fight).
+    programsSteady: windows.every((w) => w.programs === w.programsFrom),
     noConsoleErrors: page.logs.filter((line) => line.startsWith("error")).length === 0,
     noExceptions: page.exceptions.length === 0,
   };
