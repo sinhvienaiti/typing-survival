@@ -182,7 +182,28 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `scripts/visual/scenarios/survival-feel-guns.mjs`
   (`SCENES=f5,f6,shake,f9g,audio`, `GUNS=` to pick, ~15 min a size). The
   backdrop under the word line is at its limit (p50 +0.020 over build 1,
-  §4.1 allows 0.02): measure it again after any new light. Next: F5 the
-  ship (§5: drift, lunge on a load, recoil per gun), then F6.
+  §4.1 allows 0.02): measure it again after any new light. Build 3 done
+  (same changelog, "Bước 3"): the ship (§5: F5), view only. Rules in
+  `src/view/ship-rules.ts` (`tests/ship-motion.test.ts`: the drift target
+  from the near horde's weights, the springs, hover, kicks by gun and the
+  lunge, aim priorities, engine thrust); `ship.ts` drives the pose on its
+  own clock (frozen under the pause) on `Ship.root` (yaw, pitch, drift,
+  kicks) and the rig's bank (`turnBank`, the kit's slow sway taken off),
+  gets kicks and aim cues from `shots.ts` / `beams.ts` (`ship.kick`,
+  `ship.cue`), reads Ray's charge and Tia's burn from the world, and draws
+  the engines into the fight's glows and strips (`drawEngines`). Sockets
+  missing on a model fall back to anchors in ship space (Draconis has no
+  engines: none drawn). Probes for scenarios in `src/view/probes.ts`
+  (`__survival.ship()`, `.foes()`). Frame sequences:
+  `scripts/visual/scenarios/survival-feel-ship.mjs`
+  (`SCENES=drift,kick,reduced,rt`, ~5 min a size); `survival-feel` `f8` also
+  grades how much light washes out the horde (the balance pass; stage 4
+  at 1080p is 10.7 %, over its 10 %, from build 2's Pháo Sao blasts and
+  the black hole's glare, not the ship). Since build 2 the frame 267 ms
+  after a Ray load draws the 3D scene black when it lands on sim tick 74
+  of the kick scene (4/4 such runs, both before and after build 3; no
+  NaN found on the CPU side; cause not found, see the changelog): fix it
+  before the owner's play test. Next: F6 (§8: remeasure §6–§7, the
+  owner's play test §7.6).
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.
