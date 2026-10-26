@@ -18,6 +18,7 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { FIELD, type Tier } from "../content/rules";
+import { DECK_LIGHT_GLSL, deckLightUniforms } from "./lights";
 import { PALETTE } from "./theme";
 
 /** Per tier: pixel ratio cap, antialias, bloom, and effect budgets (SURVIVAL_MODE_PLAN.md 8.1). */
@@ -101,7 +102,7 @@ const FLOOR_FRAGMENT = /* glsl */ `
 uniform float uTime;
 uniform float uThreat;
 varying vec3 vWorld;
-${HASH}
+${HASH}${DECK_LIGHT_GLSL}
 float band(float v, float a, float b, float soft) { return smoothstep(a - soft, a, v) * (1.0 - smoothstep(b, b + soft, v)); }
 void main() {
   float x = vWorld.x;
@@ -157,6 +158,8 @@ void main() {
   color += ${vec3(PALETTE.volt, 0.05)} * lamp;
   color += vec3(0.05, 0.048, 0.045) * exp(-(x * x + z * z) * 0.02);
   color *= mix(1.0, 0.55, smoothstep(${f(FIELD.gateZ - 14)}, ${f(FIELD.gateZ)}, z));
+  // The guns' light pools (lights.ts): the plate's own shade lit in the gun's colour, seams staying dark.
+  color += deckLight(vWorld) * (color * 9.0 + 0.025);
   // The bottom line, red, and the danger glow growing with the threat.
   float bottom = smoothstep(0.32, 0.0, abs(z - ${f(FIELD.bottomZ)}));
   float danger = smoothstep(10.0, ${f(FIELD.bottomZ)}, z) * uThreat;
@@ -270,8 +273,9 @@ export class Stage {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(FOV, 16 / 9, 1, 2500);
   readonly composer: EffectComposer | null;
-  private readonly bloom: UnrealBloomPass | null;
   private readonly uniforms = { uTime: { value: 0 }, uThreat: { value: 0 } };
+  /** The guns' light pools on the deck (lights.ts writes them). */
+  readonly deck = deckLightUniforms();
   private readonly sky: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
   private readonly skyUniforms = { uTime: this.uniforms.uTime, uAspect: { value: 16 / 9 }, uHole: { value: HOLE.clone() } };
   private readonly camPos = new THREE.Vector3();
@@ -320,13 +324,11 @@ export class Stage {
     if (spec.bloom) {
       this.composer = new EffectComposer(this.renderer);
       this.composer.addPass(new RenderPass(this.scene, this.camera));
-      this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.3, 1.0);
-      this.composer.addPass(this.bloom);
+      // FEEL_PASS_S1 §4.1: strength 0.85, the threshold kept at 1 (only HDR light blooms); radius 0.3, not 0.45 (a Ray shot washed a 400 px column of the lane). ?bloom=s,r: A/B in scenarios.
+      const [strength, radius] = (new URLSearchParams(location.search).get("bloom") ?? "").split(",").map(Number);
+      this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(256, 256), Number.isFinite(strength) && strength! > 0 ? strength! : 0.85, Number.isFinite(radius) ? radius! : 0.3, 1.0));
       this.composer.addPass(new OutputPass());
-    } else {
-      this.composer = null;
-      this.bloom = null;
-    }
+    } else this.composer = null;
   }
 
   private build(): void {
@@ -334,7 +336,7 @@ export class Stage {
     const length = gateZ + 10;
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(halfW * 2 + 0.6, length).rotateX(-Math.PI / 2),
-      new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader: WORLD_VERTEX, fragmentShader: FLOOR_FRAGMENT, transparent: true, depthWrite: false }),
+      new THREE.ShaderMaterial({ uniforms: { ...this.uniforms, ...this.deck }, vertexShader: WORLD_VERTEX, fragmentShader: FLOOR_FRAGMENT, transparent: true, depthWrite: false }),
     );
     floor.position.set(0, 0, -(length / 2) + 5);
     floor.renderOrder = -5;

@@ -7,7 +7,9 @@
  * dipping 6 cm a step), barely flinch at a blow and drop their heads when
  * they charge; Đầu Đàn is drawn 1.25× a Trâu with gold veins; Khiên walks
  * hunched; Tách staggers and throbs at 2 Hz; a hit flashes white, knocks
- * back and squashes (src/kit/feedback/reaction.ts). A missing model (a clean
+ * back and squashes (src/kit/feedback/reaction.ts; 2–6 frames by tier, the
+ * feel pass's profile), and a killed foe stays 3 frames white-hot where it
+ * died before it goes (FEEL_PASS_S1 §4.4). A missing model (a clean
  * clone has no local GLBs) is replaced by a stand-in shape made in code.
  * Soft dark spots under each foe keep the crowd readable on the deck. Every
  * kind wears the "Bầy Hố Đen" layer below.
@@ -15,8 +17,9 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { Reactions } from "../kit/feedback";
-import { loadModel, pickModelTier, textures } from "../kit/three";
-import { models } from "./models";
+import { textures } from "../kit/three";
+import { FEEL } from "./gun-rules";
+import { loadMesh } from "./models";
 import { FOES, KIND, KINDS } from "../content/foes";
 import { MARK } from "../sim/stores";
 import { FIELD, STORE } from "../content/rules";
@@ -44,6 +47,8 @@ const FLINCH = [1, 1, 0.25, 0.8, 1, 1, 0.25];
 const FAR_GROW = 0.2;
 /** The Giáp affix draws a foe this much larger (and its veins gold). */
 const ARMOUR_GROW = 1.22;
+/** A killed foe is drawn white-hot this long where it died (s): 3 frames. */
+const DEATH_FLASH = 0.045;
 
 /**
  * "Bầy Hố Đen", the horde's shared material layer (one new faction from the
@@ -98,6 +103,8 @@ totalEmissiveRadiance += vec3(1.0, 0.25, 0.3) * vState.y * 0.4;
 const STATE_OUT = /* glsl */ `
 // The rim drinks the light (never the hit flash).
 outgoingLight *= 1.0 - smoothstep(0.55, 0.9, bhRim) * 0.92 * (1.0 - vState.x);
+// The flash reads white-hot but is no light source: held just over the bloom's threshold (a pack flashing for 2–6 frames washed the lane white).
+outgoingLight = mix(outgoingLight, min(outgoingLight, vec3(1.15)), vState.x);
 #include <opaque_fragment>
 `;
 /** Per kind: body tint, vein colour (above 1 blooms), hairline, vein strength. Trâu and Đầu Đàn: deep gold; Khiên: blue. */
@@ -136,53 +143,13 @@ function placeholder(kind: number): THREE.BufferGeometry {
   return mergeGeometries([body, wings].map((part) => (part.index === null ? part : part.toNonIndexed()))) ?? body;
 }
 
-async function modelGeometry(ids: readonly string[]): Promise<{ geometry: THREE.BufferGeometry; material: THREE.MeshStandardMaterial } | null> {
-  for (const id of ids) {
-    const entry = await models.entry("enemies", id);
-    const url = entry === null ? null : pickModelTier(entry, "high");
-    if (url === null) continue;
-    try {
-      const scene = (await loadModel(url)).scene;
-      scene.updateMatrixWorld(true);
-      let mesh: THREE.Mesh | null = null;
-      scene.traverse((object) => {
-        if (mesh === null && (object as THREE.Mesh).isMesh) mesh = object as THREE.Mesh;
-      });
-      if (mesh === null) continue;
-      const found = mesh as THREE.Mesh;
-      const geometry = floatGeometry(found.geometry);
-      geometry.applyMatrix4(found.matrixWorld);
-      const material = (Array.isArray(found.material) ? found.material[0] : found.material) as THREE.MeshStandardMaterial;
-      return { geometry, material: material.clone() };
-    } catch {
-      // A listed model the server does not have (a clean clone): try the next, then the shape.
-    }
-  }
-  return null;
-}
-
-/** Float copies of the attributes (a meshopt GLB stores them quantized, which a transform would clip). */
-function floatGeometry(source: THREE.BufferGeometry): THREE.BufferGeometry {
-  const geometry = new THREE.BufferGeometry();
-  for (const name of ["position", "normal", "uv"] as const) {
-    const attribute = source.getAttribute(name);
-    if (attribute === undefined) continue;
-    const values = new Float32Array(attribute.count * attribute.itemSize);
-    for (let i = 0; i < attribute.count; i += 1) {
-      values[i * attribute.itemSize] = attribute.getX(i);
-      values[i * attribute.itemSize + 1] = attribute.getY(i);
-      if (attribute.itemSize > 2) values[i * attribute.itemSize + 2] = attribute.getZ(i);
-    }
-    geometry.setAttribute(name, new THREE.BufferAttribute(values, attribute.itemSize));
-  }
-  const index = source.getIndex();
-  if (index !== null) geometry.setIndex(Array.from(index.array as ArrayLike<number>));
-  return geometry;
-}
-
 export class Crowd {
   readonly group = new THREE.Group();
-  readonly reactions = new Reactions(STORE.foes);
+  readonly reactions = new Reactions(STORE.foes, FEEL);
+  /** Per slot: the foe last drawn there (id, −1 none), when it was seen dead (s), its last matrix (the death flash). */
+  private readonly seen = new Int32Array(STORE.foes).fill(-1);
+  private readonly diedAt = new Float64Array(STORE.foes).fill(-1);
+  private readonly last = new Float32Array(STORE.foes * 16);
   readonly loaded: boolean[] = new Array<boolean>(KINDS).fill(false);
   private readonly layers: Layer[] = [];
   private readonly shadows: THREE.InstancedMesh;
@@ -210,7 +177,7 @@ export class Crowd {
   async load(): Promise<void> {
     await Promise.all(
       LOOK.map(async (_, kind) => {
-        const found = await modelGeometry(LOOK[kind]!.model);
+        const found = await loadMesh("enemies", LOOK[kind]!.model);
         if (found === null) return;
         const old = this.layers[kind]!;
         old.mesh.removeFromParent();
@@ -264,7 +231,12 @@ export class Crowd {
     for (const layer of this.layers) layer.count = 0;
     let shadows = 0;
     for (let s = 0; s < F.top; s += 1) {
-      if (F.alive[s] === 0) continue;
+      if (F.alive[s] === 0) {
+        if (this.seen[s]! >= 0) this.ghost(s, F.kind[s]!, now);
+        continue;
+      }
+      this.seen[s] = F.id[s]!;
+      this.diedAt[s] = -1;
       const kind = F.kind[s]!;
       const layer = this.layers[kind]!;
       const i = layer.count;
@@ -298,6 +270,7 @@ export class Crowd {
       this.pos.set(x + r[1]! * flinch, layer.lift + bob, -(z + r[2]! * flinch));
       this.matrix.compose(this.pos, this.quat, this.scale);
       layer.mesh.setMatrixAt(i, this.matrix);
+      this.matrix.toArray(this.last, s * 16);
       const o = i * 4;
       layer.state[o] = r[0]!;
       layer.state[o + 1] = kind === KIND.scout || heavy || kind === KIND.shield ? 1 - F.hp[s]! / F.maxHp[s]! : 0;
@@ -317,6 +290,24 @@ export class Crowd {
     }
     this.shadows.count = shadows;
     this.shadows.instanceMatrix.needsUpdate = true;
+  }
+
+  /** A foe gone from the store: its last pose, white-hot, for DEATH_FLASH s after the frame it was seen dead. */
+  private ghost(s: number, kind: number, now: number): void {
+    if (this.diedAt[s]! < 0) this.diedAt[s] = now;
+    const layer = this.layers[kind];
+    if (layer === undefined || now - this.diedAt[s]! >= DEATH_FLASH || layer.count >= layer.mesh.instanceMatrix.count) {
+      if (now - this.diedAt[s]! >= DEATH_FLASH) this.seen[s] = -1;
+      return;
+    }
+    const i = layer.count;
+    layer.count += 1;
+    this.matrix.fromArray(this.last, s * 16);
+    layer.mesh.setMatrixAt(i, this.matrix);
+    layer.state[i * 4] = 1;
+    layer.state[i * 4 + 1] = 0;
+    layer.state[i * 4 + 2] = 0;
+    layer.state[i * 4 + 3] = 0;
   }
 
   drawn(): number {

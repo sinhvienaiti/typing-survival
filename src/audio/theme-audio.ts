@@ -18,7 +18,7 @@
 import { SceneAudio, noiseBuffer, type BusTable } from "../kit/audio";
 import { pentatonicRatio, tier } from "../kit/feedback";
 import { PRONUNCIATION_EVENT } from "../kit/speech";
-import { GUN_SOUNDS, GUN_SOUND_IDS, type GunSoundId } from "./gun-audio";
+import { GUN_LOOPS, GUN_SOUNDS, GUN_SOUND_IDS, LOOP_SOUND_IDS, tiaEnd, xungRound, xungTail, type GunSoundId, type LoopSoundId } from "./gun-audio";
 import { Music } from "./music";
 import { crackle, noise, steel, STEEL, tone, type Voice } from "./synth";
 import { keyBad, keyOk, streakUp, TYPE_SOUND_IDS, wordFull, wordLoad } from "./type-audio";
@@ -44,8 +44,10 @@ export const SOUND_IDS = [
   "word.perfect",
   ...TYPE_SOUND_IDS,
   "gun.xung",
+  "gun.xung.tail",
   "gun.tia.start",
   "gun.tia.end",
+  ...LOOP_SOUND_IDS,
   "gun.tia.pulse",
   "hit.t1",
   "hit.t2",
@@ -112,6 +114,10 @@ export class ThemeAudio {
   /** Sounds started since the page opened, by id (the scenarios read it). */
   readonly played = new Map<SoundId, number>();
   private readonly lastGun = new Map<GunSoundId, number>();
+  private readonly loops = new Map<LoopSoundId, () => void>();
+  /** Loops the view asks for (their pan), and whether the fight runs: a loop sounds only when both hold. */
+  private readonly wanted = new Map<LoopSoundId, number>();
+  private loopsLive = true;
 
   constructor(options: ThemeAudioOptions) {
     this.sfx = clamp01(options.sfx);
@@ -143,6 +149,8 @@ export class ThemeAudio {
     this.buffer = noiseBuffer(this.ctx);
     this.music.start(this.ctx, this.inserts.get("music")!, this.buffer);
     this.count("music.calm");
+    // A loop asked for before the first gesture starts now.
+    this.syncLoops();
   }
 
   get ready(): boolean {
@@ -171,14 +179,43 @@ export class ThemeAudio {
     this.played.set(id, (this.played.get(id) ?? 0) + 1);
   }
 
-  /** An S1 sound (gun-audio.ts) at `pan`; `now` in ms keeps its gap. */
-  gun(id: GunSoundId, pan: number, now: number): void {
+  /** An S1 sound (gun-audio.ts) at `pan`; `now` in ms keeps its gap; `pitch` × its tones. */
+  gun(id: GunSoundId, pan: number, now: number, pitch = 1): void {
     const spec = GUN_BUS[id];
     if (now - (this.lastGun.get(id) ?? -1e9) < spec.gap) return;
     const v = this.voice(spec.bus, pan, id);
     if (v === null) return;
     this.lastGun.set(id, now);
-    GUN_SOUNDS[id](v);
+    GUN_SOUNDS[id](v, pitch);
+  }
+
+  /** Starts (on) or fades out a gun loop (gun-audio.ts GUN_LOOPS); it sounds only while the fight runs (`live`). */
+  loop(id: LoopSoundId, on: boolean, pan: number): void {
+    if (on) this.wanted.set(id, pan);
+    else this.wanted.delete(id);
+    this.syncLoops();
+  }
+
+  /** The fight runs (not paused, not ended): the loops asked for sound; otherwise they fade out until it runs again. */
+  set live(on: boolean) {
+    if (on === this.loopsLive) return;
+    this.loopsLive = on;
+    this.syncLoops();
+  }
+
+  private syncLoops(): void {
+    for (const id of LOOP_SOUND_IDS) {
+      const stop = this.loops.get(id);
+      const pan = this.wanted.get(id);
+      if (this.loopsLive && pan !== undefined) {
+        if (stop !== undefined) continue;
+        const v = this.voice("guns", pan, id);
+        if (v !== null) this.loops.set(id, GUN_LOOPS[id](v));
+      } else if (stop !== undefined) {
+        stop();
+        this.loops.delete(id);
+      }
+    }
   }
 
   /** A right key (type-audio.ts): the relay and the `typed`-th letter's note; `octave` from the clean streak's tier 2. */
@@ -207,13 +244,16 @@ export class ThemeAudio {
     if (v !== null) streakUp(v);
   }
 
-  /** A Xung round: a heavy autocannon (a low punch, a crack, the breech). */
-  shot(pan: number): void {
+  /** A Xung round (every one, FEEL_PASS_S1 §4.3): a heavy autocannon; `first` of a magazine adds the breech. */
+  xung(pan: number, first: boolean): void {
     const v = this.voice("guns", pan, "gun.xung");
-    if (v === null) return;
-    tone(v, 0, 0.09, 0.42, 150, 46);
-    noise(v, 0, 0.035, 0.26, "highpass", 1900);
-    noise(v, 0.012, 0.07, 0.15, "bandpass", 720, 1.2);
+    if (v !== null) xungRound(v, first);
+  }
+
+  /** Xung's corridor slap: a run's first round, every 0.5 s of it, after its last. */
+  xungTail(pan: number): void {
+    const v = this.voice("guns", pan, "gun.xung.tail");
+    if (v !== null) xungTail(v);
   }
 
   /** Tia opens (an arc spinning up and its hum) or closes (a power-down). */
@@ -228,9 +268,7 @@ export class ThemeAudio {
       return;
     }
     const v = this.voice("guns", pan, "gun.tia.end");
-    if (v === null) return;
-    tone(v, 0, 0.36, 0.09, 260, 48, { type: "sawtooth", filter: "lowpass", cutoff: 1800, cutoffTo: 200 });
-    noise(v, 0, 0.2, 0.05, "lowpass", 900);
+    if (v !== null) tiaEnd(v);
   }
 
   /** One pulse of Tia on `hits` foes: an electric zap. */

@@ -13,7 +13,7 @@
 | Bus | Mức | Khi đọc từ | Âm trên bus |
 |---|---|---|---|
 | `keys` | 0,5 | ×0,6 | `key.*` |
-| `guns` | 0,42 | ×0,5 | `gun.xung`, `gun.tia.start`, `gun.tia.end`, `gun.tan.fire`, `gun.ray.*`, `gun.phao.launch` |
+| `guns` | 0,42 | ×0,5 | `gun.xung`, `gun.xung.tail`, `gun.tia.start`, `gun.tia.loop`, `gun.tia.end`, `gun.tan.fire`, `gun.ray.*`, `gun.phao.launch` |
 | `impacts` | 0,6 | ×0,5 | `hit.*`, `gun.tia.pulse`, `foe.shot.down`, `gun.phao.burst`, `shield.*` |
 | `kills` | 0,55 | ×0,56 | `kill.*`, `foe.split`, `leader.down` |
 | `alerts` | 0,8 | ×0,8 | `word.*`, `streak.up`, `foe.shot`, `hurt.*`, `support.repair`, `alarm.surge`, `end.*`, `leader.horn`, `rift.*` |
@@ -59,15 +59,21 @@ Kiểm dải giọng (§7.5 của đặc tả; kịch bản `survival-feel` cả
 
 ## 4. Súng
 
+Lượt cảm giác S1 (`docs/FEEL_PASS_S1.md` §4.3, 26/10, bước 2) làm lại nhóm súng theo Q6 (`src/audio/gun-audio.ts`): khóa nòng, đầu tiếng giòn (dải 1–4 kHz chỉ ≤ 30 ms đầu), thân dưới 1 kHz hoặc ngân trên 4 kHz, đuôi vang hành lang dưới 1 kHz; không tiếng trầm đứng riêng.
+
 | Id | Khi nào | Cảm giác | Mã hiện tại |
 |---|---|---|---|
-| `gun.xung` | Viên Xung rời nòng (súng bắn 10 viên/s, tiếng phát cho một nửa số viên) | Pháo tự động hạng nặng: khóa nòng đóng, cú đấm trầm có thân, tiếng nổ giòn; vang hành lang thép rất ngắn trong file (đuôi dài khi ngừng bắn là đề xuất gun.xung.tail, mã chưa có) | Sin 150 → 46 Hz, nhiễu thông cao 1,9 kHz, nhiễu dải 720 Hz |
+| `gun.xung` | **Mỗi** viên Xung rời nòng (10–11 viên/s; trước lượt cảm giác chỉ một nửa số viên) | Pháo tự động hạng nặng: viên đầu của băng có tiếng khóa nòng; tiếng nổ giòn, cú đấm trầm có thân | Viên đầu: nhiễu dải 3,4 kHz 15 ms + tam giác 5,2 kHz (khóa nòng); nhiễu thông cao 1,9 kHz 30 ms; sin 150 → 46 Hz 90 ms (viên sau 70 ms, −3 dB); nhiễu dải 640 Hz 70 ms |
+| `gun.xung.tail` | Viên đầu của một loạt, rồi mỗi 0,5 s khi còn bắn, và 150 ms sau viên cuối | Tiếng nổ vỗ vào hành lang thép rồi lăn đi, dưới 900 Hz | Nhiễu lọc thấp 820 → 260 Hz 420 ms; thép dầm 150 Hz (ba bội thấp) 360 ms |
 | `gun.tia.start` | Tia bật | Tia bật: máy phát quay lên, hồ quang bắt "xẹt" rồi kêu ù; vang hành lang thép ngắn | Răng cưa 70 → 260 Hz qua lọc mở dần, nhiễu dải trượt lên, 7 tiếng tách, ù 55 Hz |
-| `gun.tia.end` | Tia tắt | Tia tắt: máy phát hạ điện, hồ quang xì tắt, tiếng ù chìm vào vang thép | Răng cưa 260 → 48 Hz, lọc đóng lại |
+| `gun.tia.loop` | Suốt lúc tia cháy (dừng khi tắt) | Hồ quang ù đều, lách tách điện ở dải cao; nhỏ hơn tiếng bật | Lặp: sin 55 Hz, răng cưa 110 Hz lọc thấp 320 Hz, nhiễu dải 6 kHz đóng mở 23 lần/s; vào 50 ms, tắt 60 ms |
+| `gun.tia.end` | Tia tắt | Tia tắt: máy phát hạ điện, hồ quang xì tắt, tiếng ù chìm vào vang thép | Răng cưa 260 → 48 Hz, lọc đóng 900 → 200 Hz; vang: nhiễu lọc thấp 700 → 240 Hz 320 ms, thép dầm 120 Hz 300 ms |
 | `gun.tia.pulse` | Mỗi nhịp 0,1 s của Tia có trúng quái | Tia điện chích, to dần theo số quái bị cắt | Nhiễu thông cao 4,2 kHz 45 ms, vuông 1.900 → 880 Hz |
 
 - `gun.xung` — *Prompt:* "Heavy autocannon single shot from a steel turret: a breech clack, a deep punch with a sharp crack and a short thick body, a quick slap off the steel corridor, 350 ms, industrial."
+- `gun.xung.tail` — *Prompt:* "The report of an autocannon burst slapping off the walls of a long steel corridor and rolling away, low and dark, no attack transient, under 900 Hz, 450 ms."
 - `gun.tia.start` — *Prompt:* "Industrial electric arc ray igniting: a generator spinning up, a high-voltage arc striking and crackling over a low 55 Hz hum, short steel corridor echo, 600 ms, gritty."
+- `gun.tia.loop` — *Prompt:* "Seamless loop of an industrial high-voltage arc burning steadily: a deep 55 Hz electrical hum with a fine crackle of sparks above 5 kHz, steady, not harsh, 2 s loop."
 - `gun.tia.end` — *Prompt:* "High-voltage generator powering down: falling pitch, the arc fizzling out, the hum dying into a short steel corridor echo, 400 ms, industrial."
 - `gun.tia.pulse` — *Prompt:* "Short electric zap of an arc burning through metal, crisp and sizzling, 50 ms, several variations."
 
@@ -142,11 +148,12 @@ Mọi id dưới đây đi qua `ThemeAudio.gun(id, pan, now)`: mỗi id có bus 
 
 | Id | Khi nào | Cảm giác | Mã hiện tại |
 |---|---|---|---|
-| `gun.tan.fire` | Tán bắn một loạt 7 viên | Khóa bơm cạch, nổ đanh có thân trên sàn thép, rồi vỏ đạn leng keng; vang hành lang thép ngắn | Nhiễu thông cao 1,4 kHz 50 ms, sin 120 → 42 Hz, nhiễu dải 900 → 400 Hz, hai tiếng thép thanh 2,6 và 3,1 kHz |
+| `gun.tan.fire` | Tán bắn một loạt 7 viên | Khóa bơm cạch, nổ đanh có thân trên sàn thép, rồi vỏ đạn leng keng; vang hành lang thép ngắn | Nhiễu thông cao 1,4 kHz 30 ms (trước 50), sin 120 → 40 Hz, nhiễu dải 820 → 380 Hz, vỏ đạn: thép 4,7 và 5,3 kHz (trước 2,6 và 3,1 kHz, giữa dải giọng), vang: nhiễu lọc thấp 760 → 260 Hz 250 ms |
+| `gun.ray.armed` | Bến Ray có băng mà chưa nạp (model đạn băng lơ lửng ở nòng); tắt khi nạp | Tụ điện nhỏ ù khẽ, lấp lánh điện rất cao: "súng đã sẵn" | Lặp: tam giác 196 Hz lọc thấp 380 Hz, sin 98 Hz, nhiễu dải 7,2 kHz đóng mở 9 lần/s; −15 dB |
 | `gun.ray.charge` | Ray bắt đầu nạp một phát (0,15 s) | Tụ điện rít lên: phần chuẩn bị của phát Ray, dừng gọn ở đỉnh; đầu tiếng, thân và đuôi nằm ở gun.ray.fire | Răng cưa 900 → 3.600 Hz qua lọc dải mở dần, sin 1,8 → 7,2 kHz |
-| `gun.ray.fire` | Ray bắn | Tiếng nổ đanh, cú đấm trầm, đuôi ngân dài | Nhiễu thông cao 3 kHz 30 ms, sin 220 → 50 Hz, răng cưa 2,4 kHz → 600 Hz qua lọc đóng dần, thép dầm 740 Hz 0,6 s |
-| `gun.phao.launch` | Pháo Sao bắn một quả | Đạn trượt vào ống cạch, ống thép bắn mạnh có thân, quả đạn rít bay lên xa; vang hành lang thép | Sin 95 → 38 Hz, nhiễu thấp 700 Hz, sin 1,2 → 2,2 kHz mở chậm |
-| `gun.phao.burst` | Quả Pháo Sao nổ | Tiếng nổ trầm có thân, mảnh vỡ rơi lách cách; vang dội hành lang thép | Sin 70 → 26 Hz 0,42 s, nhiễu thấp 900 → 160 Hz, nhiễu thông cao 4,2 kHz, 6 tiếng tách |
+| `gun.ray.fire` | Ray bắn | Tiếng nổ đanh, cú đấm trầm, điện xé, đuôi ngân dài trong hành lang | Nhiễu thông cao 3 kHz 30 ms, sin 220 → 50 Hz, điện xé: nhiễu thông cao 4,8 → 7,2 kHz 120 ms + 6 tiếng tách 6,2 kHz; vang: nhiễu lọc thấp 800 → 220 Hz 0,5 s, thép dầm 196 Hz (ba bội thấp) 0,6 s. Bỏ răng cưa 2,4 kHz → 600 Hz 0,5 s và thép 740 Hz (nằm trong dải giọng) |
+| `gun.phao.launch` | Pháo Sao bắn một quả | Đạn trượt vào ống cạch, tiếng phóng giòn (không "bụp"), tên lửa rít bay lên trên tiếng rền; vang ngắn | Khóa nòng: nhiễu dải 2,6 kHz 20 ms + tam giác 4,8 kHz; phóng: nhiễu thông cao 2,2 kHz 28 ms, sin 140 → 55 Hz 0,2 s; rít: nhiễu dải 6 → 4,6 kHz 0,4 s; rền: nhiễu lọc thấp 260 → 120 Hz 0,4 s; đuôi: nhiễu lọc thấp 700 Hz 0,25 s. Bỏ sin 95 → 38 Hz đứng riêng ("thụp") và sin 1,2 → 2,2 kHz 0,5 s (giữa dải giọng) |
+| `gun.phao.burst` | Quả Pháo Sao nổ; nổ liền nhau cách ≤ 70 ms thì mỗi tiếng cao hơn nửa cung (tối đa 4 nấc). Quái trúng trong vòng nổ không phát thêm `hit.*` (một tiếng, không chồng; trước đó phát thêm `hit.t2` có tiếng trầm 115 → 40 Hz) | Tiếng nổ giòn, nổ trầm có thân, mảnh lách tách, vang dội hành lang thép | Nhiễu thông cao 2,2 kHz 25 ms + 4,2 kHz 20 ms; sin 180 → 58 Hz 0,25 s; nhiễu lọc thấp 210 → 90 Hz 0,25 s; 7 tiếng tách 5,6 kHz; vang: nhiễu lọc thấp 800 → 160 Hz 0,6 s |
 | `hit.armour` | Một đòn bị Vỏ chặn gần hết | Tiếng keng của tấm thép dày | Thép tấm ~1 kHz 0,32 s, nhiễu thông cao 5,2 kHz 20 ms |
 | `shield.hit` | Đạn chạm khiên năng lượng của Khiên | Tiếng chích điện giòn khi đạn chạm, tiếng ù như thủy tinh trượt xuống thấp, tắt vào vang hành lang thép ngắn | Tam giác 1.300 → 700 Hz qua lọc dải, nhiễu dải 5,2 kHz |
 | `shield.break` | Khiên vỡ | Thủy tinh vỡ trên tiếng ù sụp xuống | Răng cưa 900 → 120 Hz, 14 tiếng tách 7,2 kHz, nhiễu thông cao 6 → 2,5 kHz |
@@ -158,6 +165,7 @@ Mọi id dưới đây đi qua `ThemeAudio.gun(id, pan, now)`: mỗi id có bus 
 | `star.get` | Một sao ở màn kết ải | Thanh kim loại sáng gõ nhẹ, lấp lánh | Thép thanh 1.046 Hz, tam giác 2.093 Hz |
 
 - `gun.tan.fire` — *Prompt:* "Close-range sci-fi scattergun blast on a steel deck: a pump clack, a sharp punchy crack with a heavy body, two spent shell casings ringing on metal, short steel corridor echo, 300 ms, industrial."
+- `gun.ray.armed` — *Prompt:* "Seamless loop of a small charged capacitor waiting: a soft low hum under 400 Hz with a faint glittering electric shimmer above 5 kHz, quiet, steady, 2 s loop, sci-fi."
 - `gun.ray.charge` — *Prompt:* "Capacitor charging before a rail shot: a rising high-pitched electric whine that stops cleanly at its peak, 150 ms, sci-fi, dry."
 - `gun.ray.fire` — *Prompt:* "Rail gun discharge: an extremely sharp crack and a deep punch with weight, a long metallic singing tail ringing down the steel corridor, 700 ms, powerful, sci-fi industrial."
 - `gun.phao.launch` — *Prompt:* "Mortar launch from a steel tube: a shell sliding in with a clank, a strong deep launch blast with a ringing tube body, the shell whistling up and away, short steel corridor echo, 500 ms, industrial sci-fi."

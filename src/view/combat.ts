@@ -3,8 +3,11 @@
  * blow (SURVIVAL_MODE_PLAN.md 5): tiers (src/kit/feedback/tiers.ts) decide the
  * flash, knock-back, sparks, star, ring, debris, number, sound, shake and
  * hit stop; kills in one place in one frame merge into one burst of size
- * √N; the Tia column, Xung rounds and scout shots are drawn from the sim's
- * state each frame. Nothing is allocated per event.
+ * √N that breaks into chunks (chunks.ts, by the gun of the killing blow);
+ * the guns' shots, bolts, light and hit looks are ShotFx's (shots.ts); scout
+ * shots are drawn from the sim's state each frame. Tiers, numbers and the
+ * white flash follow the feel pass's profile (gun-rules FEEL). Nothing is
+ * allocated per event.
  */
 import * as THREE from "three";
 import type { ThemeAudio } from "../audio/theme-audio";
@@ -13,16 +16,19 @@ import { ParticlePool, textures } from "../kit/three";
 import { GUN, TIA } from "../content/guns";
 import { FIELD, type Tier } from "../content/rules";
 import { EV, FLAG } from "../sim/events";
-import { ROUND } from "../sim/stores";
-import { beamEnd } from "../sim/guns/aim";
-import { bayOf, firing } from "../sim/weapons";
+import { bayOf } from "../sim/weapons";
 import type { World } from "../sim/world";
+import { Bolts } from "./bolts";
+import { Chunks } from "./chunks";
 import type { Crowd } from "./crowd";
-import { CELL, Column, FLAT, Glows, Strips } from "./fx";
+import { CELL, FLAT, Glows, Strips } from "./fx";
+import { CHUNK_CAP, EDGE, FEEL, KILL_NUMBER, LIGHTS, THROW, numberFont } from "./gun-rules";
 import { GunFx } from "./gunfx";
 import { RiftCracks, ShieldWalls } from "./hazard-fx";
+import { GunLights } from "./lights";
 import type { Stage } from "./scene";
 import { VIEW_TIERS } from "./scene";
+import { ShotFx } from "./shots";
 import { PILOT_COLORS, type Pilot, type Ship } from "./ship";
 import { BLOW as C } from "./theme";
 const MAX_CLUSTERS = 48;
@@ -30,6 +36,9 @@ const MAX_CLUSTERS = 48;
 export const far = (z: number): number => 1 + 0.3 * Math.min(1, Math.max(0, z / FIELD.gateZ));
 const KILL_RING = 2048;
 const PUNCH_MS = 220;
+/** The gun of a killing blow (its chunks' throw): Xung and the rest, Tia, Tán, Ray, Pháo Sao. */
+const THROWS = [THROW.base, THROW.tia, THROW.tan, THROW.ray, THROW.phao] as const;
+const gunOf = (flags: number): number => ((flags & FLAG.phao) !== 0 ? 4 : (flags & FLAG.ray) !== 0 ? 3 : (flags & FLAG.tan) !== 0 ? 2 : (flags & FLAG.tia) !== 0 ? 1 : 0);
 
 export type CombatHooks = {
   stop(ms: number): void;
@@ -46,29 +55,33 @@ export class Combat {
   readonly strips: Strips;
   readonly sparks: ParticlePool;
   readonly debris: Debris;
-  readonly numbers = new NumberField();
-  readonly sprites = new NumberSprites();
-  readonly trauma = new Trauma();
-  readonly hitstop = new HitStop();
+  readonly numbers = new NumberField(FEEL);
+  readonly sprites = new NumberSprites(FEEL);
+  readonly trauma = new Trauma(FEEL);
+  readonly hitstop = new HitStop(FEEL);
   readonly audio: ThemeAudio;
-  private readonly column: Column;
   readonly walls = new ShieldWalls();
   readonly cracks = new RiftCracks();
+  readonly lights: GunLights;
+  readonly bolts: Bolts;
+  readonly chunks: Chunks;
+  readonly shots: ShotFx;
+  /** The bolts loading; `warmed` once main.ts has compiled the fight's programs (warm.ts). */
+  readonly loading: Promise<void>;
+  warmed = false;
   private readonly gunfx: GunFx;
   private cursor = 0;
   private readonly kills = new Float64Array(KILL_RING).fill(-1e9);
   private killCount = 0;
-  private readonly cluster = { n: new Int32Array(MAX_CLUSTERS), key: new Int32Array(MAX_CLUSTERS), x: new Float32Array(MAX_CLUSTERS), z: new Float32Array(MAX_CLUSTERS), dx: new Float32Array(MAX_CLUSTERS), dz: new Float32Array(MAX_CLUSTERS), scout: new Uint8Array(MAX_CLUSTERS), armour: new Uint8Array(MAX_CLUSTERS), big: new Uint8Array(MAX_CLUSTERS) };
+  private readonly cluster = { n: new Int32Array(MAX_CLUSTERS), key: new Int32Array(MAX_CLUSTERS), x: new Float32Array(MAX_CLUSTERS), z: new Float32Array(MAX_CLUSTERS), dx: new Float32Array(MAX_CLUSTERS), dz: new Float32Array(MAX_CLUSTERS), scout: new Uint8Array(MAX_CLUSTERS), armour: new Uint8Array(MAX_CLUSTERS), big: new Uint8Array(MAX_CLUSTERS), kind: new Int8Array(MAX_CLUSTERS), gun: new Uint8Array(MAX_CLUSTERS) };
   private clusters = 0;
   private readonly v = new THREE.Vector3();
   private readonly at = new THREE.Vector3();
   private readonly screen = new THREE.Vector3();
-  private readonly end = new Float64Array(2);
-  private readonly shot: THREE.Color;
-  private readonly fire: boolean;
   private readonly beam: THREE.Color;
-  private shots = 0;
   private tiaHits = 0;
+  /** The Tia bay's sweep (sign of beamTo − beamX) this frame: its kills fly across it. */
+  private sweep = 1;
   /** A test switch (the keys scenario): ask for a T3 stop every frame. */
   forceStops = false;
   private forcedAt = -1e9;
@@ -79,25 +92,39 @@ export class Combat {
 
   constructor(private readonly stage: Stage, private readonly crowd: Crowd, private readonly ship: Ship, pilot: Pilot, tierName: Tier, audio: ThemeAudio, private readonly hooks: CombatHooks) {
     const spec = VIEW_TIERS[tierName];
-    this.shot = PILOT_COLORS[pilot].shot;
-    this.fire = pilot === "draconis";
-    this.beam = PILOT_COLORS[pilot].beam;
+    this.beam = pilot === "draconis" ? PILOT_COLORS.draconis.beam : C.swarm;
     this.glows = new Glows(spec.bursts);
     this.strips = new Strips(2100);
     this.sparks = new ParticlePool(spec.particles, textures().spark);
-    this.debris = new Debris(spec.debris);
+    this.debris = new Debris(spec.debris, { profile: FEEL });
     this.numbers.limit = spec.numbers;
-    this.column = new Column(this.beam, TIA.length, 3.6, FIELD.muzzleZ);
     this.audio = audio;
+    // The guns' light pool is made with the fight (a fixed count: every lit material compiles once).
+    this.lights = new GunLights(stage.scene, stage.deck, LIGHTS[tierName]);
+    this.bolts = new Bolts(stage.scene, tierName, pilot === "draconis");
+    this.loading = this.bolts.load();
+    this.chunks = new Chunks(CHUNK_CAP[tierName]);
+    this.shots = new ShotFx({ stage, glows: this.glows, strips: this.strips, sparks: this.sparks, trauma: this.trauma, ship, lights: this.lights, bolts: this.bolts, audio, pilot });
     this.gunfx = new GunFx({ glows: this.glows, strips: this.strips, sparks: this.sparks, debris: this.debris, trauma: this.trauma, ship, walls: this.walls, cracks: this.cracks, audio, ask: (ms) => this.ask(ms) });
-    stage.scene.add(this.column.mesh, this.debris.mesh, this.strips.mesh, this.glows.mesh, this.sparks.points, this.walls.mesh, this.cracks.mesh);
+    stage.scene.add(this.shots.beams.column.mesh, this.debris.mesh, this.chunks.mesh, this.chunks.shadows, this.strips.mesh, this.glows.mesh, this.sparks.points, this.walls.mesh, this.cracks.mesh);
+  }
+
+  /** The bolts' models are in (or there are none to load) and the fight's programs are compiled. */
+  get ready(): boolean {
+    return this.bolts.ready && this.warmed;
+  }
+
+  /** The scenarios' probe (info()): bolts drawn by kind, chunks, lights lit, the shake (px), the muzzles on screen (centre, left, right, core; CSS px). */
+  probe(): { bolts: number[]; chunks: number; chunk: [number, number]; lights: number; shake: number; muzzles: number[][] } {
+    return { bolts: this.bolts.counts(), chunks: this.chunks.live, chunk: this.chunks.watch(), lights: this.lights.lit, shake: Math.round(Math.hypot(this.trauma.offsetX, this.trauma.offsetY) * 100) / 100, muzzles: this.shots.muzzles() };
   }
 
   /** Point sprites are sized in world units: px per unit at distance 1. */
   resize(height: number, rects: readonly Rect[]): void {
     this.sparks.setScale(height / (2 * Math.tan(THREE.MathUtils.degToRad(this.stage.camera.fov) / 2)));
     this.numbers.protected = rects;
-    this.numbers.fontPx = Math.max(16, Math.min(30, height / 34));
+    this.numbers.fontPx = numberFont(height);
+    this.shots.resize();
   }
 
   killsWithin(now: number, ms: number): number {
@@ -115,12 +142,12 @@ export class Combat {
     }
   }
 
-  /** Projects sim (x, z) and spawns a number; `dx, dz` the blow. */
-  private number(key: number, x: number, z: number, value: number, style: number, tierId: number, dx: number, dz: number, now: number): void {
-    const profile = tier(tierId).number;
+  /** Projects sim (x, z) and spawns a number; `dx, dz` the blow; a killing blow's is larger. */
+  private number(key: number, x: number, z: number, value: number, style: number, tierId: number, dx: number, dz: number, now: number, kill: boolean): void {
+    const profile = tier(tierId, FEEL.tiers).number;
     if (profile === null) return;
     this.stage.project(x, z, 1.6, this.screen);
-    this.numbers.spawn(key, this.screen.x, this.screen.y, value, style, tierId, profile.size, profile.life, dx, -dz, now);
+    this.numbers.spawn(key, this.screen.x, this.screen.y, value, style, tierId, profile.size * (kill ? KILL_NUMBER : 1), profile.life, dx, -dz, now);
   }
 
   /** This frame's events. `now` in ms (wall clock), `seconds` the same in s. */
@@ -130,6 +157,8 @@ export class Combat {
     if (this.cursor < R.written - R.size) this.cursor = R.written - R.size;
     this.clusters = 0;
     this.tiaHits = 0;
+    const tiaBay = bayOf(w, GUN.tia);
+    if (tiaBay >= 0) this.sweep = w.guns.beamTo[tiaBay]! >= w.guns.beamX[tiaBay]! ? 1 : -1;
     for (; this.cursor < R.written; this.cursor += 1) {
       const i = this.cursor % R.size;
       const kind = R.kind[i]!;
@@ -140,16 +169,10 @@ export class Combat {
       const dz = R.dz[i]!;
       const pan = x / FIELD.halfW;
       switch (kind) {
-        case EV.shot: {
-          this.ship.muzzle(this.at);
-          const crit = (flags & FLAG.crit) !== 0;
-          this.glows.burst(CELL.star4, this.at.x, this.at.y, this.at.z, 0.7, 1.5, 0.06, crit ? C.crit : this.shot, 3);
-          this.glows.burst(CELL.soft, this.at.x, this.at.y, this.at.z, 1.2, 2.2, 0.08, this.shot, 1.6);
-          this.ship.fired();
-          this.trauma.kick(-dx, dz, 2);
-          if ((this.shots++ & 1) === 0) this.audio.shot(this.at.x / FIELD.halfW);
+        case EV.shot:
+        case EV.load:
+          this.shots.event(R, i, w, now);
           break;
-        }
         case EV.hit: {
           const tia = (flags & FLAG.tia) !== 0;
           const crit = (flags & FLAG.crit) !== 0;
@@ -158,37 +181,32 @@ export class Combat {
           // Vỏ that stopped most of a blow: a tick, never a big hit.
           const blocked = (flags & FLAG.armour) !== 0 && (flags & FLAG.pierce) === 0;
           const t = blocked ? 1 : tia || (flags & FLAG.tan) !== 0 ? (crit ? 2 : 1) : heavy ? (crit ? 3 : 2) : crit ? (perfect ? 3 : 2) : 1;
-          const profile = tier(t);
+          const profile = tier(t, FEEL.tiers);
           this.crowd.reactions.hit(R.slot[i]!, R.ref[i]!, (flags & FLAG.big) !== 0 ? Math.max(1, t - 1) : t, dx, dz, seconds);
-          const y = 0.9;
           const k = far(z);
           if (blocked) this.audio.gun("hit.armour", pan, now);
-          if (this.gunfx.hit(x, z, dx, dz, flags, k)) {
-            // The S1 look is drawn; the number and the sound below as for every blow.
-          } else if (tia) {
-            this.tiaHits += 1;
-            this.glows.burst(CELL.star4, x, y, -z, 0.4 * k, 0.95 * k, 0.08, this.beam, 1.2);
-            if ((this.tiaHits & 1) === 0) this.spark(x, y, z, dx, dz, 2, 5, this.beam, 0.22, 0.35);
-          } else {
-            const color = t >= 3 ? C.perfect : t === 2 ? C.crit : this.shot;
-            this.glows.burst(profile.rays === 12 ? CELL.star12 : profile.rays === 8 ? CELL.star8 : CELL.star4, x, y, -z, 0.5 * t * k, (1.1 + t * 0.55) * k, 0.1 + t * 0.03, color, 2.6);
-            if (profile.ring) this.glows.burst(CELL.ring, x, y, -z, 0.4, 3.2, 0.3, C.perfect, 2);
-            this.spark(x, y, z, -dx, -dz, profile.sparks, 6 + t * 2, color, 0.24, 0.4);
-            if (profile.debris > 0) this.debris.burst(x, y, -z, dx, -dz, profile.debris >> 1, 4, C.shardHot, C.shardSteel);
-          }
+          this.shots.hit(x, z, dx, dz, flags, t, k, this.gunfx.armour(x, z, dx, dz, flags, k));
+          if (!tia && (flags & (FLAG.tan | FLAG.ray | FLAG.phao)) === 0 && !blocked && profile.debris > 0) this.debris.burst(x, 0.9, -z, dx, -dz, profile.debris >> 1, 4, C.shardHot, C.shardSteel);
+          if (tia) this.tiaHits += 1;
           const style = tia || blocked ? STYLE.tick : perfect && crit ? STYLE.perfect : crit ? STYLE.crit : STYLE.normal;
           // Beam ticks roll up per 4 m along the ray, not per foe: two or three numbers, not a stack; Tán's pellets per foe.
-          this.number(tia ? -1 - Math.floor(Math.hypot(x, z - FIELD.muzzleZ) / 4) : R.ref[i]!, x, z, R.value[i]!, style, t, dx, dz, seconds);
-          this.audio.hit(t, pan, now);
-          this.trauma.add(tia || (flags & FLAG.tan) !== 0 ? 0.006 : profile.trauma);
-          // Ray: a 12 ms stop at most every 300 ms (the hit stop's own spacing); none for Tán's pellets.
-          if (!tia && (flags & FLAG.tan) === 0 && t >= 2) this.ask(this.hitstop.request(t, now));
+          this.number(tia ? -1 - Math.floor(Math.hypot(x, z - FIELD.muzzleZ) / 4) : R.ref[i]!, x, z, R.value[i]!, style, t, dx, dz, seconds, (flags & FLAG.kill) !== 0);
+          // §4.3: a foe in Pháo Sao's ring is heard in gun.phao.burst (one sound, never a stack of hits on top).
+          if ((flags & FLAG.phao) === 0) this.audio.hit(t, pan, now);
+          // §4.6: Xung's blows shake by their tier; Tia, Tán, Ray and Pháo Sao only by their shot (shots.ts).
+          if ((flags & (FLAG.tia | FLAG.tan | FLAG.ray | FLAG.phao)) === 0) this.trauma.add(profile.trauma);
+          // Ray: a 12 ms stop at most every 300 ms (the hit stop's own spacing); none for Tia, Tán or Pháo Sao.
+          if (!tia && (flags & (FLAG.tan | FLAG.phao)) === 0 && t >= 2) this.ask(this.hitstop.request(t, now));
           break;
         }
-        case EV.kill:
-          this.gather(x, z, dx, dz, (flags & FLAG.scout) !== 0, (flags & FLAG.elite) !== 0, (flags & FLAG.big) !== 0);
+        case EV.kill: {
+          // The kind as the store still holds it (unless its slot was taken again since).
+          const s = R.slot[i]!;
+          const kind = w.foes.alive[s] === 0 || w.foes.id[s] === R.ref[i] ? w.foes.kind[s]! : -1;
+          this.gather(x, z, dx, dz, (flags & FLAG.scout) !== 0, (flags & FLAG.elite) !== 0, (flags & FLAG.big) !== 0, kind, gunOf(flags));
           this.kills[this.killCount++ % KILL_RING] = now;
           break;
+        }
         case EV.breach:
           this.glows.burst(CELL.ring + FLAT, x, 0.08, -z, 0.6, 6, 0.5, C.danger, 2.6);
           this.glows.burst(CELL.core, x, 0.8, -z, 2, 3.5, 0.2, C.danger, 2.2);
@@ -240,10 +258,12 @@ export class Combat {
           this.audio.beam(true, x / FIELD.halfW);
           const k = 2 / TIA.length;
           this.glows.burst(CELL.flare, x * k, 0.6, -(FIELD.muzzleZ + (z - FIELD.muzzleZ) * k), 3, 7, 0.25, this.beam, 2.2);
+          this.shots.event(R, i, w, now);
           break;
         }
         case EV.beamEnd:
           this.audio.beam(false, x / FIELD.halfW);
+          this.shots.event(R, i, w, now);
           break;
         case EV.beamPulse:
           // Burn left on the floor along the ray (x, z: its far end).
@@ -260,7 +280,10 @@ export class Combat {
           this.hooks.ended(R.slot[i] === 1);
           break;
         default:
-          if (kind >= EV.volley) this.gunfx.event(R, i, w, seconds, now, pan);
+          if (kind >= EV.volley) {
+            this.shots.event(R, i, w, now);
+            this.gunfx.event(R, i, w, seconds, now, pan);
+          }
       }
     }
     if (this.tiaHits > 0) this.audio.pulse(w.guns.beamX[Math.max(0, bayOf(w, GUN.tia))]! / FIELD.halfW, this.tiaHits);
@@ -281,8 +304,8 @@ export class Combat {
     this.hooks.stop(ms);
   }
 
-  /** Kills in one 3 m cell this frame merge. */
-  private gather(x: number, z: number, dx: number, dz: number, scout: boolean, armour: boolean, big = false): void {
+  /** Kills in one 3 m cell this frame merge (the first kill's kind and gun set its chunks). */
+  private gather(x: number, z: number, dx: number, dz: number, scout: boolean, armour: boolean, big: boolean, kind: number, gun: number): void {
     const K = this.cluster;
     const key = Math.floor(x / 3) * 100 + Math.floor(z / 3);
     let c = 0;
@@ -297,6 +320,8 @@ export class Combat {
         K.scout[c] = 0;
         K.armour[c] = 0;
         K.big[c] = 0;
+        K.kind[c] = kind;
+        K.gun[c] = gun;
       }
     }
     K.n[c] = K.n[c]! + 1;
@@ -323,17 +348,23 @@ export class Combat {
     // A Trâu or Đầu Đàn breaks like a heap of kills: T3, heavy debris.
     const size = Math.sqrt(n) * (scout ? 1.5 : big ? 2.4 : 1) * far(z);
     const tint = scout ? C.elite : K.armour[c] === 1 ? C.armour : C.swarm;
-    this.glows.burst(CELL.core, x, 1, -z, 1 * size, 2.4 * size, 0.12, C.hot, 2.4);
-    this.glows.burst(scout ? CELL.star12 : CELL.star8, x, 1.1, -z, 1.3 * size, 3.8 * size, 0.18, tint, 2.2, 0, 0, 0, (Math.random() - 0.5) * 3);
-    this.glows.burst(CELL.soft, x, 1, -z, 1.8 * size, 3.6 * size, 0.32, tint, 0.8);
+    // The feel pass's stronger bloom (0.85) widens every HDR flash: a kill's white core and glow are kept below a haze that would hide its chunks.
+    this.glows.burst(CELL.core, x, 1, -z, 0.5 * size, 1.1 * size, 0.08, C.hot, 1.3);
+    this.glows.burst(scout ? CELL.star12 : CELL.star8, x, 1.1, -z, 1.3 * size, 3.8 * size, 0.18, tint, 1.8, 0, 0, 0, (Math.random() - 0.5) * 3);
+    this.glows.burst(CELL.soft, x, 1, -z, 1.6 * size, 3 * size, 0.28, tint, 0.45);
     // A wide streak of light for a scout or a heap of kills: the big moments read from far off.
-    if (scout || n >= 3) this.glows.burst(CELL.flare, x, 1.2, -z, 3 * size, 8 * size, 0.18, scout ? C.elite : C.hot, 2.2);
+    if (scout || n >= 5) this.glows.burst(CELL.flare, x, 1.2, -z, 3 * size, 8 * size, 0.18, scout ? C.elite : C.hot, 1.5);
     this.glows.burst(CELL.ring + FLAT, x, 0.08, -z, 0.6, 4.2 * size, 0.42, scout ? C.volt : C.swarm, 1.8);
     // Scorch on the deck where it broke.
     this.glows.burst(CELL.soft + FLAT, x, 0.07, -z, 2 * size, 2.6 * size, 1.2, C.ember, 0.35);
     this.spark(x, 1, z, dx, dz, Math.min(40, 10 + n * 4), 10 + size * 2.5, C.hot, 0.34, 0.55);
     this.spark(x, 1, z, dx, dz, Math.min(20, 5 + n * 2), 6, scout ? C.volt : C.swarm, 0.26, 0.85);
-    this.debris.burst(x, 0.9, -z, dx, -dz, Math.min(48, (scout ? 9 : big ? 30 : 5) + n * 3), 5.5 + size, C.shardHot, C.shardSteel);
+    // Chunks (§4.5) by the kind (else read from the flags) and the gun: Tia's fly across its sweep.
+    const kind = K.kind[c]! >= 0 ? K.kind[c]! : scout ? 1 : big ? 2 : 0;
+    const gun = K.gun[c]!;
+    const th = THROWS[gun]!;
+    const across = gun === 1;
+    this.chunks.burst(x, z, across ? -dz * this.sweep : dx, across ? dx * this.sweep : dz, kind, n, K.armour[c] === 1 ? EDGE.armour : -1, th.up, th.out, th.spread);
     if (big) this.ask(tier(3).stopMs);
     this.audio.kill(n, x / FIELD.halfW, scout, now);
     this.trauma.add(Math.min(0.2, (scout ? 0.1 : 0.025) * Math.sqrt(n)));
@@ -368,24 +399,10 @@ export class Combat {
     return out;
   }
 
-  /** Draws the frame: rounds, scout shots, the column, and every pool. `lead` extrapolates moving things (s). */
+  /** Draws the frame: the guns' shots (shots.ts), scout shots, and every pool. `lead` extrapolates moving things (s). */
   draw(w: World, dt: number, time: number, lead: number): void {
     this.glows.step(dt);
-    const B = w.bullets;
     this.strips.begin();
-    for (let b = 0; b < B.top; b += 1) {
-      if (B.alive[b] === 0 || B.kind[b] === ROUND.pellet) continue;
-      const x = B.x[b]! + B.vx[b]! * lead;
-      const z = B.z[b]! + B.vz[b]! * lead;
-      const flags = B.flags[b]!;
-      const crit = (flags & FLAG.crit) !== 0;
-      const color = crit && (flags & FLAG.perfect) !== 0 ? C.perfect : crit ? C.crit : this.shot;
-      if (this.fire) {
-        // Draconis: fireballs, a hot head trailing flame.
-        this.strips.add(x - B.vx[b]! * 0.07, 0.95, -(z - B.vz[b]! * 0.07), x, 0.95, -z, crit ? 0.7 : 0.55, color, 2, 0.7);
-        this.glows.stamp(CELL.soft, x, 0.95, -z, crit ? 1.6 : 1.2, 0, color, 1.6);
-      } else this.strips.add(x - B.vx[b]! * 0.05, 0.95, -(z - B.vz[b]! * 0.05), x, 0.95, -z, crit ? 0.42 : 0.3, color, 2.4, 0.9);
-    }
     const S = w.shots;
     for (let s = 0; s < S.top; s += 1) {
       if (S.alive[s] === 0) continue;
@@ -395,31 +412,7 @@ export class Combat {
       this.glows.stamp(CELL.soft, x, 1.1, -z, 1.7 * pulse, 0, C.danger, 2.2);
       this.glows.stamp(CELL.core, x, 1.1, -z, 0.55, 0, C.hot, 2.2);
     }
-    const G = w.guns;
-    const tia = bayOf(w, GUN.tia);
-    const on = tia >= 0 && G.beamOn[tia] === 1;
-    const power = on ? 1 + (G.perfect[firing(tia)] === 1 ? 0.35 : 0) : 0;
-    beamEnd(tia >= 0 ? G.beamX[tia]! : 0, this.end);
-    const ex = this.end[0]!;
-    const ez = this.end[1]!;
-    this.column.update(on, ex / TIA.length, (ez - FIELD.muzzleZ) / TIA.length, power, time);
-    if (this.column.power > 0.02) {
-      const k = this.column.power;
-      this.ship.muzzle(this.at);
-      const mx = this.at.x;
-      const my = this.at.y;
-      const mz = this.at.z;
-      // The ray: a wide glow on the floor and a white-hot core from the muzzle to its far end.
-      this.strips.add(mx, 0.4, mz, ex, 0.4, -ez, 1.1 * k, this.beam, 0.8 * k, 0.8 * k);
-      this.strips.add(mx, my, mz, ex, 0.5, -ez, 0.55 * k, this.beam, 2 * k, k);
-      this.glows.stamp(CELL.star8, mx, my, mz, 2.6 * k, time * 3, this.beam, 2.4 * k);
-      this.glows.stamp(CELL.soft, ex, 0.6, -ez, 2.4 * k, 0, this.beam, 1.8 * k);
-      if (on && Math.random() < dt * 40) {
-        const t = Math.random();
-        this.v.set((Math.random() - 0.5) * 2, 2 + Math.random() * 4, (Math.random() - 0.5) * 2);
-        this.sparks.spawn(this.at.set(mx + (ex - mx) * t + (Math.random() - 0.5) * 1.2, 0.3, mz + (-ez - mz) * t), this.v, this.beam, 0.25, 0.5, { drag: 2, gravity: 4 });
-      }
-    }
+    this.shots.draw(w, dt, time, lead);
     this.gunfx.draw(w, dt, time, lead);
     this.typing?.draw(w, time);
     this.walls.update(w, time, lead);
@@ -428,6 +421,7 @@ export class Combat {
     this.glows.flush();
     this.sparks.update(dt, 0);
     this.debris.update(dt);
+    this.chunks.update(dt);
     this.numbers.update(dt);
     this.sprites.write(this.numbers, this.stage.width, this.stage.height);
   }

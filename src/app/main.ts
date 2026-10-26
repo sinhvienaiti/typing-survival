@@ -28,6 +28,7 @@ import { renderScreen, type ScreenView } from "../view/screens";
 import { renderJourney, starRow } from "../view/screens-journey";
 import { Ship, type Pilot } from "../view/ship";
 import { TypeFeel } from "../view/typing-feel";
+import { warmPrograms } from "../view/warm";
 import { FrameCosts, bays, eventCounts, installDevHandle, numberBoxes, runState, snapshot } from "./dev";
 import { Journey, NEXT_KEY, recordStage, starsOf, takeChoice, type RunChoice } from "./journey";
 import { countedText, profileView, runStats, runWords } from "./results";
@@ -176,6 +177,11 @@ const combat = new Combat(stage, crowd, ship, pilot, tier, audio, {
     }
     setMode("end");
   },
+});
+// Every program of the fight compiled once the horde, the ship and the bolts are in (warm.ts).
+void Promise.allSettled([loading, combat.loading]).then(() => {
+  warmPrograms(stage, [combat.sprites]);
+  combat.warmed = true;
 });
 
 /** A stage run's stars when it ended; the journey's screens. */
@@ -551,6 +557,8 @@ function update(now: number): void {
     if (peak > 0 && mode === "play") audio.siren();
   }
   audio.setMusic(mode === "play" ? hordeIntensity(shown, peak > 0) : 0, mode === "play" ? 1 : mode === "paused" ? 0.45 : 0.8);
+  // Tia's arc and Ray's armed hum hold only while the fight runs (not under the pause or end screens).
+  audio.live = mode === "play";
   costs.update[costs.at] = performance.now() - start;
 }
 
@@ -609,7 +617,7 @@ function onScreen(): number {
 }
 
 installDevHandle({
-  ready: () => painted && loaded,
+  ready: () => painted && loaded && combat.ready,
   models: () => ({ mine: crowd.loaded[0], scout: crowd.loaded[1], brute: crowd.loaded[2], shield: crowd.loaded[3], splitter: crowd.loaded[4], ship: ship.loaded }),
   start: () => mode === "start" && setMode("play"),
   mode: () => mode,
@@ -634,7 +642,7 @@ installDevHandle({
   /** Sounds started so far by id (docs/audio/THEME_SOUND_LIST.md), and whether audio runs. */
   sounds: () => ({ ready: audio.ready, played: Object.fromEntries(audio.played) }),
   screen: () => screen,
-  info: () => ({ calls, triangles, geometries: stage.renderer.info.memory.geometries, textures: stage.renderer.info.memory.textures, programs: stage.renderer.info.programs?.length ?? 0, drawn: crowd.drawn(), glows: combat.glows.count, sparks: combat.sparks.count, debris: combat.debris.live, numbers: combat.numbers.live, stops: combat.stopsAsked, feel: typing.probe() }),
+  info: () => ({ calls, triangles, geometries: stage.renderer.info.memory.geometries, textures: stage.renderer.info.memory.textures, programs: stage.renderer.info.programs?.length ?? 0, drawn: crowd.drawn(), glows: combat.glows.count, sparks: combat.sparks.count, debris: combat.debris.live, numbers: combat.numbers.live, stops: combat.stopsAsked, feel: typing.probe(), ...combat.probe() }),
   numbers: () => numberBoxes(combat.numbers),
   rects: () => hud.protectedRects(),
   /** The shake settings and the camera's shake offset now (px). */

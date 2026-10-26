@@ -2,8 +2,10 @@
  * The player's ship at the bottom of the corridor (docs/BUILD_S0.md
  * §3): Vanguard by default, or Draconis; the model rides in Campaign 3D's
  * Hero rig (banking, knock-back, engine ribbons). It turns toward Xung's aim
- * and kicks back on each round. Without its model a small hull made in code
- * stands in, so the page always plays.
+ * and kicks back on each round. Shots leave its real muzzles (FEEL_PASS_S1
+ * §4.1: FX_MUZZLE_L / _R for Xung, FX_MUZZLE for the rest, FX_CORE for Pháo
+ * Sao), read once a frame. Without its model a small hull made in code stands
+ * in (muzzles 0.45 m either side), so the page always plays.
  */
 import * as THREE from "three";
 import { Hero, loadModel, pickModelTier } from "../kit/three";
@@ -11,6 +13,9 @@ import { models } from "./models";
 import { FIELD } from "../content/rules";
 
 export type Pilot = "vanguard" | "draconis";
+/** Muzzle sockets: the centre gun, Xung's left and right, the core (Pháo Sao fires upward from it). */
+export const MUZZLE = { centre: 0, left: 1, right: 2, core: 3 } as const;
+const SOCKETS = ["FX_MUZZLE", "FX_MUZZLE_L", "FX_MUZZLE_R", "FX_CORE"] as const;
 export const PILOT_COLORS: Record<Pilot, { shot: THREE.Color; beam: THREE.Color }> = {
   vanguard: { shot: new THREE.Color("#3db8ff"), beam: new THREE.Color("#ff8c32") },
   draconis: { shot: new THREE.Color("#ff8a3a"), beam: new THREE.Color("#ff5a1f") },
@@ -35,6 +40,8 @@ export class Ship {
   private kick = 0;
   private hurtFlash = 0;
   private readonly tip = new THREE.Vector3();
+  private readonly mouths = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+  private readonly nodes: (THREE.Object3D | null)[] = [null, null, null, null];
   /** The engine's glow × this (the clean streak's tier 3, FEEL_PASS_S1 §3.6). */
   boost = 1;
   loaded = false;
@@ -43,6 +50,7 @@ export class Ship {
     this.root.position.set(0, 0.9, 0);
     this.root.add(this.fallback);
     scene.add(this.root);
+    this.place();
   }
 
   async load(scene: THREE.Scene): Promise<void> {
@@ -68,6 +76,7 @@ export class Ship {
         this.root.add(hero.root);
         for (const ribbon of hero.ribbons) scene.add(ribbon.mesh);
         this.hero = hero;
+        SOCKETS.forEach((name, k) => (this.nodes[k] = hero.node(name)));
         this.loaded = true;
         return;
       } catch {
@@ -76,9 +85,21 @@ export class Ship {
     }
   }
 
-  /** The muzzle in world space. */
-  muzzle(out: THREE.Vector3): THREE.Vector3 {
-    return out.set(Math.sin(-this.yaw) * 1.4, 0.95, -FIELD.muzzleZ + 0.2);
+  /** Muzzle `which` (MUZZLE) in world space, as of this frame's update. */
+  muzzle(out: THREE.Vector3, which = 0): THREE.Vector3 {
+    return out.copy(this.mouths[which]!);
+  }
+
+  /** Reads the sockets after the rig moved; the stand-in's (and a missing socket's) from the yaw. */
+  private place(): void {
+    // The ship's right in three: (cos yaw, 0, −sin yaw).
+    const c = Math.cos(this.yaw) * 0.45;
+    const s = Math.sin(this.yaw) * 0.45;
+    const centre = this.mouths[0]!.set(Math.sin(-this.yaw) * 1.4, 0.95, -FIELD.muzzleZ + 0.2);
+    this.mouths[1]!.set(centre.x - c, 0.95, centre.z + s);
+    this.mouths[2]!.set(centre.x + c, 0.95, centre.z - s);
+    this.mouths[3]!.set(0, 1.25, -0.2);
+    this.nodes.forEach((node, k) => node?.getWorldPosition(this.mouths[k]!));
   }
 
   /** The ship's core (FX_CORE) in world space; the hull's centre without the model. */
@@ -108,6 +129,7 @@ export class Ship {
       this.hero.turnYaw = this.yaw;
       this.hero.update(dt, time, 0, 0);
       this.hero.setLook(this.hurtFlash, 0.4 * this.boost + this.kick * 0.6, 1);
+      this.place();
       // Engine trails stream back toward the camera: the ship holds still in a flowing field.
       this.hero.tips.forEach((tip, index) => {
         const ribbon = this.hero!.ribbons[index];
@@ -116,6 +138,7 @@ export class Ship {
     } else {
       this.fallback.rotation.y = this.yaw;
       this.fallback.position.z = this.kick * 0.25;
+      this.place();
     }
   }
 }
