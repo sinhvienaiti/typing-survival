@@ -21,6 +21,7 @@ import { CELL, Column, type Streaks } from "./fx";
 import { LIGHT } from "./gun-rules";
 import type { ShotParts } from "./shots";
 import { MUZZLE } from "./ship";
+import { AIM_PRIO } from "./ship-rules";
 import { BLOW as C } from "./theme";
 
 const RAILS = 8;
@@ -77,7 +78,8 @@ export class BeamFx {
         g.burst(CELL.ring, r[k + 3]! + (ex - r[k + 3]!) * t, Y, r[k + 4]! + (ez - r[k + 4]!) * t, 0.3, 1.4, 0.3, C.ray, 1.6);
       }
       this.p.lights.flash(LIGHT.ray, m.x, m.y, m.z, C.ray);
-      this.p.ship.fired(0.5);
+      this.p.ship.kick("ray");
+      this.p.ship.cue(AIM_PRIO.ray, R.x[i]!, R.z[i]!);
       this.p.trauma.kick(-dx, dz, 4);
       this.p.trauma.add(0.08);
     } else if (kind === EV.beamStart) {

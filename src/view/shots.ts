@@ -28,6 +28,7 @@ import { FEEL, LIGHT, joinWeight, screenMetres } from "./gun-rules";
 import type { GunLights } from "./lights";
 import type { Stage } from "./scene";
 import { MUZZLE, PILOT_COLORS, type Pilot, type Ship } from "./ship";
+import { AIM, AIM_PRIO } from "./ship-rules";
 import { BLOW as C } from "./theme";
 import { tier } from "../kit/feedback";
 
@@ -118,7 +119,7 @@ export class ShotFx {
     }
   }
 
-  /** A gun's event (EV.shot, load, volley, launch, burst; rail, beamStart, beamEnd go to the beams); `now` in ms. */
+  /** A gun's event (EV.shot, load, volley, charge, launch, burst; rail, beamStart, beamEnd go to the beams), and the ship's kick and turn for it (§5); `now` in ms. */
   event(R: Ring, i: number, w: World, now: number): void {
     const kind = R.kind[i]!;
     const bay = R.slot[i]! & (BAYS - 1);
@@ -132,6 +133,8 @@ export class ShotFx {
         this.fresh[bay] = 1;
         this.fired[bay] = 0;
       }
+      // The ship lunges 0.35 m forward as the word feeds the gun (§3.4, §5.2).
+      ship.kick("load");
     } else if (kind === EV.shot) {
       const first = this.fresh[bay] === 1;
       this.fresh[bay] = 0;
@@ -158,7 +161,8 @@ export class ShotFx {
         this.spark(m.x, m.y, m.z, dx, 0.4, -dz, 6, 7, this.shotHi, 0.22, 0.35, 1.6);
         this.p.trauma.kick(-dx, dz, 1.5);
       }
-      ship.fired();
+      ship.kick("xung", this.side === 1 ? MUZZLE.left : MUZZLE.right);
+      ship.cue(AIM_PRIO.xung, dx * AIM.reach, R.z[i]! + dz * AIM.reach);
       this.p.audio.xung(m.x / FIELD.halfW, first);
       if (first || now - this.lastTail[bay]! >= 500) {
         this.lastTail[bay] = now;
@@ -187,7 +191,8 @@ export class ShotFx {
       this.spark(m.x, m.y, m.z, dz, 0.8, dx, 1, 4, C.hot, 0.2, 0.5, 0.4);
       this.spark(m.x, m.y, m.z, -dz, 0.8, -dx, 1, 4, C.hot, 0.2, 0.5, 0.4);
       this.p.lights.flash(LIGHT.tan, m.x + dx, m.y, m.z - dz, C.tan);
-      ship.fired(0.7);
+      ship.kick("tan");
+      ship.cue(AIM_PRIO.tan, dx * 6, R.z[i]! + dz * 6);
       this.p.trauma.kick(-dx, dz, 3);
     } else if (kind === EV.launch) {
       const m = ship.muzzle(this.m, MUZZLE.core);
@@ -203,7 +208,8 @@ export class ShotFx {
       const soft = this.size(0.06) * 3;
       g.burst(CELL.soft, m.x, m.y + 0.2, m.z, soft * 0.7, soft, 3 * F, C.hot, 3);
       g.burst(CELL.soft, m.x, m.y + 0.3, m.z, 1, 3, 0.7, C.smoke, 0.9, 0, 1.6, 0);
-      ship.fired(0.45);
+      ship.kick("phao");
+      ship.cue(AIM_PRIO.phao, R.x[i]!, R.z[i]!);
     } else if (kind === EV.burst) {
       const x = R.x[i]!;
       const z = R.z[i]!;
@@ -216,7 +222,8 @@ export class ShotFx {
       this.spark(x, 0.8, -z, 0, 1.4, 0, 24, 8, C.hot, 0.28, 0.6, 2.4);
       this.p.lights.flash(LIGHT.phao, x, 1.5, -z, C.phao);
       this.p.trauma.add(0.05);
-    } else if (kind === EV.rail || kind === EV.beamStart || kind === EV.beamEnd) this.beams.event(R, i, now);
+    } else if (kind === EV.charge) ship.cue(AIM_PRIO.ray, R.x[i]!, R.z[i]!);
+    else if (kind === EV.rail || kind === EV.beamStart || kind === EV.beamEnd) this.beams.event(R, i, now);
   }
 
   /** A blow's look by gun (Combat draws numbers and sounds); `armour`: Vỏ's look is drawn (gunfx). */

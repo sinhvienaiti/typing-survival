@@ -127,7 +127,7 @@ let settled: SkillUpdate | null = null;
 const wordOf = (index: number): Word => vocab.words.get(world.deck[index]!) ?? { en: world.deck[index] ?? "", vi: "", ipa: "" };
 const hud = new Hud(hudRoot, wordOf, world);
 const crowd = new Crowd(stage.scene);
-const ship = new Ship(stage.scene, pilot);
+const ship = new Ship(stage.scene, pilot, motionReduced());
 const loading = Promise.all([crowd.load(), ship.load(stage.scene)]);
 let loaded = false;
 void loading.then(() => (loaded = true));
@@ -575,9 +575,9 @@ function draw(now: number): void {
   stage.roll = trauma.roll;
   const lead = mode === "play" ? session.lead() : 0;
   stage.setTitle(mode === "start");
-  // The ship turns with the bay firing now (the Tia ray when only it burns).
+  // The ship drifts, turns and kicks (ship.ts); with no blow to turn to, along the bay firing now (the Tia ray when only it burns).
   combat.aim(world, aim);
-  ship.update(dt, seconds, aim[0]!, aim[1]!, stage.camera.position);
+  ship.update(dt, world, aim, stage.camera.position);
   crowd.update(world, seconds, lead);
   combat.draw(world, dt, seconds, lead);
   stage.update(seconds);
@@ -644,6 +644,9 @@ installDevHandle({
   screen: () => screen,
   info: () => ({ calls, triangles, geometries: stage.renderer.info.memory.geometries, textures: stage.renderer.info.memory.textures, programs: stage.renderer.info.programs?.length ?? 0, drawn: crowd.drawn(), glows: combat.glows.count, sparks: combat.sparks.count, debris: combat.debris.live, numbers: combat.numbers.live, stops: combat.stopsAsked, feel: typing.probe(), ...combat.probe() }),
   numbers: () => numberBoxes(combat.numbers),
+  /** The ship's pose (cheap enough for every frame); live foes on screen with their body radius (CSS px; the balance pass's wash-out). */
+  ship: () => combat.shipProbe(),
+  foes: () => combat.foesOnScreen(world),
   rects: () => hud.protectedRects(),
   /** The shake settings and the camera's shake offset now (px). */
   motion: () => ({ scale: combat.trauma.scale, reduced: combat.trauma.reduced, trauma: combat.trauma.trauma, offset: Math.hypot(stage.shakeX, stage.shakeY) }),
