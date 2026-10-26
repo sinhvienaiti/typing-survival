@@ -161,7 +161,28 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   (`SCENES=f1,f2,f4,f9,layout,marks,rate,audio,f8`, ~10 min a size with
   f8). Open from build 1: the eye to each new number is 238 / 229 px (720p
   px, both stages pooled, target 210; stage 1 205–215, stage 4 with Pháo
-  Sao 305–315); Ray's armed bolt, the first shot's flash and the ship's lunge wait
-  for F3 and F5. Next: F3 guns (§4.1–§4.4, §4.6), F4 chunks, F5 the ship.
+  Sao 305–315). Build 2 done (same changelog, "Bước 2"): the guns and
+  kills (§4: F3 + F4). Rules in `src/view/gun-rules.ts` (the game's
+  feedback profile `FEEL`: flash 2–6 frames, numbers h/30; the 3 m join;
+  light priorities; chunk counts and flight; `tests/gun-feel.test.ts`);
+  `lights.ts` (PointLight pool made with the fight, the deck's pools through
+  `scene.ts` uniforms), `bolts.ts` (Space's `skills/*-bolt` GLBs, one
+  InstancedMesh a kind, caps), `shots.ts` (Xung with a comet head of light
+  on each round, Tán, Pháo Sao, hit looks), `beams.ts` (Tia, Ray, its
+  armed bolt), `chunks.ts` (kill chunks and shadows, 2 draw calls), real
+  muzzles from `Ship.muzzle(out, MUZZLE.*)`; `warm.ts` compiles every
+  program once the models are in, into the composer's buffer when bloom is
+  on (programs compiled for the screen are not the ones drawn there): 34
+  programs, none new in a fight; the page is `ready` after it, and
+  `survival-s1-perf` checks it (`programsSteady`). Sounds in `gun-audio.ts`
+  (loops `gun.tia.loop`, `gun.ray.armed`, heard only while the fight runs:
+  `audio.live`, set each frame in `main.ts`; `gun.xung.tail`; a foe in
+  Pháo Sao's ring plays no `hit.*`). Bloom 0.85 with radius 0.3, not the spec's
+  0.45 (a Ray shot washed the lane). Frame sequences:
+  `scripts/visual/scenarios/survival-feel-guns.mjs`
+  (`SCENES=f5,f6,shake,f9g,audio`, `GUNS=` to pick, ~15 min a size). The
+  backdrop under the word line is at its limit (p50 +0.020 over build 1,
+  §4.1 allows 0.02): measure it again after any new light. Next: F5 the
+  ship (§5: drift, lunge on a load, recoil per gun), then F6.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.
