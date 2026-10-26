@@ -24,8 +24,10 @@
 //        and how much the effects wash out (the balance pass of the ship
 //        build): foes ≤ 25 m whose body and its ring of 1–2 body radii are
 //        both bright (body p50 ≥ 0.8, ring mean ≥ 0.6) sit inside a cloud of
-//        light, not a hit flash on a dark deck (≤ 10 % of foe samples), and
-//        the share of the field above the word line brighter than 0.9.
+//        light, not a hit flash on a dark deck; those still alive 0.5 s later
+//        are threats the light hid (≤ 10 % of foe samples; the raw share,
+//        dying foes in their own blast included, is printed too), and the
+//        share of the field above the word line brighter than 0.9.
 //   layout  the line's bottom ≤ the stripes − 4 px, its top ≥ 90 px under
 //        Xung's reach, the bays under the red line, nothing in a bay
 //        overflowing with 3 magazine LEDs.
@@ -307,6 +309,8 @@ async function fight(page, dir, stage, guns, seconds) {
   const keyMs = 60000 / (40 * 5);
   const eye = await page.eval(sv("const r = t.rects()[0]; return { x: r.x + r.w / 2, y: r.y + r.h / 2, top: r.y };"));
   const washes = [];
+  // Drowned foes to look for again 0.5 s on: alive then, the light hid a threat; gone, it was its own death.
+  const later = [];
   const seen = new Set();
   const spawns = [];
   let overlaps = 0;
@@ -325,6 +329,10 @@ async function fight(page, dir, stage, guns, seconds) {
     if (look === null || look.mode !== "play" || look.state.phase !== "play" || look.state.time > seconds) break;
     const time = look.state.time;
     samples += 1;
+    for (const due of later.filter((d) => d.w.alive === undefined && time >= d.due)) {
+      const ids = new Set(((await page.eval(sv("return t.foes ? t.foes() : [];"))) ?? []).map((f) => f[5]));
+      due.w.alive = due.w.ids.filter((id) => ids.has(id)).length;
+    }
     overlaps += look.numbers.overlaps;
     const alive = new Set();
     for (const box of look.numbers.boxes) {
@@ -346,7 +354,9 @@ async function fight(page, dir, stage, guns, seconds) {
       await page.shot(file);
       await page.eval("document.querySelector('.sv-hud').style.visibility = ''; true");
       clean.push(file);
-      washes.push(wash(file, (await page.eval(sv("return t.foes ? t.foes() : [];"))) ?? [], page, eye.top));
+      const washed = wash(file, (await page.eval(sv("return t.foes ? t.foes() : [];"))) ?? [], page, eye.top);
+      washes.push(washed);
+      if (washed.ids.length > 0) later.push({ due: time + 0.5, w: washed });
     }
     if (time >= burstAt && burst.length < 30) {
       const file = join(dir, stage + "-" + size + "-burst-" + String(burst.length).padStart(2, "0") + ".png");
@@ -368,10 +378,11 @@ async function fight(page, dir, stage, guns, seconds) {
   const sheets = burst.length > 0 ? [sheet(burst, join(dir, "sheet-f8-" + stage + "-" + size + ".jpg"), { x: 0, y: 0, w: page.width, h: page.height }, 6, 420)] : [];
   const foeSamples = washes.reduce((n, w) => n + w.foes, 0);
   const drowned = washes.reduce((n, w) => n + w.drowned, 0);
+  const hidden = washes.reduce((n, w) => n + (w.alive ?? w.drowned), 0);
   const near = washes.reduce((n, w) => n + w.near, 0);
   const nearDrowned = washes.reduce((n, w) => n + w.nearDrowned, 0);
   const field = washes.map((w) => w.field).sort((a, b) => a - b);
-  const washed = { frames: washes.length, foeSamples, drowned, share: +(drowned / Math.max(1, foeSamples)).toFixed(3), near, nearShare: +(nearDrowned / Math.max(1, near)).toFixed(3), fieldBright: { p50: field[field.length >> 1] ?? 0, p95: field[Math.floor(field.length * 0.95)] ?? 0, max: field.at(-1) ?? 0 }, worst: [...washes].sort((a, b) => b.drowned - a.drowned).slice(0, 3).map((w) => ({ file: w.file, drowned: w.drowned, foes: w.foes })) };
+  const washed = { frames: washes.length, foeSamples, drowned, share: +(drowned / Math.max(1, foeSamples)).toFixed(3), hidden, hiddenShare: +(hidden / Math.max(1, foeSamples)).toFixed(3), near, nearShare: +(nearDrowned / Math.max(1, near)).toFixed(3), fieldBright: { p50: field[field.length >> 1] ?? 0, p95: field[Math.floor(field.length * 0.95)] ?? 0, max: field.at(-1) ?? 0 }, worst: [...washes].sort((a, b) => b.drowned - a.drowned).slice(0, 3).map((w) => ({ file: w.file, drowned: w.drowned, alive: w.alive ?? null, foes: w.foes })) };
   return {
     stage, guns, ready, time: final?.time, phase: final?.phase, hp: final?.hp, samples, overlaps, lineShown: +(lineShown / Math.max(1, samples)).toFixed(3), maxMarks: marks, markFrames, washed,
     eyeToHit: { n: sorted.length, median: Math.round(median(sorted)), median720: Math.round(median(sorted) / ui), within10deg1080: +(sorted.filter((d) => d / ui * 1.5 <= 10 * 37.9).length / Math.max(1, sorted.length)).toFixed(3) },
@@ -402,7 +413,8 @@ function wash(file, foes, page, top) {
   let drowned = 0;
   let near = 0;
   let nearDrowned = 0;
-  for (const [cx, cy, rpx, z] of foes) {
+  const ids = [];
+  for (const [cx, cy, rpx, z, , id] of foes) {
     if (z > 25 || cx < 4 || cy < 4 || cx >= W - 4 || cy >= top) continue;
     const r = Math.max(3, rpx);
     const inner = [];
@@ -420,13 +432,16 @@ function wash(file, foes, page, top) {
     inner.sort((a, b) => a - b);
     const wet = (inner[inner.length >> 1] ?? 0) >= 0.8 && ring / Math.max(1, ringN) >= 0.6;
     n += 1;
-    if (wet) drowned += 1;
+    if (wet) {
+      drowned += 1;
+      ids.push(id);
+    }
     if (z <= 9) {
       near += 1;
       if (wet) nearDrowned += 1;
     }
   }
-  return { file: file.split("/").pop(), foes: n, drowned, near, nearDrowned, field: +(bright / Math.max(1, all)).toFixed(4) };
+  return { file: file.split("/").pop(), foes: n, drowned, near, nearDrowned, ids, field: +(bright / Math.max(1, all)).toFixed(4) };
 }
 
 async function f8(page, dir) {
@@ -453,7 +468,7 @@ async function f8(page, dir) {
   return {
     runs: runs.map(({ clean, at720, ...run }) => ({ ...run, cleanFrames: clean.length })), contrast, pooled,
     checks: {
-      foesNotDrowned: runs.every((run) => run.washed.share <= 0.1),
+      foesNotDrowned: runs.every((run) => run.washed.hiddenShare <= 0.1),
       noNumberOnProtected: runs.every((run) => run.overlaps === 0),
       eyeToHitMedian210: pooled.median720 <= 210,
       contrastLine7: contrast.line.at99 >= 7,

@@ -20,7 +20,7 @@ export function shipProbe(stage: Stage, ship: Ship): ShipPose & { sx: number; sy
   return { ...pose, sx: round(p.x), sy: round(p.y), cx };
 }
 
-/** Live foes the camera shows (sim z ≤ 30): screen centre, body radius (CSS px, the live view), depth, kind. */
+/** Live foes the camera shows (sim z ≤ 30): screen centre, body radius (CSS px, the live view), depth, kind, id. */
 export function foesOnScreen(stage: Stage, w: World): number[][] {
   const F = w.foes;
   const out: number[][] = [];
@@ -28,7 +28,7 @@ export function foesOnScreen(stage: Stage, w: World): number[][] {
     if (F.alive[s] !== 1 || F.z[s]! > 30) continue;
     const r = FOES[F.kind[s]!]?.radius ?? 0.5;
     const { x, y } = stage.project(F.x[s]!, F.z[s]!, r, at);
-    out.push([Math.round(x), Math.round(y), round(Math.abs(stage.project(F.x[s]! + r, F.z[s]!, r, at).x - x)), round(F.z[s]!), F.kind[s]!]);
+    out.push([Math.round(x), Math.round(y), round(Math.abs(stage.project(F.x[s]! + r, F.z[s]!, r, at).x - x)), round(F.z[s]!), F.kind[s]!, F.id[s]!]);
   }
   return out;
 }
