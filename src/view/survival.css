@@ -136,8 +136,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-strip-word i.is-miss::after { height: calc(3px * var(--ui)); background: var(--danger); transform: scaleX(1); opacity: 1; }
 .sv-strip-done { --fit: 1; font: 700 calc(26px * var(--ui) * var(--fit)) var(--font-battle); line-height: 1; white-space: nowrap; color: var(--typing); transform-origin: 50% 60%; }
 .sv-strip-done b { color: var(--urgent); font-weight: 800; }
-/* Too wide for one line: "word ✓" over its meaning. */
-.sv-strip-done.is-two { display: flex; flex-direction: column; align-items: center; gap: calc(2px * var(--ui)); font-size: calc(22px * var(--ui) * var(--fit)); line-height: 1.05; }
+/* Too wide for one line: "word ✓" over its meaning (its flex must not undo the hidden attribute: it showed beside the next word). */
+.sv-strip-done.is-two:not([hidden]) { display: flex; flex-direction: column; align-items: center; gap: calc(2px * var(--ui)); font-size: calc(22px * var(--ui) * var(--fit)); line-height: 1.05; }
 .sv-strip-done.is-two small { font: 600 calc(17px * var(--ui) * var(--fit)) var(--font-battle); line-height: 1.05; color: var(--typing); }
 /* A rift's countdown beside the word line, on its wall's side (strip.ts places it). */
 .sv-strip-warn { position: absolute; left: 0; height: calc(30px * var(--ui)); padding: 0 calc(10px * var(--ui)); display: flex; align-items: center; font: 700 calc(16px * var(--ui)) var(--font-title); letter-spacing: 0.08em; white-space: nowrap; color: var(--ink); background: var(--hot); box-shadow: 0 0 18px var(--hot-glow); visibility: hidden; }
