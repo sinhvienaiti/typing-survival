@@ -6,7 +6,10 @@
  * charges, then fires a 3.4 m muzzle streak, a star 12 % of the view and a
  * line held 0.35 s with ion rings and a band of light on the deck. Tia is a
  * white-hot core in a hot glow and a faint haze, growing out in 3 frames and
- * thinning away in 6, with two held lights (the muzzle, 60 % along). Their
+ * thinning away in 6, with two held lights (the muzzle, 60 % along); round
+ * the ship it stays narrow (its star 1.5 m, the first 3 m's haze 1.4 m: a
+ * burning Tia had turned the ship and its core into one white blot, test
+ * pass 27/10). Their
  * loops (gun.ray.armed, gun.tia.loop) follow. Reads the world, never writes it.
  */
 import * as THREE from "three";
@@ -64,12 +67,13 @@ export class BeamFx {
       r[k] = m.x; r[k + 1] = m.y; r[k + 2] = m.z;
       r[k + 3] = dx * 3; r[k + 4] = -(FIELD.muzzleZ + dz * 3);
       r[k + 5] = R.x[i]!; r[k + 6] = -R.z[i]!; r[k + 7] = 0;
-      // A muzzle streak 3.4 m (5 frames), a star 12 % of the view (4 frames), ion rings along the line.
+      // A muzzle streak 3.4 m (5 frames), a star 12 % of the view (4 frames), ion rings along the line; the soft white round it
+      // smaller and dimmer than build 2's (it washed the ship and the bays' edges white each shot, test pass 27/10).
       this.p.streaks.add(m.x, m.y, m.z, m.x + dx * 3.4, m.y, m.z - dz * 3.4, 0.5, C.rayCore, 3.4, 1, 5 * F);
       const star = this.p.size(0.12) * 2.8;
       g.burst(CELL.star8, m.x, m.y, m.z, star * 0.6, star, 4 * F, C.ray, 2.8);
       g.burst(CELL.core, m.x, m.y, m.z, star * 0.2, star * 0.35, 4 * F, C.rayCore, 2.6);
-      g.burst(CELL.soft, m.x, m.y, m.z, star * 0.8, star, 4 * F, C.rayCore, 3);
+      g.burst(CELL.soft, m.x, m.y, m.z, star * 0.45, star * 0.6, 3 * F, C.rayCore, 1.8);
       const ex = R.x[i]!;
       const ez = -R.z[i]!;
       const length = Math.hypot(ex - r[k + 3]!, ez - r[k + 4]!);
@@ -189,14 +193,14 @@ export class BeamFx {
       const x1 = seg === 0 ? jx : fx;
       const y1 = seg === 0 ? jy : 0.55;
       const z1 = seg === 0 ? jz : fz;
-      // A faint haze 2.4 m, the hot glow 1.1 m, the white-hot core 0.22 m; the light it throws on the deck.
-      S.add(x0, y0, z0, x1, y1, z1, 2.4 * thin, this.tia, 0.18 * k, 0);
-      S.add(x0, y0, z0, x1, y1, z1, 1.1 * thin, this.tia, 1.3 * k, 0);
+      // A faint haze 2.4 m (1.4 m over the ship), the hot glow 1.1 m (0.8), the white-hot core 0.22 m; the light it throws on the deck.
+      S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 1.4 : 2.4) * thin, this.tia, 0.18 * k, 0);
+      S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 0.8 : 1.1) * thin, this.tia, (seg === 0 ? 1 : 1.3) * k, 0);
       S.add(x0, y0, z0, x1, y1, z1, 0.22 * thin, C.hot, 1.4 * k, 0.6);
       S.add(x0, 0.4, z0, x1, 0.4, z1, 1.1 * thin, this.tia, 0.5 * k, 0.4 * k);
     }
     const g = this.p.glows;
-    g.stamp(CELL.star8, m.x, m.y, m.z, 2.6 * k, time * 3, this.tia, 2.4 * k);
+    g.stamp(CELL.star8, m.x, m.y, m.z, 1.5 * k, time * 3, this.tia, 1.9 * k);
     g.stamp(CELL.soft, fx, 0.6, fz, 2.4 * k, 0, this.tia, 1.8 * k);
     if (on) {
       this.p.lights.hold(1, LIGHT.tia, m.x, m.y, m.z, this.tia);

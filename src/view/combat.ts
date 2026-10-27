@@ -365,7 +365,7 @@ export class Combat {
     const th = THROWS[gun]!;
     const across = gun === 1;
     this.chunks.burst(x, z, across ? -dz * this.sweep : dx, across ? dx * this.sweep : dz, kind, n, K.armour[c] === 1 ? EDGE.armour : -1, th.up, th.out, th.spread);
-    if (big) this.ask(tier(3).stopMs);
+    if (big) this.ask(this.shots.bigKill(x, z, size / 2.4));
     this.audio.kill(n, x / FIELD.halfW, scout, now);
     this.trauma.add(Math.min(0.2, (scout ? 0.1 : 0.025) * Math.sqrt(n)));
     // A heap of kills or a scout punches the view along the blow (at most every PUNCH_MS: a sweep is not a buzz).

@@ -137,12 +137,16 @@ export class GunFx {
         g.burst(CELL.ring + FLAT, x, 0.08, -z, 1, 7, 0.8, C.beacon, 1.8);
         break;
       case EV.rift: {
-        // Torn open: sparks and smoke pour from the wall.
+        // Torn open, big enough to see from the word line (test pass 27/10: a 40 px flash gone in 0.45 s): a white-hot tear, a column of
+        // molten light up the wall for 0.9 s, a ring running out over the deck, sparks and smoke pouring in.
         const side = x > 0 ? -1 : 1;
-        this.spark(x, 1, z, side, 0, 22, 8, C.rift, 0.3, 0.7, 2);
-        g.burst(CELL.soft, x, 1, -z, 2, 5, 1.2, C.smoke, 0.8, side * 1.5, 0.6, 0);
-        g.burst(CELL.flare, x, 1, -z, 3, 6, 0.3, C.rift, 2.2, 0, 0, 0, 0, Math.PI / 2);
-        this.p.trauma.add(0.06);
+        this.spark(x, 1, z, side, 0, 40, 9, C.rift, 0.34, 0.9, 2);
+        g.burst(CELL.core, x, 1.2, -z, 2, 5, 0.15, C.hot, 2.8);
+        g.burst(CELL.soft, x, 1, -z, 3, 7, 1.6, C.smoke, 0.9, side * 1.5, 0.6, 0);
+        g.burst(CELL.flare, x, 1.5, -z, 6, 14, 0.9, C.rift, 2.4, 0, 0, 0, 0, Math.PI / 2);
+        g.burst(CELL.ring + FLAT, x, 0.08, -z, 1, 9, 0.9, C.rift, 2.2);
+        this.p.trauma.add(0.12);
+        this.p.trauma.kick(side, 0, 3);
         break;
       }
     }

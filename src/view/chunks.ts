@@ -1,7 +1,10 @@
 /**
- * Kill chunks (docs/FEEL_PASS_S1.md §4.5): a killed foe breaks into dark
- * steel chunks whose edges glow hot (Lính's electric, Đầu Đàn's gold, a Bọc
- * Thép's pale gold) and cool to steel over 1.2 s. They fly in an arc by the
+ * Kill chunks (docs/FEEL_PASS_S1.md §4.5): a killed foe breaks into steel
+ * chunks whose edges glow hot (Lính's electric, Đầu Đàn's gold, a Bọc
+ * Thép's pale gold) and cool to steel over 1.2 s (a Trâu's or Đầu Đàn's big
+ * ones hotter, over 2.4 s, thrown 1.4 × higher); a cold edge keeps a dim
+ * steel rim and the steel is mid-grey, so lying chunks still read on the
+ * dark deck (test pass 27/10: dark steel there vanished). They fly in an arc by the
  * gun of the killing blow (gun-rules THROW: Pháo Sao's highest, Ray's along
  * its line), bounce once, lie 8 s, then sink. Three faceted shapes made in
  * code (an effect, not a model) share one InstancedMesh: each instance shows
@@ -19,7 +22,9 @@ const FLOOR = 0.03;
 const S = 8;
 const EDGES = [BLOW.shardHot, BLOW.elite, BLOW.beacon, BLOW.armour];
 const EDGE_HOT = 2.2;
-const EDGE_COLD = 0.12;
+const EDGE_COLD = 0.3;
+/** A big foe's big chunks: hotter edges, cooling twice as long, thrown higher. */
+const BIG = { hot: 3.4, cool: 2, up: 1.4 } as const;
 
 /** A faceted shard 1 m across at most: a split octahedron (8 faces), a wedge (8), a slab (12), corners pushed about. */
 function shapes(): THREE.BufferGeometry {
@@ -37,7 +42,7 @@ function shapes(): THREE.BufferGeometry {
     jitter(new THREE.CylinderGeometry(0.5, 0.5, 0.35, 3, 1).rotateZ(Math.PI / 2).scale(0.9, 1, 1), 2),
     jitter(new THREE.BoxGeometry(0.9, 0.3, 0.6), 3),
   ].map((g, k) => {
-    const flat = g.toNonIndexed();
+    const flat = g.index === null ? g : g.toNonIndexed();
     flat.deleteAttribute("uv");
     flat.computeVertexNormals();
     flat.setAttribute("aShape", new THREE.Float32BufferAttribute(new Float32Array(flat.getAttribute("position").count).fill(k), 1));
@@ -72,6 +77,7 @@ export class Chunks {
   private readonly size: Float32Array;
   private readonly age: Float32Array;
   private readonly edge: Uint8Array;
+  private readonly hot: Uint8Array;
   private readonly alive: Uint8Array;
   private readonly look: Float32Array;
   private readonly lookAttr: THREE.InstancedBufferAttribute;
@@ -89,7 +95,7 @@ export class Chunks {
   live = 0;
 
   constructor(readonly capacity: number) {
-    const material = new THREE.MeshStandardMaterial({ color: PALETTE.steelDark, metalness: 0.7, roughness: 0.42, flatShading: true });
+    const material = new THREE.MeshStandardMaterial({ color: PALETTE.steel, metalness: 0.45, roughness: 0.5, flatShading: true });
     material.onBeforeCompile = (shader) => {
       shader.vertexShader = "attribute float aShape;\nattribute vec4 aLook;\nvarying vec3 vEdge;\n" + shader.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\nvEdge = aLook.rgb;\nif (abs(aShape - aLook.w) > 0.5) transformed = vec3(0.0);");
       // The edges glow: faces turned away from the eye (the rim) carry most of it.
@@ -116,6 +122,7 @@ export class Chunks {
     const f = (n: number) => new Float32Array(capacity * n);
     [this.s, this.rot, this.spin, this.size, this.age] = [f(S), f(3), f(3), f(1), f(1)];
     this.edge = new Uint8Array(capacity);
+    this.hot = new Uint8Array(capacity);
     this.alive = new Uint8Array(capacity);
   }
 
@@ -146,7 +153,7 @@ export class Chunks {
       this.s[o + 1] = 0.4 + Math.random() * 0.5;
       this.s[o + 2] = -(z + (Math.random() - 0.5) * 0.6);
       this.s[o + 3] = Math.cos(a) * speed;
-      this.s[o + 4] = up[0]! + Math.random() * (up[1]! - up[0]!);
+      this.s[o + 4] = (up[0]! + Math.random() * (up[1]! - up[0]!)) * (big ? BIG.up : 1);
       this.s[o + 5] = -Math.sin(a) * speed;
       this.s[o + 6] = this.s[o + 7] = 0;
       for (let c = 0; c < 3; c += 1) {
@@ -156,6 +163,7 @@ export class Chunks {
       this.size[i] = big ? BIG_CHUNK.min + Math.random() * (BIG_CHUNK.max - BIG_CHUNK.min) : spec.min + Math.random() * (spec.max - spec.min);
       this.age[i] = -1 / 60;
       this.edge[i] = edge >= 0 ? edge : spec.edge;
+      this.hot[i] = big ? 1 : 0;
       this.look[i * 4 + 3] = Math.floor(Math.random() * 3);
     }
     return total;
@@ -195,10 +203,11 @@ export class Chunks {
       const y = this.s[o + 1]! - sink * size * 0.6;
       this.matrix.compose(this.pos.set(this.s[o]!, y, this.s[o + 2]!), this.quat, this.scale.setScalar(size * (1 - sink * 0.5)));
       this.mesh.setMatrixAt(i, this.matrix);
-      // Hot edges cool to steel over coolS.
-      const heat = Math.max(0, 1 - age / CHUNK_PHYSICS.coolS);
+      // Hot edges cool to steel over coolS (a big foe's big chunks twice as long, hotter).
+      const bigOne = this.hot[i] === 1;
+      const heat = Math.max(0, 1 - age / (CHUNK_PHYSICS.coolS * (bigOne ? BIG.cool : 1)));
       const hot = EDGES[this.edge[i]!]!;
-      const k = EDGE_COLD + (EDGE_HOT - EDGE_COLD) * heat * heat;
+      const k = EDGE_COLD + ((bigOne ? BIG.hot : EDGE_HOT) - EDGE_COLD) * heat * heat;
       const cold = 1 - heat;
       this.look[i * 4] = (hot.r * heat + BLOW.shardSteel.r * cold) * k;
       this.look[i * 4 + 1] = (hot.g * heat + BLOW.shardSteel.g * cold) * k;

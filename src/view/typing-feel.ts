@@ -40,10 +40,13 @@ const TYPING = new THREE.Color("#7ff5e0");
 /**
  * A shard's streak and the key's deck ring. §3.1 draws 0.25 × 0.06 m and a
  * 0.55 ring: on the first frames that is 7 × 2 px and a ring hidden under
- * the hull (tmp/…/feel/typing/run1); drawn here 0.4 × 0.1 m and 1.1 (HDR).
+ * the hull (tmp/…/feel/typing/run1); build 1 drew 0.4 × 0.1 m and a ring
+ * 0.8 → 2 m at 1.1, still lost under the hull and Tia's glow (test pass
+ * 27/10): now 0.6 × 0.16 m (≥ 6 px wide at 720p) and a ring from 1.4 m,
+ * clear of the hull, out to 2.8 m at 1.4 (HDR).
  */
-const SHARD = { length: 0.4, width: 0.1 } as const;
-const RING = 1.1;
+const SHARD = { length: 0.6, width: 0.16 } as const;
+const RING = { from: 1.4, to: 2.8, power: 1.4 } as const;
 
 export class TypeFeel {
   private cursor = 0;
@@ -177,7 +180,7 @@ export class TypeFeel {
   private ringUnder(gun: number, tier: number): void {
     this.ship.core(this.core);
     const wide = tier >= 1 ? 1.15 : 1;
-    this.glows.burst(CELL.ring + FLAT, this.core.x, 0.08, this.core.z, 0.8 * wide, 2 * wide, 0.15, GUN_COLOR[gun] ?? BLOW.volt, RING);
+    this.glows.burst(CELL.ring + FLAT, this.core.x, 0.08, this.core.z, RING.from * wide, RING.to * wide, 0.15, GUN_COLOR[gun] ?? BLOW.volt, RING.power);
     if (tier >= 4) this.glows.burst(CELL.ring + FLAT, this.core.x, 0.085, this.core.z, 1, 2.6, 0.2, TYPING, 0.45);
   }
 

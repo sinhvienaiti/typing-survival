@@ -6,7 +6,11 @@
  * bolts with a 3.7 m tracer, a star and a soft flash in its colour (the
  * magazine's first round twice as big, with sparks and a 1.5 px shove); Tán a
  * fan of three flame tongues, smoke, casings and amber bolts; Pháo Sao
- * flashes upward and its shells are 3D bolts on their arcs; Ray and Tia are
+ * flashes upward, its shells are 3D bolts on their arcs kept ≥ 4 % of the
+ * view long however far they fly, and a burst flashes white over a fifth of
+ * the view before its fire and smoke (test pass 27/10: a far burst was a
+ * 60–90 px glow); a Trâu or Đầu Đàn dies in a white-hot body flash, a column
+ * of fire, a shock ring and smoke (bigKill); Ray and Tia are
  * BeamFx's (beams.ts). Every shot lights the deck and the horde through the
  * light pool (lights.ts). The hits' looks by gun are here too. Reads the
  * world, never writes it; pooled, nothing allocated per shot.
@@ -214,16 +218,30 @@ export class ShotFx {
       const x = R.x[i]!;
       const z = R.z[i]!;
       const radius = R.value[i]!;
-      const core = this.size(0.12, x, z) * 2.2;
-      g.burst(CELL.core, x, 1, -z, core * 0.5, core, 4 * F, C.hot, 2.8);
-      g.burst(CELL.star8, x, 1.2, -z, 1.2, core * 0.9, 0.16, C.phao, 2.4);
-      g.burst(CELL.ring + FLAT, x, 0.08, -z, 0.4, radius * 2.2, 0.38, C.phao, 2.2);
+      // Sized on the view, not in metres: a white flash a fifth of its height (3 frames), the fireball, a shock ring, smoke rising.
+      const core = this.size(0.18, x, z) * 2.2;
+      g.burst(CELL.soft, x, 1.4, -z, core * 0.8, core * 1.4, 3 * F, C.white, 1.5);
+      g.burst(CELL.core, x, 1, -z, core * 0.5, core, 5 * F, C.hot, 2.8);
+      g.burst(CELL.star8, x, 1.2, -z, 1.2, core * 0.9, 0.2, C.phao, 2.4);
+      g.burst(CELL.ring + FLAT, x, 0.08, -z, 0.4, Math.max(radius * 2.6, core * 0.8), 0.45, C.phao, 2.4);
       g.burst(CELL.soft + FLAT, x, 0.07, -z, radius * 1.4, radius * 1.8, 1.2, C.ember, 0.45);
-      this.spark(x, 0.8, -z, 0, 1.4, 0, 24, 8, C.hot, 0.28, 0.6, 2.4);
+      g.burst(CELL.soft, x, 1.2, -z, core * 0.35, core * 0.7, 1.4, C.smoke, 0.8, 0, 1.4, 0);
+      this.spark(x, 0.8, -z, 0, 1.4, 0, 32, 9, C.hot, 0.3, 0.7, 2.4);
       this.p.lights.flash(LIGHT.phao, x, 1.5, -z, C.phao);
       this.p.trauma.add(0.05);
     } else if (kind === EV.charge) ship.cue(AIM_PRIO.ray, R.x[i]!, R.z[i]!);
     else if (kind === EV.rail || kind === EV.beamStart || kind === EV.beamEnd) this.beams.event(R, i, now);
+  }
+
+  /** A Trâu or Đầu Đàn killed at sim (x, z), `size` its burst's scale: a white-hot body flash 4 frames, a column of fire, a wide shock ring, smoke; returns the stop it asks (T3). */
+  bigKill(x: number, z: number, size: number): number {
+    const g = this.p.glows;
+    g.burst(CELL.core, x, 1.2, -z, 1.4 * size, 2.6 * size, 4 * F, C.white, 3);
+    g.burst(CELL.flare, x, 2, -z, 4 * size, 9 * size, 0.35, C.hot, 2.4, 0, 0, 0, 0, Math.PI / 2);
+    g.burst(CELL.ring + FLAT, x, 0.08, -z, 1, 7 * size, 0.55, C.hot, 2.4);
+    g.burst(CELL.soft, x, 1.4, -z, 1.5 * size, 3.5 * size, 1.4, C.smoke, 0.85, 0, 1.2, 0);
+    this.p.lights.flash(LIGHT.phao, x, 1.5, -z, C.hot);
+    return tier(3).stopMs;
   }
 
   /** A blow's look by gun (Combat draws numbers and sounds); `armour`: Vỏ's look is drawn (gunfx). */
@@ -338,8 +356,10 @@ export class ShotFx {
       arcPoint(this.m, tx, tz, Math.max(0, t - 0.08), this.v);
       S.add(this.v.x, this.v.y, this.v.z, this.at.x, this.at.y, this.at.z, 0.45, C.phao, 2.2, 0.8);
       arcPoint(this.m, tx, tz, Math.max(0, t - 0.01), this.w3);
-      if (!this.p.bolts.add(BOLT.phao, this.at.x, this.at.y, this.at.z, this.at.x - this.w3.x, this.at.y - this.w3.y, this.at.z - this.w3.z, time * 8 + k)) g.stamp(CELL.core, this.at.x, this.at.y, this.at.z, 0.6, 0, C.hot, 2.4);
-      g.stamp(CELL.soft, this.at.x, this.at.y, this.at.z, 1.4, 0, C.phao, 1.6);
+      // At least 4 % of the view long however far it flies (a 1 m bolt read as a 10 px dot 20 m out).
+      const big = Math.max(1, this.size(0.04, this.at.x, -this.at.z));
+      if (!this.p.bolts.add(BOLT.phao, this.at.x, this.at.y, this.at.z, this.at.x - this.w3.x, this.at.y - this.w3.y, this.at.z - this.w3.z, time * 8 + k, big)) g.stamp(CELL.core, this.at.x, this.at.y, this.at.z, 0.6 * big, 0, C.hot, 2.4);
+      g.stamp(CELL.soft, this.at.x, this.at.y, this.at.z, 1.4 * big, 0, C.phao, 1.6);
       g.stamp(CELL.ring + FLAT, tx, 0.06, tz, PHAO.radius * (1.2 - 0.4 * t) * 2, time * 2, C.danger, 1.2);
     }
   }

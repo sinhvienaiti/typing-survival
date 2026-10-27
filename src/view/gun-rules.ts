@@ -37,7 +37,7 @@ export const DECK_LIGHTS = 6;
 export const LIGHT = {
   xung: { prio: 1, power: 1, life: 0.05, pool: 1.8 },
   xungFirst: { prio: 3, power: 2, life: 0.08, pool: 2.4 },
-  tia: { prio: 2, power: 1.6, life: 0, pool: 2.4 },
+  tia: { prio: 2, power: 1.1, life: 0, pool: 2.4 },
   tiaSlide: { prio: 2, power: 1, life: 0, pool: 2.4 },
   tan: { prio: 3, power: 2, life: 0.08, pool: 3 },
   ray: { prio: 4, power: 3, life: 0.1, pool: 2.6 },
