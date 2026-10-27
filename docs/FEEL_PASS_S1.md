@@ -536,3 +536,56 @@ Theo luật của chủ dự án (`docs/CLAUDE_PROCESS_2026-10-24.md` §2 ở re
 6. **Hạ quái to, nổ Pháo Sao, cú nứt**: Trâu và Đầu Đàn chết trong lóe trắng 4 khung, cột lửa, vòng sóng rộng, khói; khối vỡ thép sáng hơn, mép nguội vẫn còn viền mờ, khối lớn của quái to nóng gấp đôi lâu và bay cao hơn 1,4×. Quả Pháo Sao dài ≥ 4 % chiều cao màn ở mọi tầm; nổ: lóe trắng 1/5 màn 3 khung, cầu lửa 18 %, khói. Vết nứt mở: cột sáng 14 m 0,9 s, vòng trên sàn, tia lửa, khói, đẩy camera.
 7. **Đếm ngược Vết nứt còn hiện cạnh dòng từ** phía vách sẽ nứt (biển ở mép giữ nguyên).
 
+
+## 12. Đổi ở lượt N4/N6 (27/10, sau lần kiểm lại; chủ dự án xem ở §7.6)
+
+Lần kiểm lại trên `4788022` còn hai lỗi nặng: N4 (mỗi phím trên sân vẫn nhạt: quanh tàu chỉ có một cung màu nhỏ dưới thân và một vệt ~25 px; khi Tia cháy không thấy mảnh hay vòng; Tia và Ray cùng bắn thì nửa trước tàu là một vệt trắng) và N6 (Trâu bị Ray hạ "biến vào một vòng": thân lóe trắng 4 khung rồi vòng sóng 7 m lấn hết, cột lửa trùng tia Ray, khói gần như không thấy, khối vỡ là vài chấm). Changelog: [`2026-10-27-feel-n4n6.md`](changelog/2026-10-27-feel-n4n6.md). Sim không đổi.
+
+**Đơn vị.** Cỡ một billboard (`Glows.burst`) là **bề ngang cả quad** (m), không phải bán kính: vòng sáng (`CELL.ring`) có bán kính 0,4 × bề ngang. Vòng "1,4 → 2,8 m" của §11.5 thật ra có bán kính 0,56 → 1,12 m, nằm dưới thân tàu và trong vòng sơn của sàn (bán kính 2,6 m): đó là lý do nó thành "một cung màu nhỏ dưới thân".
+
+**Bùng ở khung đầu.** Một burst tạo giữa hai khung đã già một khung khi vẽ lần đầu (`Glows.step` cộng `dt` trước khi vẽ): lóe "3 khung" thật ra hiện 44 % rồi 11 % rồi tắt. Burst mới của lượt này truyền `early = F` để hiện trọn ở khung đầu. Các burst cũ giữ nguyên (đổi hết là đổi cả độ sáng các súng, cần đo lại §4.1 và F8; để lượt sau).
+
+### 12.1 Mỗi phím đúng (N4; `KEY_MARK` trong `type-rules.ts`, `typing-feel.ts`)
+
+| Phần | Số | Khung |
+|---|---|---|
+| Tia sét màu súng từ mép dưới tấm dòng từ, ngay dưới chữ, vào lõi tàu | rộng 0,56 m (× 1,25 từ chuỗi sạch bậc 1), cường độ 4, lõi trắng 0,9; hai khớp lệch ngang 0,3 m, nhảy ở f2 và f4 | trọn f0–f1, tắt dần tới f4 |
+| Sao 4 tia nơi tia rời tấm, 3 tia lửa rơi | ngang 1,2 → 2,4 m, cường độ 4 | f0–f3 |
+| Sao 8 tia trong lõi | ngang 0,8 → 1,6 m, cường độ 3,4 | f0–f3 |
+| Sàn dưới tàu sáng | ngang 3,2 → 4 m, cường độ 0,35 | f0–f2 |
+| Vòng sàn | bán kính 1,4 → 3,2 m (qua vòng sơn 2,6 m), 0,16 s, cường độ 2,2 | f0–f9 |
+
+- Mọi phần hiện trọn ở f0 (`early`). Mực của Ray trên sân là `#8fa3ff` (trắng xanh của nó chìm trong ánh Tia).
+- Chữ không bị vẽ đè: tia rời từ mép dưới tấm (`WordStrip.anchor` trả về đáy tấm dưới chữ).
+- Bến đầy: tia văng sang ngang 1,6 m, không vào lõi, không sao lõi, không vòng.
+- Thay mảnh 0,6 m của §11.5. Đèn động riêng cho mỗi phím đã thử rồi bỏ: phủ thân tàu một quầng xanh trắng, lóe nòng của phát đầu không còn đọc được.
+- **Giảm chuyển động:** tia đứng yên (khớp lệch 0,12 m, không nhảy), không tia lửa, vòng × 0,8 và cường độ × 0,6. Vẫn thấy rõ (đo ở `f1f` "reduced").
+- **Ngân sách:** 7 billboard và vệt mỗi phím; 10 phím/s giữ ≤ 12 cùng lúc (`keyMarkLive`, test; `rate` của `survival-feel`). §6 dòng "Hiệu ứng theo phím" giữ ≤ 12.
+
+### 12.2 Tia và Ray quanh tàu
+
+- **Tia, 3 m đầu (đoạn từ nòng tới điểm nhập đường sim):** không lớp mờ; lõi và quầng × 0,7, quầng hẹp 0,55 m; vệt sàn × 0,49; sao ở nòng 1,5 → 1 m, cường độ 1,9 → 1,2; cột trên sàn mọc dần trong 2,4 m đầu (trước 0,48 m); đèn giữ ở 1,5 m ra phía trước (trước ở nòng, rọi trắng thân tàu), 1,1 → 0,9. Vết cháy mỗi nhịp 3 → 2, cường độ 0,85 → 0,6, chỉ từ 3 m trở ra (72 vết sống cùng lúc đã phủ cam nửa dưới màn).
+- **Ray:** 3 m đầu × 0,6; sao 8 tia, lõi và quầng trắng ở nòng dời 1 m ra theo hướng bắn, quầng trắng 1,8 → 1,1; đèn ở 1,5 m ra phía trước.
+- Phần xa của hai tia không đổi (độ sáng của súng giữ như build 2).
+
+### 12.3 Hạ quái to (N6; `ShotFx.bigKill`)
+
+Trâu, Đầu Đàn (và quái phụ của boss khi có cờ `big`). Đầu Đàn to hơn 1/4, màu vàng `beacon`. Cỡ theo màn (`v` = 16 % chiều cao màn ở độ sâu của nó):
+
+| Phần | Số | Thời gian |
+|---|---|---|
+| Lóe riêng | lõi trắng nóng ngang 1,8 → 2,3 v, cường độ 3 (đĩa trắng ~13 % chiều cao màn, cộng bloom thì cả làn quanh nó trắng 2 khung), sao 12 tia vàng 2 → 3,6 v (tia dài tới ~29 % màn), sàn sáng 3 → 4 v (1,2); đèn `LIGHT.big` (ưu tiên 5, cường độ 5, vũng 6 m, 0,15 s) | f0–f2 (sao tới f4) |
+| Cầu lửa | 7 cụm lửa (`CELL.puff`, vàng rồi cam), lăn lên 2,2–4,4 m/s và ra hai bên 1,1–3,3 m/s | 0,45–0,8 s |
+| Khói | 9 cụm khói phủ (chế độ `smoke` của `Glows`, hòa trộn thường; xám sáng `#9a928b`, lõi muội `#3d3835`), alpha 0,75, bốc lên 0,7–1,4 m/s, nở 1,2 → 3,6–5,2 m | 2–3 s |
+| Nền than hồng | vệt cam phẳng ngang 7–8 m, 0,55 | 3,5 s |
+| Vòng sóng | bán kính 0,8 → 2 m, 1,1 (trước: vòng 7 m của bigKill và vòng ~10 m chung, lấn cả lóe) | 0,35 s |
+| Tia lửa | 36 tia phun lên | ~0,8 s |
+
+- Lóe khác tia Ray ở **màu** (vàng ấm, Ray trắng xanh), **hình** (tròn và tia tỏa, Ray là một đường mảnh) và **chỗ** (cầu lửa ra hai bên, không chạy dọc đường Ray).
+- **Khối vỡ:** thép sáng `#56616c` (kim loại 0,25), viền thép nguội 0,45 (trước 0,3); Trâu 12 + 6 khối lớn (14 + 3), Đầu Đàn 14 + 8 (18 + 5); nhỏ 0,3–0,55 m, lớn 0,8–1,15 m (0,6–0,8); khối nhỏ của quái to nguội trong 2,4 s, khối lớn 4,2 s và văng xa 0,45 × (thành một đống trên nền than, không rải thành chấm dọc đường Ray). Khối của quái thường đổi màu thép và viền nguội như trên, số và cỡ giữ §4.5.
+- Bầy và Lính hạ chung giữ cách cũ (`ShotFx.kill`, chuyển từ `combat.ts`).
+
+### 12.4 Kiểm
+
+- `survival-feel` cảnh `f1f`, `survival-feel-guns` cảnh `f6b` (§7.2): số đo, ngưỡng và tờ khung ở changelog. `f5` gõ phím cuối sau các phím khác 300 ms để khung trước nó không còn dấu phím trên sàn (§12.1 làm sàn quanh nòng sáng ở mọi phím).
+- Draw call: thêm 1 (khói) khi có khói; chương trình shader thêm 1 (35), biên dịch sẵn ở `warm.ts`.

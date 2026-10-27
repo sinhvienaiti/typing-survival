@@ -227,5 +227,19 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   element shown and hidden with `hidden` must not get a `display` of its
   own without `:not([hidden])` (the two-line done text showed beside the
   next word).
+- N4/N6 pass (27/10, after the recheck: `docs/changelog/2026-10-27-feel-n4n6.md`,
+  `FEEL_PASS_S1.md` §12): each right key marks the field on its own frame
+  (`KEY_MARK` in `type-rules.ts`, `typing-feel.ts`: a bolt from the plate's
+  edge under the letter into the ship's core, a star at each end, the deck
+  lit with a ring out past the painted one; reduced motion keeps a still
+  bolt); Tia and Ray are tamed over the ship (their first 3 m, their lights
+  1.5 m out, Tia's floor burns past 3 m); a Trâu or Đầu Đàn dies as its own
+  event (`ShotFx.bigKill`: a warm flash, a fireball, smoke laid over the
+  deck by `Glows` in its smoke mode, a bed of embers, a heap of light steel
+  chunks). A billboard's size is its full width (a ring's radius is 0.4 of
+  it); `Glows.burst(…, early = F)` shows a new burst whole on its first
+  frame, the older bursts still lose theirs (open). Scenes `survival-feel`
+  `f1f` and `survival-feel-guns` `f6b`; `f5` types its last key 300 ms
+  late (a key now lights the deck round the muzzle). `src/` 12,755 lines.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.
