@@ -69,11 +69,11 @@ export const EDGE = { hot: 0, volt: 1, beacon: 2, armour: 3 } as const;
 export const CHUNK: readonly { n: number; min: number; max: number; big: number; edge: number }[] = [
   { n: 7, min: 0.18, max: 0.35, big: 0, edge: EDGE.hot },
   { n: 10, min: 0.2, max: 0.45, big: 0, edge: EDGE.volt },
-  { n: 20, min: 0.4, max: 0.7, big: 8, edge: EDGE.hot },
+  { n: 26, min: 0.4, max: 0.7, big: 10, edge: EDGE.hot },
   { n: 10, min: 0.2, max: 0.4, big: 0, edge: EDGE.hot },
   { n: 6, min: 0.15, max: 0.3, big: 0, edge: EDGE.hot },
   { n: 3, min: 0.15, max: 0.3, big: 0, edge: EDGE.hot },
-  { n: 22, min: 0.4, max: 0.7, big: 10, edge: EDGE.beacon },
+  { n: 28, min: 0.4, max: 0.7, big: 12, edge: EDGE.beacon },
 ];
 /** A Trâu's and Đầu Đàn's big chunks (§12, §13: up from §4.5's 0.6–0.8 m, and more of them, to read as a field of wreckage 13 m out). */
 export const BIG_CHUNK = { min: 0.9, max: 1.3 } as const;

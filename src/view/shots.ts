@@ -37,7 +37,7 @@ const F = 1 / 60;
 const Y = 0.95;
 
 /** A big kill's cloud by layer (a sooty base, a dark body, lit tops): puffs, height (m), spread, width from / to (× the view's 16 %), alpha. */
-const CLOUD = { n: [5, 14, 17], y: [0.4, 1, 2.2], spread: [1.1, 1.25, 0.5], from: [1.2, 1.4, 0.6], to: [2.8, 3.8, 1.6], alpha: [1.5, 1.3, 0.7] } as const;
+const CLOUD = { n: [5, 16, 23], y: [0.4, 1, 1.8], spread: [1.1, 1.4, 1.1], from: [1.2, 1.4, 0.8], to: [2.8, 4.2, 2.4], alpha: [1.5, 1.6, 0.8] } as const;
 const CLOUD_COLOR = [C.soot, C.smokeBody, C.smokeLit] as const;
 
 /** A point of a shell's arc from `m` to (tx, 0.3, tz) at u (0 … 1): a parabola ARC m high at the middle. */

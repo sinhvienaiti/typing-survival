@@ -20,8 +20,8 @@ const S = 8;
 const EDGES = [BLOW.shardHot, BLOW.elite, BLOW.beacon, BLOW.armour];
 const EDGE_HOT = 2.2;
 const EDGE_COLD = 0.45;
-/** A big foe's chunks smoulder (§13): its small ones cool 4 × as long, its big ones 6 × and hotter, thrown higher and less far; cold, their rims stay lit 2 × (they read on the dark deck until they sink). */
-const BIG = { hot: 3.4, small: 4, cool: 6, up: 1.4, out: 0.7, cold: 2 } as const;
+/** A big foe's chunks smoulder (§13): its small ones cool 4 × as long, its big ones 6 × and hotter, thrown higher and less far; cold, their rims stay lit 2.6 × (they read on the dark deck until they sink). */
+const BIG = { hot: 3.4, small: 4, cool: 6, up: 1.4, out: 0.7, cold: 2.6 } as const;
 
 /** A faceted shard 1 m across at most: a split octahedron (8 faces), a wedge (8), a slab (12), corners pushed about. */
 function shapes(): THREE.BufferGeometry {
