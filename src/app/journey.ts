@@ -11,7 +11,7 @@
 import { CHAPTER_1, isStageId, stageById } from "../content/chapter-1";
 import { COUNTERS, COUNTER_ROWS, GUN_IDS, GUN_KEYS, GUN_SPECS, gunByKey, type GunId } from "../content/guns";
 import { LEARN_RULES, type Stage } from "../content/stage-rules";
-import { kitScore, stageThreat, uncovered } from "../content/threat";
+import { stageThreat, uncovered } from "../content/threat";
 import type { Mode } from "../content/balance";
 import type { KeyAction } from "./input";
 import { Menu, type MenuItem } from "./menu";
@@ -182,11 +182,6 @@ export class Journey {
       .map((row) => ({ label: ROW_LABELS[row], weight: weights[row], counters: counterTag(row), covered: this.picked.length === 0 || !open.has(row) }));
   }
 
-  /** The picked kit's score on the stage (0 … 1). */
-  score(): number {
-    return kitScore(this.picked, stageThreat(this.stage));
-  }
-
   get ready(): boolean {
     return this.picked.length === this.stage.kit.bays;
   }
@@ -195,7 +190,13 @@ export class Journey {
     const at = this.picked.indexOf(gun);
     if (at >= 0) this.picked.splice(at, 1);
     else if (this.picked.length < this.stage.kit.bays) this.picked.push(gun);
-    else return;
+    else {
+      // Every bay taken: say so (a dull tick and the start button lit), instead of nothing.
+      this.host.sound("back");
+      this.cursor = GUN_IDS.length;
+      this.host.draw();
+      return;
+    }
     this.host.sound("select");
     this.host.draw();
   }
@@ -231,6 +232,7 @@ export class Journey {
     } else if (action === "enter") {
       if (this.cursor < n) this.toggle(this.cursor as GunId);
       else if (this.ready) this.begin();
+      else this.host.sound("back");
     } else if (action === "pause") this.escape();
     return true;
   }

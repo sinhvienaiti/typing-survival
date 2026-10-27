@@ -92,7 +92,7 @@ export class Ship {
   private readonly color: THREE.Color;
   readonly pose: ShipPose = { x: 0, vx: 0, target: 0, weight: 0, yaw: 0, aim: 0, back: 0, down: 0, pitch: 0, roll: 0, bob: 0, nose: 0, thrust: 0 };
 
-  constructor(scene: THREE.Scene, readonly pilot: Pilot, readonly reduced = false) {
+  constructor(scene: THREE.Scene, readonly pilot: Pilot, public reduced = false) {
     this.root.position.set(0, RIDE, 0);
     this.root.rotation.order = "YXZ";
     this.root.add(this.fallback, ...this.anchors);

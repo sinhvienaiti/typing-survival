@@ -1,4 +1,4 @@
-// Source: games/space-typing/src/ui/motion-preference.ts (trimmed: no settings row, no matchMedia override; own key)
+// Source: games/space-typing/src/ui/motion-preference.ts (trimmed: no matchMedia override; own key; the settings row is main.ts's)
 import { safeLocalStorage } from "../kit/platform";
 
 /**
@@ -13,7 +13,16 @@ export type MotionPreference = "full" | "system" | "reduced";
 export const MOTION_KEY = "survival.motion";
 
 const stored = safeLocalStorage.getItem(MOTION_KEY);
-const preference: MotionPreference = stored === "system" || stored === "reduced" ? stored : "full";
+let preference: MotionPreference = stored === "system" || stored === "reduced" ? stored : "full";
+
+export const motionPreference = (): MotionPreference => preference;
+
+/** The settings row ("Giảm chuyển động"): stores the choice and the stylesheet follows at once. */
+export function setMotion(next: MotionPreference): void {
+  preference = next;
+  safeLocalStorage.setItem(MOTION_KEY, next);
+  if (typeof document !== "undefined") document.documentElement.dataset.motion = motionReduced() ? "reduced" : "full";
+}
 
 export function motionReduced(): boolean {
   if (preference === "reduced") return true;

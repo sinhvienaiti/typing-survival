@@ -3,7 +3,9 @@
 // tags) → the loadout: keys 1 and 3 pick Xung and Tán (bay 1, bay 2), the
 // threats the pair leaves open get a yellow mark (Trâu: both ✕; every pair
 // leaves a row open, §5.2: Ray + Pháo Sao leaves Bầy sát vạch), → → to the
-// start button, Enter → the fight on stage 1 with those guns on its bays.
+// start button, Enter → the stage's card (the new page waits, its world
+// still, until a key: test pass 27/10), a letter → the fight on stage 1 with
+// those guns on its bays, the letter typed nowhere and the sound running.
 // Then, from a fresh title screen, the armory (↑ to its item, Enter) shows
 // the five guns with the trial's Xung magazine named. Checks: the five cards
 // on both screens, the warnings, the bays' gun names and words (≥ 26 px,
@@ -49,11 +51,21 @@ export default async function (page) {
   // To the start button (after card 5) and in.
   for (let k = 0; k < 5 - (picked.journey.cursor ?? 0); k += 1) await key(page, "ArrowRight");
   await key(page, "Enter");
-  let started = null;
+  let card = null;
   for (let w = 0; w < 80; w += 1) {
     await page.sleep(250);
-    started = await page.eval(sv("return t.ready() ? { mode: t.mode(), state: t.state() } : null;"));
-    if (started !== null && started.mode === "play") break;
+    card = await page.eval(sv("return t.ready() ? { mode: t.mode(), tick: t.state().tick, text: document.querySelector('.sv-overlay.is-on .sv-card')?.innerText ?? '' } : null;"));
+    if (card !== null && card.mode === "intro" && /PHÍM BẤT KỲ/.test(card.text)) break;
+  }
+  await page.sleep(600);
+  const still = await page.eval(sv("return t.state().tick;"));
+  shots.push(await page.shot(out("survival-s1-loadout-card-" + size + ".png")));
+  await page.key("q", { code: "KeyQ", text: "q" });
+  let started = null;
+  for (let w = 0; w < 40; w += 1) {
+    await page.sleep(100);
+    started = await page.eval(sv("return { mode: t.mode(), state: t.state(), sound: t.sounds().ready };"));
+    if (started.mode === "play") break;
   }
   await page.sleep(1200);
   const hud = await page.eval(`(() => [...document.querySelectorAll('.sv-slot')].map((slot) => {
@@ -88,7 +100,9 @@ export default async function (page) {
     fiveCards: log[3][1].screen === "journey-loadout" && cards === 5,
     keysPick: JSON.stringify(picked.journey.picked) === "[0,2]" && picked.journey.ready === true,
     warnsOpenRows: warnings.length > 0 && warnings.some((text) => /Trâu/.test(text)),
+    stageCardWaits: card?.mode === "intro" && /ẢI 1/.test(card.text) && still === 0,
     fightOnStage: started?.mode === "play" && started.state.stage === "c1-s1" && JSON.stringify(started.state.guns) === '["xung","tan"]',
+    cardKeyTypesNothing: started?.state.stats.keysOk + started?.state.stats.keysBad === 0 && started?.sound === true,
     baysShowGuns: hud.length === 2 && hud[0].gun === "XUNG" && hud[1].gun === "TÁN",
     wordsAtLeast26px: hud.every((bay) => bay.px >= 26),
     noBayOverflow: hud.every((bay) => bay.overflow.length === 0),
@@ -100,5 +114,5 @@ export default async function (page) {
   };
   const pass = Object.values(checks).every(Boolean);
   if (!pass) process.exitCode = 1;
-  return { pass, checks, log, briefing, warnings, hud, learnWidth, ui, armory, shots };
+  return { pass, checks, log, briefing, warnings, card, still, hud, learnWidth, ui, armory, shots };
 }

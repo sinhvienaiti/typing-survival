@@ -245,6 +245,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-start { margin: calc(8px * var(--ui)) auto 0; width: max-content; padding: calc(8px * var(--ui)) calc(26px * var(--ui)); font: 700 calc(17px * var(--ui)) var(--font-title); letter-spacing: 0.12em; color: var(--text); background-color: var(--panel-raised); border: 1px solid var(--line); border-left: calc(4px * var(--ui)) solid var(--steel-600); cursor: pointer; }
 .sv-start.is-on { border-left-color: var(--hot); box-shadow: 0 0 0 1px var(--hot-glow), 0 0 18px var(--hot-glow); }
 .sv-start.is-off { opacity: 0.55; cursor: default; }
+.sv-start.sv-go { animation: sv-blink 0.9s steps(2, jump-none) infinite; }
+[data-motion="reduced"] .sv-start.sv-go { animation: none; }
+.sv-more { margin: calc(4px * var(--ui)) 0 0 !important; }
 .sv-star-row { list-style: none; display: flex; justify-content: center; gap: calc(14px * var(--ui)); margin: calc(4px * var(--ui)) 0 calc(6px * var(--ui)); padding: 0; font: 600 calc(13px * var(--ui)) var(--font-battle); color: var(--muted); }
 .sv-star-row b { display: block; font: 700 calc(30px * var(--ui)) var(--font-title); color: var(--steel-600); }
 .sv-star-row li.is-on { color: var(--soft); }
@@ -261,9 +264,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
 .sv-stats div { padding: 10px 6px; background: var(--screen); border: 1px solid var(--bevel-lo); box-shadow: inset 0 1px 6px var(--shadow); }
 .sv-stats b { display: block; font: 700 calc(26px * var(--ui)) var(--font-title); color: var(--led); text-shadow: 0 0 10px var(--led-glow); }
-.sv-stats small { font: 600 12px var(--font-battle); color: var(--soft); }
-.sv-words { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; text-align: left; max-height: 30vh; overflow: auto; }
-.sv-words li { font: 500 14px var(--font-battle); color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sv-stats small { font: 600 calc(12px * var(--ui)) var(--font-battle); color: var(--soft); }
+.sv-words { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: calc(4px * var(--ui)) calc(18px * var(--ui)); text-align: left; }
+.sv-words li { font: 500 calc(14px * var(--ui)) var(--font-battle); color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sv-words b { color: var(--text); margin-right: 6px; }
 
 /* Reduced motion (the game's motion setting, src/app/motion.ts): no scaling bumps or blinking; the banner only fades. */

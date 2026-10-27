@@ -20,7 +20,11 @@ export type ScreenView =
   | { kind: "armory"; menu: Menu; guns: readonly GunCard[]; learning: readonly string[] }
   | { kind: "profile"; menu: Menu; stats: readonly Stat[]; advice: string; lines: readonly string[] }
   | { kind: "pause"; menu: Menu }
+  | { kind: "intro"; title: string; lines: readonly string[]; ready: boolean }
   | { kind: "end"; menu: Menu; mode: string; won: boolean; stats: readonly Stat[]; words: readonly Learned[]; advice: string; note: string; stage?: string; stars?: string };
+
+/** Words listed on the end screen (two columns of five). */
+const END_WORDS = 10;
 
 export const escapeHtml = (text: string): string => text.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]!);
 
@@ -109,15 +113,27 @@ export function renderScreen(view: ScreenView): string {
         hints("<kbd>Esc</kbd> chơi tiếp · <kbd>↑</kbd><kbd>↓</kbd> chọn · <kbd>Enter</kbd> vào") +
         "</div>"
       );
+    case "intro":
+      // The stage's card before its fight (a page from the journey or a replay): the first key goes in and opens the sound.
+      return (
+        '<div class="sv-card sv-panel sv-sheet sv-intro">' +
+        "<h1>" + escapeHtml(view.title) + '</h1><div class="sv-hazard" aria-hidden="true"></div>' +
+        view.lines.map((line) => "<p>" + escapeHtml(line) + "</p>").join("") +
+        '<div class="sv-start' + (view.ready ? " is-on sv-go" : " is-off") + '">' + (view.ready ? "NHẤN PHÍM BẤT KỲ ĐỂ VÀO TRẬN" : "ĐANG NẠP…") + "</div>" +
+        hints("Trong trận: <kbd>Esc</kbd> tạm dừng") +
+        "</div>"
+      );
     case "end":
       return (
         '<div class="sv-card sv-panel sv-sheet sv-end ' + (view.won ? "is-won" : "is-lost") + '">' +
         "<h1>" + (view.stage ? (view.won ? "VƯỢT ẢI!" : "ẢI THẤT THỦ") : view.won ? "TRỤ VỮNG!" : "TUYẾN ĐÃ VỠ") + '</h1><div class="sv-end-mode">' + escapeHtml(((view.stage ? view.stage + " · " : "") + view.mode).toUpperCase()) + '</div><div class="sv-hazard" aria-hidden="true"></div>' +
         (view.stars ?? "") +
         '<div class="sv-stats">' + view.stats.map((stat) => "<div><b>" + escapeHtml(stat.value) + "</b><small>" + escapeHtml(stat.label) + "</small></div>").join("") + "</div>" +
-        '<p class="sv-advice">' + escapeHtml(view.advice) + "</p>" +
+        (view.advice ? '<p class="sv-advice">' + escapeHtml(view.advice) + "</p>" : "") +
         (view.note ? '<p class="sv-note">' + escapeHtml(view.note) + "</p>" : "") +
-        '<ul class="sv-words">' + view.words.map((word) => "<li><b>" + escapeHtml(word.en) + "</b>" + escapeHtml(word.vi) + "</li>").join("") + "</ul>" +
+        // The last words typed, as many as the card holds without scrolling (the keys cannot scroll it), and how many more.
+        '<ul class="sv-words">' + view.words.slice(-END_WORDS).map((word) => "<li><b>" + escapeHtml(word.en) + "</b>" + escapeHtml(word.vi) + "</li>").join("") + "</ul>" +
+        (view.words.length > END_WORDS ? '<p class="sv-note sv-more">' + END_WORDS + " từ gần nhất · và " + (view.words.length - END_WORDS) + " từ khác đã vào sổ học</p>" : "") +
         menu(view.menu, " sv-row") +
         hints("<kbd>↑</kbd><kbd>↓</kbd> chọn · <kbd>Enter</kbd> vào · <kbd>Esc</kbd> màn chính") +
         "</div>"

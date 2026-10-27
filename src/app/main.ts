@@ -1,5 +1,5 @@
 // First: the motion setting decides reduced motion before anything reads it.
-import { motionReduced } from "./motion";
+import { motionPreference, motionReduced, setMotion, type MotionPreference } from "./motion";
 import "@fontsource/chakra-petch/500.css";
 import "@fontsource/chakra-petch/600.css";
 import "@fontsource/chakra-petch/700.css";
@@ -31,8 +31,8 @@ import { foesOnScreen, shipProbe } from "../view/probes";
 import { TypeFeel } from "../view/typing-feel";
 import { warmPrograms } from "../view/warm";
 import { FrameCosts, bays, eventCounts, installDevHandle, numberBoxes, runState, snapshot } from "./dev";
-import { Journey, NEXT_KEY, recordStage, starsOf, takeChoice, type RunChoice } from "./journey";
-import { countedText, profileView, runStats, runWords } from "./results";
+import { Journey, NEXT_KEY, objectiveText, recordStage, starsOf, takeChoice, type RunChoice } from "./journey";
+import { adviceText, countedText, profileView, runStats, runWords } from "./results";
 import { ImeNotice, installAutoPause, installKeys, type KeyAction } from "./input";
 import { reportWord } from "./learning";
 import { blendSkill, type SkillUpdate } from "../kit/balance";
@@ -60,10 +60,14 @@ const QUALITY_KEY = "survival.quality";
 const PILOT_KEY = "survival.pilot";
 const SETTINGS_KEY = "survival.settings";
 const SPEAK_GAP_MS = 3000;
+/** The run's end shows on the field first (a banner over the stilled fight), then its card. */
+const END_BEAT_MS = 900;
 const TIERS = Object.keys(FOE_CAP) as Tier[];
 const PILOTS = ["vanguard", "draconis"] as const satisfies readonly Pilot[];
 const TIER_NAMES: Record<Tier, string> = { low: "Thấp", medium: "Vừa", high: "Cao", ultra: "Cực cao" };
 const PILOT_NAMES: Record<Pilot, string> = { vanguard: "Vanguard", draconis: "Draconis" };
+const MOTIONS = ["full", "system", "reduced"] as const satisfies readonly MotionPreference[];
+const MOTION_NAMES: Record<MotionPreference, string> = { full: "Tắt", system: "Theo máy", reduced: "Bật" };
 
 function byId<T extends HTMLElement = HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -134,9 +138,10 @@ let loaded = false;
 void loading.then(() => (loaded = true));
 const audio = new ThemeAudio({ sfx: settings.sfxVolume, music: settings.musicVolume });
 
-type Mode = "start" | "play" | "paused" | "end";
+/** "intro": the stage card of a page that came from the journey or a replay; the fight waits for a key (it opens the audio). */
+type Mode = "start" | "intro" | "play" | "paused" | "end";
 /** What the overlay shows: a menu screen, or nothing in a running fight. */
-type Screen = "title" | "settings" | "armory" | "profile" | "pause" | "end" | "none";
+type Screen = "title" | "settings" | "armory" | "profile" | "pause" | "end" | "intro" | "none";
 let mode: Mode = "start";
 let screen: Screen = "none";
 /** Where settings, the armory and the typing profile go back to. */
@@ -144,6 +149,8 @@ let back: Screen = "title";
 let menu = new Menu([]);
 /** A run has begun: the title then offers "Chơi tiếp", and the ship and quality wait for the next page. */
 let started = false;
+/** Models in, programs warmed, a frame drawn: the world steps only from then (it used to run ~4 s while a page loaded). */
+let live = false;
 /** The ship and quality the settings screen picked (they take a new page). */
 const chosen = { pilot, tier };
 const imeNotice = new ImeNotice();
@@ -151,6 +158,8 @@ const spoken = new Set<string>();
 let lastSpeak = -1e9;
 let clock = 0;
 let lastPeak = 0;
+/** When the end card opens (−1: no run ending). */
+let endAt = -1;
 
 const combat = new Combat(stage, crowd, ship, pilot, tier, audio, {
   stop: (ms) => session.stop(ms),
@@ -176,7 +185,9 @@ const combat = new Combat(stage, crowd, ship, pilot, tier, audio, {
       recordStage(safeLocalStorage, world.header.mode, level.id, stars);
       if (stars.some(Boolean)) audio.gun("star.get", 0, clock);
     }
-    setMode("end");
+    const won = world.phase === "won";
+    hud.showBanner(level.id === "s0" ? (won ? "TRỤ VỮNG!" : "TUYẾN ĐÃ VỠ") : won ? "VƯỢT ẢI!" : "ẢI THẤT THỦ", clock);
+    endAt = clock + END_BEAT_MS;
   },
 });
 // Every program of the fight compiled once the horde, the ship and the bolts are in (warm.ts).
@@ -216,19 +227,20 @@ function items(which: Screen): MenuItem[] {
     case "title":
       return [
         { id: "journey", label: "Hành trình", note: "Chương 1 · ải 1–" + CHAPTER_1.length + " · chọn ải, nạp súng", enabled: true },
-        { id: "start", label: started ? "Trận thử lại" : "Trận thử", note: started ? "Bỏ trận đang dở, vào trận thử mới" : "Xung và Tia · giữ hành lang " + STAGE_S0.seconds / 60 + " phút", enabled: true },
+        { id: "start", label: started ? "Trận thử lại" : "Trận thử", note: started ? "Bỏ " + (level.id === "s0" ? "trận" : "Ải " + level.index) + " đang dở, vào trận thử mới" : "Xung và Tia · giữ hành lang " + STAGE_S0.seconds / 60 + " phút", enabled: true },
         { id: "continue", label: "Chơi tiếp", note: started ? "Về trận đang tạm dừng" : "Chưa có trận đang dở", enabled: started },
         { id: "mode", label: "Chế độ", value: MODE_SPECS[settings.mode].label, note: nextRun() ?? MODE_SPECS[settings.mode].note, enabled: true },
         { id: "profile", label: "Hồ sơ gõ", note: "Tốc độ, độ chính xác, lời khuyên", enabled: true },
         { id: "settings", label: "Cài đặt", note: "Âm thanh, rung, nhịp, tàu, chất lượng hình", enabled: true },
-        { id: "armory", label: "Kho súng · Học từ", note: "5 súng, khắc chế, học từ", enabled: true },
+        { id: "armory", label: "Kho súng · Học từ", note: "5 súng: băng đạn, tầm; cách học từ", enabled: true },
       ];
     case "settings": {
-      const later = started ? "Đổi ở màn chính, trước khi vào trận" : undefined;
+      const later = started ? "Đổi được khi chưa có trận dở (bỏ trận để đổi)" : undefined;
       return [
         { id: "sfx", label: "Âm hiệu ứng", value: percent(settings.sfxVolume), level: settings.sfxVolume, enabled: true },
         { id: "music", label: "Nhạc", value: percent(settings.musicVolume), level: settings.musicVolume, enabled: true },
         { id: "shake", label: "Rung màn hình", value: onOff(settings.screenShake), note: shakeAllowed ? undefined : "Đang tắt bởi ?shake=0", enabled: true },
+        { id: "motion", label: "Giảm chuyển động", value: MOTION_NAMES[motionPreference()], note: "Tàu không trôi, không lao; chữ không nảy", enabled: true },
         { id: "speak", label: "Đọc từ tiếng Anh", value: onOff(settings.pronunciationEnabled), enabled: true },
         { id: "adapt", label: "Nhịp tự điều theo cách bạn gõ", value: onOff(settings.paceAdapt), note: nextRun() ?? (settings.paceAdapt ? "Bầy dày thưa theo hồ sơ gõ của bạn" : "Nhịp chuẩn cố định, không điều trong trận"), enabled: true },
         { id: "pilot", label: "Tàu", value: PILOT_NAMES[chosen.pilot], note: later, enabled: !started },
@@ -247,12 +259,15 @@ function items(which: Screen): MenuItem[] {
       ];
     case "end": {
       const next = world.phase === "won" ? CHAPTER_1[level.index] : undefined;
-      return [
+      const list: MenuItem[] = [
         ...(next !== undefined ? [{ id: "next", label: "Ải " + next.index, note: next.name, enabled: true }] : []),
-        { id: "replay", label: level.id === "s0" ? "Chơi lại" : "Chơi lại ải", note: "Enter", enabled: true },
+        { id: "replay", label: level.id === "s0" ? "Chơi lại" : "Chơi lại ải", enabled: true },
         ...(level.id === "s0" ? [] : [{ id: "stages", label: "Chọn ải", note: "Hành trình", enabled: true }]),
         { id: "title", label: "Màn chính", note: "Esc", enabled: true },
       ];
+      // Enter takes the first item (the one selected): the key is named there.
+      list[0] = { ...list[0]!, note: (list[0]!.note ? list[0]!.note + " · " : "") + "Enter" };
+      return list;
     }
     default:
       return [];
@@ -284,6 +299,13 @@ function view(which: Screen): ScreenView | null {
       };
     case "pause":
       return { kind: "pause", menu };
+    case "intro":
+      return {
+        kind: "intro",
+        title: level.id === "s0" ? "TRẬN THỬ" : "ẢI " + level.index + " · " + level.name.toUpperCase(),
+        lines: [level.id === "s0" ? "Giữ hành lang " + STAGE_S0.seconds / 60 + " phút" : objectiveText(level), world.header.kit.guns.map((gun) => GUN_SPECS[gun]!.name).join(" · ")],
+        ready: live,
+      };
     case "end": {
       const report = skillReport(profile, settings.mode);
       return {
@@ -292,7 +314,7 @@ function view(which: Screen): ScreenView | null {
         stage: level.id === "s0" ? "" : "Ải " + level.index + " · " + level.name,
         stars: stars === null ? "" : starRow(stars, LEARN_RULES[level.learn].starAccuracy),
         mode: MODE_SPECS[world.header.mode].label,
-        advice: report.advice,
+        advice: adviceText(report, settled, world.phase === "won"),
         note: [countedText(settled, report), report.suggestionText].filter(Boolean).join(" "),
         won: world.phase === "won",
         stats: runStats(world),
@@ -329,6 +351,7 @@ function setMode(next: Mode): void {
     show("none");
   } else if (next === "paused") show("pause");
   else if (next === "end") show("end");
+  else if (next === "intro") show("intro");
   else show("title");
 }
 
@@ -341,8 +364,13 @@ function reload(autostart: boolean, run?: RunChoice): void {
   next.delete("guns");
   if (params.has("mode")) next.set("mode", settings.mode);
   if (params.has("adapt")) next.set("adapt", settings.paceAdapt ? "1" : "0");
-  if (autostart) next.set("autostart", "1");
-  else next.delete("autostart");
+  if (autostart) {
+    next.set("autostart", "1");
+    next.set("card", "1");
+  } else {
+    next.delete("autostart");
+    next.delete("card");
+  }
   if (chosen.pilot !== pilot || params.has("pilot")) next.set("pilot", chosen.pilot);
   if (chosen.tier !== tier || params.has("q")) next.set("q", chosen.tier);
   window.location.search = next.toString();
@@ -361,6 +389,10 @@ function adjust(id: string, delta: number): void {
   else if (id === "shake") settings.screenShake = !settings.screenShake;
   else if (id === "speak") settings.pronunciationEnabled = speech.enabled = !settings.pronunciationEnabled;
   else if (id === "adapt") settings.paceAdapt = !settings.paceAdapt;
+  else if (id === "motion") {
+    setMotion(cycle(MOTIONS, motionPreference(), delta));
+    combat.trauma.reduced = hud.reduced = ship.reduced = motionReduced();
+  }
   else if (id === "mode") settings.mode = cycle(MODES, settings.mode, delta);
   else if (id === "pilot") chosen.pilot = cycle(PILOTS, chosen.pilot, delta);
   else if (id === "quality") chosen.tier = cycle(TIERS, chosen.tier, delta);
@@ -433,6 +465,8 @@ function take(): void {
 }
 
 function act(action: KeyAction): void {
+  // The stage card takes its own keys (below); Esc there does nothing.
+  if (mode === "intro") return;
   if (action === "repeat") {
     if (mode === "play" && world.typing.lock >= 0) speakEnglish(wordOf(world.typing.word[world.typing.lock]!).en, speech);
     return;
@@ -466,9 +500,19 @@ function act(action: KeyAction): void {
   }
 }
 
-// A pointer can hover and click the menu items too.
+// A pointer can hover and click the menu items too (the journey's items, cards and start button as well).
 hud.overlay.addEventListener("pointermove", (event) => {
-  if (journey.active) return;
+  if (journey.active) {
+    const hit = (event.target as HTMLElement | null)?.closest<HTMLElement>("[data-index], [data-card], [data-start]");
+    const at = Number(hit?.dataset.index ?? -1);
+    const cursor = hit?.dataset.card !== undefined ? Number(hit.dataset.card) : hit?.dataset.start !== undefined ? GUN_KEYS.length : -1;
+    if (at >= 0 && at !== journey.menu.index && journey.menu.items[at]?.enabled) journey.menu.index = at;
+    else if (cursor >= 0 && cursor !== journey.cursor && journey.screen === "loadout") journey.cursor = cursor;
+    else return;
+    audio.ui("move");
+    drawScreen();
+    return;
+  }
   const target = (event.target as HTMLElement | null)?.closest<HTMLElement>("[data-index]");
   const index = Number(target?.dataset.index ?? -1);
   if (index >= 0 && index !== menu.index && menu.items[index]?.enabled) {
@@ -478,6 +522,10 @@ hud.overlay.addEventListener("pointermove", (event) => {
   }
 });
 hud.overlay.addEventListener("click", (event) => {
+  if (mode === "intro") {
+    enterFight();
+    return;
+  }
   const target = (event.target as HTMLElement | null)?.closest<HTMLElement>("[data-index], [data-card], [data-start]");
   const index = Number(target?.dataset.index ?? -1);
   if (journey.active) {
@@ -495,6 +543,21 @@ hud.overlay.addEventListener("click", (event) => {
 });
 
 for (const type of ["pointerdown", "keydown"]) window.addEventListener(type, () => audio.resume());
+// The stage card: any key but Esc goes in; that key opened the audio above and types nothing.
+window.addEventListener("keydown", (event) => {
+  if (mode !== "intro" || event.repeat || event.code === "Escape" || !(event.isTrusted || params.get("untrusted") === "1")) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  enterFight();
+});
+
+/** From the stage card into the fight (once the page is ready): its name as a banner, a sound. */
+function enterFight(): void {
+  if (mode !== "intro" || !live) return;
+  setMode("play");
+  hud.showBanner(level.id === "s0" ? "GIỮ TUYẾN!" : "ẢI " + level.index + " · " + level.name.toUpperCase(), clock);
+  audio.ui("select");
+}
 installKeys(window, {
   // Only a running fight takes letters: keys while paused or between runs type nothing.
   send: (command) => {
@@ -535,8 +598,16 @@ const aim = new Float64Array(2);
 
 function update(now: number): void {
   const start = performance.now();
-  session.paused = mode !== "play";
+  if (!live && painted && loaded && combat.ready) {
+    live = true;
+    if (mode === "intro") drawScreen();
+  }
+  session.paused = mode !== "play" || !live;
   session.frame(now);
+  if (endAt >= 0 && now >= endAt) {
+    endAt = -1;
+    setMode("end");
+  }
   combat.read(world, now);
   typing.read(world, now);
   hud.update(world, combat.killsWithin(now, 3000), now);
@@ -606,7 +677,7 @@ runFrameLoop({
   },
 });
 
-setMode(params.get("autostart") === "1" ? "play" : "start");
+setMode(params.get("autostart") === "1" ? (params.get("card") === "1" ? "intro" : "play") : "start");
 stage.setTitle(mode === "start", true);
 document.title = "Tuyến Cuối";
 
@@ -620,7 +691,7 @@ function onScreen(): number {
 installDevHandle({
   ready: () => painted && loaded && combat.ready,
   models: () => ({ mine: crowd.loaded[0], scout: crowd.loaded[1], brute: crowd.loaded[2], shield: crowd.loaded[3], splitter: crowd.loaded[4], ship: ship.loaded }),
-  start: () => mode === "start" && setMode("play"),
+  start: () => (mode === "start" || mode === "intro") && setMode("play"),
   mode: () => mode,
   flags: () => ({ seed: world.seed, tier, pilot, deck: vocab.hash, vocabulary: vocab.source, ...world.header }),
   /** The run header (mode, pace k, E, director) and the in-run balance: the pace log, the FlowMeter's window and stage so far. */

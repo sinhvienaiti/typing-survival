@@ -14,7 +14,7 @@ import { FOES, KIND } from "../content/foes";
 import { LEARN_RULES, RIFT, type Stage } from "../content/stage-rules";
 import { escapeHtml, hints, menu } from "./screens";
 
-const NEW: Readonly<Record<string, string>> = { brute: "Trâu", leader: "Đầu Đàn", shield: "Khiên", hunt: "Săn Đầu Đàn", rift: "Vết nứt", missing: "Thiếu chữ" };
+const NEW: Readonly<Record<string, string>> = { brute: "quái Trâu", leader: "quái Đầu Đàn", shield: "quái Khiên", hunt: "luật Săn", rift: "hiểm họa Vết nứt", missing: "luật Thiếu chữ" };
 
 /** The foes a stage sends, with their counter tags. */
 function foes(stage: Stage): { name: string; note: string; tag: string; fresh: boolean }[] {
@@ -40,7 +40,7 @@ function hazardDetail(stage: Stage): string {
 
 function ruleDetail(stage: Stage): string {
   if (stage.learn === "missing") return "mỗi từ ẩn 1 chữ (từ 7 chữ trở lên: 2), không bao giờ là chữ đầu. IPA và nghĩa vẫn hiện. Gõ sai ô ẩn thì chữ đúng hiện ra.";
-  return "từ và nghĩa trên bến, IPA và nghĩa trong khung học.";
+  return "từ và nghĩa trên bến; khi gõ, từ hiện to trên dòng gõ trên mũi tàu, bến đang gõ hiện IPA và nghĩa; gõ xong hiện \"từ · nghĩa ✓\".";
 }
 
 export function renderJourney(journey: Journey): string {
@@ -52,7 +52,7 @@ export function renderJourney(journey: Journey): string {
         "<h1>HÀNH TRÌNH</h1>" +
         '<div class="sv-title-en">CHƯƠNG 1 · HÀNH LANG VC-7</div><div class="sv-hazard" aria-hidden="true"></div>' +
         menu(journey.menu, " sv-stage-list") +
-        '<p class="sv-note">Mỗi ải dùng bộ đồ của nó: số bến, cấp Rèn, giáp. Ải sau mở khi qua ải trước.</p>' +
+        '<p class="sv-note">Mỗi ải có trang bị riêng: số bến, cấp Rèn, giáp. Ải sau mở khi qua ải trước.</p>' +
         hints("<kbd>↑</kbd><kbd>↓</kbd> chọn · <kbd>Enter</kbd> xem ải · <kbd>Esc</kbd> quay lại") +
         "</div>"
       );
@@ -65,7 +65,7 @@ export function renderJourney(journey: Journey): string {
         "<dt>Mục tiêu</dt><dd><b>" + escapeHtml(objectiveText(stage)) + "</b> · " + escapeHtml(objectiveDetail(stage)) + "</dd>" +
         "<dt>Hiểm họa</dt><dd>" + escapeHtml(hazardDetail(stage)) + "</dd>" +
         "<dt>Luật học</dt><dd><b>" + escapeHtml(LEARN_RULES[stage.learn].label) + "</b> · " + escapeHtml(ruleDetail(stage)) + "</dd>" +
-        "<dt>Bộ đồ</dt><dd>" + stage.kit.bays + " bến · Rèn " + stage.kit.levels.join("/") + " · giáp " + stage.kit.armour + "</dd>" +
+        "<dt>Trang bị</dt><dd>" + stage.kit.bays + " bến · Rèn " + stage.kit.levels.join("/") + " · giáp " + stage.kit.armour + "</dd>" +
         "</dl>" +
         '<ul class="sv-foes">' +
         foes(stage).map((foe) => "<li" + (foe.fresh ? ' class="is-new"' : "") + "><b>" + escapeHtml(foe.name) + "</b>" + (foe.fresh ? "<em>MỚI</em>" : "") + "<small>" + escapeHtml(foe.note) + "</small><span>" + escapeHtml(foe.tag) + "</span></li>").join("") +
@@ -98,13 +98,14 @@ export function renderJourney(journey: Journey): string {
           )
           .join("") +
         "</div>" +
-        '<div class="sv-threats"><b>Ải này gặp gì</b>' +
-        threats.map((threat) => '<span class="' + (threat.covered ? "" : "is-open") + '" title="' + escapeHtml(threat.counters) + '">' + (threat.covered ? "" : "⚠ ") + escapeHtml(threat.label) + " · " + Math.round(threat.weight * 100) + "%</span>").join("") +
+        '<div class="sv-threats"><b>Ải này gặp gì · tỉ trọng</b>' +
+        threats.map((threat) => '<span class="' + (threat.covered ? "" : "is-open") + '" title="' + escapeHtml(threat.counters) + '">' + (threat.covered ? "" : "⚠ ") + escapeHtml(threat.label) + " " + Math.round(threat.weight * 100) + " %</span>").join("") +
         "</div>" +
         '<div class="sv-start' + (journey.cursor === cards.length ? " is-on" : "") + (journey.ready ? "" : " is-off") + '" data-start="1">' +
-        (journey.ready ? "BẮT ĐẦU · ĐỘ HỢP " + Math.round(journey.score() * 100) + "%" : "CHỌN THÊM " + (bays - journey.picked.length) + " SÚNG") +
+        // No "fit %" here: the threat score ranked pairs against their measured wins (G3c) the wrong way on stages 2 and 4 (test pass 27/10); the open rows carry ⚠.
+        (journey.ready ? "BẮT ĐẦU" + (threats.some((threat) => !threat.covered) ? " · CÒN ⚠" : "") : "CHỌN THÊM " + (bays - journey.picked.length) + " SÚNG") +
         "</div>" +
-        hints("<kbd>1</kbd>–<kbd>5</kbd> chọn hoặc bỏ · <kbd>←</kbd><kbd>→</kbd> di chuyển · <kbd>Enter</kbd> chọn · <kbd>Esc</kbd> bảng tin") +
+        hints("<kbd>1</kbd>–<kbd>5</kbd> chọn hoặc bỏ · <kbd>←</kbd><kbd>→</kbd> di chuyển · <kbd>Enter</kbd> chọn · <kbd>Esc</kbd> quay lại ải") +
         "</div>"
       );
     }
