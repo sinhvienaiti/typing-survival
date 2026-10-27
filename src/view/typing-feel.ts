@@ -61,6 +61,8 @@ export class TypeFeel {
   private flowAt = -1e9;
   private flowGun = 0;
   private lastTime = -1;
+  /** A beam (Tia) lights the deck: the deck parts of a key's mark burn brighter (§13). */
+  private lit = false;
   /** The core's intensity drawn last frame (the scenarios' probe). */
   private shown = 0;
   private readonly core = new THREE.Vector3();
@@ -100,6 +102,7 @@ export class TypeFeel {
   /** This frame's typing events: the line, the bays, the sounds; shards wait for land(). Call before hud.update(). */
   read(w: World, now: number): void {
     const R = w.events;
+    this.lit = w.guns.beamOn.includes(1);
     if (this.cursor < R.written - R.size) this.cursor = R.written - R.size;
     for (; this.cursor < R.written; this.cursor += 1) {
       const i = this.cursor % R.size;
@@ -111,12 +114,10 @@ export class TypeFeel {
         const typed = R.value[i]!;
         this.hud.strip.typed(typed - 1, now);
         this.audio.key(typed, R.ref[i]!, tier >= 2);
-        if (this.pending < PENDING) {
-          this.pIndex[this.pending] = typed - 1;
-          this.pGun[this.pending] = w.guns.gun[slot]!;
-          this.pAside[this.pending] = 0;
-          this.pSlot[this.pending] = slot;
-          this.pending += 1;
+        const q = this.pending;
+        if (q < PENDING) {
+          this.pIndex[q] = typed - 1; this.pGun[q] = w.guns.gun[slot]!; this.pAside[q] = 0; this.pSlot[q] = slot;
+          this.pending = q + 1;
         }
       } else if (kind === EV.keyBad) {
         const due = R.value[i]!;
@@ -171,20 +172,19 @@ export class TypeFeel {
       const m = this.marks++ % MARKS;
       const aside = this.pAside[p] === 1;
       const c = GUN_COLOR[this.pGun[p]!] ?? BLOW.volt;
-      this.mx[m] = tip.x;
-      this.my[m] = tip.y;
-      this.mz[m] = tip.z;
-      this.mt[m] = t;
+      this.mx[m] = tip.x; this.my[m] = tip.y; this.mz[m] = tip.z; this.mt[m] = t;
       this.mg[m] = this.pGun[p]! + (aside ? 8 : 0);
       this.ms[m] = Math.random() * 100;
-      this.glows.burst(CELL.star4, tip.x, tip.y - 0.1, tip.z, K.star * 0.5, K.star, 4 * F, c, K.power, 0, 0, 0, 0, NaN, F);
+      // Its star just under the plate (behind it, it lit the plate's backdrop; the DOM spark marks the letter itself).
+      this.glows.burst(CELL.star4, tip.x, tip.y - 0.4, tip.z, K.star * 0.5, K.star, 4 * F, c, K.power, 0, 0, 0, 0, NaN, F);
       if (!reduced) for (let k = 0; k < 3; k += 1) this.sparks.spawn(tip, this.v.set((Math.random() - 0.5) * 3, -1 - Math.random() * 2, (Math.random() - 0.5) * 2), c, 0.2, 0.3, { drag: 3, gravity: 6 });
       if (aside) continue;
       this.hitAt = now;
       const wide = (tier >= 1 ? 1.15 : 1) * (reduced ? 0.8 : 1);
       this.glows.burst(CELL.star8, this.glow.x, this.glow.y, this.glow.z, K.core * 0.5, K.core, 4 * F, c, K.power * 0.85, 0, 0, 0, 0, NaN, F);
+      const lit = this.lit ? K.lit : 1;
       this.glows.burst(CELL.soft + FLAT, this.core.x, 0.07, this.core.z, K.pool, K.pool * 1.25, 3 * F, c, 0.35, 0, 0, 0, 0, NaN, F);
-      this.glows.burst(CELL.ring + FLAT, this.core.x, 0.08, this.core.z, K.ring[0] * wide, K.ring[1] * wide, K.ringLife, c, K.ringPower * (reduced ? 0.6 : 1), 0, 0, 0, 0, NaN, F);
+      this.glows.burst(CELL.ring + FLAT, this.core.x, 0.08, this.core.z, K.ring[0] * wide, K.ring[1] * wide, K.ringLife, c, K.ringPower * lit * (reduced ? 0.6 : 1), 0, 0, 0, 0, NaN, F);
       if (tier >= 4) this.glows.burst(CELL.ring + FLAT, this.core.x, 0.085, this.core.z, 1, 2.6, 0.2, TYPING, 0.45);
     }
     this.pending = 0;
@@ -206,27 +206,25 @@ export class TypeFeel {
       // Whole for 2 frames, then gone by the fifth; it ends in the core, or 1.6 m aside and down (a full bay takes nothing).
       const fade = Math.min(1, (1 - age / K.life) / 0.6);
       const aside = this.mg[m]! >= 8 ? (this.ms[m]! % 2 < 1 ? -1.6 : 1.6) : 0;
-      const sx = this.mx[m]!;
-      const sy = this.my[m]!;
-      const sz = this.mz[m]!;
+      const sx = this.mx[m]!, sy = this.my[m]!, sz = this.mz[m]!;
       const end = aside === 0 ? this.glow : this.tip.set(sx + aside, sy - 0.5, sz);
-      // Its two joints off the line jump at f2 and f4, a crackle (under reduced motion they hold still, nearer the line).
+      // Bowed out to the letter's side, off Tia's column (§13); its joints jump at f2 and f4, a crackle (under reduced motion they hold still, nearer the line).
       const seed = this.ms[m]! + (reduced ? 0 : Math.floor(age * 30) * 7);
-      const width = K.width * (this.streak.tier >= 1 ? 1.25 : 1);
-      let ax = sx;
-      let ay = sy;
-      let az = sz;
-      for (let j = 1; j <= 3; j += 1) {
-        const u = j / 3;
-        const bx = sx + (end.x - sx) * u + (j < 3 ? Math.sin(seed * 12.9898 + j * 78.233) * K.jitter * (reduced ? 0.4 : 1) : 0);
+      const width = K.width * (this.streak.tier >= 1 ? 1.25 : 1) * (this.lit ? 1.2 : 1);
+      const side = Math.abs(sx - end.x) > 0.3 ? Math.sign(sx - end.x) : this.ms[m]! % 2 < 1 ? -1 : 1;
+      const c = GUN_COLOR[this.mg[m]! & 7] ?? BLOW.volt;
+      let ax = sx; let ay = sy; let az = sz;
+      for (let j = 1; j <= 4; j += 1) {
+        const u = j / 4;
+        const bx = sx + (end.x - sx) * u + (aside === 0 ? 4 * u * (1 - u) * K.bow * side : 0) + (j < 4 ? Math.sin(seed * 12.9898 + j * 78.233) * K.jitter * (reduced ? 0.4 : 1) : 0);
         const by = sy + (end.y - sy) * u;
         const bz = sz + (end.z - sz) * u;
         // Past the first, each joint is drawn from half a segment back: its faded tail lies on the one before (a whole line).
         const back = j === 1 ? 0 : 0.5;
-        this.strips.add(ax - (bx - ax) * back, ay - (by - ay) * back, az - (bz - az) * back, bx, by, bz, width, GUN_COLOR[this.mg[m]! & 7] ?? BLOW.volt, K.power * fade, 0.9 * fade);
-        ax = bx;
-        ay = by;
-        az = bz;
+        this.strips.add(ax - (bx - ax) * back, ay - (by - ay) * back, az - (bz - az) * back, bx, by, bz, width, c, K.power * fade, 0.9 * fade);
+        // A fork off the middle joint, out and down toward the deck.
+        if (j === 2) this.strips.add(bx, by, bz, bx + side * K.fork, by - 0.35, bz + (end.z - sz) * 0.15, width * 0.6, c, K.power * fade * 0.8, 0.7 * fade);
+        ax = bx; ay = by; az = bz;
       }
     }
     // The core follows the locked word (its bay's colour); let go, it fades in 200 ms (a 0.2 glow stays from streak tier 2).

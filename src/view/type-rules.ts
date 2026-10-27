@@ -15,17 +15,21 @@ export function noteHz(typed: number): number {
 }
 
 /**
- * A right key's mark on the field (§12), whole on its own frame; sizes are a
- * billboard's full width (m): a bolt `width` wide from the plate's edge under
- * the letter into the core, `jitter` m off at its two joints, `life` s; a
- * 4-ray star (`star`) where it leaves, an 8-ray one (`core`) in the core;
- * the deck lit (`pool`) and a ring whose radius (0.4 of its width) runs
- * 1.4 → 3.2 m, past the deck's painted ring at 2.6 m.
+ * A right key's mark (§12, §13), whole on its own frame; sizes are a
+ * billboard's full width (m): a bolt `width` wide, `life` s, from the plate's
+ * edge under the letter into the core in 4 segments, bowed `bow` m to the
+ * letter's side (off Tia's column) with a `fork` m branch, joints `jitter` m
+ * off; a 4-ray star (`star`) where it leaves, an 8-ray one (`core`) in the
+ * core; the deck lit (`pool`), a ring of radius 0.4 × its width, 1.4 → 3.2 m
+ * (past the painted 2.6 m; × `lit` under a beam); `spark` ms on the letter.
  */
-export const KEY_MARK = { life: 5 / 60, width: 0.56, power: 4, jitter: 0.3, star: 2.4, core: 1.6, pool: 3.2, ring: [3.5, 8], ringLife: 0.16, ringPower: 2.2 } as const;
+export const KEY_MARK = { life: 5 / 60, width: 0.64, power: 4, jitter: 0.3, bow: 1.3, fork: 0.9, star: 2.4, core: 1.6, pool: 3.2, ring: [3.5, 8], ringLife: 0.16, ringPower: 2.2, lit: 1.5, spark: 80 } as const;
 
-/** Billboards and strips a key's mark holds `age` s after its key: 3 strips to 5 frames, 2 stars to 4, the pool to 3, the ring to ringLife. */
-export const keyMarkLive = (age: number, f = age * 60 + 1e-6): number => (age < 0 ? 0 : (age < KEY_MARK.life ? 3 : 0) + (f < 4 ? 2 : 0) + (f < 3 ? 1 : 0) + (age < KEY_MARK.ringLife ? 1 : 0));
+/** Billboards and strips a key's mark holds `age` s after its key: 5 strips to 5 frames, 2 stars to 4, the pool to 3, the ring to ringLife. */
+export const keyMarkLive = (age: number, f = age * 60 + 1e-6): number => (age < 0 ? 0 : (age < KEY_MARK.life ? 5 : 0) + (f < 4 ? 2 : 0) + (f < 3 ? 1 : 0) + (age < KEY_MARK.ringLife ? 1 : 0));
+
+/** The word line's spark on a typed letter, `t` ms after its key: whole at f0, gone by f5 (strip.ts, survival.css). */
+export const sparkLevel = (t: number): number => (t < 0 ? 0 : Math.max(0, 1 - t / KEY_MARK.spark));
 
 /** The streak shows from 3 clean words; tiers start at 3, 6, 10, 20; streak.up plays at those. */
 export const STREAK = { show: 3, tiers: [3, 6, 10, 20] } as const;

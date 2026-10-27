@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CleanStreak, KEY_MARK, NOTE_HZ, POP, WORD_HZ, bounce, fullBlink, keyMarkLive, noteHz, popColour, popDrop, popGlow, popScale, streakTier, sweepAlpha, sweepLength, swell } from "../src/view/type-rules";
+import { CleanStreak, KEY_MARK, NOTE_HZ, POP, WORD_HZ, bounce, fullBlink, keyMarkLive, noteHz, sparkLevel, popColour, popDrop, popGlow, popScale, streakTier, sweepAlpha, sweepLength, swell } from "../src/view/type-rules";
 
 /**
  * The typing feel's rules (docs/FEEL_PASS_S1.md §3): the notes a word climbs,
@@ -9,7 +9,11 @@ import { CleanStreak, KEY_MARK, NOTE_HZ, POP, WORD_HZ, bounce, fullBlink, keyMar
  */
 describe("typing feel", () => {
   it("a key's mark is whole on its own frame, its ring out past the painted one, and 10 keys a second hold ≤ 12 billboards and strips (§12, §6)", () => {
-    expect(keyMarkLive(0)).toBe(7);
+    expect(keyMarkLive(0)).toBe(9);
+    // The word line's spark on the letter: whole at f0, still lit at f3, gone by f5 (§13).
+    expect(sparkLevel(0)).toBe(1);
+    expect(sparkLevel(3 * (1000 / 60))).toBeGreaterThan(0.3);
+    expect(sparkLevel(5 * (1000 / 60))).toBe(0);
     expect(keyMarkLive(-0.01)).toBe(0);
     expect(keyMarkLive(KEY_MARK.ringLife)).toBe(0);
     // The ring's radius is 0.4 of its width: from beside the hull to past the deck's painted ring (2.6 m).

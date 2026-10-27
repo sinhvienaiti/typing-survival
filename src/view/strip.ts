@@ -7,7 +7,8 @@
  * wide: the word and its meaning always together, never split onto a bay).
  * Every letter typed pops in place (1.25× → 1×, the gun's ink with a halo
  * from its first frame, a sweep line under it that stays as the typed
- * part's underline), the plate's edge flashes the gun's colour for 3 frames,
+ * part's underline; a spark behind the word frames it, its rays out past the
+ * plate, for 5 frames), the plate's edge flashes the gun's colour for 3 frames,
  * and the letter stands still after 100 ms; a wrong key underlines the
  * letter due in red; a stray key ghosts in red at the line's centre. Beside
  * it the clean streak's LED ("SẠCH ×N", shown with the plate); a rift's
@@ -21,7 +22,7 @@ import { GUN_SPECS } from "../content/guns";
 import { NEAR } from "../content/rules";
 import type { World } from "../sim/world";
 import type { Stage } from "./scene";
-import { bounce, popColour, popDrop, popGlow, popScale, sweepAlpha, sweepLength, swell, STREAK, POP } from "./type-rules";
+import { bounce, popColour, popDrop, popGlow, popScale, sparkLevel, sweepAlpha, sweepLength, swell, STREAK, POP } from "./type-rules";
 
 const LETTERS = 16;
 const MARKS = 6;
@@ -29,6 +30,8 @@ const MARKS = 6;
 const PLATE = { height: 56, width: 420, pad: 16 } as const;
 /** "word · meaning ✓" for 600 ms, fading in 120; before it, the finished word for f0–f2 (under 45 ms: the frame clock's sums sit a hair under 50 at f3). */
 const DONE = { show: 600, fade: 120, word: 45 } as const;
+/** A popping letter's properties (ink, halo, sweep, its alpha). */
+const POP_VARS = ["--k", "--g", "--sw", "--swo"] as const;
 
 function el<T extends HTMLElement>(tag: string, className: string, parent: HTMLElement): T {
   const node = document.createElement(tag) as T;
@@ -41,6 +44,9 @@ type Done = { word: string; text: string; full: boolean; gun: string; start: num
 
 export class WordStrip {
   private readonly plate: HTMLElement;
+  private readonly spark: HTMLElement;
+  /** The last right key's letter and its spark's turn (deg: a burst, not a cross-hair). */
+  private readonly lastKey = { at: 0, turn: 0 };
   private readonly word: HTMLElement;
   private readonly done: HTMLElement;
   private readonly sweep: HTMLElement;
@@ -78,6 +84,8 @@ export class WordStrip {
 
   constructor(root: HTMLElement) {
     this.plate = el("div", "sv-strip", root);
+    // First in the plate: drawn behind the word, never over a letter.
+    this.spark = el("i", "sv-strip-spark", this.plate);
     this.word = el("div", "sv-strip-word", this.plate);
     this.done = el("div", "sv-strip-done", this.plate);
     this.sweep = el("i", "sv-strip-sweep", this.plate);
@@ -125,6 +133,8 @@ export class WordStrip {
     if (index === 0) this.lockAt = now;
     if (index < LETTERS) this.popAt[index] = now;
     this.keyAt = now;
+    this.lastKey.at = index;
+    this.lastKey.turn = 10 + Math.random() * 25;
   }
 
   /** A rift's countdown beside the line, on its wall's side (`side` < 0 left; "" hides it). */
@@ -340,10 +350,7 @@ export class WordStrip {
         this.styled[i] = 1;
       } else if (this.styled[i] === 1) {
         letter.style.transform = "";
-        letter.style.removeProperty("--k");
-        letter.style.removeProperty("--g");
-        letter.style.removeProperty("--sw");
-        letter.style.removeProperty("--swo");
+        for (const name of POP_VARS) letter.style.removeProperty(name);
         this.styled[i] = 0;
       }
       if (letter.classList.contains("is-pop") !== popping) letter.classList.toggle("is-pop", popping);
@@ -352,6 +359,11 @@ export class WordStrip {
       if (letter.classList.contains("is-hot") !== hot) letter.classList.toggle("is-hot", hot);
       if (letter.classList.contains("is-miss") !== missing) letter.classList.toggle("is-miss", missing);
     }
+    // The last right key's spark, centred on its letter (f0–f4).
+    const sp = mode === "word" || mode === "final" ? sparkLevel(now - this.keyAt) : 0;
+    const on = this.letters[this.lastKey.at];
+    if (sp > 0 && on !== undefined) this.put(this.spark, "transform", "translate(" + (on.offsetLeft + on.offsetWidth / 2) + "px, " + (on.offsetTop + on.offsetHeight / 2) + "px) rotate(" + this.lastKey.turn.toFixed(1) + "deg)");
+    this.put(this.spark, "--sp", sp.toFixed(3));
     // The word as a whole: the plate opens on the first key, a finished word swells and a sweep runs under it.
     const open = mode === "word" && move ? 0.9 + 0.1 * Math.min(1, (now - this.lockAt) / 80) : 1;
     this.put(this.plate, "transform", "translateX(-50%) scaleX(" + open.toFixed(3) + ")");
