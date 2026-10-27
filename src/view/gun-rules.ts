@@ -31,9 +31,9 @@ export const DECK_LIGHTS = 6;
 /**
  * A flash of light per shot (§4.2): priority (a new light takes the slot with
  * the lowest priority × light left), intensity, seconds to fade, the pool's
- * radius on the deck (m). Burst Pháo Sao 5 > Ray 4 > Tán 3 = Xung's first 3 >
- * Tia 2 > a Xung round 1. Tia's and Ray's sit 1.5 m out along their line
- * (beams.ts), off the hull (§12).
+ * radius on the deck (m). A big kill and a Pháo Sao burst 5 > Ray 4 > Tán 3
+ * = Xung's first 3 > Tia 2 > a Xung round 1. Tia's and Ray's sit 1.5 m out
+ * along their line (beams.ts), off the hull (§12).
  */
 export const LIGHT = {
   xung: { prio: 1, power: 1, life: 0.05, pool: 1.8 },
@@ -43,6 +43,7 @@ export const LIGHT = {
   tan: { prio: 3, power: 2, life: 0.08, pool: 3 },
   ray: { prio: 4, power: 3, life: 0.1, pool: 2.6 },
   phao: { prio: 5, power: 3.5, life: 0.12, pool: 4 },
+  big: { prio: 5, power: 5, life: 0.15, pool: 6 },
 } as const;
 export type LightSpec = (typeof LIGHT)[keyof typeof LIGHT];
 
@@ -68,13 +69,14 @@ export const EDGE = { hot: 0, volt: 1, beacon: 2, armour: 3 } as const;
 export const CHUNK: readonly { n: number; min: number; max: number; big: number; edge: number }[] = [
   { n: 7, min: 0.18, max: 0.35, big: 0, edge: EDGE.hot },
   { n: 10, min: 0.2, max: 0.45, big: 0, edge: EDGE.volt },
-  { n: 14, min: 0.25, max: 0.45, big: 3, edge: EDGE.hot },
+  { n: 12, min: 0.3, max: 0.55, big: 6, edge: EDGE.hot },
   { n: 10, min: 0.2, max: 0.4, big: 0, edge: EDGE.hot },
   { n: 6, min: 0.15, max: 0.3, big: 0, edge: EDGE.hot },
   { n: 3, min: 0.15, max: 0.3, big: 0, edge: EDGE.hot },
-  { n: 18, min: 0.25, max: 0.45, big: 5, edge: EDGE.beacon },
+  { n: 14, min: 0.3, max: 0.55, big: 8, edge: EDGE.beacon },
 ];
-export const BIG_CHUNK = { min: 0.6, max: 0.8 } as const;
+/** A Trâu's and Đầu Đàn's big chunks (§12: up from §4.5's 0.6–0.8 m, and more of them, to read as a heap 13 m out). */
+export const BIG_CHUNK = { min: 0.8, max: 1.15 } as const;
 export const CHUNKS_MAX = 48;
 
 /** Chunks of a heap of `n` kills of `kind` (√N, as the kit's merged bursts): small ones and big ones, together at most 48. */

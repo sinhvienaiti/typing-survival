@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SHIP, TIERS } from "../src/kit/feedback";
-import { CHUNK, CHUNK_CAP, CHUNKS_MAX, CHUNK_PHYSICS, FEEL, JOIN, KILL_NUMBER, LIGHT, LIGHTS, chunkCount, chunkStep, joinWeight, lightLevel, numberFont, pickLight, screenMetres } from "../src/view/gun-rules";
+import { BIG_CHUNK, CHUNK, CHUNK_CAP, CHUNKS_MAX, CHUNK_PHYSICS, FEEL, JOIN, KILL_NUMBER, LIGHT, LIGHTS, chunkCount, chunkStep, joinWeight, lightLevel, numberFont, pickLight, screenMetres } from "../src/view/gun-rules";
 
 /**
  * The guns' feel rules (docs/FEEL_PASS_S1.md §4): the game's feedback
@@ -41,6 +41,9 @@ describe("gun feel", () => {
     const order = [LIGHT.phao, LIGHT.ray, LIGHT.tan, LIGHT.tia, LIGHT.xung].map((l) => l.prio);
     expect(order).toEqual([5, 4, 3, 2, 1]);
     expect(LIGHT.xungFirst.prio).toBe(LIGHT.tan.prio);
+    // §12: a big kill ranks with a Pháo Sao burst and lights the lane widest.
+    expect(LIGHT.big.prio).toBe(LIGHT.phao.prio);
+    expect(LIGHT.big.pool).toBeGreaterThan(LIGHT.phao.pool);
     expect(pickLight([5, 1, 0, 4], [2, 0.5, 0, 1], 4)).toBe(2);
     // All lit: Pháo Sao's 5 × 0.1 = 0.5 goes before a Xung round's 1 × 0.9 and Ray's 4 × 1.
     expect(pickLight([5, 1, 4], [0.1, 0.9, 1], 3)).toBe(0);
@@ -53,12 +56,14 @@ describe("gun feel", () => {
     expect(lightLevel(9, 0)).toBe(1);
   });
 
-  it("kills break into the kind's chunks, √N for a heap, at most 48 (§4.5)", () => {
-    expect(CHUNK.map((c) => c.n)).toEqual([7, 10, 14, 10, 6, 3, 18]);
-    expect(CHUNK.map((c) => c.big)).toEqual([0, 0, 3, 0, 0, 0, 5]);
+  it("kills break into the kind's chunks, √N for a heap, at most 48 (§4.5; a Trâu's and Đầu Đàn's from §12)", () => {
+    expect(CHUNK.map((c) => c.n)).toEqual([7, 10, 12, 10, 6, 3, 14]);
+    expect(CHUNK.map((c) => c.big)).toEqual([0, 0, 6, 0, 0, 0, 8]);
+    expect(BIG_CHUNK.min).toBeGreaterThanOrEqual(0.8);
+    expect(CHUNK[2]!.min).toBeGreaterThanOrEqual(0.3);
     expect(chunkCount(0, 1)).toEqual({ small: 7, big: 0 });
-    expect(chunkCount(2, 1)).toEqual({ small: 14, big: 3 });
-    expect(chunkCount(6, 1)).toEqual({ small: 18, big: 5 });
+    expect(chunkCount(2, 1)).toEqual({ small: 12, big: 6 });
+    expect(chunkCount(6, 1)).toEqual({ small: 14, big: 8 });
     expect(chunkCount(0, 4)).toEqual({ small: 14, big: 0 });
     for (const kind of [0, 1, 2, 6]) for (const n of [1, 9, 40, 200]) {
       const c = chunkCount(kind, n);

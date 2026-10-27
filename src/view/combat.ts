@@ -13,6 +13,7 @@ import * as THREE from "three";
 import type { ThemeAudio } from "../audio/theme-audio";
 import { Debris, HitStop, NumberField, NumberSprites, STOP_GAP_MS, STYLE, Trauma, tier, type Rect } from "../kit/feedback";
 import { ParticlePool, textures } from "../kit/three";
+import { KIND } from "../content/foes";
 import { GUN, TIA } from "../content/guns";
 import { FIELD, type Tier } from "../content/rules";
 import { EV, FLAG } from "../sim/events";
@@ -52,6 +53,7 @@ export type CombatHooks = {
 
 export class Combat {
   readonly glows: Glows;
+  readonly smoke = new Glows(96, true); // a big kill's smoke laid over the scene: one draw call
   readonly strips: Strips;
   readonly sparks: ParticlePool;
   readonly debris: Debris;
@@ -104,9 +106,9 @@ export class Combat {
     this.bolts = new Bolts(stage.scene, tierName, pilot === "draconis");
     this.loading = this.bolts.load();
     this.chunks = new Chunks(CHUNK_CAP[tierName]);
-    this.shots = new ShotFx({ stage, glows: this.glows, strips: this.strips, sparks: this.sparks, trauma: this.trauma, ship, lights: this.lights, bolts: this.bolts, audio, pilot });
+    this.shots = new ShotFx({ stage, glows: this.glows, smoke: this.smoke, strips: this.strips, sparks: this.sparks, trauma: this.trauma, ship, lights: this.lights, bolts: this.bolts, audio, pilot });
     this.gunfx = new GunFx({ glows: this.glows, strips: this.strips, sparks: this.sparks, debris: this.debris, trauma: this.trauma, ship, walls: this.walls, cracks: this.cracks, audio, ask: (ms) => this.ask(ms) });
-    stage.scene.add(this.shots.beams.column.mesh, this.debris.mesh, this.chunks.mesh, this.chunks.shadows, this.strips.mesh, this.glows.mesh, this.sparks.points, this.walls.mesh, this.cracks.mesh);
+    stage.scene.add(this.shots.beams.column.mesh, this.debris.mesh, this.chunks.mesh, this.chunks.shadows, this.smoke.mesh, this.strips.mesh, this.glows.mesh, this.sparks.points, this.walls.mesh, this.cracks.mesh);
   }
 
   /** The bolts' models are in (or there are none to load) and the fight's programs are compiled. */
@@ -347,16 +349,9 @@ export class Combat {
     const big = K.big[c] === 1;
     // A Trâu or Đầu Đàn breaks like a heap of kills: T3, heavy debris.
     const size = Math.sqrt(n) * (scout ? 1.5 : big ? 2.4 : 1) * far(z);
-    const tint = scout ? C.elite : K.armour[c] === 1 ? C.armour : C.swarm;
-    // The feel pass's stronger bloom (0.85) widens every HDR flash: a kill's white core and glow are kept below a haze that would hide its chunks.
-    this.glows.burst(CELL.core, x, 1, -z, 0.5 * size, 1.1 * size, 0.08, C.hot, 1.3);
-    this.glows.burst(scout ? CELL.star12 : CELL.star8, x, 1.1, -z, 1.3 * size, 3.8 * size, 0.18, tint, 1.8, 0, 0, 0, (Math.random() - 0.5) * 3);
-    this.glows.burst(CELL.soft, x, 1, -z, 1.6 * size, 3 * size, 0.28, tint, 0.45);
-    // A wide streak of light for a scout or a heap of kills: the big moments read from far off.
-    if (scout || n >= 5) this.glows.burst(CELL.flare, x, 1.2, -z, 3 * size, 8 * size, 0.18, scout ? C.elite : C.hot, 1.5);
-    this.glows.burst(CELL.ring + FLAT, x, 0.08, -z, 0.6, 4.2 * size, 0.42, scout ? C.volt : C.swarm, 1.8);
-    // Scorch on the deck where it broke.
-    this.glows.burst(CELL.soft + FLAT, x, 0.07, -z, 2 * size, 2.6 * size, 1.2, C.ember, 0.35);
+    // A big foe's death is its own event (§12); a heap's or a scout's reads from far off.
+    if (big) this.ask(this.shots.bigKill(x, z, K.kind[c] === KIND.leader));
+    else this.shots.kill(x, z, size, scout, n >= 5, scout ? C.elite : K.armour[c] === 1 ? C.armour : C.swarm);
     this.spark(x, 1, z, dx, dz, Math.min(40, 10 + n * 4), 10 + size * 2.5, C.hot, 0.34, 0.55);
     this.spark(x, 1, z, dx, dz, Math.min(20, 5 + n * 2), 6, scout ? C.volt : C.swarm, 0.26, 0.85);
     // Chunks (§4.5) by the kind (else read from the flags) and the gun: Tia's fly across its sweep.
@@ -365,7 +360,6 @@ export class Combat {
     const th = THROWS[gun]!;
     const across = gun === 1;
     this.chunks.burst(x, z, across ? -dz * this.sweep : dx, across ? dx * this.sweep : dz, kind, n, K.armour[c] === 1 ? EDGE.armour : -1, th.up, th.out, th.spread);
-    if (big) this.ask(this.shots.bigKill(x, z, size / 2.4));
     this.audio.kill(n, x / FIELD.halfW, scout, now);
     this.trauma.add(Math.min(0.2, (scout ? 0.1 : 0.025) * Math.sqrt(n)));
     // A heap of kills or a scout punches the view along the blow (at most every PUNCH_MS: a sweep is not a buzz).
@@ -402,6 +396,7 @@ export class Combat {
   /** Draws the frame: the guns' shots (shots.ts), scout shots, and every pool. `lead` extrapolates moving things (s). */
   draw(w: World, dt: number, time: number, lead: number): void {
     this.glows.step(dt);
+    this.smoke.step(dt);
     this.strips.begin();
     const S = w.shots;
     for (let s = 0; s < S.top; s += 1) {
@@ -420,6 +415,7 @@ export class Combat {
     this.cracks.update(time);
     this.strips.end();
     this.glows.flush();
+    this.smoke.flush();
     this.sparks.update(dt, 0);
     this.debris.update(dt);
     this.chunks.update(dt);

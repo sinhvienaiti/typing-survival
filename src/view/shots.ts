@@ -1,19 +1,13 @@
 /**
- * Every shot of the five guns, seen (docs/FEEL_PASS_S1.md §4.1–4.2, §4.6):
- * each leaves its real muzzle (Ship sockets: Xung left and right in turn, the
- * centre gun for Tán, Ray and Tia, the core upward for Pháo Sao) and joins
- * the sim's path within 3 m, so where it hits stays the sim's. Xung fires 3D
- * bolts with a 3.7 m tracer, a star and a soft flash in its colour (the
- * magazine's first round twice as big, with sparks and a 1.5 px shove); Tán a
- * fan of three flame tongues, smoke, casings and amber bolts; Pháo Sao
- * flashes upward, its shells are 3D bolts on their arcs kept ≥ 4 % of the
- * view long however far they fly, and a burst flashes white over a fifth of
- * the view before its fire and smoke (test pass 27/10: a far burst was a
- * 60–90 px glow); a Trâu or Đầu Đàn dies in a white-hot body flash, a column
- * of fire, a shock ring and smoke (bigKill); Ray and Tia are
- * BeamFx's (beams.ts). Every shot lights the deck and the horde through the
- * light pool (lights.ts). The hits' looks by gun are here too. Reads the
- * world, never writes it; pooled, nothing allocated per shot.
+ * Every shot of the five guns, seen (docs/FEEL_PASS_S1.md §4.1–4.2, §4.6,
+ * §11–12): each leaves its real muzzle (Ship sockets) and joins the sim's
+ * path within 3 m, so where it hits stays the sim's. Xung: 3D bolts, a 3.7 m
+ * tracer, a star and a soft flash (a magazine's first round twice as big,
+ * sparks, a 1.5 px shove); Tán: three flame tongues, smoke, casings, amber
+ * bolts; Pháo Sao: an upward flash, shells ≥ 4 % of the view long, a burst a
+ * fifth of the view; a Trâu's or Đầu Đàn's death as its own event (bigKill);
+ * the hits' looks by gun. Ray and Tia are BeamFx's (beams.ts). Shots light
+ * the deck and the horde (lights.ts). Reads the world, never writes it.
  */
 import * as THREE from "three";
 import type { ThemeAudio } from "../audio/theme-audio";
@@ -47,7 +41,7 @@ function arcPoint(m: THREE.Vector3, tx: number, tz: number, u: number, out: THRE
   return out.set(m.x + (tx - m.x) * u, m.y + (0.3 - m.y) * u + ARC * 4 * u * (1 - u), m.z + (tz - m.z) * u);
 }
 
-export type ShotParts = { stage: Stage; glows: Glows; strips: Strips; sparks: ParticlePool; trauma: Trauma; ship: Ship; lights: GunLights; bolts: Bolts; audio: ThemeAudio; pilot: Pilot };
+export type ShotParts = { stage: Stage; glows: Glows; smoke: Glows; strips: Strips; sparks: ParticlePool; trauma: Trauma; ship: Ship; lights: GunLights; bolts: Bolts; audio: ThemeAudio; pilot: Pilot };
 
 export class ShotFx {
   readonly beams: BeamFx;
@@ -233,14 +227,40 @@ export class ShotFx {
     else if (kind === EV.rail || kind === EV.beamStart || kind === EV.beamEnd) this.beams.event(R, i, now);
   }
 
-  /** A Trâu or Đầu Đàn killed at sim (x, z), `size` its burst's scale: a white-hot body flash 4 frames, a column of fire, a wide shock ring, smoke; returns the stop it asks (T3). */
-  bigKill(x: number, z: number, size: number): number {
+  /** A heap of N kills (or a scout) at sim (x, z), `size` √N-scaled: a white core and a star kept below a haze that would hide the chunks (bloom 0.85), a streak of light for a scout or 5+, a ring, scorch. */
+  kill(x: number, z: number, size: number, scout: boolean, heap: boolean, tint: THREE.Color): void {
     const g = this.p.glows;
-    g.burst(CELL.core, x, 1.2, -z, 1.4 * size, 2.6 * size, 4 * F, C.white, 3);
-    g.burst(CELL.flare, x, 2, -z, 4 * size, 9 * size, 0.35, C.hot, 2.4, 0, 0, 0, 0, Math.PI / 2);
-    g.burst(CELL.ring + FLAT, x, 0.08, -z, 1, 7 * size, 0.55, C.hot, 2.4);
-    g.burst(CELL.soft, x, 1.4, -z, 1.5 * size, 3.5 * size, 1.4, C.smoke, 0.85, 0, 1.2, 0);
-    this.p.lights.flash(LIGHT.phao, x, 1.5, -z, C.hot);
+    g.burst(CELL.core, x, 1, -z, 0.5 * size, 1.1 * size, 0.08, C.hot, 1.3);
+    g.burst(scout ? CELL.star12 : CELL.star8, x, 1.1, -z, 1.3 * size, 3.8 * size, 0.18, tint, 1.8, 0, 0, 0, (Math.random() - 0.5) * 3);
+    g.burst(CELL.soft, x, 1, -z, 1.6 * size, 3 * size, 0.28, tint, 0.45);
+    if (scout || heap) g.burst(CELL.flare, x, 1.2, -z, 3 * size, 8 * size, 0.18, scout ? C.elite : C.hot, 1.5);
+    g.burst(CELL.ring + FLAT, x, 0.08, -z, 0.6, 4.2 * size, 0.42, scout ? C.volt : C.swarm, 1.8);
+    g.burst(CELL.soft + FLAT, x, 0.07, -z, 2 * size, 2.6 * size, 1.2, C.ember, 0.35);
+  }
+
+  /** A Trâu or Đầu Đàn (`leader`: a quarter bigger, gold) killed at sim (x, z), its own event sized on the view (§12): f0–f2 a warm flash, round and gold where Ray's line is thin and white-blue, the lane lit round it; a fireball rolling up and out to the sides; smoke laid over the deck 2–3 s; a bed of embers 3.5 s under its chunks; a small ring. Returns its stop (T3). */
+  bigKill(x: number, z: number, leader: boolean): number {
+    const g = this.p.glows;
+    const k = leader ? 1.25 : 1;
+    const v = this.size(0.16, x, z) * k;
+    const gold = leader ? C.beacon : C.crit;
+    // Billboard sizes are full widths: the core's white disc is 0.35 of it (here 17 % of the view across), the rays reach half.
+    g.burst(CELL.core, x, 1.2, -z, v * 1.8, v * 2.3, 3 * F, C.hot, 3, 0, 0, 0, 0, NaN, F);
+    g.burst(CELL.star12, x, 1.3, -z, v * 2, v * 3.6, 5 * F, gold, 2.6, 0, 0, 0, 0.6, NaN, F);
+    g.burst(CELL.soft + FLAT, x, 0.07, -z, v * 3, v * 4, 4 * F, gold, 1.2, 0, 0, 0, 0, NaN, F);
+    this.p.lights.flash(LIGHT.big, x, 1.6, -z, gold);
+    // The fireball: lumpy puffs of flame rolling up and out to both sides, 0.5–0.9 s (Ray's line stays thin between them).
+    for (let i = 0; i < 7; i += 1) {
+      const side = (i % 2 === 0 ? -1 : 1) * (0.5 + Math.random());
+      g.burst(CELL.puff, x + side * 0.5, 0.8 + Math.random() * 0.6, -z, 2 * k, (4.2 + Math.random() * 1.6) * k, 0.45 + Math.random() * 0.35, i < 3 ? C.crit : C.swarm, 0.95, side * 2.2, 2.2 + Math.random() * 2.2, 0, (Math.random() - 0.5) * 2, NaN, F);
+    }
+    for (let i = 0; i < 9; i += 1) {
+      const a = Math.random() * 6.283;
+      this.p.smoke.burst(CELL.puff, x + Math.cos(a) * 0.8, 1 + Math.random(), -z + Math.sin(a) * 0.8, 1.2 * k, (3.6 + Math.random() * 1.6) * k, 2 + Math.random(), i < 3 ? C.soot : C.smokeLit, 0.75, Math.cos(a) * 0.5, 0.7 + Math.random() * 0.7, Math.sin(a) * 0.3, (Math.random() - 0.5) * 1.2);
+    }
+    g.burst(CELL.soft + FLAT, x, 0.065, -z, 7 * k, 8 * k, 3.5, C.swarm, 0.55);
+    g.burst(CELL.ring + FLAT, x, 0.08, -z, 2, 5 * k, 0.35, C.hot, 1.1);
+    this.spark(x, 1, -z, 0, 1.6, 0, 36, 10, C.hot, 0.32, 0.8, 2.2);
     return tier(3).stopMs;
   }
 
