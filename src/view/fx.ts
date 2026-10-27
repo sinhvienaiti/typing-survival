@@ -81,8 +81,9 @@ attribute vec4 iColor;
 attribute vec2 iSize;
 varying vec2 vUv;
 varying vec4 vColor;
+varying float vY;
 void main() {
-  // Cells 8 and up lie flat on the floor (shock rings, scorch); the rest face the camera.
+  // Cells 8 and up lie flat on the floor (shock rings, scorch); the rest face the camera (vY: the corner's height, from the camera's right and up in world y).
   float ground = step(7.5, iPos.w);
   float cell = iPos.w - 8.0 * ground;
   vUv = vec2((uv.x + cell) / ${CELLS.toFixed(1)}, uv.y);
@@ -91,6 +92,7 @@ void main() {
   float c = cos(iSize.y);
   vec2 corner = position.xy * iSize.x;
   corner = vec2(corner.x * c - corner.y * s, corner.x * s + corner.y * c);
+  vY = ground > 0.5 ? 9.0 : iPos.y + corner.x * viewMatrix[1][0] + corner.y * viewMatrix[1][1];
   if (ground > 0.5) {
     // Flat on the floor, facing up (−y here would leave the quad's back to the camera: culled).
     gl_Position = projectionMatrix * viewMatrix * vec4(iPos.xyz + vec3(corner.x, 0.0, -corner.y), 1.0);
@@ -100,15 +102,16 @@ void main() {
     gl_Position = projectionMatrix * view;
   }
 }`;
-// Added light; SMOKE: the colour laid over the scene (normal blending), its alpha the cell's × the burst's, thick parts darker and thin edges lit (soot with a rim of light).
+// Added light; SMOKE: the colour laid over the scene (normal blending), its alpha the cell's × the burst's, thick parts darker and thin edges lit (soot with a rim of light), fading into the deck (no straight edge where the floor cuts a puff).
 const GLOW_FRAGMENT = /* glsl */ `
 uniform sampler2D uMap;
 varying vec2 vUv;
 varying vec4 vColor;
+varying float vY;
 void main() {
   float a = texture2D(uMap, vUv).a;
 #ifdef SMOKE
-  gl_FragColor = vec4(vColor.rgb * mix(2.0, 0.65, smoothstep(0.06, 0.45, a)), a * vColor.a);
+  gl_FragColor = vec4(vColor.rgb * mix(2.0, 0.65, smoothstep(0.06, 0.45, a)), a * vColor.a * smoothstep(0.1, 1.2, vY));
 #else
   gl_FragColor = vec4(vColor.rgb * a * vColor.a, 1.0);
 #endif
@@ -171,8 +174,7 @@ export class Glows {
     const p = i * 4;
     this.pos[p] = x; this.pos[p + 1] = y; this.pos[p + 2] = z; this.pos[p + 3] = cell;
     this.color[p] = r; this.color[p + 1] = g; this.color[p + 2] = bl; this.color[p + 3] = a;
-    this.size[i * 2] = size;
-    this.size[i * 2 + 1] = rot;
+    this.size[i * 2] = size; this.size[i * 2 + 1] = rot;
   }
 
   /** Ages the bursts and writes them; stamps of the last frame are dropped. Call before stamping. */
@@ -186,9 +188,7 @@ export class Glows {
       if (n !== i) b.copyWithin(n * this.stride, o, o + this.stride);
       const q = n * this.stride;
       b[q + 13] = age;
-      b[q] = b[q]! + b[q + 3]! * dt;
-      b[q + 1] = b[q + 1]! + b[q + 4]! * dt;
-      b[q + 2] = b[q + 2]! + b[q + 5]! * dt;
+      b[q] = b[q]! + b[q + 3]! * dt; b[q + 1] = b[q + 1]! + b[q + 4]! * dt; b[q + 2] = b[q + 2]! + b[q + 5]! * dt;
       b[q + 8] = b[q + 8]! + b[q + 9]! * dt;
       const k = Math.max(0, age) / b[q + 14]!;
       const ease = 1 - (1 - k) * (1 - k);
