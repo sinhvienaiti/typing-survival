@@ -218,7 +218,6 @@ const typing = (combat.typing = new TypeFeel(hud, stage, ship, combat.glows, com
 
 const percent = (value: number): string => Math.round(value * 100) + " %";
 const onOff = (on: boolean): string => (on ? "Bật" : "Tắt");
-const fixed = (value: number, digits: number): string => value.toFixed(digits).replace(".", ",");
 /** During a run, a new mode or "Nhịp tự điều" waits for the next one. */
 const nextRun = (): string | undefined => (started ? "Áp dụng từ trận sau" : undefined);
 
@@ -349,10 +348,7 @@ function setMode(next: Mode): void {
   if (next === "play") {
     started = true;
     show("none");
-  } else if (next === "paused") show("pause");
-  else if (next === "end") show("end");
-  else if (next === "intro") show("intro");
-  else show("title");
+  } else show(next === "paused" ? "pause" : next === "end" || next === "intro" ? next : "title");
 }
 
 /** A new page: `autostart` straight into a fight (a journey stage when `run` is given); the settings' ship, quality and mode go in its address. */
@@ -360,17 +356,11 @@ function reload(autostart: boolean, run?: RunChoice): void {
   if (started && mode !== "end") settle("quit");
   safeSessionStorage.setItem(NEXT_KEY, run === undefined ? "" : JSON.stringify({ stage: run.stage, guns: run.guns.map((gun) => GUN_KEYS[gun]) }));
   const next = new URLSearchParams(params);
-  next.delete("stage");
-  next.delete("guns");
+  for (const key of ["stage", "guns"]) next.delete(key);
   if (params.has("mode")) next.set("mode", settings.mode);
   if (params.has("adapt")) next.set("adapt", settings.paceAdapt ? "1" : "0");
-  if (autostart) {
-    next.set("autostart", "1");
-    next.set("card", "1");
-  } else {
-    next.delete("autostart");
-    next.delete("card");
-  }
+  for (const key of ["autostart", "card"]) if (autostart) next.set(key, "1");
+  else next.delete(key);
   if (chosen.pilot !== pilot || params.has("pilot")) next.set("pilot", chosen.pilot);
   if (chosen.tier !== tier || params.has("q")) next.set("q", chosen.tier);
   window.location.search = next.toString();
