@@ -14,7 +14,9 @@
 //        reduced motion, while Tia burns, a Ray word while Ray and Tia fire;
 //        the frame change round the ship and between the line and the ship
 //        (≥ 2× the frames between keys at ≥ 9 keys in 10), the bright mark
-//        (≥ 300 px at 720p that rose ≥ 0.25 in luma), the ship's white.
+//        (≥ 300 px at 720p that rose ≥ 0.25 in luma; §13: ≥ 8,000 px on the
+//        field from the plate to under the ship at f0), the ship's white; the
+//        word line's spark on the letter at f0, gone by f5.
 //   f2   a wrong key at letter 3 (red underline, core dip, red sparks) and a
 //        stray key with no lock (red ghost, the bays' first letters bounce).
 //   f4   a word into a full bay (no load flash, LEDs blink urgent, "ĐẦY").
@@ -705,6 +707,8 @@ async function f1f(page, dir) {
     const gap = { x: Math.round(plate.x), y: Math.round(plate.y + plate.h + 2), w: Math.round(plate.w), h: Math.max(8, Math.round(view.core.y - 12 * ui - (plate.y + plate.h + 2))) };
     // Under the gap, round the ship (the two boxes do not overlap).
     const shipBox = { x: Math.round(view.ship.x), y: gap.y + gap.h, w: Math.round(view.ship.w), h: Math.round(view.core.y + 80 * ui - gap.y - gap.h) };
+    // The field from the plate's bottom to under the ship, 600 px across (the recheck's own box, §13): the f0 mark's area.
+    const field = { x: Math.round(view.core.x - 300 * ui), y: gap.y, w: Math.round(600 * ui), h: Math.round(view.core.y + 110 * ui - gap.y) };
     const slots = await page.eval(sv("return t.slots();"));
     const word = slots[slots.findIndex((slot) => slot.gun === run.gun)].text;
     const rows = [];
@@ -720,9 +724,15 @@ async function f1f(page, dir) {
       return row;
     };
     await shot({ key: null, k: -1, f: -1 });
+    // The word line's spark (§13): its opacity and its centre off the letter's (× the letter's width / height).
+    const sparks = [];
+    const spark = (k) => "(() => { const s = document.querySelector('.sv-strip-spark'); const a = s.getBoundingClientRect(); const b = document.querySelectorAll('.sv-strip-word i')[" + k + "].getBoundingClientRect(); return { o: +getComputedStyle(s).opacity, dx: +(Math.abs(a.left + a.width / 2 - b.left - b.width / 2) / b.width).toFixed(2), dy: +(Math.abs(a.top + a.height / 2 - b.top - b.height / 2) / b.height).toFixed(2) }; })()";
     for (let k = 0; k < word.length - 1; k += 1) {
       await press(page, word[k]);
-      for (let f = 0; f < 9; f += 1) await shot({ key: f === 0 ? word[k] : null, k, f });
+      for (let f = 0; f < 9; f += 1) {
+        await shot({ key: f === 0 ? word[k] : null, k, f });
+        if (f === 0 || f === 5) sparks.push({ k, f, ...(await page.eval(spark(k))) });
+      }
     }
     await hold(page, false);
     for (let i = 1; i < rows.length; i += 1) {
@@ -745,7 +755,7 @@ async function f1f(page, dir) {
       const mark = Math.max(...[0, 1].map((f) => rose(pre.bare, at(f).bare, gap, 0.25, ui) + rose(pre.bare, at(f).bare, shipBox, 0.25, ui)));
       keys.push({
         k, key: word[k], gapX: +(Math.max(at(0).maeGap, at(1).maeGap) / Math.max(0.01, midGap)).toFixed(2), shipX: +(Math.max(at(0).maeShip, at(1).maeShip) / Math.max(0.01, midShip)).toFixed(2),
-        gap: [at(0).maeGap, at(1).maeGap], ship: [at(0).maeShip, at(1).maeShip], mark, whiteF0: white(at(0).bare), live: at(0).info.feel.shards,
+        gap: [at(0).maeGap, at(1).maeGap], ship: [at(0).maeShip, at(1).maeShip], mark, field: rose(pre.bare, at(0).bare, field, 0.25, ui), whiteF0: white(at(0).bare), live: at(0).info.feel.shards,
       });
     }
     const clip = { x: plate.x - 80 * ui, y: plate.y - 10 * ui, w: plate.w + 160 * ui, h: view.core.y + 90 * ui - (plate.y - 10 * ui) };
@@ -759,8 +769,8 @@ async function f1f(page, dir) {
     const share = (pred) => +(keys.filter(pred).length / Math.max(1, keys.length)).toFixed(2);
     results[run.name] = {
       ready, word, gap, ship: shipBox, midGap, midShip, keys, sheet: sheetFile,
-      shareGap2: share((key) => key.gapX >= 2), shareShip2: share((key) => key.shipX >= 2), markMin: Math.min(...keys.map((key) => key.mark)), markMedian: median(keys.map((key) => key.mark)),
-      whiteMedian: median(keys.map((key) => key.whiteF0)), whiteBetween: median(rows.filter((row) => row.f >= 6).map((row) => white(row.bare))), liveMax: Math.max(...keys.map((key) => key.live)),
+      shareGap2: share((key) => key.gapX >= 2), shareShip2: share((key) => key.shipX >= 2), markMin: Math.min(...keys.map((key) => key.mark)), markMedian: median(keys.map((key) => key.mark)), fieldMin: Math.min(...keys.map((key) => key.field)),
+      whiteMedian: median(keys.map((key) => key.whiteF0)), whiteBetween: median(rows.filter((row) => row.f >= 6).map((row) => white(row.bare))), liveMax: Math.max(...keys.map((key) => key.live)), sparks,
     };
     rowsAll.push(...rows.map(({ file, bare, ...row }) => ({ run: run.name, file: file.split("/").pop(), k: row.k, f: row.f, maeGap: row.maeGap, maeShip: row.maeShip, feel: row.info.feel })));
     await page.eval("localStorage.removeItem('survival.motion'); true");
@@ -773,6 +783,10 @@ async function f1f(page, dir) {
       gapChangesTwice: all.every((r) => r.shareGap2 >= 0.9),
       shipChangesTwice: all.every((r) => r.shareShip2 >= 0.9),
       brightMarkEveryKey: all.every((r) => r.markMin >= 300),
+      // §13: on the field round the ship each key lights ≥ 8,000 px (720p) at f0, a beam burning or not (the recheck's 1,900–3,800 with one).
+      fieldMarkEveryKey: all.every((r) => r.fieldMin >= 8000),
+      // §13: the spark lit on the letter just typed at f0 (its centre within half the letter), gone by f5.
+      sparkOnLetter: all.every((r) => r.sparks.every((s) => (s.f === 0 ? s.o >= 0.9 && s.dx <= 0.5 && s.dy <= 0.5 : s.o <= 0.05))),
     },
   };
 }

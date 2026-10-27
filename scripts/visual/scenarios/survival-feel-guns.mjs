@@ -20,7 +20,8 @@
 //   f6b   big kills (FEEL_PASS_S1 §12): a Trâu at 13 m, a Đầu Đàn at 12 m and
 //         a Trâu at 19 m killed by Ray, every frame round the death then to
 //         9.8 s: the flash (area, frames, off Ray's line), the fire, the
-//         smoke, the chunks against the floor (see f6b below).
+//         smoke (lit grey and, §13, sooty: px darker than the floor; the cloud
+//         against the frame before the kill), the chunks against the floor.
 //   shake chapter stage 1 typed at 40 WPM on the held clock for 60 s: the
 //         camera's offset every frame (p95 ≤ 3 px, max ≤ 8 px at 1080p) and the
 //         pools at their peak (§6).
@@ -534,30 +535,37 @@ async function f6b(page, dir) {
     });
     // Live foes masked (their discs at either frame).
     const mask = (list) => (x, y) => list.some((f) => (x - f[0]) ** 2 + (y - f[1]) ** 2 <= (f[2] * 1.6 + 6 * ui) ** 2);
-    const changed = (row, rect, level, grey) => {
+    // Against `base` (the 9.8 s frame): "lit" lighter grey px (lit smoke); "soot" px darker by ≥ level; "cloud" grey px either way, off Ray's line (base: the frame before the kill); else |Δ| ≥ level.
+    const changed = (row, rect, level, mode = "", base = ref) => {
       const P = pixels(row.bare, rect);
-      const R = pixels(ref.bare, rect);
-      const skip = mask([...row.foes, ...ref.foes]);
+      const R = pixels(base.bare, rect);
+      const skip = mask([...row.foes, ...base.foes]);
       let n = 0;
       let lit = 0;
       let floor = 0;
       for (let i = 0; i < P.n; i += 1) {
         const d = P.luma(i) - R.luma(i);
-        if ((grey ? d < level || P.chroma(i) > 0.12 : Math.abs(d) < level) || skip(rect.x + (i % rect.w), rect.y + Math.floor(i / rect.w))) continue;
+        const x = rect.x + (i % rect.w);
+        const y = rect.y + Math.floor(i / rect.w);
+        const off = mode === "lit" ? d < level || P.chroma(i) > 0.12 : mode === "soot" ? d > -level : mode === "cloud" ? Math.abs(d) < level || P.chroma(i) > 0.15 || band(x, y) : Math.abs(d) < level;
+        if (off || skip(x, y)) continue;
         n += 1;
         lit += P.luma(i);
         floor += R.luma(i);
       }
       return { px: Math.round(n / (ui * ui)), luma: n > 0 ? +(lit / n).toFixed(3) : 0, floor: n > 0 ? +(floor / n).toFixed(3) : 0 };
     };
-    const smoke = rows.filter((row) => [600, 1500, 2000].some((m) => Math.abs(row.t - m) < 1)).map((row) => ({ label: row.label, ...changed(row, box(160, 240, -30), 0.06, true) }));
+    const smoke = rows.filter((row) => [600, 1500, 2000].some((m) => Math.abs(row.t - m) < 1)).map((row) => ({ label: row.label, ...changed(row, box(160, 240, -30), 0.06, "lit") }));
+    const soot = rows.filter((row) => [600, 1500, 2000, 3000].some((m) => Math.abs(row.t - m) < 1)).map((row) => ({ label: row.label, ...changed(row, box(200, 240, 60), 0.05, "soot") }));
+    // The cloud against the frame before the kill (§13): its grey px, dark or lit, the size of the flash.
+    const cloud = rows.filter((row) => [600, 1500, 2000, 3000].some((m) => Math.abs(row.t - m) < 1)).map((row) => ({ label: row.label, ...changed(row, box(240, 240, 60), 0.06, "cloud", before) }));
     const chunks = rows.filter((row) => [1500, 3000, 4500, 6000].some((m) => Math.abs(row.t - m) < 1)).map((row) => ({ label: row.label, ...changed(row, box(170, 160, 70), 0.08, false) }));
     const clip = { x: kill.x - 260 * ui, y: kill.y - 240 * ui, w: 520 * ui, h: 340 * ui };
     const shown = rows.filter((row) => row.t <= 12 * STEP + 1 || [200, 400, 600, 1000, 1500, 2000, 3000, 6000].some((m) => Math.abs(row.t - m) < 1));
     const sheetFile = sheet(shown.map((row) => ({ file: row.file, label: scene.name + " " + row.label })), join(dir, "sheet-f6b-" + scene.name + "-" + size + ".jpg"), clip, 7, 300);
     results[scene.name] = {
       killed, killMs: Math.round(ms), kill, word, flash, flashPeak: peak, flashFrames: flash.filter((f) => f.px >= peak * 0.3 && peak > 0).length, flashAll: Math.max(...flash.map((f) => f.all)),
-      fire, firePeak: Math.max(...fire.map((f) => f.px)), smoke, smokeMax: Math.max(...smoke.map((s) => s.px)), chunks, sheet: sheetFile,
+      fire, firePeak: Math.max(...fire.map((f) => f.px)), smoke, smokeMax: Math.max(...smoke.map((s) => s.px)), soot, cloud, cloud2s: cloud.find((c) => c.label === "+2000 ms")?.px ?? 0, chunks, chunks6s: chunks.at(-1)?.px ?? 0, sheet: sheetFile,
     };
   }
   save(dir, "meta-f6b-" + size + ".json", results);
