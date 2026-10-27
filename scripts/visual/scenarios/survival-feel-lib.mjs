@@ -77,6 +77,34 @@ export function luma(files, rect) {
   return { samples: values.length, p50: +q(0.5).toFixed(3), p95: +q(0.95).toFixed(3), p99: +q(0.99).toFixed(3) };
 }
 
+/** `rect` (CSS px) kept inside a `w` × `h` frame, rounded. */
+export const inside = (r, w, h) => {
+  const x = Math.max(0, Math.round(r.x));
+  const y = Math.max(0, Math.round(r.y));
+  return { x, y, w: Math.max(1, Math.min(w - x, Math.round(r.x + r.w) - x)), h: Math.max(1, Math.min(h - y, Math.round(r.y + r.h) - y)) };
+};
+
+/** The RGB bytes of `rect` in `file` (row by row), with `luma(i)` (Rec. 709 of the encoded pixel, 0 … 1) and `chroma(i)` (max − min, 0 … 1) of pixel i. */
+export function pixels(file, rect) {
+  const data = execFileSync("magick", [file, "-crop", crop(rect), "+repage", "-depth", "8", "rgb:-"], { maxBuffer: 1 << 27 });
+  const at = (i) => i * 3;
+  return {
+    data, w: rect.w, h: rect.h, n: data.length / 3,
+    luma: (i) => (0.2126 * data[at(i)] + 0.7152 * data[at(i) + 1] + 0.0722 * data[at(i) + 2]) / 255,
+    chroma: (i) => (Math.max(data[at(i)], data[at(i) + 1], data[at(i) + 2]) - Math.min(data[at(i)], data[at(i) + 1], data[at(i) + 2])) / 255,
+    warm: (i) => (data[at(i)] - data[at(i) + 2]) / 255,
+  };
+}
+
+/** Pixels of `rect` (CSS px) whose luma rose ≥ `rise` from file `a` to file `b`, skipping (x, y) where `skip(x, y)` (CSS px) holds; in 720p px (÷ ui²). */
+export function rose(a, b, rect, rise, ui, skip = () => false) {
+  const A = pixels(a, rect);
+  const B = pixels(b, rect);
+  let n = 0;
+  for (let i = 0; i < B.n; i += 1) if (B.luma(i) - A.luma(i) >= rise && !skip(rect.x + (i % rect.w), rect.y + Math.floor(i / rect.w))) n += 1;
+  return Math.round(n / (ui * ui));
+}
+
 const lin = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 const TEXT_L = 0.2126 * lin(0xf4 / 255) + 0.7152 * lin(0xf1 / 255) + 0.0722 * lin(0xeb / 255);
 /**

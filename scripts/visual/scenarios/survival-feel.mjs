@@ -10,6 +10,11 @@
 //        and the ship's box) at ≥ 9 keys in 10; the letter just typed ≥ 1.2×
 //        its height at f0–f1 and back within 1 px by f7; the core ≥ 0.95
 //        bright at the word's f0–f2.
+//   f1f  each letter on the field (FEEL_PASS_S1 §12): a Xung word alone, with
+//        reduced motion, while Tia burns, a Ray word while Ray and Tia fire;
+//        the frame change round the ship and between the line and the ship
+//        (≥ 2× the frames between keys at ≥ 9 keys in 10), the bright mark
+//        (≥ 300 px at 720p that rose ≥ 0.25 in luma), the ship's white.
 //   f2   a wrong key at letter 3 (red underline, core dip, red sparks) and a
 //        stray key with no lock (red ghost, the bays' first letters bounce).
 //   f4   a word into a full bay (no load flash, LEDs blink urgent, "ĐẦY").
@@ -34,18 +39,19 @@
 //        under the red line, nothing in a bay overflowing with 3 magazine LEDs.
 //   marks  near foes behind the word line (§2.4): placed mines, a word locked,
 //        red ticks under the plate at their x, blinking at 4 Hz, at most 6.
-//   rate   10 keys a second on the held clock: at most 8 live shards.
+//   rate   10 keys a second on the held clock: the keys' billboards and strips
+//        at most 12 (§6; the marks of §12).
 //   audio  each typing sound built offline in Chrome (OfflineAudioContext):
 //        the 1–4 kHz band ≤ −20 dB of the sound's peak outside 30 ms after
 //        each attack (§7.5, Q6).
-//   URL=http://127.0.0.1:3007/ OUT_DIR=… SCENES=f1,f2,f4,f9,f8,layout,marks,rate,audio node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-feel.mjs --width=1280 --height=720
+//   URL=http://127.0.0.1:3007/ OUT_DIR=… SCENES=f1,f1f,f2,f4,f9,f8,layout,marks,rate,audio node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-feel.mjs --width=1280 --height=720
 import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { OUT_DIR } from "./common.mjs";
 import { open, press, sv } from "./survival-s0-lib.mjs";
 import { openStage } from "./survival-s1-lib.mjs";
-import { advance, contrastOver, crop, frame, hold, luma, mae, READ, save, sheet, STEP } from "./survival-feel-lib.mjs";
+import { advance, contrastOver, crop, frame, hold, luma, mae, pixels as pixelsOf, READ, rose, save, sheet, STEP } from "./survival-feel-lib.mjs";
 
 const median = (list) => {
   const sorted = [...list].sort((a, b) => a - b);
@@ -602,7 +608,7 @@ async function marks(page, dir) {
   };
 }
 
-/** 10 keys a second (120 WPM) on the held clock: live shards and floor rings at most 8 and 2 (§3.1), every frame. */
+/** 10 keys a second (120 WPM) on the held clock: the keys' billboards and strips at most 12 (§6, §12), every frame. */
 async function rate(page) {
   const ready = await trial(page);
   await hold(page, true);
@@ -624,10 +630,154 @@ async function rate(page) {
     }
   }
   await hold(page, false);
-  return { ready, typed, frames, maxShards, checks: { shardsAtMost8: maxShards <= 8 && maxShards > 0 } };
+  return { ready, typed, frames, maxShards, checks: { keyFxAtMost12: maxShards <= 12 && maxShards > 0 } };
 }
 
-const SCENES = { f1, f2, f4, f9, f8, layout, marks, audio, rate };
+/**
+ * N4 (test pass 27/10): each letter on the field, where the eye runs from the
+ * word line down to the ship. Four runs, 9 frames a key (150 ms) on the held
+ * clock: a Xung word alone (the trial), the same with reduced motion, a Xung
+ * word while Tia burns (the trial), a Ray word while Ray and Tia fire
+ * together (stage 1, a pack placed). Each frame as shown (the sheets) and
+ * with the HUD hidden (the measures). Per key: the change (MAE) of f0 and f1
+ * against the frame before, round the ship and in the gap between the line
+ * and the ship, over the median change of the frames between keys (f3–f8);
+ * the bright mark: 720p px of both boxes whose luma rose ≥ 0.25 over the
+ * frame before the key; the white blot: the ship box's share above 0.95 at
+ * f0 and between keys (f6–f8).
+ */
+async function f1f(page, dir) {
+  const size = page.width + "x" + page.height;
+  const ui = page.height / 720;
+  const fire = async (gun) => {
+    const slots = await page.eval(sv("return t.slots();"));
+    const bay = slots.findIndex((slot) => slot.gun === gun);
+    for (const letter of slots[bay].text) {
+      await press(page, letter);
+      await advance(page, 50);
+    }
+    await advance(page, 250);
+  };
+  const runs = [
+    { name: "alone", gun: "xung", open: () => trial(page) },
+    {
+      name: "reduced", gun: "xung",
+      open: async () => {
+        await trial(page);
+        await page.eval("localStorage.setItem('survival.motion', 'reduced'); true");
+        return trial(page);
+      },
+    },
+    {
+      name: "tia", gun: "xung",
+      open: async () => {
+        const ready = await trial(page);
+        await hold(page, true);
+        // The trial's first pack in Tia's reach (it burns only with foes to sweep).
+        await advance(page, 3000);
+        await fire("tia");
+        return ready;
+      },
+    },
+    {
+      name: "rayTia", gun: "ray",
+      open: async () => {
+        const ready = await openStage(page, "c1-s1", ["tia", "ray"], "&director=0");
+        await page.key("Shift", { code: "ShiftLeft" });
+        await page.sleep(300);
+        await hold(page, true);
+        for (const [i, x] of [-2, -1, 0, 1, 2, -1.5, 0.5, 1.5].entries()) await page.eval(sv("t.place(0," + x + "," + (8 + (i >= 5 ? 1.5 : 0)) + "); return true;"));
+        await page.eval(sv("t.place(2,0.8,14); return true;"));
+        await advance(page, 300);
+        await fire("tia");
+        await fire("ray");
+        return ready;
+      },
+    },
+  ];
+  const results = {};
+  const rowsAll = [];
+  for (const run of runs) {
+    const ready = await run.open();
+    await hold(page, true);
+    const view = await boxes(page);
+    const plate = (await page.eval(sv("return t.rects()[0];")));
+    const gap = { x: Math.round(plate.x), y: Math.round(plate.y + plate.h + 2), w: Math.round(plate.w), h: Math.max(8, Math.round(view.core.y - 12 * ui - (plate.y + plate.h + 2))) };
+    // Under the gap, round the ship (the two boxes do not overlap).
+    const shipBox = { x: Math.round(view.ship.x), y: gap.y + gap.h, w: Math.round(view.ship.w), h: Math.round(view.core.y + 80 * ui - gap.y - gap.h) };
+    const slots = await page.eval(sv("return t.slots();"));
+    const word = slots[slots.findIndex((slot) => slot.gun === run.gun)].text;
+    const rows = [];
+    let n = 0;
+    const shot = async (extra) => {
+      const name = "f1f-" + run.name + "-" + String(n++).padStart(3, "0");
+      const row = await frame(page, dir, name, extra.f === -1 ? 0 : STEP, extra);
+      row.bare = join(dir, name + "-bare.png");
+      await page.eval("document.querySelector('.sv-hud').style.visibility = 'hidden'; true");
+      await page.shot(row.bare);
+      await page.eval("document.querySelector('.sv-hud').style.visibility = ''; true");
+      rows.push(row);
+      return row;
+    };
+    await shot({ key: null, k: -1, f: -1 });
+    for (let k = 0; k < word.length - 1; k += 1) {
+      await press(page, word[k]);
+      for (let f = 0; f < 9; f += 1) await shot({ key: f === 0 ? word[k] : null, k, f });
+    }
+    await hold(page, false);
+    for (let i = 1; i < rows.length; i += 1) {
+      rows[i].maeGap = mae(rows[i - 1].bare, rows[i].bare, crop(gap));
+      rows[i].maeShip = mae(rows[i - 1].bare, rows[i].bare, crop(shipBox));
+    }
+    const between = rows.filter((row) => row.f >= 3);
+    const midGap = median(between.map((row) => row.maeGap));
+    const midShip = median(between.map((row) => row.maeShip));
+    const white = (file) => {
+      const p = pixelsOf(file, shipBox);
+      let c = 0;
+      for (let i = 0; i < p.n; i += 1) if (p.luma(i) >= 0.95) c += 1;
+      return +(c / p.n).toFixed(3);
+    };
+    const keys = [];
+    for (let k = 0; k < word.length - 1; k += 1) {
+      const pre = rows.find((row) => (k === 0 ? row.k === -1 : row.k === k - 1 && row.f === 8));
+      const at = (f) => rows.find((row) => row.k === k && row.f === f);
+      const mark = Math.max(...[0, 1].map((f) => rose(pre.bare, at(f).bare, gap, 0.25, ui) + rose(pre.bare, at(f).bare, shipBox, 0.25, ui)));
+      keys.push({
+        k, key: word[k], gapX: +(Math.max(at(0).maeGap, at(1).maeGap) / Math.max(0.01, midGap)).toFixed(2), shipX: +(Math.max(at(0).maeShip, at(1).maeShip) / Math.max(0.01, midShip)).toFixed(2),
+        gap: [at(0).maeGap, at(1).maeGap], ship: [at(0).maeShip, at(1).maeShip], mark, whiteF0: white(at(0).bare), live: at(0).info.feel.shards,
+      });
+    }
+    const clip = { x: plate.x - 80 * ui, y: plate.y - 10 * ui, w: plate.w + 160 * ui, h: view.core.y + 90 * ui - (plate.y - 10 * ui) };
+    const cells = [];
+    for (const k of [1, 2]) {
+      const pre = rows.find((row) => row.k === k - 1 && row.f === 8);
+      cells.push({ file: pre.file, label: run.name + " before '" + word[k] + "'" });
+      for (let f = 0; f < 6; f += 1) cells.push({ file: rows.find((row) => row.k === k && row.f === f).file, label: "'" + word[k] + "' f" + f + " " + Math.round((f + 1) * STEP) + " ms" });
+    }
+    const sheetFile = sheet(cells, join(dir, "sheet-f1f-" + run.name + "-" + size + ".jpg"), clip, 7, 300);
+    const share = (pred) => +(keys.filter(pred).length / Math.max(1, keys.length)).toFixed(2);
+    results[run.name] = {
+      ready, word, gap, ship: shipBox, midGap, midShip, keys, sheet: sheetFile,
+      shareGap2: share((key) => key.gapX >= 2), shareShip2: share((key) => key.shipX >= 2), markMin: Math.min(...keys.map((key) => key.mark)), markMedian: median(keys.map((key) => key.mark)),
+      whiteMedian: median(keys.map((key) => key.whiteF0)), whiteBetween: median(rows.filter((row) => row.f >= 6).map((row) => white(row.bare))), liveMax: Math.max(...keys.map((key) => key.live)),
+    };
+    rowsAll.push(...rows.map(({ file, bare, ...row }) => ({ run: run.name, file: file.split("/").pop(), k: row.k, f: row.f, maeGap: row.maeGap, maeShip: row.maeShip, feel: row.info.feel })));
+    await page.eval("localStorage.removeItem('survival.motion'); true");
+  }
+  save(dir, "meta-f1f-" + size + ".json", { results, rows: rowsAll });
+  const all = Object.values(results);
+  return {
+    results,
+    checks: {
+      gapChangesTwice: all.every((r) => r.shareGap2 >= 0.9),
+      shipChangesTwice: all.every((r) => r.shareShip2 >= 0.9),
+      brightMarkEveryKey: all.every((r) => r.markMin >= 300),
+    },
+  };
+}
+
+const SCENES = { f1, f1f, f2, f4, f9, f8, layout, marks, audio, rate };
 
 export default async function (page) {
   const size = page.width + "x" + page.height;

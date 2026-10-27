@@ -4,7 +4,9 @@
 // sheets, and the measures that grade them.
 //   f5    each gun (Xung, Tia, Tán, Ray, Pháo Sao) on chapter stage 1, seed
 //         3, director off, a pack placed by logged commands; a magazine typed
-//         on the held clock, then 24 frames 33 ms apart (Pháo Sao 32). Each
+//         on the held clock (its last key 300 ms after the others: the frame
+//         before it clear of the keys' own marks on the deck, FEEL_PASS_S1
+//         §12), then 24 frames 33 ms apart (Pháo Sao 32). Each
 //         frame twice: as shown, and with the HUD hidden for the measures.
 //         Grades: its bolts drawn (Xung, Tán, Pháo Sao; Ray's armed bolt
 //         while it waits); the muzzle flash on the shot's frame (the radius of
@@ -15,6 +17,10 @@
 //         33 ms apart and one 6 s later. Grades: chunks after a kill ≥ §4.5's
 //         count; one chunk followed rising ≥ 3 frames, then falling ≥ 3; at
 //         +6 s ≥ 50 % still lying.
+//   f6b   big kills (FEEL_PASS_S1 §12): a Trâu at 13 m, a Đầu Đàn at 12 m and
+//         a Trâu at 19 m killed by Ray, every frame round the death then to
+//         9.8 s: the flash (area, frames, off Ray's line), the fire, the
+//         smoke, the chunks against the floor (see f6b below).
 //   shake chapter stage 1 typed at 40 WPM on the held clock for 60 s: the
 //         camera's offset every frame (p95 ≤ 3 px, max ≤ 8 px at 1080p) and the
 //         pools at their peak (§6).
@@ -22,14 +28,14 @@
 //         takes them (it has no screencast).
 //   audio the gun sounds built offline in Chrome (OfflineAudioContext): the
 //         1–4 kHz band ≤ −20 dB of the peak outside 30 ms after each attack.
-//   URL=http://127.0.0.1:3007/ OUT_DIR=… SCENES=f5,f6,shake,f9g,audio node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-feel-guns.mjs --width=1280 --height=720
+//   URL=http://127.0.0.1:3007/ OUT_DIR=… SCENES=f5,f6,f6b,shake,f9g,audio node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-feel-guns.mjs --width=1280 --height=720
 import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { OUT_DIR } from "./common.mjs";
 import { press, stats, sv } from "./survival-s0-lib.mjs";
 import { KIND, openStage } from "./survival-s1-lib.mjs";
-import { advance, crop, hold, save, sheet, STEP } from "./survival-feel-lib.mjs";
+import { advance, crop, hold, inside, pixels, save, sheet, STEP } from "./survival-feel-lib.mjs";
 
 const EV = { shot: 1, hit: 2, kill: 3, beamStart: 12, volley: 20, charge: 21, rail: 22, launch: 23, burst: 24 };
 const BOLT = { xung: 0, tan: 1, ray: 2, phao: 3 };
@@ -43,7 +49,7 @@ const GUNS = {
 };
 
 const hud = (page, on) => page.eval("document.querySelector('.sv-hud').style.visibility = '" + (on ? "" : "hidden") + "'; true");
-const READ = sv("return { tick: t.state().tick, info: t.info(), events: t.events(), numbers: t.numbers().boxes.map((b) => ({ h: Math.round(b.h), text: b.text })) };");
+const READ = sv("return { tick: t.state().tick, info: t.info(), events: t.events(), numbers: t.numbers().boxes.map((b) => ({ h: Math.round(b.h), text: b.text })), foes: t.foes() };");
 
 /** A frame as shown and with the HUD hidden (the measures read that one), with what the page knew. */
 async function frame(page, dir, name, extra) {
@@ -134,6 +140,8 @@ async function f5(page, dir) {
     const { bay } = await bayOf(page, gun);
     // Ray: its armed bolt shows from the load; the frames start then and run to the line.
     const word = await typeHeld(page, bay);
+    // Each key marks the deck under the ship (FEEL_PASS_S1 §12): 300 ms on, the frame before the last key is clear of those marks.
+    await advance(page, 300);
     // The frame before the last key, then the last key's frame (its magazine loads; Xung, Tán, Pháo Sao, Tia fire on it), then every 33 ms.
     const rows = [await frame(page, dir, gun + "-pre", { f: -1, ms: -17 })];
     await press(page, word.at(-1));
@@ -409,7 +417,154 @@ async function audio(page) {
   return { sounds: result, checks: { speechBandClear: result !== null && Object.values(result).every((s) => s.worstBandDb <= -20), noClip: result !== null && Object.values(result).every((s) => s.peakAmp < 1) } };
 }
 
-const SCENES = { f5, f6, shake, f9g, audio };
+/**
+ * N6 (test pass 27/10): a big kill must read as a big event. Three kills,
+ * director off, Tán + Ray: a Trâu at 13 m (it dies to Ray's second shot, the
+ * third comes 0.8 s later), a Đầu Đàn at 12 m (the last shot), a Trâu at
+ * 19 m (Pháo Sao cannot kill a Trâu in one magazine). The placed foe is followed by
+ * id; frames on the held clock: the one before its death and every frame to
+ * f12, every 100 ms to 2 s, then 3, 4.5, 6 s and 9.8 s (its chunks gone: the
+ * floor's reference). Measures on the bare frames (HUD hidden), in 720p px:
+ * the flash (px ≥ 0.85 luma that were not before the kill, off a 56 px band
+ * along Ray's line, not blue: R − B ≥ 0.04; all new bright px for context):
+ * its peak, frames ≥ 30 % of the peak; the fire (warm px new since the kill
+ * above it, off the band) to 0.6 s; the smoke (grey px ≥ 0.06 lighter than
+ * the reference above the kill, live foes masked) at 0.6, 1.5, 2 s (Ray's
+ * third shot lights 0.8–1.3 s); the chunks (px ≥ 0.08 off the reference
+ * round the kill, foes masked) at 1.5–6 s, with their luma over the floor's.
+ */
+async function f6b(page, dir) {
+  const size = page.width + "x" + page.height;
+  const ui = page.height / 720;
+  const W = page.width;
+  const H = page.height;
+  const KILLS = [
+    { name: "ray-brute", kit: ["tan", "ray"], gun: "ray", kind: KIND.brute, x: 0, z: 13 },
+    { name: "ray-leader", kit: ["tan", "ray"], gun: "ray", kind: KIND.leader, x: -1.5, z: 12 },
+    { name: "ray-far", kit: ["tan", "ray"], gun: "ray", kind: KIND.brute, x: 1, z: 19 },
+  ];
+  const foes = () => page.eval(sv("return t.foes();"));
+  const results = {};
+  for (const scene of KILLS) {
+    await openStage(page, "c1-s1", scene.kit, "&director=0");
+    await page.key("Shift", { code: "ShiftLeft" });
+    await page.sleep(300);
+    await hold(page, true);
+    await page.eval(sv("t.place(" + scene.kind + ", " + scene.x + ", " + scene.z + "); return true;"));
+    await advance(page, 2 * STEP);
+    const target = (await foes()).filter((f) => f[4] === scene.kind).sort((a, b) => Math.abs(a[3] - scene.z) - Math.abs(b[3] - scene.z))[0];
+    const id = target[5];
+    const { bay } = await bayOf(page, scene.gun);
+    const word = await typeHeld(page, bay);
+    await press(page, word.at(-1));
+    // Every frame until the foe is gone (each shot twice, as shown and bare, under two names in turn: the last is the one before the kill).
+    let last = null;
+    let pre = null;
+    let at = target;
+    let ms = 0;
+    let killed = false;
+    for (let f = 0; f < 400 && !killed; f += 1) {
+      await advance(page, STEP);
+      ms += STEP;
+      const live = (await foes()).find((foe) => foe[5] === id);
+      killed = live === undefined;
+      if (killed) break;
+      at = live;
+      pre = last;
+      last = await frame(page, dir, "f6b-" + scene.name + "-pre" + (f % 2), { ms: Math.round(ms) });
+    }
+    const kill = { x: at[0], y: at[1], r: at[2] };
+    const muzzle = last.info.muzzles[0];
+    const rows = [{ ...last, label: "before", t: -STEP }];
+    let t = 0;
+    const take = async (step, label) => {
+      t += step;
+      rows.push({ ...(await frame(page, dir, "f6b-" + scene.name + "-" + String(rows.length).padStart(3, "0"), { t })), label: label ?? "+" + Math.round(t) + " ms", t });
+    };
+    // The kill's own frame was drawn by the loop's last advance (the foe gone): shoot it, then step on.
+    rows.push({ ...(await frame(page, dir, "f6b-" + scene.name + "-kill", { t: 0 })), label: "kill f0", t: 0 });
+    for (let f = 1; f <= 12; f += 1) {
+      await advance(page, STEP);
+      await take(STEP, "f" + f);
+    }
+    while (t < 2000 - 1) {
+      await advance(page, 100);
+      await take(100);
+    }
+    for (const until of [3000, 4500, 6000, 9800]) {
+      await advance(page, until - t);
+      await take(until - t);
+    }
+    await hold(page, false);
+    // Ray's line on screen: the muzzle through the kill, ± 18 px.
+    const band = (x, y) => {
+      if (scene.gun !== "ray") return false;
+      const dx = kill.x - muzzle[0];
+      const dy = kill.y - muzzle[1];
+      const len = Math.hypot(dx, dy) || 1;
+      return Math.abs((x - muzzle[0]) * dy - (y - muzzle[1]) * dx) / len <= 28 * ui;
+    };
+    const box = (hx, up, down) => inside({ x: kill.x - hx * ui, y: kill.y - up * ui, w: 2 * hx * ui, h: (up + down) * ui }, W, H);
+    const before = rows[0];
+    const ref = rows.at(-1);
+    // The flash: new px ≥ 0.85 off the band, their warmth.
+    const flashBox = box(240, 240, 120);
+    const P0 = pixels(before.bare, flashBox);
+    const flash = rows.filter((row) => row.t >= 0 && row.t <= 12 * STEP + 1).map((row) => {
+      const P = pixels(row.bare, flashBox);
+      let n = 0;
+      let all = 0;
+      for (let i = 0; i < P.n; i += 1) {
+        if (P.luma(i) < 0.85 || P0.luma(i) >= 0.85) continue;
+        all += 1;
+        if (P.warm(i) >= 0.04 && !band(flashBox.x + (i % flashBox.w), flashBox.y + Math.floor(i / flashBox.w))) n += 1;
+      }
+      return { label: row.label, px: Math.round(n / (ui * ui)), all: Math.round(all / (ui * ui)) };
+    });
+    const peak = Math.max(...flash.map((f) => f.px));
+    // The fire: warm px (R ≥ 0.55, R − B ≥ 0.2) above the kill, new since the frame before, off the band.
+    const fireBox = box(110, 220, 10);
+    const F0 = pixels(before.bare, fireBox);
+    const hot = (P, i) => P.data[i * 3] >= 140 && P.warm(i) >= 0.2;
+    const fire = rows.filter((row) => row.t >= 0 && row.t <= 600).map((row) => {
+      const P = pixels(row.bare, fireBox);
+      let n = 0;
+      for (let i = 0; i < P.n; i += 1) if (hot(P, i) && !hot(F0, i) && !band(fireBox.x + (i % fireBox.w), fireBox.y + Math.floor(i / fireBox.w))) n += 1;
+      return { label: row.label, px: Math.round(n / (ui * ui)) };
+    });
+    // Live foes masked (their discs at either frame).
+    const mask = (list) => (x, y) => list.some((f) => (x - f[0]) ** 2 + (y - f[1]) ** 2 <= (f[2] * 1.6 + 6 * ui) ** 2);
+    const changed = (row, rect, level, grey) => {
+      const P = pixels(row.bare, rect);
+      const R = pixels(ref.bare, rect);
+      const skip = mask([...row.foes, ...ref.foes]);
+      let n = 0;
+      let lit = 0;
+      let floor = 0;
+      for (let i = 0; i < P.n; i += 1) {
+        const d = P.luma(i) - R.luma(i);
+        if ((grey ? d < level || P.chroma(i) > 0.12 : Math.abs(d) < level) || skip(rect.x + (i % rect.w), rect.y + Math.floor(i / rect.w))) continue;
+        n += 1;
+        lit += P.luma(i);
+        floor += R.luma(i);
+      }
+      return { px: Math.round(n / (ui * ui)), luma: n > 0 ? +(lit / n).toFixed(3) : 0, floor: n > 0 ? +(floor / n).toFixed(3) : 0 };
+    };
+    const smoke = rows.filter((row) => [600, 1500, 2000].some((m) => Math.abs(row.t - m) < 1)).map((row) => ({ label: row.label, ...changed(row, box(160, 240, -30), 0.06, true) }));
+    const chunks = rows.filter((row) => [1500, 3000, 4500, 6000].some((m) => Math.abs(row.t - m) < 1)).map((row) => ({ label: row.label, ...changed(row, box(170, 160, 70), 0.08, false) }));
+    const clip = { x: kill.x - 260 * ui, y: kill.y - 240 * ui, w: 520 * ui, h: 340 * ui };
+    const shown = rows.filter((row) => row.t <= 12 * STEP + 1 || [200, 400, 600, 1000, 1500, 2000, 3000, 6000].some((m) => Math.abs(row.t - m) < 1));
+    const sheetFile = sheet(shown.map((row) => ({ file: row.file, label: scene.name + " " + row.label })), join(dir, "sheet-f6b-" + scene.name + "-" + size + ".jpg"), clip, 7, 300);
+    results[scene.name] = {
+      killed, killMs: Math.round(ms), kill, word, flash, flashPeak: peak, flashFrames: flash.filter((f) => f.px >= peak * 0.3 && peak > 0).length, flashAll: Math.max(...flash.map((f) => f.all)),
+      fire, firePeak: Math.max(...fire.map((f) => f.px)), smoke, smokeMax: Math.max(...smoke.map((s) => s.px)), chunks, sheet: sheetFile,
+    };
+  }
+  save(dir, "meta-f6b-" + size + ".json", results);
+  return { results, checks: { killed: Object.values(results).every((r) => r.killed) } };
+}
+
+const SCENES = { f5, f6, f6b, shake, f9g, audio };
 
 export default async function (page) {
   const size = page.width + "x" + page.height;
