@@ -9,7 +9,7 @@
  * No DOM here: the host draws (view/screens-journey.ts) and reloads.
  */
 import { CHAPTER_1, isStageId, stageById } from "../content/chapter-1";
-import { COUNTERS, COUNTER_ROWS, GUN_IDS, GUN_KEYS, GUN_SPECS, gunByKey, type GunId } from "../content/guns";
+import { COUNTERS, COUNTER_ROWS, GUN_IDS, GUN_SPECS, gunByKey, type GunId } from "../content/guns";
 import { LEARN_RULES, type Stage } from "../content/stage-rules";
 import { stageThreat, uncovered } from "../content/threat";
 import type { Mode } from "../content/balance";
@@ -304,6 +304,3 @@ export function objectiveText(stage: Stage): string {
   if (o.kind === "hold") return "Trụ vững " + Math.floor(o.seconds / 60) + ":" + String(o.seconds % 60).padStart(2, "0");
   return "Săn " + o.need + " trong " + o.leaders.length + " Đầu Đàn";
 }
-
-/** The guns' keys for the address (?guns=ray,tia). */
-export const gunsParam = (guns: readonly GunId[]): string => guns.map((gun) => GUN_KEYS[gun]).join(",");

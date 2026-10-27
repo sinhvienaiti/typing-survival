@@ -61,6 +61,17 @@ const NEW_CARD: Readonly<Record<number, string>> = {
 };
 const TEACH_KIND: Readonly<Record<string, number>> = { brute: KIND.brute, leader: KIND.leader, shield: KIND.shield, splitter: KIND.splitter };
 
+/** Sets `node`'s text when it changed (most frames change nothing). */
+const text = (node: HTMLElement, value: string): void => {
+  if (node.textContent !== value) node.textContent = value;
+};
+/** Restarts a class's CSS animation on `node`. */
+const replay = (node: HTMLElement, name: string): void => {
+  node.classList.remove(name);
+  void node.offsetWidth;
+  node.classList.add(name);
+};
+
 function el<T extends HTMLElement>(tag: string, className: string, parent: HTMLElement, text = ""): T {
   const node = document.createElement(tag) as T;
   node.className = className;
@@ -97,7 +108,7 @@ export class Hud {
   private readonly slots: Slot[] = [];
   readonly overlay: HTMLElement;
   readonly vignette: HTMLElement;
-  private last = { hp: -1, time: "", kills: -1, total: -1, peak: 0, goal: "", warn: "" };
+  private last = { hp: -1, kills: -1, peak: 0, goal: "", warn: "" };
   private bounceAt = -1e9;
   private streakHot = false;
   private readonly at = new THREE.Vector3();
@@ -217,11 +228,8 @@ export class Hud {
       return;
     }
     bay.loadAt = now;
-    const root = bay.root;
-    root.classList.toggle("is-perfect", perfect);
-    root.classList.remove("is-loaded");
-    void root.offsetWidth;
-    root.classList.add("is-loaded");
+    bay.root.classList.toggle("is-perfect", perfect);
+    replay(bay.root, "is-loaded");
   }
 
   /** The clean streak (n words), the streak a wrong key broke, its tier (3: the line's edge takes the gun's colour). */
@@ -232,22 +240,18 @@ export class Hud {
 
   showBanner(text: string, now: number): void {
     this.banner.textContent = text;
-    this.banner.classList.remove("is-on");
-    void this.banner.offsetWidth;
-    this.banner.classList.add("is-on");
+    replay(this.banner, "is-on");
     this.bannerUntil = now + 2200;
   }
 
-  setNotice(text: string): void {
-    if (this.notice.textContent !== text) this.notice.textContent = text;
-    this.notice.hidden = text === "";
+  setNotice(value: string): void {
+    text(this.notice, value);
+    this.notice.hidden = value === "";
   }
 
   /** A hurt: the screen edges flash red for a moment. */
   hurt(): void {
-    this.vignette.classList.remove("is-hurt");
-    void this.vignette.offsetWidth;
-    this.vignette.classList.add("is-hurt");
+    replay(this.vignette, "is-hurt");
   }
 
   update(w: World, killsRecent: number, now: number): void {
@@ -259,11 +263,7 @@ export class Hud {
       this.hp.classList.toggle("is-low", w.hp <= w.armourMax * 0.3);
     }
     const left = Math.max(0, Math.ceil(w.seconds - w.time));
-    const clock = Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0");
-    if (clock !== this.last.time) {
-      this.last.time = clock;
-      this.time.textContent = clock;
-    }
+    text(this.time, Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0"));
     const peak = peakAt(w);
     if (peak !== this.last.peak) {
       this.last.peak = peak;
@@ -273,18 +273,11 @@ export class Hud {
     if (now > this.bannerUntil) this.banner.classList.remove("is-on");
     if (killsRecent !== this.last.kills) {
       this.kills.textContent = "×" + killsRecent;
-      if (killsRecent > this.last.kills) {
-        this.kills.classList.remove("is-bump");
-        void this.kills.offsetWidth;
-        this.kills.classList.add("is-bump");
-      }
+      if (killsRecent > this.last.kills) replay(this.kills, "is-bump");
       this.kills.parentElement!.classList.toggle("is-hot", killsRecent >= 15);
       this.last.kills = killsRecent;
     }
-    if (w.stats.kills !== this.last.total) {
-      this.last.total = w.stats.kills;
-      this.total.textContent = "Tổng " + w.stats.kills;
-    }
+    text(this.total, "Tổng " + w.stats.kills);
     this.updateGoal(w);
     this.updateWarn(w);
     this.updateFresh(w, now);

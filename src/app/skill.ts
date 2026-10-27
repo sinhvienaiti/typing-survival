@@ -8,7 +8,7 @@
  * finished them here (`survival.seen`). No DOM: storage comes in.
  */
 import {
-  ADVICE_VI, blendSkill, newSkillProfile, parseSkill, serializeSkill, skillAdvice, skillStorageKey, suggestDifficulty, updateSkill,
+  ADVICE_VI, blendSkill, parseSkill, serializeSkill, skillAdvice, skillStorageKey, suggestDifficulty, updateSkill,
   type DifficultySuggestion, type Familiarity, type FlowSummary, type SkillProfile, type SkillSample, type SkillUpdate, type SkillView,
 } from "../kit/balance";
 import { MODE_SPECS, MODES, runHeader, type Mode, type RunPace } from "../content/balance";
@@ -162,5 +162,3 @@ export function skillReport(profile: SkillProfile, mode: Mode): SkillReport {
         : "";
   return { view, measured: view.confidence.e > 0, runs: profile.trend.stages, advice: ADVICE_VI[skillAdvice(view)], suggestion, suggestionText };
 }
-
-export const freshProfile = (mode: Mode): SkillProfile => newSkillProfile("adult", mode);
