@@ -57,11 +57,13 @@ export class CleanStreak {
 
 /**
  * A typed letter's pop (§3.1), `t` ms after its key: 1.25× and 6 px low at
- * f0, 1.12× and 3 px at f1, 1.03× by f3, still at 1× from 100 ms; white-hot
- * to the gun's colour by 120 ms; its glow gone at 160 ms; a sweep line under
- * it in 50 ms.
+ * f0, 1.12× and 3 px at f1, 1.03× by f3, still at 1× from 100 ms. Its ink is
+ * the gun's from the first frame (65 % gun over white-hot, full gun by
+ * 120 ms: a white-hot f0 read as the untyped letters' white, test pass
+ * 27/10) with a halo gone at 160 ms; a sweep line under it, 40 % long at f0
+ * and whole by 50 ms, stays at 55 % as the typed part's underline.
  */
-export const POP = { scale: 0.25, drop: 6, tau: 24, settle: 100, colour: 120, glow: 160, sweep: 50 } as const;
+export const POP = { scale: 0.25, drop: 6, tau: 24, settle: 100, ink: 0.65, colour: 120, glow: 160, sweep: 50, line: 0.55 } as const;
 
 export function popScale(t: number): number {
   return t >= POP.settle || t < 0 ? 1 : 1 + POP.scale * Math.exp(-t / POP.tau);
@@ -72,14 +74,24 @@ export function popDrop(t: number): number {
   return t >= POP.settle || t < 0 ? 0 : POP.drop * Math.exp(-t / POP.tau);
 }
 
-/** 0 white-hot … 1 the gun's colour. */
+/** The gun's share of the ink: 0.65 at the key … 1 by 120 ms (the rest white-hot). */
 export function popColour(t: number): number {
-  return Math.max(0, Math.min(1, t / POP.colour));
+  return POP.ink + (1 - POP.ink) * Math.max(0, Math.min(1, t / POP.colour));
 }
 
 /** The letter's glow, 1 … 0. */
 export function popGlow(t: number): number {
   return Math.max(0, 1 - t / POP.glow);
+}
+
+/** The sweep line's length (share of the letter): 0.4 at f0, whole by 50 ms. */
+export function sweepLength(t: number): number {
+  return Math.min(1, 0.4 + (0.6 * Math.max(0, t)) / POP.sweep);
+}
+
+/** The sweep line's alpha: 1 while it runs, then down to the underline's 0.55 in 110 ms. */
+export function sweepAlpha(t: number): number {
+  return t < POP.sweep ? 1 : Math.max(POP.line, 1 - ((1 - POP.line) * (t - POP.sweep)) / 110);
 }
 
 /** A finished word swells 1 → 1.06 → 1 over 160 ms. */

@@ -5,7 +5,7 @@
 // starts the audio and the music), then Trận thử (↓ Enter), the HUD with its health bar, clock and kill counter, and two gun
 // slots that each show a word (≥ 26 px at 1280×720) with its meaning, the
 // word line above the ship (hidden until a key locks a bay; FEEL_PASS_S1
-// §2.6: 4 protected boxes), contrast ≥ 7 : 1 measured on the real frame: the
+// §2.6: 6 protected boxes: the line, armour, clock, kills, two bays), contrast ≥ 7 : 1 measured on the real frame: the
 // brightest 1 % of the view behind each bay and the line (the HUD hidden for
 // one picture) through the plate's own alpha; no console error. S0 review:
 // a window that loses focus pauses the fight (Esc goes on); with the screen
@@ -114,7 +114,7 @@ export default async function (page) {
     firstLettersDiffer: hud.sim[0].text[0] !== hud.sim[1].text[0],
     wordAtLeast26px: hud.slots.every((slot) => slot.px >= 26),
     contrastAtLeast7: hud.slots.every((slot) => slot.contrast >= 7) && hud.line.contrast >= 7 && hud.slots.every((slot) => /244, 241, 235/.test(slot.color)),
-    hudShown: hud.hp === "100" && /^\d:\d\d$/.test(hud.clock ?? "") && /^×\d+$/.test(hud.kills ?? "") && hud.learn && hud.rects === 4,
+    hudShown: hud.hp === "100" && /^\d:\d\d$/.test(hud.clock ?? "") && /^×\d+$/.test(hud.kills ?? "") && hud.learn && hud.rects === 6,
     blurPauses: blurred === "paused" && resumed === "play",
     controlShakes: shaking.ready && shaking.worst > 0,
     shakeOffHonoured: shakeOff.ready && shakeOff.scale === 0 && shakeOff.worst === 0 && shakeOff.trauma === 0 && shakeOff.hits > 0,

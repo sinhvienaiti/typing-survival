@@ -26,7 +26,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-hazard { height: calc(8px * var(--ui)); background: var(--hazard); border-top: 1px solid var(--bevel-lo); border-bottom: 1px solid var(--bevel-lo); }
 
 /* While the title (or its menus) shows, the fight's HUD steps aside (hidden, still laid out: the number field keeps its rectangles). */
-.sv-hud[data-mode="start"] .sv-top, .sv-hud[data-mode="start"] .sv-bottom, .sv-hud[data-mode="start"] .sv-strip, .sv-hud[data-mode="start"] .sv-streak, .sv-hud[data-mode="start"] .sv-marks, .sv-hud[data-mode="start"] .sv-banner, .sv-hud[data-mode="start"] .sv-notice { visibility: hidden; }
+.sv-hud[data-mode="start"] .sv-top, .sv-hud[data-mode="start"] .sv-bottom, .sv-hud[data-mode="start"] .sv-strip, .sv-hud[data-mode="start"] .sv-streak, .sv-hud[data-mode="start"] .sv-marks, .sv-hud[data-mode="start"] .sv-banner, .sv-hud[data-mode="start"] .sv-strip-warn { visibility: hidden; }
+/* The input notice stays on every screen (the title and the journey too), over the menus. */
+.sv-hud[data-mode="start"] .sv-notice { top: calc(18px * var(--ui)) !important; z-index: 2; }
 
 /* Top: armour, clock, kills. */
 .sv-top { position: absolute; top: calc(12px * var(--ui)); left: calc(14px * var(--ui)); right: calc(14px * var(--ui)); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
@@ -53,7 +55,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-banner { position: absolute; top: 16%; left: 50%; transform: translate(-50%, 0) scale(0.9); opacity: 0; padding: calc(8px * var(--ui)) calc(40px * var(--ui)); font: 700 calc(34px * var(--ui)) var(--font-title); letter-spacing: 0.16em; color: var(--text); text-shadow: var(--title-glow); background: var(--banner-band); border-top: calc(5px * var(--ui)) solid transparent; border-bottom: calc(5px * var(--ui)) solid transparent; border-image: var(--hazard) 6; }
 .sv-banner.is-on { animation: sv-banner 2.2s ease-out forwards; }
 @keyframes sv-banner { 0% { opacity: 0; transform: translate(-50%, 0) scale(1.4); } 10% { opacity: 1; transform: translate(-50%, 0) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
-.sv-notice { position: absolute; top: calc(72px * var(--ui)); left: 50%; transform: translateX(-50%); padding: 6px 14px; border: 1px solid var(--danger); background: var(--notice); font: 700 14px var(--font-battle); }
+/* An input notice (Vietnamese IME on, fallback words): just above the word line (hud.ts sets its top), big enough to see while typing. */
+.sv-notice { position: absolute; top: calc(360px * var(--ui)); left: 50%; transform: translateX(-50%); padding: calc(7px * var(--ui)) calc(16px * var(--ui)); border: 2px solid var(--danger); background: var(--notice); box-shadow: 0 0 18px var(--danger-glow); font: 700 calc(20px * var(--ui)) var(--font-battle); white-space: nowrap; color: var(--text); }
+.sv-notice::before { content: "⌨ "; }
 
 /* The objective's plate (top centre, fixed: only its numbers change). */
 .sv-goal { align-self: flex-start; padding: calc(7px * var(--ui)) calc(18px * var(--ui)); font: 700 calc(16px * var(--ui)) var(--font-title); letter-spacing: 0.14em; color: var(--led); text-shadow: 0 0 10px var(--led-glow); background-color: var(--screen); }
@@ -70,11 +74,12 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 /* Bottom: the bays on the floor beside the ship, [bay 3][bay 1] ship [bay 2][bay 4] (FEEL_PASS_S1 §2.1); hud.ts places the row under the bottom line and sets its columns. */
 .sv-bottom { position: absolute; left: 50%; top: 508px; transform: translateX(-50%); display: grid; grid-template-columns: 208px 230px 324px 230px 208px; column-gap: calc(12px * var(--ui)); align-items: start; }
 /* Each bay's gun colour: --gun and --gun-glow. */
-.sv-xung { --gun: var(--xung); --gun-glow: var(--xung-glow); }
-.sv-tia { --gun: var(--tia); --gun-glow: var(--tia-glow); }
-.sv-tan { --gun: var(--tan); --gun-glow: var(--tan-glow); }
-.sv-ray { --gun: var(--ray); --gun-glow: var(--ray-glow); }
-.sv-phao { --gun: var(--phao); --gun-glow: var(--phao-glow); }
+/* --gun-ink is set with each gun: a var() inherits as the value it took where it was declared, so a :root default would give every gun Xung's ink. */
+.sv-xung { --gun: var(--xung); --gun-glow: var(--xung-glow); --gun-ink: var(--xung); }
+.sv-tia { --gun: var(--tia); --gun-glow: var(--tia-glow); --gun-ink: var(--tia); }
+.sv-tan { --gun: var(--tan); --gun-glow: var(--tan-glow); --gun-ink: var(--tan); }
+.sv-ray { --gun: var(--ray); --gun-glow: var(--ray-glow); --gun-ink: var(--ray-ink); }
+.sv-phao { --gun: var(--phao); --gun-glow: var(--phao-glow); --gun-ink: var(--phao); }
 .sv-slot { --load: 0; position: relative; min-width: 0; height: calc(100px * var(--ui)); padding: calc(11px * var(--ui)) calc(14px * var(--ui)) calc(7px * var(--ui)); display: flex; flex-direction: column; gap: calc(2px * var(--ui)); background-color: var(--bay-glass); transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; }
 /* The top stripe: dim, and lit from the left as the word is typed (full for a moment when it loads). */
 .sv-slot::before, .sv-slot::after { content: ""; position: absolute; left: 0; top: 0; height: calc(5px * var(--ui)); background: var(--hazard-gun); }
@@ -83,7 +88,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-slot.is-charged::after { width: 100%; }
 .sv-slot header { display: flex; align-items: center; gap: calc(6px * var(--ui)); min-width: 0; }
 .sv-gun { font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.12em; white-space: nowrap; color: var(--gun); }
-.sv-slot .sv-typed { color: var(--gun); }
+.sv-slot .sv-typed { color: var(--gun-ink); text-decoration: underline calc(2px * var(--ui)) var(--gun-ink); text-underline-offset: calc(4px * var(--ui)); }
 .sv-head { display: inline-block; transform-origin: 50% 85%; }
 .sv-mags { margin-left: auto; display: flex; gap: calc(3px * var(--ui)); color: var(--gun); }
 .sv-mags i { --fill: 0; position: relative; width: calc(22px * var(--ui)); height: calc(9px * var(--ui)); background: var(--track); border: 1px solid var(--bevel-lo); overflow: hidden; }
@@ -92,8 +97,12 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-slot.is-overfull .sv-mags { color: var(--urgent); filter: drop-shadow(0 0 6px var(--urgent)); }
 .sv-slot.is-overfull .sv-mags i { border-color: var(--urgent); }
 .sv-word { --fit: 1; font: 800 calc(32px * var(--ui) * var(--fit)) var(--font-battle); letter-spacing: 0.02em; line-height: 1.15; white-space: nowrap; color: var(--text); }
-.sv-mean { font: 600 calc(15px * var(--ui)) var(--font-battle); color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sv-mean.is-ipa { font-family: var(--font-ipa); }
+.sv-mean { --mfit: 1; font: 600 calc(15px * var(--ui) * var(--mfit)) var(--font-battle); color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sv-ipa { font: 600 calc(14px * var(--ui)) var(--font-ipa); letter-spacing: 0; color: var(--soft); }
+.sv-ipa:not(:empty) { margin-left: calc(8px * var(--ui)); }
+/* The bay being typed: its word small with the IPA (the line above the ship shows it big), the meaning on up to two lines. */
+.sv-slot.is-active .sv-word { font-size: calc(22px * var(--ui)); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; }
+.sv-slot.is-active .sv-mean { font-size: calc(14px * var(--ui)); line-height: 1.25; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
 .sv-slot.is-active { border-color: var(--gun); box-shadow: inset 0 1px 0 var(--bevel-hi), 0 0 0 2px var(--gun), 0 0 26px var(--gun-glow); }
 /* A bay without a gun: a dark steel plate (bay 3 opens at the Mốc, bay 4 later). */
 .sv-bay-lock { height: calc(100px * var(--ui)); display: grid; place-items: center; background-color: var(--bay-glass); font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.16em; color: var(--steel-400); opacity: 0.8; }
@@ -113,18 +122,27 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-strip { position: absolute; left: 50%; top: 416px; height: calc(56px * var(--ui)); max-width: calc(420px * var(--ui)); padding: 0 calc(16px * var(--ui)); display: flex; align-items: center; justify-content: center; background: var(--strip); border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 6px 18px var(--shadow); opacity: 0; transform: translateX(-50%); transform-origin: 50% 50%; }
 .sv-strip.is-bad { border-color: var(--danger); box-shadow: 0 0 0 1px var(--danger), 0 0 16px var(--danger-glow); }
 .sv-strip.is-streak { border-color: var(--gun); }
+/* A right key: the edge flashes the gun's colour (3 frames; strip.ts). */
+.sv-strip.is-key { border-color: var(--gun); box-shadow: 0 0 0 1px var(--gun), 0 0 calc(16px * var(--ui)) var(--gun-glow), 0 6px 18px var(--shadow); }
 .sv-strip-word { --fit: 1; font: 800 calc(42px * var(--ui) * var(--fit)) var(--font-battle); line-height: 1; white-space: nowrap; color: var(--text); transform-origin: 50% 60%; }
 .sv-strip-word i { position: relative; display: inline-block; font-style: normal; transform-origin: 50% 100%; }
-.sv-strip-word i.is-typed { color: var(--gun); }
-/* A typed letter: white-hot to the gun's colour (--k), its glow (--g), a sweep line under it (--sw, --swo); strip.ts drives them each frame. */
-.sv-strip-word i.is-pop { color: color-mix(in srgb, var(--gun) calc(var(--k) * 100%), var(--white-hot)); text-shadow: 0 0 calc(12px * var(--ui)) color-mix(in srgb, var(--gun-glow) calc(var(--g) * 100%), transparent); }
-.sv-strip-word i::after { content: ""; position: absolute; left: 0; right: 0; bottom: calc(-3px * var(--ui)); height: calc(2px * var(--ui)); background: var(--gun); transform-origin: left; transform: scaleX(var(--sw, 0)); opacity: var(--swo, 0); }
+.sv-strip-word i.is-typed { --sw: 1; --swo: 0.55; color: var(--gun-ink); }
+/* A typed letter: the gun's ink over white-hot (--k), its halo (--g), a sweep line under it that stays as the typed part's underline (--sw, --swo); strip.ts drives them each frame. */
+.sv-strip-word i.is-pop { color: color-mix(in srgb, var(--gun-ink) calc(var(--k) * 100%), var(--white-hot)); text-shadow: 0 0 calc(14px * var(--ui)) color-mix(in srgb, var(--gun-glow) calc(var(--g) * 100%), transparent), 0 0 calc(4px * var(--ui)) color-mix(in srgb, var(--gun-ink) calc(var(--g) * 100%), transparent); }
+.sv-strip-word i::after { content: ""; position: absolute; left: 0; right: 0; bottom: calc(-3px * var(--ui)); height: calc(3px * var(--ui)); background: var(--gun-ink); transform-origin: left; transform: scaleX(var(--sw, 0)); opacity: var(--swo, 0); }
 .sv-strip-word i.is-hot { color: var(--white-hot); text-shadow: 0 0 calc(14px * var(--ui)) var(--gun-glow); }
 /* A wrong key: the letter due gets a red underline and glow (220 ms). */
 .sv-strip-word i.is-miss { text-shadow: 0 0 calc(10px * var(--ui)) var(--danger-glow); }
 .sv-strip-word i.is-miss::after { height: calc(3px * var(--ui)); background: var(--danger); transform: scaleX(1); opacity: 1; }
 .sv-strip-done { --fit: 1; font: 700 calc(26px * var(--ui) * var(--fit)) var(--font-battle); line-height: 1; white-space: nowrap; color: var(--typing); transform-origin: 50% 60%; }
 .sv-strip-done b { color: var(--urgent); font-weight: 800; }
+/* Too wide for one line: "word ✓" over its meaning. */
+.sv-strip-done.is-two { display: flex; flex-direction: column; align-items: center; gap: calc(2px * var(--ui)); font-size: calc(22px * var(--ui) * var(--fit)); line-height: 1.05; }
+.sv-strip-done.is-two small { font: 600 calc(17px * var(--ui) * var(--fit)) var(--font-battle); line-height: 1.05; color: var(--typing); }
+/* A rift's countdown beside the word line, on its wall's side (strip.ts places it). */
+.sv-strip-warn { position: absolute; left: 0; height: calc(30px * var(--ui)); padding: 0 calc(10px * var(--ui)); display: flex; align-items: center; font: 700 calc(16px * var(--ui)) var(--font-title); letter-spacing: 0.08em; white-space: nowrap; color: var(--ink); background: var(--hot); box-shadow: 0 0 18px var(--hot-glow); visibility: hidden; }
+.sv-strip-warn.is-on { visibility: visible; animation: sv-blink 0.5s steps(2, jump-none) infinite; }
+[data-motion="reduced"] .sv-strip-warn.is-on { animation: none; }
 .sv-strip-sweep { position: absolute; left: calc(16px * var(--ui)); right: calc(16px * var(--ui)); bottom: calc(6px * var(--ui)); height: calc(2px * var(--ui)); background: var(--gun); transform-origin: left; transform: scaleX(0); opacity: 0; }
 /* A stray key ghosts in red at the line's centre. */
 .sv-strip-ghost { position: absolute; left: 50%; height: calc(56px * var(--ui)); display: flex; align-items: center; transform: translateX(-50%); font: 800 calc(42px * var(--ui)) var(--font-battle); line-height: 1; color: var(--danger); opacity: 0; }

@@ -3,11 +3,16 @@
  * word being typed, 42 px, on a plate that hugs it (16 px each side, at most
  * 420 px at 1280×720), its bottom 4 px above the bottom line's stripes. It
  * hides until a key locks a bay; a finished word shows "word · meaning ✓"
- * for 0.6 s. Every letter typed pops in place (1.25× → 1×, white-hot → the
- * gun's colour, a sweep line under it) and stands still after 100 ms; a
- * wrong key underlines the letter due in red; a stray key ghosts in red at
- * the line's centre. Beside it the clean streak's LED ("SẠCH ×N"); under it
- * a red tick at each near foe the plate hides. Every effect runs on the
+ * for 0.6 s (on two lines, "word ✓" over the meaning, when one line is too
+ * wide: the word and its meaning always together, never split onto a bay).
+ * Every letter typed pops in place (1.25× → 1×, the gun's ink with a halo
+ * from its first frame, a sweep line under it that stays as the typed
+ * part's underline), the plate's edge flashes the gun's colour for 3 frames,
+ * and the letter stands still after 100 ms; a wrong key underlines the
+ * letter due in red; a stray key ghosts in red at the line's centre. Beside
+ * it the clean streak's LED ("SẠCH ×N", shown with the plate); a rift's
+ * countdown on its wall's side; under it a red tick at each near foe the
+ * plate hides. Every effect runs on the
  * page's frame clock (`now`), never CSS keyframes, so the held clock of the
  * scenarios captures it frame by frame. DOM outside the canvas: never shaken.
  */
@@ -16,7 +21,7 @@ import { GUN_SPECS } from "../content/guns";
 import { NEAR } from "../content/rules";
 import type { World } from "../sim/world";
 import type { Stage } from "./scene";
-import { bounce, popColour, popDrop, popGlow, popScale, swell, STREAK, POP } from "./type-rules";
+import { bounce, popColour, popDrop, popGlow, popScale, sweepAlpha, sweepLength, swell, STREAK, POP } from "./type-rules";
 
 const LETTERS = 16;
 const MARKS = 6;
@@ -41,6 +46,7 @@ export class WordStrip {
   private readonly sweep: HTMLElement;
   private readonly ghost: HTMLElement;
   private readonly led: HTMLElement;
+  private readonly hazard: HTMLElement;
   private readonly ticks: HTMLElement[] = [];
   private readonly letters: HTMLElement[] = [];
   private readonly popAt = new Float64Array(LETTERS).fill(-1e9);
@@ -53,6 +59,8 @@ export class WordStrip {
   private lockAt = -1e9;
   private badAt = -1e9;
   private strayAt = -1e9;
+  private keyAt = -1e9;
+  private hazardKey = "";
   private last: Done | null = null;
   private streakN = 0;
   private streakAt = -1e9;
@@ -76,6 +84,7 @@ export class WordStrip {
     for (let i = 0; i < LETTERS; i += 1) this.letters.push(el("i", "", this.word));
     this.ghost = el("div", "sv-strip-ghost", root);
     this.led = el("div", "sv-streak", root);
+    this.hazard = el("div", "sv-strip-warn", root);
     const marks = el("div", "sv-marks", root);
     for (let i = 0; i < MARKS; i += 1) this.ticks.push(el("i", "", marks));
   }
@@ -90,6 +99,7 @@ export class WordStrip {
     this.plate.style.top = top + "px";
     this.ghost.style.top = top + "px";
     this.led.style.top = top + (PLATE.height - 22) * 0.5 * ui + "px";
+    this.hazard.style.top = top + (PLATE.height - 30) * 0.5 * ui + "px";
     (this.ticks[0]!.parentElement as HTMLElement).style.top = bottom - 3 * ui + "px";
     this.wide = this.plate.offsetWidth;
     this.placeLed();
@@ -114,6 +124,24 @@ export class WordStrip {
   typed(index: number, now: number): void {
     if (index === 0) this.lockAt = now;
     if (index < LETTERS) this.popAt[index] = now;
+    this.keyAt = now;
+  }
+
+  /** A rift's countdown beside the line, on its wall's side (`side` < 0 left; "" hides it). */
+  warn(text: string, side: number): void {
+    const key = text + side;
+    if (key === this.hazardKey) return;
+    this.hazardKey = key;
+    this.hazard.textContent = text;
+    this.hazard.classList.toggle("is-on", text !== "");
+    this.hazard.classList.toggle("is-left", side < 0);
+    this.placeHazard();
+  }
+
+  private placeHazard(): void {
+    // Clear of the widest plate (420 px) and of the streak LED on the right.
+    const off = (PLATE.width / 2 + (this.hazard.classList.contains("is-left") ? 12 : 120)) * this.ui;
+    this.put(this.hazard, "transform", this.hazard.classList.contains("is-left") ? "translateX(calc(" + (this.center - off).toFixed(1) + "px - 100%))" : "translateX(" + (this.center + off).toFixed(1) + "px)");
   }
 
   /** A wrong key in the locked word: the letter due (`index`) underlined red, the plate's edge flashes. */
@@ -128,28 +156,32 @@ export class WordStrip {
     this.strayAt = now;
   }
 
-  /** A word finished: the word white-hot for 2 frames, then "word · meaning ✓" (or "word ✓ · ĐẦY"). Returns false when the meaning did not fit. */
-  finished(word: string, meaning: string, gun: number, full: boolean, now: number): boolean {
+  /** A word finished: the word white-hot for 2 frames, then "word · meaning ✓" (or "word ✓" over the meaning when one line is too wide; "word ✓ · ĐẦY"). */
+  finished(word: string, meaning: string, gun: number, full: boolean, now: number): void {
     const key = GUN_SPECS[gun]?.key ?? "xung";
-    let text = full ? word + " ✓ · " : word + " · " + meaning + " ✓";
-    this.setDone(text, full);
+    this.setDone(full ? word + " ✓ · " : word + " · " + meaning + " ✓", full, "");
     // Measured at its own size (26 px) while shown for a moment; update() picks what shows this frame.
     const wasHidden = this.done.hidden;
     this.done.hidden = false;
     this.done.style.setProperty("--fit", "1");
-    const fits = full || this.done.scrollWidth <= (PLATE.width - 2 * PLATE.pad) * this.ui;
+    const fits = full || meaning === "" || this.done.scrollWidth <= (PLATE.width - 2 * PLATE.pad) * this.ui;
     this.done.hidden = wasHidden;
-    if (!fits) {
-      text = word + " ✓";
-      this.setDone(text, false);
-    }
+    if (!fits) this.setDone(word + " ✓", false, meaning);
     this.key = "";
-    this.last = { word, text, full, gun: key, start: now };
-    return fits;
+    this.last = { word, text: this.done.textContent ?? "", full, gun: key, start: now };
   }
 
-  private setDone(text: string, full: boolean): void {
-    this.done.textContent = text;
+  /** The done line; `below`: the meaning on a second line under "word ✓". */
+  private setDone(text: string, full: boolean, below: string): void {
+    this.done.classList.toggle("is-two", below !== "");
+    if (below === "") this.done.textContent = text;
+    else {
+      const top = document.createElement("span");
+      top.textContent = text;
+      const under = document.createElement("small");
+      under.textContent = below;
+      this.done.replaceChildren(top, under);
+    }
     if (full) {
       const tag = document.createElement("b");
       tag.textContent = "ĐẦY";
@@ -168,6 +200,7 @@ export class WordStrip {
 
   private placeLed(): void {
     this.led.style.left = this.center + this.wide / 2 + 8 * this.ui + "px";
+    this.placeHazard();
   }
 
   /** Near foes the plate hides (§2.4): a red tick under it at each one's x, blinking at 4 Hz (at most 6). */
@@ -302,8 +335,8 @@ export class WordStrip {
         letter.style.transform = move ? "translateY(" + (popDrop(t) * ui).toFixed(2) + "px) scale(" + popScale(t).toFixed(3) + ")" : "";
         letter.style.setProperty("--k", popColour(t).toFixed(3));
         letter.style.setProperty("--g", popGlow(t).toFixed(3));
-        letter.style.setProperty("--sw", Math.min(1, t / POP.sweep).toFixed(3));
-        letter.style.setProperty("--swo", (t < POP.sweep ? 1 : Math.max(0, 1 - (t - POP.sweep) / 110)).toFixed(3));
+        letter.style.setProperty("--sw", sweepLength(t).toFixed(3));
+        letter.style.setProperty("--swo", sweepAlpha(t).toFixed(3));
         this.styled[i] = 1;
       } else if (this.styled[i] === 1) {
         letter.style.transform = "";
@@ -330,6 +363,8 @@ export class WordStrip {
     this.put(this.sweep, "opacity", sweep > 0 && doneAge < 260 ? Math.max(0, 1 - Math.max(0, doneAge - 100) / 160).toFixed(3) : "0");
     this.put(this.plate, "opacity", mode === "done" && doneAge > DONE.show ? Math.max(0, 1 - (doneAge - DONE.show) / DONE.fade).toFixed(3) : mode === "hidden" ? "0" : "1");
     this.plate.classList.toggle("is-bad", now - this.badAt < 120);
+    // Each right key: the plate's edge flashes the gun's colour for 3 frames.
+    this.plate.classList.toggle("is-key", mode === "word" && now - this.keyAt < 45);
     this.plate.classList.toggle("is-streak", hotEdge);
     // A stray key's ghost fades in 250 ms.
     const ghost = now - this.strayAt;
@@ -338,7 +373,8 @@ export class WordStrip {
     const broke = now - this.brokeAt;
     const lit = this.streakN >= STREAK.show;
     const fading = !lit && broke >= 0 && broke < 400;
-    this.led.classList.toggle("is-on", lit || fading);
+    // Shown with the plate only: alone on the field it reads as a stray label.
+    this.led.classList.toggle("is-on", (lit || fading) && mode !== "hidden");
     this.led.classList.toggle("is-broken", fading);
     this.put(this.led, "opacity", fading ? (1 - broke / 400).toFixed(3) : "1");
     const bump = now - this.streakAt;

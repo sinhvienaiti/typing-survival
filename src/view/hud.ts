@@ -9,11 +9,17 @@
  * its gun (name, colour, magazine LEDs: 2, or 3 at Rèn 3; a top stripe that
  * fills as its word is typed), its word (32 px, long words shrink to no less
  * than 26 px; Thiếu chữ's hidden letters as "_" until typed or shown) and
- * meaning, with the IPA while it is the bay being typed; a bay without a gun
+ * meaning (one line, shrinking to 12 px before it is cut). The bay being
+ * typed hands its big word to the line above the ship and reads as a
+ * dictionary entry: the word at 22 px with its IPA, the meaning on up to two
+ * lines (test pass 27/10: "IPA · meaning" on one line was cut). A finished
+ * word's meaning stays with the word on the line (strip.ts), never under the
+ * bay's next word. A bay without a gun
  * is a dark plate ("MỞ Ở MỐC" for bay 3 in the chapter, a lock for bay 4).
  * Top: armour, clock, kills, the objective's plate (Săn: "ĐẦU ĐÀN 1/3"), a
- * rift's warning on its wall's side, a 2 s card when something new first
- * appears. It publishes the rectangles damage numbers must not cover.
+ * rift's warning on its wall's side (and its countdown beside the word line),
+ * a 2 s card when something new first appears; an input notice just above
+ * the word line. It publishes the rectangles damage numbers must not cover.
  */
 import * as THREE from "three";
 import type { Rect } from "../kit/feedback";
@@ -30,8 +36,17 @@ import type { Stage } from "./scene";
 import { firstBounce, WordStrip } from "./strip";
 import { fullBlink } from "./type-rules";
 
-const DONE_MS = 600;
 const NEW_MS = 2000;
+/**
+ * The word line's bottom stands over the deck 1.8 m past the bottom line
+ * (4 px above its projection): build 1 put it on the stripes' far edge
+ * (1.05 m), where the plate hid every muzzle flash, Tán's flame tongues and
+ * the first metres of Ray and Tia (test pass 27/10); 16 px higher at 720p
+ * they show between the ship's nose and the plate.
+ */
+const LINE_LIFT = 1.8;
+/** A bay's meaning shrinks to this share of 15 px (12 px) before it is cut. */
+const MIN_MEAN = 0.8;
 /** Bay columns at 1280×720: bay 3, bay 1, the ship's gap, bay 2, bay 4 (gaps of 12). */
 const COLUMNS = [208, 230, 324, 230, 208] as const;
 const BAY_COLUMN = [2, 4, 1, 5] as const;
@@ -54,7 +69,7 @@ function el<T extends HTMLElement>(tag: string, className: string, parent: HTMLE
   return node;
 }
 
-type Slot = { root: HTMLElement; line: HTMLElement; typed: HTMLElement; head: HTMLElement; rest: HTMLElement; mean: HTMLElement; mags: HTMLElement[]; gun: number; key: string; fullAt: number; loadAt: number; doneMean: string; doneUntil: number; bounced: boolean; blink: boolean };
+type Slot = { root: HTMLElement; line: HTMLElement; typed: HTMLElement; head: HTMLElement; rest: HTMLElement; ipa: HTMLElement; mean: HTMLElement; mags: HTMLElement[]; gun: number; key: string; fullAt: number; loadAt: number; bounced: boolean; blink: boolean };
 
 /** A word as shown: the typed part, then the rest with hidden letters as "_" (shown ones as letters). */
 function masked(word: string, from: number, hidden: number, shown: number): string {
@@ -90,6 +105,7 @@ export class Hud {
   /** Where layout() put things (CSS px): the stripes' far edge, the red line's glow edge, Xung's reach (z 11.7 m). */
   readonly placed = { stripes: 0, glow: 0, reach: 0 };
   private bannerUntil = 0;
+  private lastNow = 0;
   private freshUntil = 0;
   private readonly met = new Set<number>();
   private readonly teach: Set<number>;
@@ -143,7 +159,7 @@ export class Hud {
       el("span", "sv-gun", head, spec.name);
       const mags = el("div", "sv-mags", head);
       const line = el("div", "sv-word", root);
-      const slot: Slot = { root, line, typed: el("span", "sv-typed", line), head: el("span", "sv-head", line), rest: el("span", "", line), mean: el("div", "sv-mean", root), mags: [], gun, key: "", fullAt: -1e9, loadAt: -1e9, doneMean: "", doneUntil: -1e9, bounced: false, blink: false };
+      const slot: Slot = { root, line, typed: el("span", "sv-typed", line), head: el("span", "sv-head", line), rest: el("span", "", line), ipa: el("span", "sv-ipa", line), mean: el("div", "sv-mean", root), mags: [], gun, key: "", fullAt: -1e9, loadAt: -1e9, bounced: false, blink: false };
       for (let m = 0; m < w.guns.cap[bay]!; m += 1) slot.mags.push(el("i", "", mags));
       this.slots[bay] = slot;
     }
@@ -153,23 +169,26 @@ export class Hud {
 
   /**
    * Places the word line and the bays from the still camera (FEEL_PASS_S1
-   * §2.1): the line's bottom 4 px above the far edge of the bottom line's
-   * stripes (the projection puts that edge at 476 px at 720p, so the line
-   * sits at 416–472 as §2.1 draws it and 90 px under Xung's reach), the
-   * bays' top where the red line's glow ends. Call on resize.
+   * §2.1): the line's bottom 4 px above the deck LINE_LIFT m past the bottom
+   * line (456 px at 720p: the line sits at 400–456, the stripes' far edge at
+   * 476 below it, 74 px under Xung's reach), the bays' top where the red
+   * line's glow ends. Call on resize.
    */
   layout(stage: Stage, ui: number): void {
-    const stripes = (this.placed.stripes = stage.project(0, FIELD.bottomZ + 1.05, 0, this.at, true).y);
+    this.placed.stripes = stage.project(0, FIELD.bottomZ + 1.05, 0, this.at, true).y;
+    const line = stage.project(0, FIELD.bottomZ + LINE_LIFT, 0, this.at, true).y - 4 * ui;
     const glow = (this.placed.glow = stage.project(0, FIELD.bottomZ - 0.32, 0, this.at, true).y);
     this.placed.reach = stage.project(0, 11.7, 0, this.at, true).y;
     this.bottom.style.top = glow + "px";
     this.bottom.style.gridTemplateColumns = COLUMNS.map((px) => px * ui + "px").join(" ");
-    this.strip.layout(stage, stripes - 4 * ui, ui);
+    this.strip.layout(stage, line, ui);
+    // The input notice sits just above the word line, where the eyes are while typing.
+    this.notice.style.top = line - 56 * ui - 52 * ui + "px";
   }
 
-  /** The rectangles no damage number may cover (CSS px), with a small margin: the word line (at its widest), the armour, the bays, the objective's plate. */
+  /** The rectangles no damage number may cover (CSS px), with a small margin: the word line (at its widest), the armour, the clock, the kills, the bays, the objective's plate. */
   protectedRects(): Rect[] {
-    const nodes = [this.hp, ...this.slots.filter(Boolean).map((slot) => slot.root)];
+    const nodes = [this.hp, this.time.parentElement!, this.kills.parentElement!, ...this.slots.filter(Boolean).map((slot) => slot.root)];
     if (!this.goal.hidden) nodes.push(this.goal);
     const line = this.strip.rect();
     return [{ x: line.x - 6, y: line.y - 6, w: line.w + 12, h: line.h + 12 }, ...nodes.map((node) => {
@@ -187,16 +206,12 @@ export class Hud {
     }
   }
 
-  /** A word finished on `slot` (`full`: its bay took no magazine): the line shows it, the bay flashes (or its LEDs blink when full). */
+  /** A word finished on `slot` (`full`: its bay took no magazine): the line shows it with its meaning, the bay flashes (or its LEDs blink when full). */
   wordDone(slot: number, index: number, perfect: boolean, full: boolean, now: number): void {
     const word = this.words(index);
-    const fits = this.strip.finished(word.en, word.vi, this.slots[slot]?.gun ?? 0, full, now);
+    this.strip.finished(word.en, word.vi, this.slots[slot]?.gun ?? 0, full, now);
     const bay = this.slots[slot];
     if (bay === undefined) return;
-    if (!fits) {
-      bay.doneMean = word.vi + " ✓";
-      bay.doneUntil = now + DONE_MS;
-    }
     if (full) {
       bay.fullAt = now;
       return;
@@ -236,6 +251,7 @@ export class Hud {
   }
 
   update(w: World, killsRecent: number, now: number): void {
+    this.lastNow = now;
     if (w.hp !== this.last.hp) {
       this.last.hp = w.hp;
       this.hpFill.style.transform = "scaleX(" + Math.max(0, w.hp / w.armourMax).toFixed(3) + ")";
@@ -284,23 +300,27 @@ export class Hud {
     const word = index >= 0 ? w.deck[index]! : "";
     const locked = T.lock === s;
     const typed = locked ? T.typed[s]! : 0;
-    const meaning = now < slot.doneUntil;
-    const key = index + ":" + typed + ":" + T.shown[s] + ":" + (locked ? 1 : 0) + (meaning ? "m" : "");
+    const key = index + ":" + typed + ":" + T.shown[s] + ":" + (locked ? 1 : 0);
     if (key !== slot.key) {
+      const was = slot.key;
       slot.key = key;
       const info = index >= 0 ? this.words(index) : null;
-      // The bay being typed shows the IPA beside the meaning (the line above the ship shows only the word).
-      slot.mean.textContent = meaning ? slot.doneMean : info === null ? "" : locked && info.ipa !== "" ? info.ipa + " · " + info.vi : info.vi;
-      slot.mean.classList.toggle("is-ipa", locked && !meaning);
+      // The bay being typed: the word small with its IPA, the meaning under it (the line above the ship shows the word big).
+      slot.root.classList.toggle("is-active", locked);
+      slot.ipa.textContent = locked && info !== null ? info.ipa : "";
       slot.typed.textContent = word.slice(0, typed);
       const rest = masked(word, typed, T.hidden[s]!, T.shown[s]!);
       slot.head.textContent = typed === 0 ? rest.slice(0, 1) : "";
       slot.rest.textContent = typed === 0 ? rest.slice(1) : rest;
       if (typed === 0) this.fit(slot.line, slot.root);
+      // A new word or a lock taken or let go: the meaning again, shrunk to fit one line when free.
+      if (was.split(":")[0] !== String(index) || was.endsWith(":1") !== locked) {
+        slot.mean.textContent = info === null ? "" : info.vi;
+        this.fitMean(slot.mean, locked);
+      }
       // The top stripe fills as the word is typed.
       slot.root.style.setProperty("--load", word.length > 0 ? (typed / word.length).toFixed(3) : "0");
     }
-    slot.root.classList.toggle("is-active", locked);
     slot.root.classList.toggle("is-dim", T.lock >= 0 && !locked);
     slot.root.classList.toggle("is-charged", now - slot.loadAt < 350);
     // A stray key: every bay's first letter bounces (200 ms).
@@ -325,6 +345,15 @@ export class Hud {
     }
   }
 
+  /** A free bay's meaning shrinks to one line (never under 12 px, then it is cut); the bay being typed wraps it to two lines. */
+  private fitMean(mean: HTMLElement, locked: boolean): void {
+    mean.style.setProperty("--mfit", "1");
+    if (locked) return;
+    const need = mean.scrollWidth;
+    const room = mean.clientWidth;
+    if (room > 0 && need > room) mean.style.setProperty("--mfit", Math.max(MIN_MEAN, room / need).toFixed(3));
+  }
+
   /** A long word shrinks to fit its bay (never under 26 px). */
   private fit(line: HTMLElement, box: HTMLElement): void {
     line.style.setProperty("--fit", "1");
@@ -339,6 +368,8 @@ export class Hud {
     const O = w.objective;
     const text = O.need > 0 ? (O.retreat >= 0 ? "BẦY RÚT LUI" : "ĐẦU ĐÀN " + O.done + "/" + O.need + " · LỌT " + O.leaked + "/" + (O.of - O.need)) : "";
     if (text === this.last.goal) return;
+    // The hunt won: said in the middle of the view too, not only on the plate up top.
+    if (O.retreat >= 0 && this.last.goal !== "") this.showBanner("BẦY RÚT LUI!", this.lastNow);
     this.last.goal = text;
     this.goal.textContent = text;
     this.goal.hidden = text === "";
@@ -360,6 +391,8 @@ export class Hud {
     const key = text + side;
     if (key === this.last.warn) return;
     this.last.warn = key;
+    // Its countdown also beside the word line, pointing at the wall (the eyes are there while typing).
+    this.strip.warn(text === "" ? "" : side < 0 ? "◀ " + text.replace("⚠ ", "") : text.replace("⚠ ", "") + " ▶", side);
     this.warn.textContent = text;
     this.warn.classList.toggle("is-on", text !== "");
     this.warn.classList.toggle("is-left", side < 0);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CleanStreak, NOTE_HZ, POP, WORD_HZ, bounce, fullBlink, noteHz, popColour, popDrop, popGlow, popScale, streakTier, swell } from "../src/view/type-rules";
+import { CleanStreak, NOTE_HZ, POP, WORD_HZ, bounce, fullBlink, noteHz, popColour, popDrop, popGlow, popScale, streakTier, sweepAlpha, sweepLength, swell } from "../src/view/type-rules";
 
 /**
  * The typing feel's rules (docs/FEEL_PASS_S1.md §3): the notes a word climbs,
@@ -58,9 +58,16 @@ describe("typing feel", () => {
     expect(popScale(POP.settle)).toBe(1);
     expect(popDrop(POP.settle)).toBe(0);
     expect(popScale(-5)).toBe(1);
-    // White-hot to the gun's colour by 120 ms; its glow gone at 160 ms.
-    expect(popColour(0)).toBe(0);
+    // The gun's ink from the first frame (65 %, the rest white-hot), all gun by 120 ms; its glow gone at 160 ms.
+    expect(popColour(0)).toBeCloseTo(0.65, 6);
+    expect(popColour(60)).toBeGreaterThan(0.8);
     expect(popColour(120)).toBe(1);
+    // The sweep line shows on f0 (40 %), is whole by 50 ms and stays as the typed part's underline (55 %).
+    expect(sweepLength(0)).toBeCloseTo(0.4, 6);
+    expect(sweepLength(50)).toBe(1);
+    expect(sweepAlpha(0)).toBe(1);
+    expect(sweepAlpha(400)).toBeCloseTo(POP.line, 6);
+    for (let t = 50; t < 400; t += 10) expect(sweepAlpha(t + 10)).toBeLessThanOrEqual(sweepAlpha(t));
     expect(popGlow(0)).toBe(1);
     expect(popGlow(160)).toBe(0);
     for (let t = 0; t < 100; t += 5) expect(popScale(t + 5)).toBeLessThanOrEqual(popScale(t));

@@ -28,9 +28,10 @@
 //        are threats the light hid (≤ 10 % of foe samples; the raw share,
 //        dying foes in their own blast included, is printed too), and the
 //        share of the field above the word line brighter than 0.9.
-//   layout  the line's bottom ≤ the stripes − 4 px, its top ≥ 90 px under
-//        Xung's reach, the bays under the red line, nothing in a bay
-//        overflowing with 3 magazine LEDs.
+//   layout  the line's bottom ≤ the stripes − 4 px with the muzzles below it
+//        (test pass 27/10: the line now stands 1.8 m past the bottom line),
+//        its top ≥ 70 px under Xung's reach (90 before the lift), the bays
+//        under the red line, nothing in a bay overflowing with 3 magazine LEDs.
 //   marks  near foes behind the word line (§2.4): placed mines, a word locked,
 //        red ticks under the plate at their x, blinking at 4 Hz, at most 6.
 //   rate   10 keys a second on the held clock: at most 8 live shards.
@@ -486,7 +487,7 @@ async function layout(page, dir) {
     for (const mags of document.querySelectorAll('.sv-slot .sv-mags')) if (mags.children.length < 3) mags.append(mags.children[0].cloneNode(true));
     const overflow = [...document.querySelectorAll('.sv-slot, .sv-slot *')].filter((n) => n.scrollWidth > n.clientWidth + 1 && getComputedStyle(n).overflow !== 'hidden').map((n) => n.className);
     const strip = document.querySelector('.sv-strip');
-    return { feel: t.info().feel, strip: box(strip), maxWidth: parseFloat(getComputedStyle(strip).maxWidth), bays: [...document.querySelectorAll('.sv-bottom > *')].map(box), overflow, ui: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui')) };`));
+    return { feel: t.info().feel, muzzles: t.info().muzzles, strip: box(strip), maxWidth: parseFloat(getComputedStyle(strip).maxWidth), bays: [...document.querySelectorAll('.sv-bottom > *')].map(box), overflow, ui: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui')) };`));
   const size = page.width + "x" + page.height;
   const shot = await page.shot(join(dir, "layout-" + size + ".png"));
   const L = read.feel.layout;
@@ -496,7 +497,9 @@ async function layout(page, dir) {
     ready, read, shot,
     checks: {
       lineAboveStripes: lineBottom <= L.stripes - 4,
-      lineUnderXungReach: lineTop - L.reach >= 90 * read.ui,
+      lineUnderXungReach: lineTop - L.reach >= 70 * read.ui,
+      // Every muzzle (centre, Xung's two, the core) below the plate: their flashes start in sight.
+      muzzlesBelowLine: read.muzzles.every((m) => m[1] >= lineBottom + 20 * read.ui),
       baysUnderRedLine: read.bays.every((bay) => bay.y >= L.glow - 0.5),
       lineMaxWidth420: Math.abs(read.maxWidth - 420 * read.ui) <= 1,
       noOverflowWith3Leds: read.overflow.length === 0,
