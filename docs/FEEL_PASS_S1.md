@@ -86,7 +86,7 @@ Cái giá là che quái vùng gần; §2.4 bù bằng dấu báo. Phương án A
 
 | Phần | 1280×720 | 1920×1080 | Ghi chú |
 |---|---|---|---|
-| Dòng từ | Cao 56, đáy ở y 472, giữa màn. Tấm ôm từ, đệm 16 px mỗi bên, rộng tối đa 420 | Cao 84, đáy ở y 708, rộng tối đa 630 | Ngay trên dải sọc vạch đáy (y 477–500). Đáy dòng = phép chiếu (`stage.project`) của mép trên dải sọc, trừ 5 px; không viết px cứng, để còn đúng nếu camera đổi |
+| Dòng từ | Cao 56, đáy ở y 456 (~~472~~), giữa màn. Tấm ôm từ, đệm 16 px mỗi bên, rộng tối đa 420 | Cao 84, đáy ở y 684 (~~708~~), rộng tối đa 630 | ~~Ngay trên dải sọc vạch đáy (y 477–500). Đáy dòng = phép chiếu của mép trên dải sọc, trừ 5 px.~~ Từ lượt sửa sau test 27/10 (§11): đáy dòng = phép chiếu (`stage.project`) của sàn cách vạch đáy 1,8 m, trừ 4 px; lóe nòng, lưỡi lửa Tán và gốc tia hiện giữa mũi tàu và tấm. Không viết px cứng, để còn đúng nếu camera đổi |
 | Bến 1, bến 2 | 230 × 100, y 508–608; x 236–466 và 814–1044 | 345 × 150, y 762–912; x 354–699 và 1221–1566 | Dưới vạch đỏ, không che nó. Phần sàn này có 0 mẫu quái, đòn, đường đạn trong 400 trận |
 | Bến 3, bến 4 | 208 × 100, cùng hàng; x 16–224 và 1056–1264 | 312 × 150; x 24–336 và 1584–1896 | Mờ tới khi mở (như nay) |
 | Tàu | Thân y ≈ 495–600, giữa bến 1 và bến 2 | | Khoảng trống giữa hai bến 348 px; tàu rộng ≈ 97 px |
@@ -99,9 +99,9 @@ Bàn điều khiển cũ (y 590–708) thành sàn.
 | Trạng thái | Dòng từ | Bến đang gõ |
 |---|---|---|
 | Chưa khóa từ | Ẩn (opacity 0) | Như nay: từ 32 px, nghĩa 15 px |
-| Phím đầu khóa một bến | Tấm mở từ 90 % → 100 % bề ngang trong 80 ms, cùng hiệu ứng chữ đầu (§3.1) | Viền màu súng (đã có). IPA 17 px · nghĩa 15 px trên một dòng |
+| Phím đầu khóa một bến | Tấm mở từ 90 % → 100 % bề ngang trong 80 ms, cùng hiệu ứng chữ đầu (§3.1) | Viền màu súng (đã có). ~~IPA 17 px · nghĩa 15 px trên một dòng~~ Từ 27/10 (§11): bến thành mục từ điển, từ 22 px kèm IPA 14 px, nghĩa 14 px tối đa 2 dòng |
 | Đang gõ | Từ 42 px, Be Vietnam Pro 800. Phần đã gõ màu súng (`--gun`), phần còn lại `--text` #f4f1eb. Thiếu chữ: "_" như trên bến | Phần đã gõ màu súng. Sọc đầu bến đầy theo tỉ lệ đã gõ (§3.1) |
-| Xong từ | "từ · nghĩa ✓" màu `--typing` #7ff5e0, 26 px, 600 ms (như khung học cũ). Không vừa 420 px thì chỉ "từ ✓", nghĩa ở lại bến 600 ms | Bến lóe (đã có `sv-load`, `sv-perfect`) |
+| Xong từ | "từ · nghĩa ✓" màu `--typing` #7ff5e0, 26 px, 600 ms (như khung học cũ). ~~Không vừa 420 px thì chỉ "từ ✓", nghĩa ở lại bến 600 ms~~ Từ 27/10 (§11): không vừa một dòng thì hai dòng, "từ ✓" 22 px trên nghĩa 17 px; nghĩa không bao giờ nằm ở bến dưới từ mới | Bến lóe (đã có `sv-load`, `sv-perfect`) |
 | Bến đầy, không nạp | "từ ✓ · ĐẦY", chữ ĐẦY màu `--urgent` #ffb020 | Không lóe nạp; vạch băng chớp vàng (§3.4) |
 | Luật Nghĩa (R2) | Nghĩa và các chữ đã gõ; từ đủ và IPA khi xong | |
 | Từ chặn của boss (R3) | Hiện ở chỗ dòng từ, tấm đỏ | |
@@ -144,7 +144,7 @@ f0 = khung đầu tiên vẽ sau phím (đích §17: ≤ 1 khung sau phím).
 
 | Khung | Dòng từ (DOM) | Sân (WebGL) |
 |---|---|---|
-| f0 | Chữ hiện ở chỗ của nó, cỡ 1,25×, lệch xuống 6 px, màu trắng nóng #fff0d8, quầng chữ `0 0 12px var(--gun-glow)` | 4 mảnh năng lượng (vệt `Strips` dài 0,25 m, rộng 0,06 m, lõi trắng, viền màu súng) rời điểm ngay dưới chữ (chiếu ngược đáy chữ lên mặt phẳng y 0,95 m) |
+| f0 | Chữ hiện ở chỗ của nó, cỡ 1,25×, lệch xuống 6 px, ~~màu trắng nóng #fff0d8~~ màu súng 65 % trên trắng nóng (27/10, §11), quầng chữ `0 0 14px var(--gun-glow)` và viền 4 px màu súng; vạch quét dài 40 % ngay từ f0; viền tấm lóe màu súng 3 f | 4 mảnh năng lượng (vệt `Strips` dài 0,25 m, rộng 0,06 m, lõi trắng, viền màu súng) rời điểm ngay dưới chữ (chiếu ngược đáy chữ lên mặt phẳng y 0,95 m) |
 | f1–f2 | 1,12×, lệch 3 px. Vạch quét 2 px màu súng chạy dưới chữ, trái → phải, 50 ms | Mảnh bay xuống, nhanh dần, vào lõi tàu (socket `FX_CORE`; thiếu socket thì tâm thân tàu). Mỗi mảnh bay 70–100 ms, so le 0–25 ms |
 | f3–f5 | 1,03× → 1×. Màu chuyển sang màu súng, xong ở 120 ms | Lõi nhận mảnh: sáng thêm 30 %, tắt dần trong 90 ms. Vòng sáng nằm trên sàn dưới tàu (`CELL.ring + FLAT`), bán kính 0,8 → 2,0 m, 150 ms, màu súng, alpha 0,55 |
 | f6 | Chữ đứng yên ở 1×. Quầng chữ tắt hẳn ở 160 ms | Mảnh cuối vào lõi |
@@ -457,7 +457,7 @@ Boss (đòn lớn) chưa có ở R1: thêm cảnh khi làm R3.
 | Khối | `info().chunks` ≥ số của §4.5 sau một lần hạ; một khối theo dõi được đi lên ≥ 3 khung rồi xuống | Vụn dẹt |
 | Tàu trôi (F7) | Dời ≥ 40 px (720p) về phía cụm trong 1,5 s; về cách tâm ≤ 10 px trong 2,5 s sau khi cụm chết; nhấp nhô 2–5 px | 0 px |
 | Mắt → đòn (F8; tâm dòng từ tới chỗ số sát thương sinh ra, như study B) | Trung vị ≤ 210 px ở 720p; ≥ 60 % trong 10° khi toàn màn 1080p (1° ≈ 37,9 px CSS) | 355 px; 3 % |
-| Bố cục | Đáy dòng từ ≤ y vạch đáy − 4 px; đỉnh dòng cách mép tầm Xung (z 11,7 m) ≥ 90 px; bến không đè vạch đỏ; không phần tử nào tràn (`scrollWidth ≤ clientWidth`) với 3 băng; ở cả hai cỡ | |
+| Bố cục | Đáy dòng từ ≤ y vạch đáy − 4 px, mọi nòng thấp hơn đáy dòng ≥ 20 px; đỉnh dòng cách mép tầm Xung (z 11,7 m) ≥ ~~90~~ 70 px (27/10, §11); bến không đè vạch đỏ; không phần tử nào tràn (`scrollWidth ≤ clientWidth`) với 3 băng; ở cả hai cỡ | |
 | Tương phản | ≥ 7 : 1 ở nền p99 dưới dòng từ và dưới bến, trên 400 khung thật mỗi cỡ (cách `contrast.mjs` của study C) | |
 | Số đè | 0 số đè dòng từ, bến, thanh giáp, biển mục tiêu | 0 |
 | Kho, rung, draw call | Như §6 | |
@@ -523,3 +523,16 @@ Theo luật của chủ dự án (`docs/CLAUDE_PROCESS_2026-10-24.md` §2 ở re
 4. Chuỗi sạch chỉ hiển thị, không thêm sát thương. Chuỗi có sát thương (kế hoạch §4.3) để S2.
 5. Khối vỡ nằm 8 s (kế hoạch §5.5), không 3–6 s như video.
 6. Rung camera giữ nhỏ (§4.6); lực đến từ ánh sáng, lóe, khối vỡ.
+
+## 11. Đổi ở lượt sửa sau đợt test 27/10 (chủ dự án xem ở §7.6)
+
+Đợt test chia theo màn 27/10 (ba người, changelog [`2026-10-27-test-pass.md`](changelog/2026-10-27-test-pass.md)) đặt khung của ta cạnh tờ Typing Break (`tmp/mac-2026-10-26/feel/study-a/seq/`) và thấy các chỗ dưới. Đã đổi, sim không đổi (152 trận chương băm trùng `3d495ad`):
+
+1. **Nghĩa luôn đi cùng từ của nó.** Luật cũ của §2.2 ("không vừa thì nghĩa ở lại bến 600 ms") đặt nghĩa của từ vừa xong dưới từ mới của bến: người học đọc "perfect = thực sự". Nay dòng từ xuống hai dòng ("từ ✓" trên nghĩa) khi một dòng không vừa; bến không giữ nghĩa cũ.
+2. **Bến đang gõ là một mục từ điển**: từ 22 px kèm IPA, nghĩa tối đa 2 dòng (IPA · nghĩa một dòng bị cắt ở 8/8 trận). Bến rảnh: nghĩa một dòng co tới 12 px rồi mới cắt (4/450 từ của bộ từ còn bị cắt).
+3. **Dòng từ lên 16 px** (720p; đáy y 456): tấm đứng trên sàn cách vạch đáy 1,8 m thay vì mép dải sọc, nên lóe nòng, lưỡi lửa Tán, gốc tia Ray và Tia hiện giữa mũi tàu và tấm. Kiểm §7.3 "đỉnh dòng cách mép tầm Xung ≥ 90 px" thành ≥ 70 px; thêm "mọi nòng thấp hơn đáy dòng ≥ 20 px".
+4. **Chữ vừa gõ có màu súng ngay f0** (65 % súng trên trắng nóng; trắng nóng thuần trùng màu chữ chưa gõ), quầng đậm hơn, vạch quét hiện từ f0 và ở lại làm gạch dưới phần đã gõ (0,55), viền tấm lóe màu súng 3 khung mỗi phím. Mực chữ đã gõ `--gun-ink` đặt theo từng lớp súng; Ray có mực riêng `--ray-ink` #8fa3ff (trắng xanh #c4d2ff cạnh chữ kem chỉ 1,33 : 1).
+5. **Trên sân**: mảnh 0,6 × 0,16 m, vòng sàn từ 1,4 m (ngoài thân tàu) tới 2,8 m; Tia hẹp lại quanh tàu (sao ở nòng 2,6 → 1,5 m, lớp mờ 3 m đầu 1,4 m, đèn nòng 1,6 → 1,1) để tàu và lõi không thành một vệt trắng; quầng trắng quanh nòng của phát Ray nhỏ và ngắn hơn.
+6. **Hạ quái to, nổ Pháo Sao, cú nứt**: Trâu và Đầu Đàn chết trong lóe trắng 4 khung, cột lửa, vòng sóng rộng, khói; khối vỡ thép sáng hơn, mép nguội vẫn còn viền mờ, khối lớn của quái to nóng gấp đôi lâu và bay cao hơn 1,4×. Quả Pháo Sao dài ≥ 4 % chiều cao màn ở mọi tầm; nổ: lóe trắng 1/5 màn 3 khung, cầu lửa 18 %, khói. Vết nứt mở: cột sáng 14 m 0,9 s, vòng trên sàn, tia lửa, khói, đẩy camera.
+7. **Đếm ngược Vết nứt còn hiện cạnh dòng từ** phía vách sẽ nứt (biển ở mép giữ nguyên).
+

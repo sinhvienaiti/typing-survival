@@ -205,5 +205,27 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   NaN found on the CPU side; cause not found, see the changelog): fix it
   before the owner's play test. Next: F6 (§8: remeasure §6–§7, the
   owner's play test §7.6).
+- Test pass of 27/10 (three testers by level, then one verify-and-fix
+  agent; `docs/changelog/2026-10-27-test-pass.md`, spec changes in
+  `FEEL_PASS_S1.md` §11): a finished word's meaning never sits under a
+  bay's next word (the line goes to two lines); the bay being typed is a
+  dictionary entry (word 22 px + IPA, meaning on two lines); the word line
+  stands 1.8 m past the bottom line (`LINE_LIFT` in `hud.ts`, y 400–456 at
+  720p) so the muzzles show under it; typed letters take the gun's ink
+  from f0 (`--gun-ink`, set on each gun class: a `:root` default inherits
+  as Xung's colour; Ray's `--ray-ink`) with an underline that stays;
+  big kills, Pháo Sao and the rift's open hit harder; the rift's countdown
+  sits beside the line. App: the world steps only once the page is ready;
+  a page from the journey or a replay opens on the stage card (`?card=1`,
+  mode `intro`: any key but Esc goes in, opens the audio and types
+  nothing); a run's end shows a 0.9 s banner before its card; settings has
+  "Giảm chuyển động" (`survival.motion`, live). Balance (Khá/Nhanh into
+  full bays, stages 1–2 too easy, a 30 WPM human losing stages 2–3 that
+  bots win) stays with the R1 gate's tuning. `src/` is 12,757 lines with
+  its CSS (over the 12,500 proposed for the feel pass; `main.ts` 738,
+  `hud.ts` 419 over its 400, `combat.ts` 429 of 430): split in R2. An
+  element shown and hidden with `hidden` must not get a `display` of its
+  own without `:not([hidden])` (the two-line done text showed beside the
+  next word).
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.
