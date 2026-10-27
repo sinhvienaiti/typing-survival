@@ -111,13 +111,13 @@ export class WordStrip {
     return { x: this.center - w / 2, y: this.bottom - PLATE.height * this.ui, w, h: PLATE.height * this.ui };
   }
 
-  /** Bottom centre of letter `index` (CSS px), where its shards leave from. */
+  /** Under letter `index`, on the plate's bottom edge (CSS px): where its key's bolt leaves (never drawn over a letter). */
   anchor(index: number, out: { x: number; y: number }): boolean {
     const letter = this.letters[index];
     if (letter === undefined || index >= this.count) return false;
     const box = letter.getBoundingClientRect();
     out.x = box.left + box.width / 2;
-    out.y = box.bottom;
+    out.y = this.bottom;
     return true;
   }
 

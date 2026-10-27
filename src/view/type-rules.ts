@@ -14,6 +14,19 @@ export function noteHz(typed: number): number {
   return NOTE_HZ[Math.max(0, Math.min(NOTE_HZ.length, typed) - 1)]!;
 }
 
+/**
+ * A right key's mark on the field (§12), whole on its own frame; sizes are a
+ * billboard's full width (m): a bolt `width` wide from the plate's edge under
+ * the letter into the core, `jitter` m off at its two joints, `life` s; a
+ * 4-ray star (`star`) where it leaves, an 8-ray one (`core`) in the core;
+ * the deck lit (`pool`) and a ring whose radius (0.4 of its width) runs
+ * 1.4 → 3.2 m, past the deck's painted ring at 2.6 m.
+ */
+export const KEY_MARK = { life: 5 / 60, width: 0.56, power: 4, jitter: 0.3, star: 2.4, core: 1.6, pool: 3.2, ring: [3.5, 8], ringLife: 0.16, ringPower: 2.2 } as const;
+
+/** Billboards and strips a key's mark holds `age` s after its key: 3 strips to 5 frames, 2 stars to 4, the pool to 3, the ring to ringLife. */
+export const keyMarkLive = (age: number, f = age * 60 + 1e-6): number => (age < 0 ? 0 : (age < KEY_MARK.life ? 3 : 0) + (f < 4 ? 2 : 0) + (f < 3 ? 1 : 0) + (age < KEY_MARK.ringLife ? 1 : 0));
+
 /** The streak shows from 3 clean words; tiers start at 3, 6, 10, 20; streak.up plays at those. */
 export const STREAK = { show: 3, tiers: [3, 6, 10, 20] } as const;
 

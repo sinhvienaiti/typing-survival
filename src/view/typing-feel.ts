@@ -1,21 +1,17 @@
 /**
- * Each key of a word, seen and heard (docs/FEEL_PASS_S1.md §3). Reads the
- * sim's typing events with its own cursor on the ring (it never writes the
- * world) and drives the word line and the bays (hud.ts, strip.ts), the
- * ship's core on the field and the typing sounds:
- * - a right key pops its letter and sends 4 shards of energy down from under
- *   it into the ship's core (FX_CORE), which glows brighter with each letter
- *   of the locked word (0.35 + 0.5·L m, 1.2 + 1.6·L; a priming spark at the
- *   muzzle from half the word); a ring of light runs out on the deck under
- *   the ship; a note climbs the A-minor pentatonic;
+ * Each key of a word, seen and heard (docs/FEEL_PASS_S1.md §3, §12). Reads
+ * the sim's typing events with its own cursor (never writing the world) and
+ * drives the word line and bays (hud.ts, strip.ts), the field and the sounds:
+ * - a right key pops its letter and marks the field on its own frame
+ *   (KEY_MARK): a bolt from under the letter into the ship's core, a star at
+ *   each end, the deck under the ship lit with a ring out past the painted
+ *   one; the core glows brighter with each letter of the locked word; a note
+ *   climbs the A-minor pentatonic;
  * - a wrong key dims the core with red sparks; a stray key only ghosts;
- * - a finished word flashes the core and runs a stream of energy to the
- *   muzzle (a perfect one adds a teal ring); a word into a full bay throws
- *   its shards aside and never reaches the core;
- * - the clean streak adds shards, a wider ring, an octave, a core that keeps
- *   a glow, a brighter engine, and a teal ring a key from 20.
- * No shot is drawn per key: shots are the sim's (§3.1). Pooled: nothing is
- * allocated per key; 0 draw calls of its own (the combat's glows and strips).
+ * - a finished word flashes the core and runs a stream to the muzzle; into a
+ *   full bay its last key's bolt is thrown aside;
+ * - the clean streak widens the marks, adds an octave, keeps the core aglow.
+ * Reduced motion: a still bolt, no sparks, a fainter ring. No shot per key (§3.1).
  */
 import * as THREE from "three";
 import type { ThemeAudio } from "../audio/theme-audio";
@@ -27,40 +23,28 @@ import type { Hud } from "./hud";
 import type { Stage } from "./scene";
 import type { Ship } from "./ship";
 import { BLOW } from "./theme";
-import { CleanStreak } from "./type-rules";
+import { CleanStreak, KEY_MARK as K, keyMarkLive } from "./type-rules";
 
-const SHARDS = 32;
-/** At most this many shards fly at once (§3.1: ≤ 8 at 10 keys a second, the streak's fifth shard included). */
-const LIVE_MAX = 8;
+/** Key marks kept (10 keys a second hold 2 at once). */
+const MARKS = 8;
 const PENDING = 32;
-/** The gun colours (GUN ids: Xung, Tia, Tán, Ray, Pháo Sao), as the bays' --gun. */
-const GUN_COLOR = [BLOW.volt, BLOW.swarm, BLOW.tan, BLOW.ray, BLOW.phao] as const;
+const F = 1 / 60;
+/** The gun colours (GUN ids: Xung, Tia, Tán, Ray, Pháo Sao); Ray's mark in its ink (its white-blue drowned in Tia's light). */
+const GUN_COLOR = [BLOW.volt, BLOW.swarm, BLOW.tan, new THREE.Color("#8fa3ff"), BLOW.phao] as const;
 const PAN = [-0.35, 0.35, -0.6, 0.6] as const;
 const TYPING = new THREE.Color("#7ff5e0");
-/**
- * A shard's streak and the key's deck ring. §3.1 draws 0.25 × 0.06 m and a
- * 0.55 ring: on the first frames that is 7 × 2 px and a ring hidden under
- * the hull (tmp/…/feel/typing/run1); build 1 drew 0.4 × 0.1 m and a ring
- * 0.8 → 2 m at 1.1, still lost under the hull and Tia's glow (test pass
- * 27/10): now 0.6 × 0.16 m (≥ 6 px wide at 720p) and a ring from 1.4 m,
- * clear of the hull, out to 2.8 m at 1.4 (HDR).
- */
-const SHARD = { length: 0.6, width: 0.16 } as const;
-const RING = { from: 1.4, to: 2.8, power: 1.4 } as const;
 
 export class TypeFeel {
   private cursor = 0;
   readonly streak = new CleanStreak();
-  // Shards: start, launch time (s), flight (s), mode (0 into the core, 1 thrown aside), aside direction, gun.
-  private readonly sx = new Float32Array(SHARDS);
-  private readonly sy = new Float32Array(SHARDS);
-  private readonly sz = new Float32Array(SHARDS);
-  private readonly t0 = new Float64Array(SHARDS);
-  private readonly life = new Float32Array(SHARDS);
-  private readonly mode = new Uint8Array(SHARDS);
-  private readonly ax = new Float32Array(SHARDS);
-  private readonly gun = new Uint8Array(SHARDS);
-  private readonly alive = new Uint8Array(SHARDS);
+  // Key marks: where the bolt leaves (under the letter), its key's time (s), gun (+ 8 thrown aside: a full bay), its crackle's seed.
+  private readonly mx = new Float32Array(MARKS);
+  private readonly my = new Float32Array(MARKS);
+  private readonly mz = new Float32Array(MARKS);
+  private readonly mt = new Float64Array(MARKS).fill(-1e9);
+  private readonly mg = new Uint8Array(MARKS);
+  private readonly ms = new Float32Array(MARKS);
+  private marks = 0;
   // Keys of this frame waiting for the line to show them (their letter's place): letter index, gun, thrown aside.
   private readonly pIndex = new Int32Array(PENDING);
   private readonly pGun = new Uint8Array(PENDING);
@@ -95,10 +79,10 @@ export class TypeFeel {
     private readonly audio: ThemeAudio,
   ) {}
 
-  /** Live shards (the scenarios read it through info()). */
+  /** The keys' billboards and strips alive now (§6: ≤ 12 at 10 keys a second; the scenarios read it through info()). */
   get live(): number {
     let n = 0;
-    for (let s = 0; s < SHARDS; s += 1) n += this.alive[s]!;
+    for (let m = 0; m < MARKS; m += 1) n += keyMarkLive(this.lastTime - this.mt[m]!);
     return n;
   }
 
@@ -134,7 +118,6 @@ export class TypeFeel {
           this.pSlot[this.pending] = slot;
           this.pending += 1;
         }
-        this.ringUnder(w.guns.gun[slot]!, tier);
       } else if (kind === EV.keyBad) {
         const due = R.value[i]!;
         this.hud.keyBad(slot, due, String.fromCharCode(97 + R.ref[i]!), now);
@@ -176,55 +159,38 @@ export class TypeFeel {
     }
   }
 
-  /** A ring of light on the deck under the ship (a key); wider with the streak, and a teal one from 20. */
-  private ringUnder(gun: number, tier: number): void {
-    this.ship.core(this.core);
-    const wide = tier >= 1 ? 1.15 : 1;
-    this.glows.burst(CELL.ring + FLAT, this.core.x, 0.08, this.core.z, RING.from * wide, RING.to * wide, 0.15, GUN_COLOR[gun] ?? BLOW.volt, RING.power);
-    if (tier >= 4) this.glows.burst(CELL.ring + FLAT, this.core.x, 0.085, this.core.z, 1, 2.6, 0.2, TYPING, 0.45);
-  }
-
-  /** After hud.update(): this frame's keys send their shards from under their letters on the line. */
+  /** After hud.update(): this frame's keys mark the field from under their letters, whole on f0 (KEY_MARK; the bolt in draw()). */
   land(now: number): void {
-    const seconds = now / 1000;
-    const count = this.streak.tier >= 1 ? 5 : 4;
+    const t = now / 1000;
+    const reduced = this.hud.reduced;
+    const tier = this.streak.tier;
+    this.ship.core(this.core);
     for (let p = 0; p < this.pending; p += 1) {
       if (!this.hud.strip.anchor(this.pIndex[p]!, this.point)) continue;
-      this.stage.unproject(this.point.x, this.point.y, 0.95, this.tip);
-      for (let k = 0; k < count; k += 1) {
-        const s = this.free();
-        this.sx[s] = this.tip.x + (Math.random() - 0.5) * 0.25;
-        this.sy[s] = this.tip.y;
-        this.sz[s] = this.tip.z;
-        // Two leave on the key's own frame (f0), the others staggered by up to 25 ms.
-        this.t0[s] = seconds + (k < 2 ? 0 : Math.random() * 0.025);
-        this.life[s] = 0.07 + Math.random() * 0.03;
-        this.mode[s] = this.pAside[p]!;
-        this.ax[s] = (k % 2 === 0 ? -1 : 1) * (2.5 + Math.random() * 2);
-        this.gun[s] = this.pGun[p]!;
-        this.alive[s] = 1;
-      }
+      const tip = this.stage.unproject(this.point.x, this.point.y, 0.95, this.tip);
+      const m = this.marks++ % MARKS;
+      const aside = this.pAside[p] === 1;
+      const c = GUN_COLOR[this.pGun[p]!] ?? BLOW.volt;
+      this.mx[m] = tip.x;
+      this.my[m] = tip.y;
+      this.mz[m] = tip.z;
+      this.mt[m] = t;
+      this.mg[m] = this.pGun[p]! + (aside ? 8 : 0);
+      this.ms[m] = Math.random() * 100;
+      this.glows.burst(CELL.star4, tip.x, tip.y - 0.1, tip.z, K.star * 0.5, K.star, 4 * F, c, K.power, 0, 0, 0, 0, NaN, F);
+      if (!reduced) for (let k = 0; k < 3; k += 1) this.sparks.spawn(tip, this.v.set((Math.random() - 0.5) * 3, -1 - Math.random() * 2, (Math.random() - 0.5) * 2), c, 0.2, 0.3, { drag: 3, gravity: 6 });
+      if (aside) continue;
+      this.hitAt = now;
+      const wide = (tier >= 1 ? 1.15 : 1) * (reduced ? 0.8 : 1);
+      this.glows.burst(CELL.star8, this.glow.x, this.glow.y, this.glow.z, K.core * 0.5, K.core, 4 * F, c, K.power * 0.85, 0, 0, 0, 0, NaN, F);
+      this.glows.burst(CELL.soft + FLAT, this.core.x, 0.07, this.core.z, K.pool, K.pool * 1.25, 3 * F, c, 0.35, 0, 0, 0, 0, NaN, F);
+      this.glows.burst(CELL.ring + FLAT, this.core.x, 0.08, this.core.z, K.ring[0] * wide, K.ring[1] * wide, K.ringLife, c, K.ringPower * (reduced ? 0.6 : 1), 0, 0, 0, 0, NaN, F);
+      if (tier >= 4) this.glows.burst(CELL.ring + FLAT, this.core.x, 0.085, this.core.z, 1, 2.6, 0.2, TYPING, 0.45);
     }
     this.pending = 0;
   }
 
-  /** A free shard; the oldest flying one when LIVE_MAX already fly. */
-  private free(): number {
-    let oldest = -1;
-    let open = -1;
-    let live = 0;
-    for (let s = 0; s < SHARDS; s += 1) {
-      if (this.alive[s] === 0) {
-        if (open < 0) open = s;
-        continue;
-      }
-      live += 1;
-      if (oldest < 0 || this.t0[s]! < this.t0[oldest]!) oldest = s;
-    }
-    return live >= LIVE_MAX || open < 0 ? oldest : open;
-  }
-
-  /** Draws the shards, the core, the priming spark and the stream (between the combat's strips.begin() and end()). */
+  /** Draws the bolts, the core, the priming spark and the stream (between the combat's strips.begin() and end()). */
   draw(w: World, time: number): void {
     const now = time * 1000;
     const dt = this.lastTime < 0 ? 0 : Math.max(0, time - this.lastTime);
@@ -233,37 +199,34 @@ export class TypeFeel {
     this.ship.core(this.core);
     // The core is drawn a little toward the camera so the hull never hides it.
     this.glow.copy(this.stage.camera.position).sub(this.core).normalize().multiplyScalar(0.8).add(this.core);
-    for (let s = 0; s < SHARDS; s += 1) {
-      if (this.alive[s] === 0) continue;
-      const age = time - this.t0[s]!;
-      if (age < 0) continue;
-      const k = age / this.life[s]!;
-      const color = GUN_COLOR[this.gun[s]!] ?? BLOW.volt;
-      if (this.mode[s] === 0) {
-        if (k >= 1) {
-          this.alive[s] = 0;
-          this.hitAt = now;
-          continue;
-        }
-        // Falls faster and faster into the core.
-        const e = k * k;
-        const x = this.sx[s]! + (this.glow.x - this.sx[s]!) * e;
-        const y = this.sy[s]! + (this.glow.y - this.sy[s]!) * e;
-        const z = this.sz[s]! + (this.glow.z - this.sz[s]!) * e;
-        this.v.set(this.glow.x - x, this.glow.y - y, this.glow.z - z);
-        const left = this.v.length();
-        this.v.multiplyScalar(Math.min(SHARD.length, left) / Math.max(1e-4, left));
-        this.strips.add(x - this.v.x, y - this.v.y, z - this.v.z, x, y, z, SHARD.width, color, 2.4, 0.9);
-      } else {
-        // Thrown aside: it slows and fades.
-        if (k >= 2) {
-          this.alive[s] = 0;
-          continue;
-        }
-        const d = age * (1 - k * 0.3);
-        const x = this.sx[s]! + this.ax[s]! * d;
-        const y = this.sy[s]! - 0.6 * d;
-        this.strips.add(x - Math.sign(this.ax[s]!) * SHARD.length, y + 0.05, this.sz[s]!, x, y, this.sz[s]!, SHARD.width, color, 2.2 * (1 - k / 2), 0.7);
+    const reduced = this.hud.reduced;
+    for (let m = 0; m < MARKS; m += 1) {
+      const age = time - this.mt[m]!;
+      if (age < 0 || age >= K.life) continue;
+      // Whole for 2 frames, then gone by the fifth; it ends in the core, or 1.6 m aside and down (a full bay takes nothing).
+      const fade = Math.min(1, (1 - age / K.life) / 0.6);
+      const aside = this.mg[m]! >= 8 ? (this.ms[m]! % 2 < 1 ? -1.6 : 1.6) : 0;
+      const sx = this.mx[m]!;
+      const sy = this.my[m]!;
+      const sz = this.mz[m]!;
+      const end = aside === 0 ? this.glow : this.tip.set(sx + aside, sy - 0.5, sz);
+      // Its two joints off the line jump at f2 and f4, a crackle (under reduced motion they hold still, nearer the line).
+      const seed = this.ms[m]! + (reduced ? 0 : Math.floor(age * 30) * 7);
+      const width = K.width * (this.streak.tier >= 1 ? 1.25 : 1);
+      let ax = sx;
+      let ay = sy;
+      let az = sz;
+      for (let j = 1; j <= 3; j += 1) {
+        const u = j / 3;
+        const bx = sx + (end.x - sx) * u + (j < 3 ? Math.sin(seed * 12.9898 + j * 78.233) * K.jitter * (reduced ? 0.4 : 1) : 0);
+        const by = sy + (end.y - sy) * u;
+        const bz = sz + (end.z - sz) * u;
+        // Past the first, each joint is drawn from half a segment back: its faded tail lies on the one before (a whole line).
+        const back = j === 1 ? 0 : 0.5;
+        this.strips.add(ax - (bx - ax) * back, ay - (by - ay) * back, az - (bz - az) * back, bx, by, bz, width, GUN_COLOR[this.mg[m]! & 7] ?? BLOW.volt, K.power * fade, 0.9 * fade);
+        ax = bx;
+        ay = by;
+        az = bz;
       }
     }
     // The core follows the locked word (its bay's colour); let go, it fades in 200 ms (a 0.2 glow stays from streak tier 2).

@@ -32,12 +32,13 @@ export const DECK_LIGHTS = 6;
  * A flash of light per shot (§4.2): priority (a new light takes the slot with
  * the lowest priority × light left), intensity, seconds to fade, the pool's
  * radius on the deck (m). Burst Pháo Sao 5 > Ray 4 > Tán 3 = Xung's first 3 >
- * Tia 2 > a Xung round 1.
+ * Tia 2 > a Xung round 1. Tia's and Ray's sit 1.5 m out along their line
+ * (beams.ts), off the hull (§12).
  */
 export const LIGHT = {
   xung: { prio: 1, power: 1, life: 0.05, pool: 1.8 },
   xungFirst: { prio: 3, power: 2, life: 0.08, pool: 2.4 },
-  tia: { prio: 2, power: 1.1, life: 0, pool: 2.4 },
+  tia: { prio: 2, power: 0.9, life: 0, pool: 2.4 },
   tiaSlide: { prio: 2, power: 1, life: 0, pool: 2.4 },
   tan: { prio: 3, power: 2, life: 0.08, pool: 3 },
   ray: { prio: 4, power: 3, life: 0.1, pool: 2.6 },

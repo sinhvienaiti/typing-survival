@@ -1,8 +1,9 @@
 /**
  * The effects of the fight, all pooled and instanced (no allocation in a
  * run): `Glows`, camera-facing billboards from a small atlas painted in code
- * (soft glow, 4/8/12-ray stars, ring, flare) for muzzles, impacts, kill
- * bursts and scout shots; `Strips`, camera-facing streaks between two points
+ * (soft glow, 4/8/12-ray stars, ring, flare, a puff) for muzzles, impacts,
+ * kill bursts and scout shots, added light or (smoke) laid over the scene;
+ * `Strips`, camera-facing streaks between two points
  * for Xung rounds, the Tia column's light and its feed from the ship;
  * `Streaks`, ones held a while (muzzle tongues, flashes along a shot);
  * `Column`, the Tia column burning on the floor.
@@ -10,7 +11,7 @@
 import * as THREE from "three";
 import { instancedQuads, uploadQuads } from "../kit/feedback";
 
-export const CELL = { soft: 0, star4: 1, star8: 2, star12: 3, ring: 4, flare: 5, core: 6 } as const;
+export const CELL = { soft: 0, star4: 1, star8: 2, star12: 3, ring: 4, flare: 5, core: 6, puff: 7 } as const;
 /** Add to a cell to lay it flat on the floor. */
 export const FLAT = 8;
 const CELLS = 8;
@@ -23,8 +24,9 @@ function atlas(): THREE.CanvasTexture {
   const g = canvas.getContext("2d");
   if (g !== null) {
     const c = size / 2;
-    const radial = (cell: number, stops: [number, number][]) => {
-      const gradient = g.createRadialGradient(cell * size + c, c, 0, cell * size + c, c, c);
+    // A radial gradient filling `cell`, centred off its middle by (ox, oy) × its half-size, `r` × it across.
+    const radial = (cell: number, stops: (readonly [number, number])[], ox = 0, oy = 0, r = 1) => {
+      const gradient = g.createRadialGradient(cell * size + c * (1 + ox), c * (1 + oy), 0, cell * size + c * (1 + ox), c * (1 + oy), c * r);
       for (const [at, a] of stops) gradient.addColorStop(at, "rgba(255,255,255," + a + ")");
       g.fillStyle = gradient;
       g.fillRect(cell * size, 0, size, size);
@@ -65,6 +67,8 @@ function atlas(): THREE.CanvasTexture {
     g.restore();
     radial(CELL.flare, [[0, 0.9], [0.15, 0.3], [0.4, 0], [1, 0]]);
     radial(CELL.core, [[0, 1], [0.35, 1], [0.55, 0.5], [1, 0]]);
+    // A puff (smoke, flame): soft blobs heaped off the centre.
+    for (const [ox, oy, r] of [[0, 0.05, 0.6], [-0.32, 0.18, 0.42], [0.3, 0.14, 0.45], [0.06, -0.3, 0.42], [-0.24, -0.22, 0.34], [0.28, -0.24, 0.3]] as const) radial(CELL.puff, [[0, 0.55], [0.55, 0.32], [1, 0]], ox, oy, r);
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -96,55 +100,63 @@ void main() {
     gl_Position = projectionMatrix * view;
   }
 }`;
-const ADD_FRAGMENT = /* glsl */ `
+// Added light; SMOKE: the colour laid over the scene (normal blending), its alpha the cell's × the burst's.
+const GLOW_FRAGMENT = /* glsl */ `
 uniform sampler2D uMap;
 varying vec2 vUv;
 varying vec4 vColor;
 void main() {
   float a = texture2D(uMap, vUv).a;
+#ifdef SMOKE
+  gl_FragColor = vec4(vColor.rgb, a * vColor.a);
+#else
   gl_FragColor = vec4(vColor.rgb * a * vColor.a, 1.0);
+#endif
 }`;
 
-/** Billboards that live a while (bursts) and one-frame stamps (scout shots, muzzle glows). */
+/** Billboards that live a while (bursts) and one-frame stamps (scout shots, muzzle glows); `smoke` ones are laid over the scene, rising in and out. */
 export class Glows {
   readonly mesh: THREE.Mesh<THREE.InstancedBufferGeometry, THREE.ShaderMaterial>;
   limit: number;
   private readonly pos: Float32Array;
   private readonly color: Float32Array;
   private readonly size: Float32Array;
-  // Live bursts: position, velocity, size start/end, rotation, spin, colour, life.
+  // Live bursts: position, velocity, size start/end, rotation, spin, colour, age, life, cell, intensity.
   private readonly b: Float32Array;
-  private readonly stride = 16;
+  private readonly stride = 17;
   private live = 0;
   private stamps = 0;
 
-  constructor(readonly capacity: number) {
+  constructor(readonly capacity: number, readonly smoke = false) {
     this.limit = capacity;
     const total = capacity * 2;
     this.pos = new Float32Array(total * 4);
     this.color = new Float32Array(total * 4);
     this.size = new Float32Array(total * 2);
     const geometry = instancedQuads({ iPos: [this.pos, 4], iColor: [this.color, 4], iSize: [this.size, 2] });
-    this.mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({ uniforms: { uMap: { value: atlas() } }, vertexShader: GLOW_VERTEX, fragmentShader: ADD_FRAGMENT, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    this.mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({ uniforms: { uMap: { value: atlas() } }, defines: smoke ? { SMOKE: 1 } : {}, vertexShader: GLOW_VERTEX, fragmentShader: GLOW_FRAGMENT, transparent: true, depthWrite: false, blending: smoke ? THREE.NormalBlending : THREE.AdditiveBlending }));
     this.mesh.frustumCulled = false;
-    this.mesh.renderOrder = 8;
+    this.mesh.renderOrder = smoke ? 6 : 8; // smoke first: fire and flashes add over it
     this.b = new Float32Array(capacity * this.stride);
   }
 
   /**
    * A burst at (x, y, z) of `cell`, growing from `from` to `to` m over
-   * `life` s, colour × `intensity` (above 1 blooms), drifting (vx, vy, vz),
-   * turning `spin` rad/s from `angle` (random when not given).
+   * `life` s, colour × `intensity` (above 1 blooms; smoke's alpha), drifting
+   * (vx, vy, vz), turning `spin` rad/s from `angle` (random when not given).
+   * `early` s are shown before it ages (one frame, F: a burst made between
+   * frames shows whole on its first, not already a frame old).
    */
-  burst(cell: number, x: number, y: number, z: number, from: number, to: number, life: number, color: THREE.Color, intensity: number, vx = 0, vy = 0, vz = 0, spin = 0, angle = NaN): void {
+  burst(cell: number, x: number, y: number, z: number, from: number, to: number, life: number, color: THREE.Color, intensity: number, vx = 0, vy = 0, vz = 0, spin = 0, angle = NaN, early = 0): void {
     if (this.live >= this.limit) return;
     const o = this.live * this.stride;
     const b = this.b;
     b[o] = x; b[o + 1] = y; b[o + 2] = z; b[o + 3] = vx; b[o + 4] = vy; b[o + 5] = vz;
     // A set angle (a flash along a shot), else a random one.
     b[o + 6] = from; b[o + 7] = to; b[o + 8] = angle === angle ? angle : Math.random() * 6.283; b[o + 9] = spin;
-    b[o + 10] = color.r * intensity; b[o + 11] = color.g * intensity; b[o + 12] = color.b * intensity;
-    b[o + 13] = 0; b[o + 14] = life; b[o + 15] = cell;
+    const k = this.smoke ? 1 : intensity;
+    b[o + 10] = color.r * k; b[o + 11] = color.g * k; b[o + 12] = color.b * k;
+    b[o + 13] = -early; b[o + 14] = life; b[o + 15] = cell; b[o + 16] = intensity;
     this.live += 1;
   }
 
@@ -178,9 +190,9 @@ export class Glows {
       b[q + 1] = b[q + 1]! + b[q + 4]! * dt;
       b[q + 2] = b[q + 2]! + b[q + 5]! * dt;
       b[q + 8] = b[q + 8]! + b[q + 9]! * dt;
-      const k = age / b[q + 14]!;
+      const k = Math.max(0, age) / b[q + 14]!;
       const ease = 1 - (1 - k) * (1 - k);
-      const fade = (1 - k) * (1 - k);
+      const fade = this.smoke ? Math.min(1, k * 8) * (1 - k) * b[q + 16]! : (1 - k) * (1 - k);
       this.write(n, b[q]!, b[q + 1]!, b[q + 2]!, b[q + 15]!, b[q + 10]!, b[q + 11]!, b[q + 12]!, fade, b[q + 6]! + (b[q + 7]! - b[q + 6]!) * ease, b[q + 8]!);
       n += 1;
     }
@@ -238,7 +250,7 @@ export class Strips {
   private readonly width: Float32Array;
   private n = 0;
 
-  constructor(readonly capacity: number) {
+  constructor(readonly capacity: number, readonly smoke = false) {
     this.from = new Float32Array(capacity * 3);
     this.to = new Float32Array(capacity * 3);
     this.color = new Float32Array(capacity * 4);
@@ -276,7 +288,7 @@ export class Streaks {
   private n = 0;
   private readonly color = new THREE.Color();
 
-  constructor(readonly capacity: number) {
+  constructor(readonly capacity: number, readonly smoke = false) {
     this.f = new Float32Array(capacity * 13);
   }
 
@@ -311,7 +323,8 @@ void main() {
   float flow = 0.65 + 0.35 * sin(vUv.y * 60.0 - uTime * 38.0) * sin(vUv.y * 13.0 + uTime * 9.0);
   float core = smoothstep(0.3, 0.0, across) * flow;
   float glow = pow(1.0 - across, 3.0);
-  float far = smoothstep(1.0, 0.82, vUv.y) * smoothstep(0.0, 0.04, vUv.y);
+  // It rises over its first fifth (2.4 m): no orange sheet on the deck round the ship (§12).
+  float far = smoothstep(1.0, 0.82, vUv.y) * smoothstep(0.0, 0.2, vUv.y);
   vec3 color = (uColor * glow * 0.5 + vec3(1.0, 0.95, 0.85) * core * 1.0) * far * uPower;
   gl_FragColor = vec4(color, 1.0);
 }`;

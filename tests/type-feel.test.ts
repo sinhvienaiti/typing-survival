@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CleanStreak, NOTE_HZ, POP, WORD_HZ, bounce, fullBlink, noteHz, popColour, popDrop, popGlow, popScale, streakTier, sweepAlpha, sweepLength, swell } from "../src/view/type-rules";
+import { CleanStreak, KEY_MARK, NOTE_HZ, POP, WORD_HZ, bounce, fullBlink, keyMarkLive, noteHz, popColour, popDrop, popGlow, popScale, streakTier, sweepAlpha, sweepLength, swell } from "../src/view/type-rules";
 
 /**
  * The typing feel's rules (docs/FEEL_PASS_S1.md §3): the notes a word climbs,
@@ -8,6 +8,22 @@ import { CleanStreak, NOTE_HZ, POP, WORD_HZ, bounce, fullBlink, noteHz, popColou
  * bay's blink. View only: the sim never reads them.
  */
 describe("typing feel", () => {
+  it("a key's mark is whole on its own frame, its ring out past the painted one, and 10 keys a second hold ≤ 12 billboards and strips (§12, §6)", () => {
+    expect(keyMarkLive(0)).toBe(7);
+    expect(keyMarkLive(-0.01)).toBe(0);
+    expect(keyMarkLive(KEY_MARK.ringLife)).toBe(0);
+    // The ring's radius is 0.4 of its width: from beside the hull to past the deck's painted ring (2.6 m).
+    expect(KEY_MARK.ring[0] * 0.4).toBeGreaterThanOrEqual(1.2);
+    expect(KEY_MARK.ring[1] * 0.4).toBeGreaterThan(2.6);
+    let peak = 0;
+    for (let t = 0; t < 1; t += 1 / 240) {
+      let live = 0;
+      for (let key = 0; key * 0.1 <= t; key += 1) live += keyMarkLive(t - key * 0.1);
+      peak = Math.max(peak, live);
+    }
+    expect(peak).toBeLessThanOrEqual(12);
+  });
+
   it("letters climb the A-minor pentatonic from A3 and a word lands on A5 (§3.5)", () => {
     expect(NOTE_HZ.length).toBe(10);
     expect(NOTE_HZ[0]).toBe(220);

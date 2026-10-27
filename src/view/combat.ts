@@ -266,10 +266,10 @@ export class Combat {
           this.shots.event(R, i, w, now);
           break;
         case EV.beamPulse:
-          // Burn left on the floor along the ray (x, z: its far end).
-          for (let k = 0; k < 3; k += 1) {
-            const t = 0.12 + Math.random() * 0.85;
-            this.glows.burst(CELL.soft + FLAT, x * t + (Math.random() - 0.5) * 0.6, 0.06, -(FIELD.muzzleZ + (z - FIELD.muzzleZ) * t), 1.5, 1.8, 2.4, this.beam, 0.85);
+          // Burn left on the floor along the ray (x, z: its far end), past its first 3 m (72 of them at 0.85 had sheeted the lower field orange, §12).
+          for (let k = 0; k < 2; k += 1) {
+            const t = 0.25 + Math.random() * 0.72;
+            this.glows.burst(CELL.soft + FLAT, x * t + (Math.random() - 0.5) * 0.6, 0.06, -(FIELD.muzzleZ + (z - FIELD.muzzleZ) * t), 1.5, 1.8, 2.4, this.beam, 0.6);
           }
           break;
         case EV.spawn:

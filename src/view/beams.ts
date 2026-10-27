@@ -1,16 +1,12 @@
 /**
- * The line guns, seen (docs/FEEL_PASS_S1.md §4.1–4.2): Ray and Tia leave the
- * ship's centre muzzle and run on to the sim's line 3 m out, so where they
- * strike stays the sim's. Ray shows its frost bolt hovering over the muzzle
- * while a magazine waits armed, pulls it in (× 3 bright, 1 → 0.3) as it
- * charges, then fires a 3.4 m muzzle streak, a star 12 % of the view and a
- * line held 0.35 s with ion rings and a band of light on the deck. Tia is a
- * white-hot core in a hot glow and a faint haze, growing out in 3 frames and
- * thinning away in 6, with two held lights (the muzzle, 60 % along); round
- * the ship it stays narrow (its star 1.5 m, the first 3 m's haze 1.4 m: a
- * burning Tia had turned the ship and its core into one white blot, test
- * pass 27/10). Their
- * loops (gun.ray.armed, gun.tia.loop) follow. Reads the world, never writes it.
+ * The line guns, seen (docs/FEEL_PASS_S1.md §4.1–4.2, §12): Ray and Tia leave
+ * the centre muzzle and join the sim's line 3 m out. Ray: its frost bolt
+ * armed over the muzzle, pulled in as it charges, then a 3.4 m streak, a star
+ * 12 % of the view 1 m out and a line held 0.35 s with ion rings and a band on
+ * the deck. Tia: a white-hot core in a hot glow and haze, out in 3 frames,
+ * gone in 6. Over the ship (their first 3 m) both are tamed and their lights
+ * sit 1.5 m out, so a key's mark shows through. Their loops (gun.ray.armed,
+ * gun.tia.loop) follow. Reads the world, never writes it.
  */
 import * as THREE from "three";
 import { GUN, RAY, TIA } from "../content/guns";
@@ -70,10 +66,12 @@ export class BeamFx {
       // A muzzle streak 3.4 m (5 frames), a star 12 % of the view (4 frames), ion rings along the line; the soft white round it
       // smaller and dimmer than build 2's (it washed the ship and the bays' edges white each shot, test pass 27/10).
       this.p.streaks.add(m.x, m.y, m.z, m.x + dx * 3.4, m.y, m.z - dz * 3.4, 0.5, C.rayCore, 3.4, 1, 5 * F);
+      // The star and its white sit 1 m out along the shot: on the muzzle they whitened the ship's front (§12).
       const star = this.p.size(0.12) * 2.8;
-      g.burst(CELL.star8, m.x, m.y, m.z, star * 0.6, star, 4 * F, C.ray, 2.8);
-      g.burst(CELL.core, m.x, m.y, m.z, star * 0.2, star * 0.35, 4 * F, C.rayCore, 2.6);
-      g.burst(CELL.soft, m.x, m.y, m.z, star * 0.45, star * 0.6, 3 * F, C.rayCore, 1.8);
+      const [sx, sz] = [m.x + dx, m.z - dz];
+      g.burst(CELL.star8, sx, m.y, sz, star * 0.6, star, 4 * F, C.ray, 2.8);
+      g.burst(CELL.core, sx, m.y, sz, star * 0.2, star * 0.35, 4 * F, C.rayCore, 2.6);
+      g.burst(CELL.soft, sx, m.y, sz, star * 0.45, star * 0.6, 3 * F, C.rayCore, 1.1);
       const ex = R.x[i]!;
       const ez = -R.z[i]!;
       const length = Math.hypot(ex - r[k + 3]!, ez - r[k + 4]!);
@@ -81,7 +79,7 @@ export class BeamFx {
         const t = d / length;
         g.burst(CELL.ring, r[k + 3]! + (ex - r[k + 3]!) * t, Y, r[k + 4]! + (ez - r[k + 4]!) * t, 0.3, 1.4, 0.3, C.ray, 1.6);
       }
-      this.p.lights.flash(LIGHT.ray, m.x, m.y, m.z, C.ray);
+      this.p.lights.flash(LIGHT.ray, m.x + dx * 1.5, m.y, m.z - dz * 1.5, C.ray);
       this.p.ship.kick("ray");
       this.p.ship.cue(AIM_PRIO.ray, R.x[i]!, R.z[i]!);
       this.p.trauma.kick(-dx, dz, 4);
@@ -116,8 +114,9 @@ export class BeamFx {
         const az = seg === 0 ? r[k + 2]! : r[k + 4]!;
         const bx = seg === 0 ? r[k + 3]! : r[k + 5]!;
         const bz = seg === 0 ? r[k + 4]! : r[k + 6]!;
-        S.add(ax, ay, az, bx, Y, bz, 0.5 * f, C.ray, 1.8 * f, 0);
-        S.add(ax, ay, az, bx, Y, bz, 0.12 + 0.06 * f, C.rayCore, 2.4 * f, f);
+        const near = seg === 0 ? 0.6 : 1; // over the ship (its first 3 m): a key's mark shows through
+        S.add(ax, ay, az, bx, Y, bz, 0.5 * f, C.ray, 1.8 * f * near, 0);
+        S.add(ax, ay, az, bx, Y, bz, 0.12 + 0.06 * f, C.rayCore, 2.4 * f * near, f * near);
         // A flat band of light along the line on the deck for 0.3 s.
         if (age < 0.3) S.add(ax, 0.05, az, bx, 0.05, bz, 1.2, C.ray, 0.7 * (1 - age / 0.3), 0.15);
       }
@@ -193,17 +192,18 @@ export class BeamFx {
       const x1 = seg === 0 ? jx : fx;
       const y1 = seg === 0 ? jy : 0.55;
       const z1 = seg === 0 ? jz : fz;
-      // A faint haze 2.4 m (1.4 m over the ship), the hot glow 1.1 m (0.8), the white-hot core 0.22 m; the light it throws on the deck.
-      S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 1.4 : 2.4) * thin, this.tia, 0.18 * k, 0);
-      S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 0.8 : 1.1) * thin, this.tia, (seg === 0 ? 1 : 1.3) * k, 0);
-      S.add(x0, y0, z0, x1, y1, z1, 0.22 * thin, C.hot, 1.4 * k, 0.6);
-      S.add(x0, 0.4, z0, x1, 0.4, z1, 1.1 * thin, this.tia, 0.5 * k, 0.4 * k);
+      // A faint haze 2.4 m (none over the ship), the hot glow 1.1 m (0.55 at 0.7), the white-hot core 0.22 m (0.7); the light it throws on the deck.
+      const near = seg === 0 ? 0.7 : 1;
+      if (seg === 1) S.add(x0, y0, z0, x1, y1, z1, 2.4 * thin, this.tia, 0.18 * k, 0);
+      S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 0.55 : 1.1) * thin, this.tia, (seg === 0 ? 0.7 : 1.3) * k, 0);
+      S.add(x0, y0, z0, x1, y1, z1, 0.22 * thin, C.hot, 1.4 * k * near, 0.6 * near);
+      S.add(x0, 0.4, z0, x1, 0.4, z1, 1.1 * thin, this.tia, 0.5 * k * near * near, 0.4 * k * near);
     }
     const g = this.p.glows;
-    g.stamp(CELL.star8, m.x, m.y, m.z, 1.5 * k, time * 3, this.tia, 1.9 * k);
+    g.stamp(CELL.star8, m.x, m.y, m.z, 1 * k, time * 3, this.tia, 1.2 * k);
     g.stamp(CELL.soft, fx, 0.6, fz, 2.4 * k, 0, this.tia, 1.8 * k);
     if (on) {
-      this.p.lights.hold(1, LIGHT.tia, m.x, m.y, m.z, this.tia);
+      this.p.lights.hold(1, LIGHT.tia, m.x + ux * 1.5, m.y, m.z - uz * 1.5, this.tia);
       this.p.lights.hold(2, LIGHT.tiaSlide, m.x + (ex - m.x) * 0.6, 0.9, m.z + (-ez - m.z) * 0.6, this.tia);
       if (Math.random() < dt * 40) {
         const t = Math.random();
