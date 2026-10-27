@@ -100,7 +100,7 @@ void main() {
     gl_Position = projectionMatrix * view;
   }
 }`;
-// Added light; SMOKE: the colour laid over the scene (normal blending), its alpha the cell's × the burst's.
+// Added light; SMOKE: the colour laid over the scene (normal blending), its alpha the cell's × the burst's, thick parts darker and thin edges lit (soot with a rim of light).
 const GLOW_FRAGMENT = /* glsl */ `
 uniform sampler2D uMap;
 varying vec2 vUv;
@@ -108,13 +108,13 @@ varying vec4 vColor;
 void main() {
   float a = texture2D(uMap, vUv).a;
 #ifdef SMOKE
-  gl_FragColor = vec4(vColor.rgb, a * vColor.a);
+  gl_FragColor = vec4(vColor.rgb * mix(2.0, 0.65, smoothstep(0.06, 0.45, a)), a * vColor.a);
 #else
   gl_FragColor = vec4(vColor.rgb * a * vColor.a, 1.0);
 #endif
 }`;
 
-/** Billboards that live a while (bursts) and one-frame stamps (scout shots, muzzle glows); `smoke` ones are laid over the scene, rising in and out. */
+/** Billboards that live a while (bursts) and one-frame stamps (scout shots, muzzle glows); `smoke` ones are laid over the scene (puffs rising in and out, a scorch on the deck). */
 export class Glows {
   readonly mesh: THREE.Mesh<THREE.InstancedBufferGeometry, THREE.ShaderMaterial>;
   limit: number;
@@ -136,7 +136,7 @@ export class Glows {
     const geometry = instancedQuads({ iPos: [this.pos, 4], iColor: [this.color, 4], iSize: [this.size, 2] });
     this.mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({ uniforms: { uMap: { value: atlas() } }, defines: smoke ? { SMOKE: 1 } : {}, vertexShader: GLOW_VERTEX, fragmentShader: GLOW_FRAGMENT, transparent: true, depthWrite: false, blending: smoke ? THREE.NormalBlending : THREE.AdditiveBlending }));
     this.mesh.frustumCulled = false;
-    this.mesh.renderOrder = smoke ? 6 : 8; // smoke first: fire and flashes add over it
+    this.mesh.renderOrder = smoke ? 7.5 : 8; // smoke over the beams and tracers (a cloud hides them), then fire and flashes add over it
     this.b = new Float32Array(capacity * this.stride);
   }
 
@@ -192,7 +192,8 @@ export class Glows {
       b[q + 8] = b[q + 8]! + b[q + 9]! * dt;
       const k = Math.max(0, age) / b[q + 14]!;
       const ease = 1 - (1 - k) * (1 - k);
-      const fade = this.smoke ? Math.min(1, k * 8) * (1 - k) * b[q + 16]! : (1 - k) * (1 - k);
+      // Smoke puffs rise in and hold, a scorch holds longer still; embers (3 s and more) hold then cool, the rest ease out.
+      const fade = this.smoke ? (b[q + 15] === CELL.puff ? Math.min(1, k * 20) * (1 - k * k) : 1 - k ** 4) * b[q + 16]! : b[q + 14]! >= 3 ? 1 - k * k : (1 - k) * (1 - k);
       this.write(n, b[q]!, b[q + 1]!, b[q + 2]!, b[q + 15]!, b[q + 10]!, b[q + 11]!, b[q + 12]!, fade, b[q + 6]! + (b[q + 7]! - b[q + 6]!) * ease, b[q + 8]!);
       n += 1;
     }

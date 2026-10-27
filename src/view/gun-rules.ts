@@ -69,14 +69,14 @@ export const EDGE = { hot: 0, volt: 1, beacon: 2, armour: 3 } as const;
 export const CHUNK: readonly { n: number; min: number; max: number; big: number; edge: number }[] = [
   { n: 7, min: 0.18, max: 0.35, big: 0, edge: EDGE.hot },
   { n: 10, min: 0.2, max: 0.45, big: 0, edge: EDGE.volt },
-  { n: 12, min: 0.3, max: 0.55, big: 6, edge: EDGE.hot },
+  { n: 20, min: 0.4, max: 0.7, big: 8, edge: EDGE.hot },
   { n: 10, min: 0.2, max: 0.4, big: 0, edge: EDGE.hot },
   { n: 6, min: 0.15, max: 0.3, big: 0, edge: EDGE.hot },
   { n: 3, min: 0.15, max: 0.3, big: 0, edge: EDGE.hot },
-  { n: 14, min: 0.3, max: 0.55, big: 8, edge: EDGE.beacon },
+  { n: 22, min: 0.4, max: 0.7, big: 10, edge: EDGE.beacon },
 ];
-/** A Trâu's and Đầu Đàn's big chunks (§12: up from §4.5's 0.6–0.8 m, and more of them, to read as a heap 13 m out). */
-export const BIG_CHUNK = { min: 0.8, max: 1.15 } as const;
+/** A Trâu's and Đầu Đàn's big chunks (§12, §13: up from §4.5's 0.6–0.8 m, and more of them, to read as a field of wreckage 13 m out). */
+export const BIG_CHUNK = { min: 0.9, max: 1.3 } as const;
 export const CHUNKS_MAX = 48;
 
 /** Chunks of a heap of `n` kills of `kind` (√N, as the kit's merged bursts): small ones and big ones, together at most 48. */
@@ -94,7 +94,8 @@ export const CHUNK_CAP = { low: 150, medium: 400, high: 900, ultra: 1400 } as co
  * How a chunk flies (§4.5): up `up` m/s, out `out` m/s along the blow within
  * ±`spread` rad, by the gun of the killing blow: Pháo Sao throws from the
  * burst's centre and highest, Ray along its line and fastest, Tán along the
- * push, Tia across the sweep, Xung (and the rest) as the base.
+ * push, Tia across the sweep, Xung (and the rest) as the base; a big foe's
+ * all round.
  */
 export const THROW = {
   base: { up: [3, 6], out: [2, 5], spread: Math.PI / 3 },
@@ -102,6 +103,8 @@ export const THROW = {
   tan: { up: [3, 5.5], out: [4, 6], spread: 0.6 },
   ray: { up: [2.5, 5], out: [6, 9], spread: 0.35 },
   phao: { up: [5, 8], out: [2, 5], spread: Math.PI },
+  /** A Trâu or Đầu Đàn, whatever killed it: all round, a field of wreckage (§13). */
+  big: { up: [3.5, 6.5], out: [2.5, 6.5], spread: Math.PI },
 } as const;
 export const CHUNK_PHYSICS = { gravity: 14, spin: [6, 14], bounce: 0.3, friction: 0.6, coolS: 1.2 } as const;
 

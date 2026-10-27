@@ -2,8 +2,9 @@
  * Kill chunks (docs/FEEL_PASS_S1.md §4.5, §12): a killed foe breaks into
  * light steel chunks whose edges glow hot (Lính's electric, Đầu Đàn's gold, a
  * Bọc Thép's pale gold), cool to a steel rim over 1.2 s (a Trâu's or Đầu
- * Đàn's over 2.4 s, its big ones hotter over 4.2 s, thrown higher and less
- * far: a heap on its bed of embers), fly by the gun of the killing blow
+ * Đàn's smoulder: its small ones over 4.8 s, its big ones hotter over 7.2 s,
+ * thrown all round, the big ones higher and less far: a field of wreckage on
+ * its scorch, rims lit until they sink), fly by the gun of the killing blow
  * (gun-rules THROW), bounce once, lie 8 s, then sink. Three faceted shapes
  * made in code share one InstancedMesh; a soft shadow under each in a
  * second: 2 draw calls. A ring pool, nothing allocated after construction.
@@ -19,8 +20,8 @@ const S = 8;
 const EDGES = [BLOW.shardHot, BLOW.elite, BLOW.beacon, BLOW.armour];
 const EDGE_HOT = 2.2;
 const EDGE_COLD = 0.45;
-/** A big foe's big chunks: hotter edges, cooling 3.5 × as long, thrown higher and less far. */
-const BIG = { hot: 3.4, cool: 3.5, up: 1.4, out: 0.45 } as const;
+/** A big foe's chunks smoulder (§13): its small ones cool 4 × as long, its big ones 6 × and hotter, thrown higher and less far; cold, their rims stay lit 2 × (they read on the dark deck until they sink). */
+const BIG = { hot: 3.4, small: 4, cool: 6, up: 1.4, out: 0.7, cold: 2 } as const;
 
 /** A faceted shard 1 m across at most: a split octahedron (8 faces), a wedge (8), a slab (12), corners pushed about. */
 function shapes(): THREE.BufferGeometry {
@@ -200,15 +201,17 @@ export class Chunks {
       const y = this.s[o + 1]! - sink * size * 0.6;
       this.matrix.compose(this.pos.set(this.s[o]!, y, this.s[o + 2]!), this.quat, this.scale.setScalar(size * (1 - sink * 0.5)));
       this.mesh.setMatrixAt(i, this.matrix);
-      // Hot edges cool to steel over coolS (a big foe's big chunks twice as long, hotter).
+      // Hot edges cool to steel over coolS (a big foe's smoulder: BIG).
       const bigOne = this.hot[i] === 2;
-      const heat = Math.max(0, 1 - age / (CHUNK_PHYSICS.coolS * (bigOne ? BIG.cool : this.hot[i]! + 1)));
+      const ofBig = this.hot[i]! > 0;
+      const heat = Math.max(0, 1 - age / (CHUNK_PHYSICS.coolS * (bigOne ? BIG.cool : ofBig ? BIG.small : 1)));
       const hot = EDGES[this.edge[i]!]!;
-      const k = EDGE_COLD + ((bigOne ? BIG.hot : EDGE_HOT) - EDGE_COLD) * heat * heat;
-      const cold = 1 - heat;
-      this.look[i * 4] = (hot.r * heat + BLOW.shardSteel.r * cold) * k;
-      this.look[i * 4 + 1] = (hot.g * heat + BLOW.shardSteel.g * cold) * k;
-      this.look[i * 4 + 2] = (hot.b * heat + BLOW.shardSteel.b * cold) * k;
+      const cold = EDGE_COLD * (ofBig ? BIG.cold : 1);
+      const k = cold + ((bigOne ? BIG.hot : EDGE_HOT) - cold) * heat * heat;
+      const cool = 1 - heat;
+      this.look[i * 4] = (hot.r * heat + BLOW.shardSteel.r * cool) * k;
+      this.look[i * 4 + 1] = (hot.g * heat + BLOW.shardSteel.g * cool) * k;
+      this.look[i * 4 + 2] = (hot.b * heat + BLOW.shardSteel.b * cool) * k;
       // The shadow: 1.3 × the chunk's size, lighter as it rises (gone at 2 m).
       const high = Math.max(0, this.s[o + 1]! - FLOOR);
       this.shade[i] = 0.35 * Math.max(0, 1 - high / 2) * (1 - sink);

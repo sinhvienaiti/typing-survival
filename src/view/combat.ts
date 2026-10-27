@@ -53,7 +53,7 @@ export type CombatHooks = {
 
 export class Combat {
   readonly glows: Glows;
-  readonly smoke = new Glows(96, true); // a big kill's smoke laid over the scene: one draw call
+  readonly smoke = new Glows(160, true); // a big kill's smoke and scorch laid over the scene: one draw call
   readonly strips: Strips;
   readonly sparks: ParticlePool;
   readonly debris: Debris;
@@ -98,6 +98,7 @@ export class Combat {
     this.glows = new Glows(spec.bursts);
     this.strips = new Strips(2100);
     this.sparks = new ParticlePool(spec.particles, textures().spark);
+    this.sparks.points.renderOrder = 8; // over a big kill's smoke (embers drift out of it)
     this.debris = new Debris(spec.debris, { profile: FEEL });
     this.numbers.limit = spec.numbers;
     this.audio = audio;
@@ -357,7 +358,7 @@ export class Combat {
     // Chunks (§4.5) by the kind (else read from the flags) and the gun: Tia's fly across its sweep.
     const kind = K.kind[c]! >= 0 ? K.kind[c]! : scout ? 1 : big ? 2 : 0;
     const gun = K.gun[c]!;
-    const th = THROWS[gun]!;
+    const th = big ? THROW.big : THROWS[gun]!;
     const across = gun === 1;
     this.chunks.burst(x, z, across ? -dz * this.sweep : dx, across ? dx * this.sweep : dz, kind, n, K.armour[c] === 1 ? EDGE.armour : -1, th.up, th.out, th.spread);
     this.audio.kill(n, x / FIELD.halfW, scout, now);

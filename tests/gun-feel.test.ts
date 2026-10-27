@@ -56,14 +56,14 @@ describe("gun feel", () => {
     expect(lightLevel(9, 0)).toBe(1);
   });
 
-  it("kills break into the kind's chunks, √N for a heap, at most 48 (§4.5; a Trâu's and Đầu Đàn's from §12)", () => {
-    expect(CHUNK.map((c) => c.n)).toEqual([7, 10, 12, 10, 6, 3, 14]);
-    expect(CHUNK.map((c) => c.big)).toEqual([0, 0, 6, 0, 0, 0, 8]);
-    expect(BIG_CHUNK.min).toBeGreaterThanOrEqual(0.8);
-    expect(CHUNK[2]!.min).toBeGreaterThanOrEqual(0.3);
+  it("kills break into the kind's chunks, √N for a heap, at most 48 (§4.5; a Trâu's and Đầu Đàn's from §13)", () => {
+    expect(CHUNK.map((c) => c.n)).toEqual([7, 10, 20, 10, 6, 3, 22]);
+    expect(CHUNK.map((c) => c.big)).toEqual([0, 0, 8, 0, 0, 0, 10]);
+    expect(BIG_CHUNK.min).toBeGreaterThanOrEqual(0.9);
+    expect(CHUNK[2]!.min).toBeGreaterThanOrEqual(0.4);
     expect(chunkCount(0, 1)).toEqual({ small: 7, big: 0 });
-    expect(chunkCount(2, 1)).toEqual({ small: 12, big: 6 });
-    expect(chunkCount(6, 1)).toEqual({ small: 14, big: 8 });
+    expect(chunkCount(2, 1)).toEqual({ small: 20, big: 8 });
+    expect(chunkCount(6, 1)).toEqual({ small: 22, big: 10 });
     expect(chunkCount(0, 4)).toEqual({ small: 14, big: 0 });
     for (const kind of [0, 1, 2, 6]) for (const n of [1, 9, 40, 200]) {
       const c = chunkCount(kind, n);

@@ -52,9 +52,11 @@ export const BLOW = {
   rayCore: new THREE.Color("#f2f7ff"),
   phao: new THREE.Color("#ff3f6c"),
   smoke: new THREE.Color("#58616b"),
-  /** A big kill's smoke laid over the deck (normal blending): lit grey, lighter than the steel; its sooty heart. */
-  smokeLit: new THREE.Color("#9a928b"),
-  soot: new THREE.Color("#3d3835"),
+  /** A big kill's smoke laid over the deck (normal blending; fx.ts lights its thin edges): lit grey tops, a dark body, a sooty base; its scorch. */
+  smokeLit: new THREE.Color("#7d746c"),
+  smokeBody: new THREE.Color("#2c2724"),
+  soot: new THREE.Color("#0e0c0b"),
+  scorch: new THREE.Color("#0a0807"),
   /** A blow Vỏ stopped: orange sparks bouncing back. */
   clank: new THREE.Color("#ff9a2e"),
   /** A clean magazine piercing Vỏ: a white-blue streak. */

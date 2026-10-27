@@ -36,6 +36,10 @@ const ARC = 6;
 const F = 1 / 60;
 const Y = 0.95;
 
+/** A big kill's cloud by layer (a sooty base, a dark body, lit tops): puffs, height (m), spread, width from / to (× the view's 16 %), alpha. */
+const CLOUD = { n: [5, 14, 17], y: [0.4, 1, 2.2], spread: [1.1, 1.25, 0.5], from: [1.2, 1.4, 0.6], to: [2.8, 3.8, 1.6], alpha: [1.5, 1.3, 0.7] } as const;
+const CLOUD_COLOR = [C.soot, C.smokeBody, C.smokeLit] as const;
+
 /** A point of a shell's arc from `m` to (tx, 0.3, tz) at u (0 … 1): a parabola ARC m high at the middle. */
 function arcPoint(m: THREE.Vector3, tx: number, tz: number, u: number, out: THREE.Vector3): THREE.Vector3 {
   return out.set(m.x + (tx - m.x) * u, m.y + (0.3 - m.y) * u + ARC * 4 * u * (1 - u), m.z + (tz - m.z) * u);
@@ -238,29 +242,41 @@ export class ShotFx {
     g.burst(CELL.soft + FLAT, x, 0.07, -z, 2 * size, 2.6 * size, 1.2, C.ember, 0.35);
   }
 
-  /** A Trâu or Đầu Đàn (`leader`: a quarter bigger, gold) killed at sim (x, z), its own event sized on the view (§12): f0–f2 a warm flash, round and gold where Ray's line is thin and white-blue, the lane lit round it; a fireball rolling up and out to the sides; smoke laid over the deck 2–3 s; a bed of embers 3.5 s under its chunks; a small ring. Returns its stop (T3). */
+  /** A Trâu or Đầu Đàn (`leader`: a quarter bigger, gold) killed at sim (x, z), its own event sized on the view (§12, §13): f0–f2 a warm flash, round and gold where Ray's line is thin and white-blue, the lane lit round it; a fireball rolling up and out; a dark cloud as wide as the flash with lit edges, laid over the deck and the beams 3.5–4.5 s, embers drifting out of it; a scorch 9 s whose cracks glow 7 s; a small ring. Returns its stop (T3). */
   bigKill(x: number, z: number, leader: boolean): number {
     const g = this.p.glows;
+    const s = this.p.smoke;
     const k = leader ? 1.25 : 1;
     const v = this.size(0.16, x, z) * k;
     const gold = leader ? C.beacon : C.crit;
+    const r = () => Math.random();
     // Billboard sizes are full widths: the core's white disc is 0.35 of it (here 17 % of the view across), the rays reach half.
     g.burst(CELL.core, x, 1.2, -z, v * 1.8, v * 2.3, 3 * F, C.hot, 3, 0, 0, 0, 0, NaN, F);
     g.burst(CELL.star12, x, 1.3, -z, v * 2, v * 3.6, 5 * F, gold, 2.6, 0, 0, 0, 0.6, NaN, F);
     g.burst(CELL.soft + FLAT, x, 0.07, -z, v * 3, v * 4, 4 * F, gold, 1.2, 0, 0, 0, 0, NaN, F);
     this.p.lights.flash(LIGHT.big, x, 1.6, -z, gold);
-    // The fireball: lumpy puffs of flame rolling up and out to both sides, 0.5–0.9 s (Ray's line stays thin between them).
-    for (let i = 0; i < 7; i += 1) {
-      const side = (i % 2 === 0 ? -1 : 1) * (0.5 + Math.random());
-      g.burst(CELL.puff, x + side * 0.5, 0.8 + Math.random() * 0.6, -z, 2 * k, (4.2 + Math.random() * 1.6) * k, 0.45 + Math.random() * 0.35, i < 3 ? C.crit : C.swarm, 0.95, side * 2.2, 2.2 + Math.random() * 2.2, 0, (Math.random() - 0.5) * 2, NaN, F);
-    }
+    // The fireball, sized on the view: lumpy puffs of flame, white-hot and gold (not Tia's orange), rolling up and out to both sides (Ray's line stays thin between them).
     for (let i = 0; i < 9; i += 1) {
-      const a = Math.random() * 6.283;
-      this.p.smoke.burst(CELL.puff, x + Math.cos(a) * 0.8, 1 + Math.random(), -z + Math.sin(a) * 0.8, 1.2 * k, (3.6 + Math.random() * 1.6) * k, 2 + Math.random(), i < 3 ? C.soot : C.smokeLit, 0.75, Math.cos(a) * 0.5, 0.7 + Math.random() * 0.7, Math.sin(a) * 0.3, (Math.random() - 0.5) * 1.2);
+      const side = (i % 2 === 0 ? -1 : 1) * (0.3 + r());
+      g.burst(CELL.puff, x + side * 0.25 * v, 0.9 + r() * 0.6, -z, 0.35 * v, (0.9 + r() * 0.4) * v, 0.5 + r() * 0.35, i < 3 ? C.hot : gold, 1.2, side * 0.45 * v, (0.35 + r() * 0.35) * v, 0, (r() - 0.5) * 2, NaN, F);
     }
+    // The cloud (Glows smoke mode, over the beams), as wide as the flash, rising slowly 3.5–4.5 s: a sooty base, a dark body, lit tops.
+    for (let i = 0, l = 0; i < CLOUD.n[2]; i += 1) {
+      if (i >= CLOUD.n[l]!) l += 1;
+      const a = r() * 6.283;
+      const d = (0.15 + r() * CLOUD.spread[l]!) * v;
+      s.burst(CELL.puff, x + Math.cos(a) * d, CLOUD.y[l]! + r() * 0.8, -z + Math.sin(a) * d * 0.4, CLOUD.from[l]! * v, (CLOUD.to[l]! + r() * 0.5) * v, 3.5 + r(), CLOUD_COLOR[l]!, CLOUD.alpha[l]!, Math.cos(a) * 0.08 * v, (0.06 + r() * 0.08) * v, 0, (r() - 0.5) * 0.6);
+    }
+    // The scorch (9 s), its cracks glowing as they cool (7 s), the bed of embers under the chunks (3.5 s).
+    const crack = r() * 6.283;
+    s.burst(CELL.soft + FLAT, x, 0.062, -z, 1.5 * v, 1.6 * v, 9, C.scorch, 0.8);
+    s.burst(CELL.star12 + FLAT, x, 0.064, -z, 1.7 * v, 1.8 * v, 9, C.scorch, 0.9, 0, 0, 0, 0, crack);
+    g.burst(CELL.star12 + FLAT, x, 0.066, -z, 1.4 * v, 1.5 * v, 7, C.ember, 1.1, 0, 0, 0, 0, crack);
+    g.burst(CELL.star8 + FLAT, x, 0.067, -z, 0.9 * v, 0.95 * v, 7, C.ember, 0.9, 0, 0, 0, 0, crack + 0.3);
     g.burst(CELL.soft + FLAT, x, 0.065, -z, 7 * k, 8 * k, 3.5, C.swarm, 0.55);
     g.burst(CELL.ring + FLAT, x, 0.08, -z, 2, 5 * k, 0.35, C.hot, 1.1);
     this.spark(x, 1, -z, 0, 1.6, 0, 36, 10, C.hot, 0.32, 0.8, 2.2);
+    for (let i = 0; i < 14; i += 1) this.p.sparks.spawn(this.w3.set(x + (r() - 0.5) * 0.5 * v, 1 + r() * 2, -z), this.v.set((r() - 0.5) * 2, 0.5 + r(), (r() - 0.5)), C.ember, 0.28, 1.4 + r(), { drag: 1.2, gravity: -0.6 });
     return tier(3).stopMs;
   }
 
