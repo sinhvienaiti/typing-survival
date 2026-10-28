@@ -46,7 +46,7 @@ describe("Tuyến Cuối theme", () => {
 
   it("the player sees the game's name, never Space's mode", () => {
     const visible = [text("index.html"), text("src/view/screens.ts"), text("src/view/hud.ts")].join("\n");
-    expect(visible).toContain("TUYẾN CUỐI");
+    expect(visible).toContain("LAST LINE");
     expect(visible).not.toMatch(/SINH TỒN|Sinh Tồn/);
   });
 

@@ -124,11 +124,11 @@ export class Journey {
     const best = progress.best[this.host.mode()] ?? {};
     const items: MenuItem[] = CHAPTER_1.map((stage) => ({
       id: stage.id,
-      label: "Ải " + stage.index + " · " + stage.name + (isOpen(progress, stage.index) ? "  " + "★".repeat(best[stage.id] ?? 0) + "☆".repeat(3 - (best[stage.id] ?? 0)) : ""),
-      note: isOpen(progress, stage.index) ? stageNote(stage) : "Qua ải " + (stage.index - 1) + " để mở",
+      label: "Stage " + stage.index + " · " + stage.name + (isOpen(progress, stage.index) ? "  " + "★".repeat(best[stage.id] ?? 0) + "☆".repeat(3 - (best[stage.id] ?? 0)) : ""),
+      note: isOpen(progress, stage.index) ? stageNote(stage) : "Clear Stage " + (stage.index - 1) + " to unlock",
       enabled: isOpen(progress, stage.index),
     }));
-    items.push({ id: "back", label: "Quay lại", note: "Màn chính", enabled: true });
+    items.push({ id: "back", label: "Back", note: "Main menu", enabled: true });
     this.menu = new Menu(items);
     if (focus !== undefined) this.menu.select(focus);
     this.screen = "stages";
@@ -139,8 +139,8 @@ export class Journey {
   brief(stage: Stage): void {
     this.stage = stage;
     this.menu = new Menu([
-      { id: "loadout", label: "Nạp súng", note: "Chọn " + stage.kit.bays + " trong 5 súng", enabled: true },
-      { id: "back", label: "Quay lại", note: "Chọn ải", enabled: true },
+      { id: "loadout", label: "Loadout", note: "Pick " + stage.kit.bays + " of 5 guns", enabled: true },
+      { id: "back", label: "Back", note: "Stages", enabled: true },
     ]);
     this.screen = "briefing";
     this.host.draw();
@@ -275,12 +275,12 @@ export class Journey {
 }
 
 export const ROW_LABELS = {
-  swarmFar: "Swarm giữa sân",
-  swarmNear: "Swarm sát vạch",
-  scout: "Scout và đạn Scout",
-  armoured: "Brute, Pack Leader (Vỏ)",
+  swarmFar: "Swarm mid-lane",
+  swarmNear: "Swarm at the line",
+  scout: "Scouts and shots",
+  armoured: "Brute, Pack Leader (armor)",
   shield: "Shield Guard",
-  splitter: "Splitter và Shard",
+  splitter: "Splitter and Shard",
 } as const;
 
 /** "khắc: Ray · được: Pháo Sao" for a row. */
@@ -288,7 +288,7 @@ export function counterTag(row: (typeof COUNTER_ROWS)[number]): string {
   const names = (mark: number) => GUN_IDS.filter((gun) => COUNTERS[row][gun] === mark).map((gun) => GUN_SPECS[gun]!.name);
   const good = names(2);
   const fair = names(1);
-  return (good.length > 0 ? "khắc: " + good.join(", ") : "") + (fair.length > 0 ? (good.length > 0 ? " · " : "") + "được: " + fair.join(", ") : "");
+  return (good.length > 0 ? "Best: " + good.join(", ") : "") + (fair.length > 0 ? (good.length > 0 ? " · " : "") + "OK: " + fair.join(", ") : "");
 }
 
 /** The rows a gun counters (mark 2) or is poor on (mark 0), as text. */
@@ -300,12 +300,12 @@ function rowsWhere(gun: number, mark: number): string {
 export function stageNote(stage: Stage): string {
   const parts = [objectiveText(stage)];
   if (stage.hazard !== null) parts.push("Rift");
-  parts.push("Luật " + LEARN_RULES[stage.learn].label);
+  parts.push("Words: " + LEARN_RULES[stage.learn].label);
   return parts.join(" · ");
 }
 
 export function objectiveText(stage: Stage): string {
   const o = stage.objective;
-  if (o.kind === "hold") return "Trụ vững " + Math.floor(o.seconds / 60) + ":" + String(o.seconds % 60).padStart(2, "0");
-  return "Săn " + o.need + " trong " + o.leaders.length + " Pack Leader";
+  if (o.kind === "hold") return "Hold for " + Math.floor(o.seconds / 60) + ":" + String(o.seconds % 60).padStart(2, "0");
+  return "Hunt " + o.need + " of " + o.leaders.length + " Pack Leaders";
 }

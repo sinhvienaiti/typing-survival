@@ -18,11 +18,11 @@ describe("small player labels (ticket 104)", () => {
     const screen = journey();
     screen.brief(stageById(id));
     const html = renderJourney(screen);
-    const detail = /<dt>Luật học<\/dt><dd><b>[^<]+<\/b> · ([\s\S]*?)<\/dd>/.exec(html)![1]!;
+    const detail = /<dt>Learning<\/dt><dd><b>[^<]+<\/b> · ([\s\S]*?)<\/dd>/.exec(html)![1]!;
     const sentences = detail.split(/[.!?]/).map((sentence) => sentence.trim()).filter(Boolean);
     expect(sentences.length).toBeGreaterThan(0);
     for (const sentence of sentences) expect(sentence.split(/\s+/).length, sentence).toBeLessThanOrEqual(14);
-    expect(detail).toContain("phiên âm");
+    expect(detail).toContain("pronunciation");
     expect(detail).not.toMatch(/IPA|&quot;/);
   });
 
@@ -30,12 +30,12 @@ describe("small player labels (ticket 104)", () => {
     const stage = stageById("c1-s2");
     const screen = journey();
     screen.open();
-    expect(renderJourney(screen)).toContain("Ải 2 · Săn Pack Leader");
+    expect(renderJourney(screen)).toContain("Stage 2 · Leader Hunt");
     screen.brief(stage);
-    expect(renderJourney(screen)).toContain("ẢI 2 · SĂN PACK LEADER");
+    expect(renderJourney(screen)).toContain("STAGE 2 · LEADER HUNT");
     expect(renderScreen({
-      kind: "end", menu: new Menu([]), mode: "Cân bằng", won: true,
-      stats: [], words: [], advice: "", note: "", stage: "Ải 2 · " + stage.name,
-    })).toContain("ẢI 2 · SĂN PACK LEADER · CÂN BẰNG");
+      kind: "end", menu: new Menu([]), mode: "Balanced", won: true,
+      stats: [], words: [], advice: "", note: "", stage: "Stage 2 · " + stage.name,
+    })).toContain("STAGE 2 · LEADER HUNT · BALANCED");
   });
 });

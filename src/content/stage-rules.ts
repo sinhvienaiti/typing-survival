@@ -59,7 +59,7 @@ export type Stage = {
   readonly pace: PaceTable;
 };
 
-export const OBJECTIVE_LABELS: Readonly<Record<ObjectiveKind, string>> = { hold: "Trụ vững", hunt: "Săn Pack Leader" };
+export const OBJECTIVE_LABELS: Readonly<Record<ObjectiveKind, string>> = { hold: "Hold out", hunt: "Hunt Pack Leaders" };
 export const HAZARD_LABELS: Readonly<Record<HazardKind, string>> = { rift: "Rift" };
 /** Heavy hazards halve the storm chance and never meet a hard learning rule (§7.2, §7.3). */
 export const HAZARD_HEAVY: Readonly<Record<HazardKind, boolean>> = { rift: false };
@@ -71,8 +71,8 @@ export const HAZARD_HEAVY: Readonly<Record<HazardKind, boolean>> = { rift: false
  * runs do not update E and CV).
  */
 export const LEARN_RULES: Readonly<Record<LearnRule, { readonly label: string; readonly familiarity: "known" | "learning" | "new"; readonly starAccuracy: number; readonly hard: boolean }>> = {
-  standard: { label: "Chuẩn", familiarity: "known", starAccuracy: 0.95, hard: false },
-  missing: { label: "Thiếu chữ", familiarity: "learning", starAccuracy: 0.9, hard: true },
+  standard: { label: "Standard", familiarity: "known", starAccuracy: 0.95, hard: false },
+  missing: { label: "Missing letters", familiarity: "learning", starAccuracy: 0.9, hard: true },
 };
 
 /** Thiếu chữ: words of up to `short` letters hide one letter, longer ones two; never the first, never two side by side. */
@@ -146,7 +146,7 @@ export function checkChapter(stages: readonly Stage[]): string[] {
       const { need, leaders, cap } = stage.objective;
       if (need > leaders.length || leaders.some((at) => at >= cap)) problems.push(stage.id + ": the hunt cannot be won in its time");
     }
-    if (stage.kit.levels.length > stage.kit.bays) problems.push(stage.id + ": more Rèn levels than bays");
+    if (stage.kit.levels.length > stage.kit.bays) problems.push(stage.id + ": more Forge levels than bays");
   }
   return problems;
 }

@@ -194,7 +194,7 @@ export class WordStrip {
     }
     if (full) {
       const tag = document.createElement("b");
-      tag.textContent = "ĐẦY";
+      tag.textContent = "FULL";
       this.done.append(tag);
     }
   }
@@ -203,7 +203,7 @@ export class WordStrip {
   streak(n: number, broke: number, now: number): void {
     if (n > this.streakN && n >= STREAK.show) this.streakAt = now;
     if (broke >= STREAK.show) this.brokeAt = now;
-    if (n >= STREAK.show) this.led.textContent = "SẠCH ×" + n;
+    if (n >= STREAK.show) this.led.textContent = "CLEAN ×" + n;
     this.streakN = n;
     this.placeLed();
   }

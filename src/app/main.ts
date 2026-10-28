@@ -64,10 +64,10 @@ const SPEAK_GAP_MS = 3000;
 const END_BEAT_MS = 900;
 const TIERS = Object.keys(FOE_CAP) as Tier[];
 const PILOTS = ["vanguard", "draconis"] as const satisfies readonly Pilot[];
-const TIER_NAMES: Record<Tier, string> = { low: "Thấp", medium: "Vừa", high: "Cao", ultra: "Cực cao" };
+const TIER_NAMES: Record<Tier, string> = { low: "Low", medium: "Medium", high: "High", ultra: "Ultra" };
 const PILOT_NAMES: Record<Pilot, string> = { vanguard: "Vanguard", draconis: "Draconis" };
 const MOTIONS = ["full", "system", "reduced"] as const satisfies readonly MotionPreference[];
-const MOTION_NAMES: Record<MotionPreference, string> = { full: "Tắt", system: "Theo máy", reduced: "Bật" };
+const MOTION_NAMES: Record<MotionPreference, string> = { full: "Off", system: "System", reduced: "On" };
 
 function byId<T extends HTMLElement = HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -105,7 +105,7 @@ let stage: Stage;
 try {
   stage = new Stage(byId<HTMLCanvasElement>("svCanvas"), tier);
 } catch {
-  hudRoot.textContent = "Trình duyệt này không chạy được WebGL, nên Tuyến Cuối không chơi được ở đây.";
+  hudRoot.textContent = "This browser does not support WebGL. Last Line cannot run here.";
   throw new Error("survival: no WebGL");
 }
 const vocab = await loadVocab();
@@ -176,7 +176,7 @@ const combat = new Combat(stage, crowd, ship, pilot, tier, audio, {
     }
   },
   hurt: () => hud.hurt(),
-  repaired: (hp) => hud.showBanner("TIẾP TẾ +" + Math.round(hp) + " GIÁP", clock),
+  repaired: (hp) => hud.showBanner("REPAIR +" + Math.round(hp) + " HULL", clock),
   ended: () => {
     settle(world.phase === "won" ? "won" : "lost");
     if (level.id !== "s0") {
@@ -186,7 +186,7 @@ const combat = new Combat(stage, crowd, ship, pilot, tier, audio, {
       if (stars.some(Boolean)) audio.gun("star.get", 0, clock);
     }
     const won = world.phase === "won";
-    hud.showBanner(level.id === "s0" ? (won ? "TRỤ VỮNG!" : "TUYẾN ĐÃ VỠ") : won ? "VƯỢT ẢI!" : "ẢI THẤT THỦ", clock);
+    hud.showBanner(level.id === "s0" ? (won ? "LINE HELD!" : "LINE LOST") : won ? "STAGE CLEAR!" : "STAGE LOST", clock);
     endAt = clock + END_BEAT_MS;
   },
 });
@@ -216,53 +216,53 @@ applyShake();
 combat.trauma.reduced = hud.reduced = motionReduced();
 const typing = (combat.typing = new TypeFeel(hud, stage, ship, combat.glows, combat.strips, combat.sparks, audio));
 
-const percent = (value: number): string => Math.round(value * 100) + " %";
-const onOff = (on: boolean): string => (on ? "Bật" : "Tắt");
+const percent = (value: number): string => Math.round(value * 100) + "%";
+const onOff = (on: boolean): string => (on ? "On" : "Off");
 /** During a run, a new mode or "Nhịp tự điều" waits for the next one. */
-const nextRun = (): string | undefined => (started ? "Áp dụng từ trận sau" : undefined);
+const nextRun = (): string | undefined => (started ? "Applies next run" : undefined);
 
 function items(which: Screen): MenuItem[] {
   switch (which) {
     case "title":
       return [
-        { id: "journey", label: "Hành trình", note: "Chương 1 · ải 1–" + CHAPTER_1.length + " · chọn ải, nạp súng", enabled: true },
-        { id: "start", label: started ? "Trận thử lại" : "Trận thử", note: started ? "Bỏ " + (level.id === "s0" ? "trận" : "Ải " + level.index) + " đang dở, vào trận thử mới" : "Pulse Gun và Heat Beam · giữ hành lang " + STAGE_S0.seconds / 60 + " phút", enabled: true },
-        { id: "continue", label: "Chơi tiếp", note: started ? "Về trận đang tạm dừng" : "Chưa có trận đang dở", enabled: started },
-        { id: "mode", label: "Chế độ", value: MODE_SPECS[settings.mode].label, note: nextRun() ?? MODE_SPECS[settings.mode].note, enabled: true },
-        { id: "profile", label: "Hồ sơ gõ", note: "Tốc độ, độ chính xác, lời khuyên", enabled: true },
-        { id: "settings", label: "Cài đặt", note: "Âm thanh, rung, nhịp, tàu, chất lượng hình", enabled: true },
-        { id: "armory", label: "Kho súng · Học từ", note: "5 súng: băng đạn, tầm; cách học từ", enabled: true },
+        { id: "journey", label: "Campaign", note: "Chapter 1 · stages 1–" + CHAPTER_1.length + " · pick stage and guns", enabled: true },
+        { id: "start", label: started ? "New trial" : "Trial", note: started ? "Abandon " + (level.id === "s0" ? "this run" : "Stage " + level.index) + " for a new trial" : "Pulse Gun and Heat Beam · hold for " + STAGE_S0.seconds / 60 + " min", enabled: true },
+        { id: "continue", label: "Resume", note: started ? "Back to your paused run" : "No run to resume", enabled: started },
+        { id: "mode", label: "Mode", value: MODE_SPECS[settings.mode].label, note: nextRun() ?? MODE_SPECS[settings.mode].note, enabled: true },
+        { id: "profile", label: "Profile", note: "Speed, accuracy, advice", enabled: true },
+        { id: "settings", label: "Options", note: "Audio, shake, pace, ship, graphics", enabled: true },
+        { id: "armory", label: "Armory · Learning", note: "5 guns: ammo, range; how learning works", enabled: true },
       ];
     case "settings": {
-      const later = started ? "Đổi được khi chưa có trận dở (bỏ trận để đổi)" : undefined;
+      const later = started ? "End your run to change this" : undefined;
       return [
-        { id: "sfx", label: "Âm hiệu ứng", value: percent(settings.sfxVolume), level: settings.sfxVolume, enabled: true },
-        { id: "music", label: "Nhạc", value: percent(settings.musicVolume), level: settings.musicVolume, enabled: true },
-        { id: "shake", label: "Rung màn hình", value: onOff(settings.screenShake), note: shakeAllowed ? undefined : "Đang tắt bởi ?shake=0", enabled: true },
-        { id: "motion", label: "Giảm chuyển động", value: MOTION_NAMES[motionPreference()], note: "Tàu không trôi, không lao; chữ không nảy", enabled: true },
-        { id: "speak", label: "Đọc từ tiếng Anh", value: onOff(settings.pronunciationEnabled), enabled: true },
-        { id: "adapt", label: "Nhịp tự điều theo cách bạn gõ", value: onOff(settings.paceAdapt), note: nextRun() ?? (settings.paceAdapt ? "Swarm dày thưa theo hồ sơ gõ của bạn" : "Nhịp chuẩn cố định, không điều trong trận"), enabled: true },
-        { id: "pilot", label: "Tàu", value: PILOT_NAMES[chosen.pilot], note: later, enabled: !started },
-        { id: "quality", label: "Chất lượng hình", value: TIER_NAMES[chosen.tier], note: later, enabled: !started },
-        { id: "done", label: "Xong", enabled: true },
+        { id: "sfx", label: "Effects", value: percent(settings.sfxVolume), level: settings.sfxVolume, enabled: true },
+        { id: "music", label: "Music", value: percent(settings.musicVolume), level: settings.musicVolume, enabled: true },
+        { id: "shake", label: "Screen shake", value: onOff(settings.screenShake), note: shakeAllowed ? undefined : "Disabled by ?shake=0", enabled: true },
+        { id: "motion", label: "Reduce motion", value: MOTION_NAMES[motionPreference()], note: "No ship drift or lunges; no letter bounce", enabled: true },
+        { id: "speak", label: "Read words aloud", value: onOff(settings.pronunciationEnabled), enabled: true },
+        { id: "adapt", label: "Adapt pace to your typing", value: onOff(settings.paceAdapt), note: nextRun() ?? (settings.paceAdapt ? "Swarm density follows your profile" : "Fixed pace throughout the run"), enabled: true },
+        { id: "pilot", label: "Ship", value: PILOT_NAMES[chosen.pilot], note: later, enabled: !started },
+        { id: "quality", label: "Graphics", value: TIER_NAMES[chosen.tier], note: later, enabled: !started },
+        { id: "done", label: "Done", enabled: true },
       ];
     }
     case "armory":
     case "profile":
-      return [{ id: "back", label: "Quay lại", enabled: true }];
+      return [{ id: "back", label: "Back", enabled: true }];
     case "pause":
       return [
-        { id: "resume", label: "Chơi tiếp", note: "Esc", enabled: true },
-        { id: "settings", label: "Cài đặt", note: "Âm thanh, rung, đọc từ", enabled: true },
-        { id: "title", label: "Về màn chính", note: "Trận giữ nguyên, chơi tiếp được", enabled: true },
+        { id: "resume", label: "Resume", note: "Esc", enabled: true },
+        { id: "settings", label: "Options", note: "Audio, shake, speech", enabled: true },
+        { id: "title", label: "Main menu", note: "Your run stays paused", enabled: true },
       ];
     case "end": {
       const next = world.phase === "won" ? CHAPTER_1[level.index] : undefined;
       const list: MenuItem[] = [
-        ...(next !== undefined ? [{ id: "next", label: "Ải " + next.index, note: next.name, enabled: true }] : []),
-        { id: "replay", label: level.id === "s0" ? "Chơi lại" : "Chơi lại ải", enabled: true },
-        ...(level.id === "s0" ? [] : [{ id: "stages", label: "Chọn ải", note: "Hành trình", enabled: true }]),
-        { id: "title", label: "Màn chính", note: "Esc", enabled: true },
+        ...(next !== undefined ? [{ id: "next", label: "Stage " + next.index, note: next.name, enabled: true }] : []),
+        { id: "replay", label: level.id === "s0" ? "Retry" : "Retry stage", enabled: true },
+        ...(level.id === "s0" ? [] : [{ id: "stages", label: "Stages", note: "Campaign", enabled: true }]),
+        { id: "title", label: "Main menu", note: "Esc", enabled: true },
       ];
       // Enter takes the first item (the one selected): the key is named there.
       list[0] = { ...list[0]!, note: (list[0]!.note ? list[0]!.note + " · " : "") + "Enter" };
@@ -279,21 +279,21 @@ function view(which: Screen): ScreenView | null {
       return {
         kind: "title",
         menu,
-        lead: "Bầy Hố Đen tràn ra từ mép hố đen. Gõ từ trên hai bến súng để nạp đạn; súng tự bắn. Gõ không lỗi thì đạn xuyên Vỏ và dễ chí mạng.",
-        status: "TÀU " + PILOT_NAMES[pilot].toUpperCase() + " · HÌNH " + TIER_NAMES[tier].toUpperCase() + " · " + MODE_SPECS[settings.mode].label.toUpperCase(),
+        lead: "The Black Hole Horde is coming. Type words to reload your guns; they fire on their own. Flawless words pierce armor and crit.",
+        status: "SHIP " + PILOT_NAMES[pilot].toUpperCase() + " · GFX " + TIER_NAMES[tier].toUpperCase() + " · " + MODE_SPECS[settings.mode].label.toUpperCase(),
       };
     case "profile":
       return { kind: "profile", menu, ...profileView(profile, settings.mode, settings.paceAdapt) };
     case "settings":
-      return { kind: "settings", menu, note: started ? "" : "Đổi tàu hoặc chất lượng hình thì trang tải lại khi bấm Xong." };
+      return { kind: "settings", menu, note: started ? "" : "Changing ships or graphics reloads the page when you press Done." };
     case "armory":
       return {
         kind: "armory",
         menu,
-        guns: GUN_SPECS.map((gun) => ({ kind: gun.key, name: gun.name, title: gun.title, text: gun.magazine + (gun.trial ? " (" + gun.trial + ")" : "") + ", tầm\u00a0" + gun.range + (gun.heavy ? ", từ có thể dài hơn 1 chữ" : "") + "." })),
+        guns: GUN_SPECS.map((gun) => ({ kind: gun.key, name: gun.name, title: gun.title, text: gun.magazine + (gun.trial ? " (" + gun.trial + ")" : "") + ", range " + gun.range + (gun.heavy ? ", words up to 1 letter longer" : "") + "." })),
         learning: [
-          "Gõ không lỗi: xuyên Vỏ (Vỏ chỉ chặn 75\u00a0%) và dễ chí mạng; ở Trận thử đòn mạnh thêm\u00a06\u00a0%.",
-          "Mỗi từ gõ xong được ghi vào sổ học chung của portal (mã typing-survival).",
+          "Flawless words pierce armor (it blocks only 75%) and crit more often; in the Trial they hit 6% harder.",
+          "Every word you finish goes into the portal's shared learning log (typing-survival).",
         ],
       };
     case "pause":
@@ -301,8 +301,8 @@ function view(which: Screen): ScreenView | null {
     case "intro":
       return {
         kind: "intro",
-        title: level.id === "s0" ? "TRẬN THỬ" : "ẢI " + level.index + " · " + level.name.toUpperCase(),
-        lines: [level.id === "s0" ? "Giữ hành lang " + STAGE_S0.seconds / 60 + " phút" : objectiveText(level), world.header.kit.guns.map((gun) => GUN_SPECS[gun]!.name).join(" · ")],
+        title: level.id === "s0" ? "TRIAL" : "STAGE " + level.index + " · " + level.name.toUpperCase(),
+        lines: [level.id === "s0" ? "Hold the lane for " + STAGE_S0.seconds / 60 + " min" : objectiveText(level), world.header.kit.guns.map((gun) => GUN_SPECS[gun]!.name).join(" · ")],
         ready: live,
       };
     case "end": {
@@ -310,7 +310,7 @@ function view(which: Screen): ScreenView | null {
       return {
         kind: "end",
         menu,
-        stage: level.id === "s0" ? "" : "Ải " + level.index + " · " + level.name,
+        stage: level.id === "s0" ? "" : "Stage " + level.index + " · " + level.name,
         stars: stars === null ? "" : starRow(stars, LEARN_RULES[level.learn].starAccuracy),
         mode: MODE_SPECS[world.header.mode].label,
         advice: adviceText(report, settled, world.phase === "won"),
@@ -575,7 +575,7 @@ window.addEventListener("keydown", (event) => {
 function enterFight(): void {
   if (mode !== "intro" || !live) return;
   setMode("play");
-  hud.showBanner(level.id === "s0" ? "GIỮ TUYẾN!" : "ẢI " + level.index + " · " + level.name.toUpperCase(), clock);
+  hud.showBanner(level.id === "s0" ? "HOLD THE LINE!" : "STAGE " + level.index + " · " + level.name.toUpperCase(), clock);
   audio.ui("select");
 }
 installKeys(window, {
@@ -632,7 +632,7 @@ function update(now: number): void {
   typing.read(world, now);
   hud.update(world, combat.killsWithin(now, 3000), now);
   typing.land(now);
-  hud.setNotice(imeNotice.on(now) ? "Tắt bộ gõ tiếng Việt để gõ" : vocab.source === "fallback" ? "Từ dự phòng (máy chủ không có từ vựng)" : "");
+  hud.setNotice(imeNotice.on(now) ? "Switch to an English keyboard" : vocab.source === "fallback" ? "Offline word list (server words unavailable)" : "");
   // The floor glows red as the press reaches the ship (inside the guns' reach and closing); the music rises with the horde.
   let near = 0;
   let shown = 0;
@@ -699,7 +699,7 @@ runFrameLoop({
 
 setMode(params.get("autostart") === "1" ? (params.get("card") === "1" ? "intro" : "play") : "start");
 stage.setTitle(mode === "start", true);
-document.title = "Tuyến Cuối";
+document.title = "Last Line";
 
 /** Foes the camera shows: on the field and the gate's queue just above it. */
 function onScreen(): number {
