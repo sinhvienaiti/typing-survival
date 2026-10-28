@@ -251,14 +251,14 @@ export class ShotFx {
     const gold = leader ? C.beacon : C.crit;
     const r = () => Math.random();
     // Billboard sizes are full widths: the core's white disc is 0.35 of it (here 17 % of the view across), the rays reach half.
-    g.burst(CELL.core, x, 1.2, -z, v * 1.8, v * 2.3, 3 * F, C.hot, 3, 0, 0, 0, 0, NaN, F);
-    g.burst(CELL.star12, x, 1.3, -z, v * 2, v * 3.6, 5 * F, gold, 2.6, 0, 0, 0, 0.6, NaN, F);
-    g.burst(CELL.soft + FLAT, x, 0.07, -z, v * 3, v * 4, 4 * F, gold, 1.2, 0, 0, 0, 0, NaN, F);
+    g.burst(CELL.core, x, 1.2, -z, v * 1.8, v * 2.3, 3 * F, C.hot, 3, 0, 0, 0, 0, NaN);
+    g.burst(CELL.star12, x, 1.3, -z, v * 2, v * 3.6, 5 * F, gold, 2.6, 0, 0, 0, 0.6, NaN);
+    g.burst(CELL.soft + FLAT, x, 0.07, -z, v * 3, v * 4, 4 * F, gold, 1.2, 0, 0, 0, 0, NaN);
     this.p.lights.flash(LIGHT.big, x, 1.6, -z, gold);
     // The fireball, sized on the view: lumpy puffs of flame, white-hot and gold (not Tia's orange), rolling up and out to both sides (Ray's line stays thin between them).
     for (let i = 0; i < 9; i += 1) {
       const side = (i % 2 === 0 ? -1 : 1) * (0.3 + r());
-      g.burst(CELL.puff, x + side * 0.25 * v, 0.9 + r() * 0.6, -z, 0.35 * v, (0.9 + r() * 0.4) * v, 0.5 + r() * 0.35, i < 3 ? C.hot : gold, 1.2, side * 0.45 * v, (0.35 + r() * 0.35) * v, 0, (r() - 0.5) * 2, NaN, F);
+      g.burst(CELL.puff, x + side * 0.25 * v, 0.9 + r() * 0.6, -z, 0.35 * v, (0.9 + r() * 0.4) * v, 0.5 + r() * 0.35, i < 3 ? C.hot : gold, 1.2, side * 0.45 * v, (0.35 + r() * 0.35) * v, 0, (r() - 0.5) * 2, NaN);
     }
     // The cloud (Glows smoke mode, over the beams), as wide as the flash, rising slowly 3.5–4.5 s: a sooty base, a dark body, lit tops.
     for (let i = 0, l = 0; i < CLOUD.n[2]; i += 1) {

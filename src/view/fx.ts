@@ -117,16 +117,26 @@ void main() {
 #endif
 }`;
 
-/** Billboards that live a while (bursts) and one-frame stamps (scout shots, muzzle glows); `smoke` ones are laid over the scene (puffs rising in and out, a scorch on the deck). */
+function writeGlow(pos: Float32Array, color: Float32Array, sizes: Float32Array, i: number, x: number, y: number, z: number, cell: number, r: number, g: number, bl: number, a: number, size: number, rot: number): void {
+  const p = i * 4;
+  pos[p] = x; pos[p + 1] = y; pos[p + 2] = z; pos[p + 3] = cell;
+  color[p] = r; color[p + 1] = g; color[p + 2] = bl; color[p + 3] = a;
+  sizes[i * 2] = size; sizes[i * 2 + 1] = rot;
+}
+
+/** Bursts start at age zero on flush, followed by one-frame stamps; `smoke` ones overlay the scene (rising puffs, a scorch on the deck). */
 export class Glows {
   readonly mesh: THREE.Mesh<THREE.InstancedBufferGeometry, THREE.ShaderMaterial>;
   limit: number;
   private readonly pos: Float32Array;
   private readonly color: Float32Array;
   private readonly size: Float32Array;
-  // Live bursts: position, velocity, size start/end, rotation, spin, colour, age, life, cell, intensity.
+  private readonly stampPos: Float32Array;
+  private readonly stampColor: Float32Array;
+  private readonly stampSize: Float32Array;
+  // Live bursts: position, velocity, size start/end, rotation, spin, colour, age, life, cell, intensity, new.
   private readonly b: Float32Array;
-  private readonly stride = 17;
+  private readonly stride = 18;
   private live = 0;
   private stamps = 0;
 
@@ -136,6 +146,9 @@ export class Glows {
     this.pos = new Float32Array(total * 4);
     this.color = new Float32Array(total * 4);
     this.size = new Float32Array(total * 2);
+    this.stampPos = new Float32Array(capacity * 4);
+    this.stampColor = new Float32Array(capacity * 4);
+    this.stampSize = new Float32Array(capacity * 2);
     const geometry = instancedQuads({ iPos: [this.pos, 4], iColor: [this.color, 4], iSize: [this.size, 2] });
     this.mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({ uniforms: { uMap: { value: atlas() } }, defines: smoke ? { SMOKE: 1 } : {}, vertexShader: GLOW_VERTEX, fragmentShader: GLOW_FRAGMENT, transparent: true, depthWrite: false, blending: smoke ? THREE.NormalBlending : THREE.AdditiveBlending }));
     this.mesh.frustumCulled = false;
@@ -147,10 +160,9 @@ export class Glows {
    * A burst at (x, y, z) of `cell`, growing from `from` to `to` m over
    * `life` s, colour × `intensity` (above 1 blooms; smoke's alpha), drifting
    * (vx, vy, vz), turning `spin` rad/s from `angle` (random when not given).
-   * `early` s are shown before it ages (one frame, F: a burst made between
-   * frames shows whole on its first, not already a frame old).
+   * The first flush shows it at age zero; later steps age and move it.
    */
-  burst(cell: number, x: number, y: number, z: number, from: number, to: number, life: number, color: THREE.Color, intensity: number, vx = 0, vy = 0, vz = 0, spin = 0, angle = NaN, early = 0): void {
+  burst(cell: number, x: number, y: number, z: number, from: number, to: number, life: number, color: THREE.Color, intensity: number, vx = 0, vy = 0, vz = 0, spin = 0, angle = NaN): void {
     if (this.live >= this.limit) return;
     const o = this.live * this.stride;
     const b = this.b;
@@ -159,50 +171,56 @@ export class Glows {
     b[o + 6] = from; b[o + 7] = to; b[o + 8] = angle === angle ? angle : Math.random() * 6.283; b[o + 9] = spin;
     const k = this.smoke ? 1 : intensity;
     b[o + 10] = color.r * k; b[o + 11] = color.g * k; b[o + 12] = color.b * k;
-    b[o + 13] = -early; b[o + 14] = life; b[o + 15] = cell; b[o + 16] = intensity;
+    b[o + 13] = 0; b[o + 14] = life; b[o + 15] = cell; b[o + 16] = intensity; b[o + 17] = 1;
     this.live += 1;
   }
 
   /** A one-frame billboard (call every frame it should show, after step()). */
   stamp(cell: number, x: number, y: number, z: number, size: number, rot: number, color: THREE.Color, intensity: number): void {
     if (this.stamps >= this.capacity) return;
-    this.write(this.live + this.stamps, x, y, z, cell, color.r * intensity, color.g * intensity, color.b * intensity, 1, size, rot);
+    writeGlow(this.stampPos, this.stampColor, this.stampSize, this.stamps, x, y, z, cell, color.r * intensity, color.g * intensity, color.b * intensity, 1, size, rot);
     this.stamps += 1;
   }
 
-  private write(i: number, x: number, y: number, z: number, cell: number, r: number, g: number, bl: number, a: number, size: number, rot: number): void {
-    const p = i * 4;
-    this.pos[p] = x; this.pos[p + 1] = y; this.pos[p + 2] = z; this.pos[p + 3] = cell;
-    this.color[p] = r; this.color[p + 1] = g; this.color[p + 2] = bl; this.color[p + 3] = a;
-    this.size[i * 2] = size; this.size[i * 2 + 1] = rot;
-  }
-
-  /** Ages the bursts and writes them; stamps of the last frame are dropped. Call before stamping. */
+  /** Ages and compacts bursts already flushed; drops last frame's stamps. Call before stamping. */
   step(dt: number): void {
     const b = this.b;
     let n = 0;
     for (let i = 0; i < this.live; i += 1) {
       const o = i * this.stride;
-      const age = b[o + 13]! + dt;
-      if (age >= b[o + 14]!) continue;
+      const fresh = b[o + 17] === 1;
+      const age = b[o + 13]! + (fresh ? 0 : dt);
+      if (!fresh && age >= b[o + 14]!) continue;
       if (n !== i) b.copyWithin(n * this.stride, o, o + this.stride);
       const q = n * this.stride;
       b[q + 13] = age;
-      b[q] = b[q]! + b[q + 3]! * dt; b[q + 1] = b[q + 1]! + b[q + 4]! * dt; b[q + 2] = b[q + 2]! + b[q + 5]! * dt;
-      b[q + 8] = b[q + 8]! + b[q + 9]! * dt;
-      const k = Math.max(0, age) / b[q + 14]!;
-      const ease = 1 - (1 - k) * (1 - k);
-      // Smoke puffs rise in and hold, a scorch holds longer still; embers (3 s and more) hold then cool, the rest ease out.
-      const fade = this.smoke ? (b[q + 15] === CELL.puff ? Math.min(1, k * 20) * (1 - k * k) : 1 - k ** 4) * b[q + 16]! : b[q + 14]! >= 3 ? 1 - k * k : (1 - k) * (1 - k);
-      this.write(n, b[q]!, b[q + 1]!, b[q + 2]!, b[q + 15]!, b[q + 10]!, b[q + 11]!, b[q + 12]!, fade, b[q + 6]! + (b[q + 7]! - b[q + 6]!) * ease, b[q + 8]!);
+      if (!fresh) {
+        b[q] = b[q]! + b[q + 3]! * dt; b[q + 1] = b[q + 1]! + b[q + 4]! * dt; b[q + 2] = b[q + 2]! + b[q + 5]! * dt;
+        b[q + 8] = b[q + 8]! + b[q + 9]! * dt;
+      }
       n += 1;
     }
     this.live = n;
     this.stamps = 0;
   }
 
-  /** Uploads this frame's bursts and stamps. */
+  /** Writes bursts at their stored age, then this frame's stamps, and uploads both. */
   flush(): void {
+    const b = this.b;
+    for (let i = 0; i < this.live; i += 1) {
+      const q = i * this.stride;
+      const k = Math.max(0, b[q + 13]!) / b[q + 14]!;
+      const ease = 1 - (1 - k) * (1 - k);
+      // Smoke puffs rise in and hold, a scorch holds longer still; embers (3 s and more) hold then cool, the rest ease out.
+      const fade = this.smoke ? (b[q + 15] === CELL.puff ? Math.min(1, k * 20) * (1 - k * k) : 1 - k ** 4) * b[q + 16]! : b[q + 14]! >= 3 ? 1 - k * k : (1 - k) * (1 - k);
+      writeGlow(this.pos, this.color, this.size, i, b[q]!, b[q + 1]!, b[q + 2]!, b[q + 15]!, b[q + 10]!, b[q + 11]!, b[q + 12]!, fade, b[q + 6]! + (b[q + 7]! - b[q + 6]!) * ease, b[q + 8]!);
+      b[q + 17] = 0;
+    }
+    for (let i = 0; i < this.stamps * 4; i += 1) {
+      this.pos[this.live * 4 + i] = this.stampPos[i]!;
+      this.color[this.live * 4 + i] = this.stampColor[i]!;
+    }
+    for (let i = 0; i < this.stamps * 2; i += 1) this.size[this.live * 2 + i] = this.stampSize[i]!;
     uploadQuads(this.mesh.geometry, this.live + this.stamps);
   }
 

@@ -176,15 +176,15 @@ export class TypeFeel {
       this.mg[m] = this.pGun[p]! + (aside ? 8 : 0);
       this.ms[m] = Math.random() * 100;
       // Its star just under the plate (behind it, it lit the plate's backdrop; the DOM spark marks the letter itself).
-      this.glows.burst(CELL.star4, tip.x, tip.y - 0.4, tip.z, K.star * 0.5, K.star, 4 * F, c, K.power, 0, 0, 0, 0, NaN, F);
+      this.glows.burst(CELL.star4, tip.x, tip.y - 0.4, tip.z, K.star * 0.5, K.star, 4 * F, c, K.power, 0, 0, 0, 0, NaN);
       if (!reduced) for (let k = 0; k < 3; k += 1) this.sparks.spawn(tip, this.v.set((Math.random() - 0.5) * 3, -1 - Math.random() * 2, (Math.random() - 0.5) * 2), c, 0.2, 0.3, { drag: 3, gravity: 6 });
       if (aside) continue;
       this.hitAt = now;
       const wide = (tier >= 1 ? 1.15 : 1) * (reduced ? 0.8 : 1);
-      this.glows.burst(CELL.star8, this.glow.x, this.glow.y, this.glow.z, K.core * 0.5, K.core, 4 * F, c, K.power * 0.85, 0, 0, 0, 0, NaN, F);
+      this.glows.burst(CELL.star8, this.glow.x, this.glow.y, this.glow.z, K.core * 0.5, K.core, 4 * F, c, K.power * 0.85, 0, 0, 0, 0, NaN);
       const lit = this.lit ? K.lit : 1;
-      this.glows.burst(CELL.soft + FLAT, this.core.x, 0.07, this.core.z, K.pool, K.pool * 1.25, 3 * F, c, 0.35, 0, 0, 0, 0, NaN, F);
-      this.glows.burst(CELL.ring + FLAT, this.core.x, 0.08, this.core.z, K.ring[0] * wide, K.ring[1] * wide, K.ringLife, c, K.ringPower * lit * (reduced ? 0.6 : 1), 0, 0, 0, 0, NaN, F);
+      this.glows.burst(CELL.soft + FLAT, this.core.x, 0.07, this.core.z, K.pool, K.pool * 1.25, 3 * F, c, 0.35, 0, 0, 0, 0, NaN);
+      this.glows.burst(CELL.ring + FLAT, this.core.x, 0.08, this.core.z, K.ring[0] * wide, K.ring[1] * wide, K.ringLife, c, K.ringPower * lit * (reduced ? 0.6 : 1), 0, 0, 0, 0, NaN);
       if (tier >= 4) this.glows.burst(CELL.ring + FLAT, this.core.x, 0.085, this.core.z, 1, 2.6, 0.2, TYPING, 0.45);
     }
     this.pending = 0;
