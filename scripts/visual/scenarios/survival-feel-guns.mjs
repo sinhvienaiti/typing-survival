@@ -17,11 +17,15 @@
 //         33 ms apart and one 6 s later. Grades: chunks after a kill ≥ §4.5's
 //         count; one chunk followed rising ≥ 3 frames, then falling ≥ 3; at
 //         +6 s ≥ 50 % still lying.
-//   f6b   big kills (FEEL_PASS_S1 §12): a Trâu at 13 m, a Đầu Đàn at 12 m and
-//         a Trâu at 19 m killed by Ray, every frame round the death then to
-//         9.8 s: the flash (area, frames, off Ray's line), the fire, the
-//         smoke (lit grey and, §13, sooty: px darker than the floor; the cloud
-//         against the frame before the kill), the chunks against the floor.
+//   f6b   big kills (FEEL_PASS_S1 §12–14): a Trâu at 13 m, a Đầu Đàn at 12 m
+//         and a Trâu at 19 m killed by Ray, then the judge's set (Xung, Tia,
+//         Tán, Pháo Sao on a Trâu and a Đầu Đàn; KILLS= picks), every frame
+//         round the death then to 9.8 s: the flash (area, frames, off Ray's
+//         line), the fire, the smoke (lit grey and, §13, sooty: px darker than
+//         the floor; the cloud against the frame before the kill), the ember
+//         star, the chunks against the floor. Grades (§14): the live foes in
+//         the cloud keep their luma spread 0.3–4 s; the cloud, the ember star
+//         and the chunks still read at 2–3 s.
 //   shake chapter stage 1 typed at 40 WPM on the held clock for 60 s: the
 //         camera's offset every frame (p95 ≤ 3 px, max ≤ 8 px at 1080p) and the
 //         pools at their peak (§6).
@@ -48,6 +52,10 @@ const GUNS = {
   ray: { kit: ["ray", "xung"], first: EV.rail, frames: 36, muzzle: [0], flash: 0.12, pack: (i) => [i % 4 === 0 ? KIND.scout : KIND.mine, (i % 3) * 0.3 - 0.3, 8 + i * 1.6] },
   phao: { kit: ["phao", "xung"], first: EV.launch, frames: 32, muzzle: [3], flash: 0.06, pack: (i) => [KIND.mine, 3 + (i % 4) * 1.1, 15 + Math.floor(i / 4) * 1.1] },
 };
+
+/** f6b (cloud fix, 28/10): foes in a big kill's cloud keep a luma spread ≥ `std` and ≥ `end` of the box's and their own at 4.5 s; the aftermath's floors at 2–3 s (720p px, about half the least of the fix's 26 kills). */
+const KEEP = { std: 0.12, end: 0.6 };
+const AFTER = { cloud2s: 5000, cloud3s: 4000, embers3s: 1000, chunks3s: 3500 };
 
 const hud = (page, on) => page.eval("document.querySelector('.sv-hud').style.visibility = '" + (on ? "" : "hidden") + "'; true");
 const READ = sv("return { tick: t.state().tick, info: t.info(), events: t.events(), numbers: t.numbers().boxes.map((b) => ({ h: Math.round(b.h), text: b.text })), foes: t.foes() };");
@@ -419,62 +427,96 @@ async function audio(page) {
 }
 
 /**
- * N6 (test pass 27/10): a big kill must read as a big event. Three kills,
- * director off, Tán + Ray: a Trâu at 13 m (it dies to Ray's second shot, the
- * third comes 0.8 s later), a Đầu Đàn at 12 m (the last shot), a Trâu at
- * 19 m (Pháo Sao cannot kill a Trâu in one magazine). The placed foe is followed by
- * id; frames on the held clock: the one before its death and every frame to
- * f12, every 100 ms to 2 s, then 3, 4.5, 6 s and 9.8 s (its chunks gone: the
- * floor's reference). Measures on the bare frames (HUD hidden), in 720p px:
- * the flash (px ≥ 0.85 luma that were not before the kill, off a 56 px band
- * along Ray's line, not blue: R − B ≥ 0.04; all new bright px for context):
- * its peak, frames ≥ 30 % of the peak; the fire (warm px new since the kill
- * above it, off the band) to 0.6 s; the smoke (grey px ≥ 0.06 lighter than
- * the reference above the kill, live foes masked) at 0.6, 1.5, 2 s (Ray's
- * third shot lights 0.8–1.3 s); the chunks (px ≥ 0.08 off the reference
- * round the kill, foes masked) at 1.5–6 s, with their luma over the floor's.
+ * N6 (test pass 27/10): a big kill must read as a big event. The project's
+ * three kills, director off, Tán + Ray: a Trâu at 13 m (it dies to Ray's
+ * second shot, the third comes 0.8 s later), a Đầu Đàn at 12 m (the last
+ * shot), a Trâu at 19 m (Pháo Sao cannot kill a Trâu in one magazine); then
+ * the judge's set of 27/10 (round 2) for the other guns: Xung, Tia and Tán on
+ * a Trâu and a Đầu Đàn at 10–11.5 m, Pháo Sao on each at 23 m with six Bầy
+ * behind it, each gun's word typed whenever its bay holds under two
+ * magazines (they die at 6–11 m, Tia's Đầu Đàn in a crowd of ~50).
+ * `KILLS=` picks scenes by name. The placed foe is followed by id; a dry run
+ * finds its death, the second run shoots the frame before it, then every
+ * frame to f12, every 100 ms to 2 s, every 0.5 s to 4.5 s, 6 s and 9.8 s (its
+ * chunks gone: the floor's reference). Measures on the bare frames (HUD
+ * hidden), in 720p px: the flash (px ≥ 0.85 luma that were not before the
+ * kill, off a 56 px band along Ray's line, not blue: R − B ≥ 0.04; all new
+ * bright px for context): its peak, frames ≥ 30 % of the peak; the fire
+ * (warm px new since the kill above it, off the band) to 0.6 s; the smoke
+ * (grey px ≥ 0.06 lighter than the reference above the kill, live foes
+ * masked) at 0.6, 1.5, 2 s (Ray's third shot lights 0.8–1.3 s); the cloud
+ * and the chunks (below); the ember star (warm px new since the frame
+ * before, on the deck round the kill) at 2–4.5 s. Checks (cloud fix, 28/10):
+ * the cloud never hides the horde: at every frame 0.3–4 s, the live foes
+ * (z ≤ 25) inside the judge's 480 × 340 px box round the kill keep a luma
+ * spread (median of each foe's 2r square) ≥ 0.12, ≥ 60 % of the box's at
+ * 4.5 s and ≥ 60 % of their own at 4.5 s (the median of each foe's ratio to
+ * itself by id, `own`); a dip counts when the next or the frame before dips
+ * too (one frame of the gun's next hit, a Tán flash or a Pháo Sao burst over
+ * the pack, is not a cloud: a run with the smoke off dips there too); and
+ * the aftermath still reads: the cloud at 2 and 3 s, the ember star at 3 s,
+ * the chunks at 3 s, each over a floor (`AFTER`, half the least measured).
  */
 async function f6b(page, dir) {
   const size = page.width + "x" + page.height;
   const ui = page.height / 720;
   const W = page.width;
   const H = page.height;
-  const KILLS = [
+  const ALL = [
     { name: "ray-brute", kit: ["tan", "ray"], gun: "ray", kind: KIND.brute, x: 0, z: 13 },
     { name: "ray-leader", kit: ["tan", "ray"], gun: "ray", kind: KIND.leader, x: -1.5, z: 12 },
     { name: "ray-far", kit: ["tan", "ray"], gun: "ray", kind: KIND.brute, x: 1, z: 19 },
+    ...[["xung", "tan", 10.5], ["tia", "xung", 11.5], ["tan", "xung", 10], ["phao", "xung", 23]].flatMap(([gun, other, z]) => [["brute", 0.4], ["leader", -0.4]].map(([kind, x]) => (
+      { name: gun + "-" + kind, kit: [gun, other], gun, kind: KIND[kind], x: gun === "phao" ? x * 2 : x, z, refill: true, pack: gun === "phao" }))),
   ];
+  const pick = process.env.KILLS?.split(",");
+  const KILLS = ALL.filter((scene) => pick === undefined || pick.includes(scene.name));
   const foes = () => page.eval(sv("return t.foes();"));
-  const results = {};
-  for (const scene of KILLS) {
+  const place = (kind, x, z) => page.eval(sv("t.place(" + kind + ", " + x + ", " + z + "); return true;"));
+  /** One run of `scene` until its foe is gone (≤ 1,500 frames); from frame `from` on, each frame shot (as shown and bare), the last two kept. */
+  const run = async (scene, from) => {
     await openStage(page, "c1-s1", scene.kit, "&director=0");
     await page.key("Shift", { code: "ShiftLeft" });
     await page.sleep(300);
     await hold(page, true);
-    await page.eval(sv("t.place(" + scene.kind + ", " + scene.x + ", " + scene.z + "); return true;"));
+    await place(scene.kind, scene.x, scene.z);
+    if (scene.pack) for (let i = 0; i < 6; i += 1) await place(KIND.mine, scene.x - 1.5 + (i % 3) * 1.5, scene.z + 1 + Math.floor(i / 3) * 1.2);
     await advance(page, 2 * STEP);
     const target = (await foes()).filter((f) => f[4] === scene.kind).sort((a, b) => Math.abs(a[3] - scene.z) - Math.abs(b[3] - scene.z))[0];
     const id = target[5];
-    const { bay } = await bayOf(page, scene.gun);
-    const word = await typeHeld(page, bay);
-    await press(page, word.at(-1));
-    // Every frame until the foe is gone (each shot twice, as shown and bare, under two names in turn: the last is the one before the kill).
-    let last = null;
-    let pre = null;
-    let at = target;
-    let ms = 0;
-    let killed = false;
-    for (let f = 0; f < 400 && !killed; f += 1) {
-      await advance(page, STEP);
-      ms += STEP;
-      const live = (await foes()).find((foe) => foe[5] === id);
-      killed = live === undefined;
-      if (killed) break;
-      at = live;
-      pre = last;
-      last = await frame(page, dir, "f6b-" + scene.name + "-pre" + (f % 2), { ms: Math.round(ms) });
+    let word = "";
+    if (!scene.refill) {
+      word = await typeHeld(page, (await bayOf(page, scene.gun)).bay);
+      await press(page, word.at(-1));
     }
-    const kill = { x: at[0], y: at[1], r: at[2] };
+    const ring = [];
+    let at = target;
+    let f = 0;
+    for (; f < 1500; f += 1) {
+      if (scene.refill && f % 20 === 0) {
+        const { slots } = await bayOf(page, "");
+        const mine = slots.find((slot) => slot.gun === scene.gun);
+        if (mine.mags < 2 && !slots.some((slot) => slot.locked)) for (const letter of (word = mine.text)) { await press(page, letter); await advance(page, STEP); f += 1; }
+      }
+      await advance(page, STEP);
+      const live = (await foes()).find((foe) => foe[5] === id);
+      if (live === undefined) break;
+      at = live;
+      if (f < from) continue;
+      ring.push(await frame(page, dir, "f6b-" + scene.name + "-pre" + (f % 2), { ms: Math.round((f + 1) * STEP) }));
+      if (ring.length > 2) ring.shift();
+    }
+    // Gone at the line is a breach, not a kill.
+    return { f, at, ring, word, killed: f < 1500 && at[3] > 3.5 };
+  };
+  const results = {};
+  for (const scene of KILLS) {
+    const dry = await run(scene, Infinity);
+    let shot = await run(scene, Math.max(0, dry.f - 30));
+    if (shot.ring.length === 0) shot = await run(scene, 0);
+    const { at, killed, word } = shot;
+    const last = shot.ring.at(-1);
+    const kill = { x: at[0], y: at[1], r: at[2], z: at[3] };
     const muzzle = last.info.muzzles[0];
     const rows = [{ ...last, label: "before", t: -STEP }];
     let t = 0;
@@ -482,7 +524,7 @@ async function f6b(page, dir) {
       t += step;
       rows.push({ ...(await frame(page, dir, "f6b-" + scene.name + "-" + String(rows.length).padStart(3, "0"), { t })), label: label ?? "+" + Math.round(t) + " ms", t });
     };
-    // The kill's own frame was drawn by the loop's last advance (the foe gone): shoot it, then step on.
+    // The kill's own frame was drawn by the run's last advance (the foe gone): shoot it, then step on.
     rows.push({ ...(await frame(page, dir, "f6b-" + scene.name + "-kill", { t: 0 })), label: "kill f0", t: 0 });
     for (let f = 1; f <= 12; f += 1) {
       await advance(page, STEP);
@@ -492,7 +534,7 @@ async function f6b(page, dir) {
       await advance(page, 100);
       await take(100);
     }
-    for (const until of [3000, 4500, 6000, 9800]) {
+    for (const until of [2500, 3000, 3500, 4000, 4500, 6000, 9800]) {
       await advance(page, until - t);
       await take(until - t);
     }
@@ -523,16 +565,19 @@ async function f6b(page, dir) {
       return { label: row.label, px: Math.round(n / (ui * ui)), all: Math.round(all / (ui * ui)) };
     });
     const peak = Math.max(...flash.map((f) => f.px));
-    // The fire: warm px (R ≥ 0.55, R − B ≥ 0.2) above the kill, new since the frame before, off the band.
-    const fireBox = box(110, 220, 10);
-    const F0 = pixels(before.bare, fireBox);
+    // The fire: warm px (R ≥ 0.55, R − B ≥ 0.2) above the kill, new since the frame before, off the band; the ember star: the same on the deck round the kill.
     const hot = (P, i) => P.data[i * 3] >= 140 && P.warm(i) >= 0.2;
-    const fire = rows.filter((row) => row.t >= 0 && row.t <= 600).map((row) => {
-      const P = pixels(row.bare, fireBox);
-      let n = 0;
-      for (let i = 0; i < P.n; i += 1) if (hot(P, i) && !hot(F0, i) && !band(fireBox.x + (i % fireBox.w), fireBox.y + Math.floor(i / fireBox.w))) n += 1;
-      return { label: row.label, px: Math.round(n / (ui * ui)) };
-    });
+    const warmNew = (rect, list) => {
+      const B = pixels(before.bare, rect);
+      return list.map((row) => {
+        const P = pixels(row.bare, rect);
+        let n = 0;
+        for (let i = 0; i < P.n; i += 1) if (hot(P, i) && !hot(B, i) && !band(rect.x + (i % rect.w), rect.y + Math.floor(i / rect.w))) n += 1;
+        return { label: row.label, px: Math.round(n / (ui * ui)) };
+      });
+    };
+    const fire = warmNew(box(110, 220, 10), rows.filter((row) => row.t >= 0 && row.t <= 600));
+    const embers = warmNew(box(110, 45, 45), rows.filter((row) => [2000, 3000, 4500].some((m) => Math.abs(row.t - m) < 1)));
     // Live foes masked (their discs at either frame).
     const mask = (list) => (x, y) => list.some((f) => (x - f[0]) ** 2 + (y - f[1]) ** 2 <= (f[2] * 1.6 + 6 * ui) ** 2);
     // Against `base` (the 9.8 s frame): "lit" lighter grey px (lit smoke); "soot" px darker by ≥ level; "cloud" grey px either way, off Ray's line (base: the frame before the kill); else |Δ| ≥ level.
@@ -560,16 +605,64 @@ async function f6b(page, dir) {
     // The cloud against the frame before the kill (§13): its grey px, dark or lit, the size of the flash.
     const cloud = rows.filter((row) => [600, 1500, 2000, 3000].some((m) => Math.abs(row.t - m) < 1)).map((row) => ({ label: row.label, ...changed(row, box(240, 240, 60), 0.06, "cloud", before) }));
     const chunks = rows.filter((row) => [1500, 3000, 4500, 6000].some((m) => Math.abs(row.t - m) < 1)).map((row) => ({ label: row.label, ...changed(row, box(170, 160, 70), 0.08, false) }));
-    const clip = { x: kill.x - 260 * ui, y: kill.y - 240 * ui, w: 520 * ui, h: 340 * ui };
-    const shown = rows.filter((row) => row.t <= 12 * STEP + 1 || [200, 400, 600, 1000, 1500, 2000, 3000, 6000].some((m) => Math.abs(row.t - m) < 1));
-    const sheetFile = sheet(shown.map((row) => ({ file: row.file, label: scene.name + " " + row.label })), join(dir, "sheet-f6b-" + scene.name + "-" + size + ".jpg"), clip, 7, 300);
+    // Foes in the cloud (the judge's measure of 27/10): the luma spread (std) of each live foe's 2r square, for those inside the 480 × 340 px box (720p) round the kill; the median, and each foe's against its own at 4.5 s.
+    const cloudBox = box(240, 260, 80);
+    const shown = (f) => f[3] <= 25 && f[0] > 4 && f[0] < W - 4 && f[1] > 4 && f[1] < H - 4;
+    const spreads = (row) => {
+      const P = pixels(row.bare, { x: 0, y: 0, w: W, h: H });
+      return (f) => {
+        const R = Math.max(3, Math.round(f[2]));
+        let sum = 0;
+        let sq = 0;
+        let n = 0;
+        for (let y = Math.max(0, f[1] - R); y < Math.min(H, f[1] + R); y += 1) for (let x = Math.max(0, f[0] - R); x < Math.min(W, f[0] + R); x += 1) {
+          const v = P.luma(y * W + x);
+          sum += v;
+          sq += v * v;
+          n += 1;
+        }
+        return Math.sqrt(Math.max(0, sq / n - (sum / n) ** 2));
+      };
+    };
+    const median = (list) => (list.length > 0 ? +[...list].sort((p, q) => p - q)[list.length >> 1].toFixed(3) : null);
+    const end = rows.find((row) => Math.abs(row.t - 4500) < 1);
+    const spreadEnd = spreads(end);
+    const own = new Map(end.foes.filter(shown).map((f) => [f[5], spreadEnd(f)]));
+    const occl = rows.filter((row) => row.t >= 300 - 1 && row.t <= 4500 + 1).map((row) => {
+      const spread = spreads(row);
+      const inBox = row.foes.filter((f) => shown(f) && f[0] >= cloudBox.x && f[0] <= cloudBox.x + cloudBox.w && f[1] >= cloudBox.y && f[1] <= cloudBox.y + cloudBox.h);
+      const std = inBox.map(spread);
+      const ratio = inBox.flatMap((f, k) => ((own.get(f[5]) ?? 0) > 0.02 ? [std[k] / own.get(f[5])] : []));
+      return { label: row.label, t: Math.round(row.t), foes: std.length, std: median(std), own: median(ratio) };
+    });
+    const during = occl.filter((o) => o.t <= 4000 && o.foes > 0);
+    const worst = during.reduce((w, o) => (w === null || o.std < w.std ? o : w), null);
+    const endStd = occl.at(-1)?.std ?? 0;
+    // A dip below the floor, below 60 % of the box at 4.5 s or of the foes' own; it counts when a neighbouring frame dips too (≥ 0.1 s): one frame of the gun's next hit is not a cloud.
+    const low = (o) => o !== undefined && (o.std < KEEP.std || o.std < KEEP.end * endStd || (o.own !== null && o.own < KEEP.end));
+    const dips = during.filter((o, k) => low(o) && (low(during[k - 1]) || low(during[k + 1])));
+    const sheetRows = rows.filter((row) => row.t <= 12 * STEP + 1 || [200, 400, 600, 1000, 1500, 2000, 2500, 3000, 4000, 4500, 6000].some((m) => Math.abs(row.t - m) < 1));
+    const sheetFile = sheet(sheetRows.map((row) => ({ file: row.file, label: scene.name + " " + row.label })), join(dir, "sheet-f6b-" + scene.name + "-" + size + ".jpg"), { x: kill.x - 260 * ui, y: kill.y - 240 * ui, w: 520 * ui, h: 340 * ui }, 7, 300);
+    const pxAt = (list, ms) => list.find((c) => c.label === "+" + ms + " ms")?.px ?? 0;
     results[scene.name] = {
-      killed, killMs: Math.round(ms), kill, word, flash, flashPeak: peak, flashFrames: flash.filter((f) => f.px >= peak * 0.3 && peak > 0).length, flashAll: Math.max(...flash.map((f) => f.all)),
-      fire, firePeak: Math.max(...fire.map((f) => f.px)), smoke, smokeMax: Math.max(...smoke.map((s) => s.px)), soot, cloud, cloud2s: cloud.find((c) => c.label === "+2000 ms")?.px ?? 0, chunks, chunks6s: chunks.at(-1)?.px ?? 0, sheet: sheetFile,
+      killed, killFrame: shot.f, kill, word, flash, flashPeak: peak, flashFrames: flash.filter((f) => f.px >= peak * 0.3 && peak > 0).length, flashAll: Math.max(...flash.map((f) => f.all)),
+      fire, firePeak: Math.max(...fire.map((f) => f.px)), smoke, smokeMax: Math.max(...smoke.map((s) => s.px)), soot, cloud, cloud2s: pxAt(cloud, 2000), cloud3s: pxAt(cloud, 3000), embers, embers3s: pxAt(embers, 3000), chunks, chunks3s: pxAt(chunks, 3000), chunks6s: chunks.at(-1)?.px ?? 0,
+      occl, foesWorst: worst, foesEnd: endStd, foesLow: during.filter(low).map((o) => o.t), foesKept: dips.length === 0,
+      sheet: sheetFile,
     };
   }
   save(dir, "meta-f6b-" + size + ".json", results);
-  return { results, checks: { killed: Object.values(results).every((r) => r.killed) } };
+  const all = Object.values(results);
+  return {
+    results,
+    checks: {
+      killed: all.every((r) => r.killed),
+      cloudKeepsFoes: all.every((r) => r.foesKept),
+      cloudReads: all.every((r) => r.cloud2s >= AFTER.cloud2s && r.cloud3s >= AFTER.cloud3s),
+      emberStar: all.every((r) => r.embers3s >= AFTER.embers3s),
+      chunksLie: all.every((r) => r.chunks3s >= AFTER.chunks3s),
+    },
+  };
 }
 
 const SCENES = { f5, f6, f6b, shake, f9g, audio };
