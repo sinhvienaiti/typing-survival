@@ -81,18 +81,17 @@ attribute vec4 iColor;
 attribute vec2 iSize;
 varying vec2 vUv;
 varying vec4 vColor;
-varying float vY;
+varying vec2 vY;
 void main() {
-  // Cells 8 and up lie flat on the floor (shock rings, scorch); the rest face the camera (vY: the corner's height, from the camera's right and up in world y).
+  // Cells 8 and up lie flat on the floor (shock rings, scorch); the rest face the camera (vY: the corner's height, from the camera's right and up in world y; and f / (f − n) of the projection, for the smoke's depth).
   float ground = step(7.5, iPos.w);
   float cell = iPos.w - 8.0 * ground;
   vUv = vec2((uv.x + cell) / ${CELLS.toFixed(1)}, uv.y);
   vColor = iColor;
-  float s = sin(iSize.y);
-  float c = cos(iSize.y);
+  float s = sin(iSize.y), c = cos(iSize.y);
   vec2 corner = position.xy * iSize.x;
   corner = vec2(corner.x * c - corner.y * s, corner.x * s + corner.y * c);
-  vY = ground > 0.5 ? 9.0 : iPos.y + corner.x * viewMatrix[1][0] + corner.y * viewMatrix[1][1];
+  vY = vec2(ground > 0.5 ? 1e4 : iPos.y + corner.x * viewMatrix[1][0] + corner.y * viewMatrix[1][1], 0.5 - 0.5 * projectionMatrix[2][2]);
   if (ground > 0.5) {
     // Flat on the floor, facing up (−y here would leave the quad's back to the camera: culled).
     gl_Position = projectionMatrix * viewMatrix * vec4(iPos.xyz + vec3(corner.x, 0.0, -corner.y), 1.0);
@@ -102,16 +101,17 @@ void main() {
     gl_Position = projectionMatrix * view;
   }
 }`;
-// Added light; SMOKE: the colour laid over the scene (normal blending), its alpha the cell's × the burst's, thick parts darker and thin edges lit (soot with a rim of light), fading into the deck (no straight edge where the floor cuts a puff).
+// Added light; SMOKE: the colour laid over the scene (normal blending), its alpha the cell's × the burst's, thick parts darker and thin edges lit (soot with a rim of light), fading into the deck (no straight edge where the floor cuts a puff); in depth it lies on the deck (the floor's depth along the pixel's ray: a − (a − z) / t, t = the floor's distance over the puff's), so foes and chunks standing in a cloud are drawn over it.
 const GLOW_FRAGMENT = /* glsl */ `
 uniform sampler2D uMap;
 varying vec2 vUv;
 varying vec4 vColor;
-varying float vY;
+varying vec2 vY;
 void main() {
   float a = texture2D(uMap, vUv).a;
 #ifdef SMOKE
-  gl_FragColor = vec4(vColor.rgb * mix(2.0, 0.65, smoothstep(0.06, 0.45, a)), a * vColor.a * smoothstep(0.1, 1.2, vY));
+  gl_FragColor = vec4(vColor.rgb * mix(2.0, 0.65, smoothstep(0.06, 0.45, a)), a * vColor.a * smoothstep(0.1, 1.2, vY.x));
+  gl_FragDepth = vY.x > 999.0 ? gl_FragCoord.z : vY.y - (vY.y - gl_FragCoord.z) * max(0.0, cameraPosition.y - vY.x) / (cameraPosition.y - 0.05);
 #else
   gl_FragColor = vec4(vColor.rgb * a * vColor.a, 1.0);
 #endif
