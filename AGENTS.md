@@ -238,8 +238,24 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   deck by `Glows` in its smoke mode, a bed of embers, a heap of light steel
   chunks). A billboard's size is its full width (a ring's radius is 0.4 of
   it); `Glows.burst(…, early = F)` shows a new burst whole on its first
-  frame, the older bursts still lose theirs (open). Scenes `survival-feel`
+  frame, the older bursts and new lights still lose theirs (Codex ticket
+  035 fixes `Glows` and `GunLights` on branch `ts-vfx`). Scenes `survival-feel`
   `f1f` and `survival-feel-guns` `f6b`; `f5` types its last key 300 ms
-  late (a key now lights the deck round the muzzle). `src/` 12,755 lines.
+  late (a key now lights the deck round the muzzle). Round 2 (after an
+  independent judge, same changelog, `FEEL_PASS_S1.md` §13): the bolt bows
+  1.3 m to the letter's side with a fork (off Tia's column), and a spark
+  marks the letter itself (`.sv-strip-spark`, the plate's first child so it
+  is drawn behind the word, never over a letter; placed by `strip.ts`); a
+  big kill leaves a dark cloud about as wide as its flash (`CLOUD` in
+  `shots.ts`: 23 puffs, a sooty base, a dense dark body, dimmer tops; the
+  smoke shader shades by thickness and fades a puff over its lowest 1.2 m,
+  so the deck never cuts it on a straight line; drawn over the beams), a
+  scorch with glowing cracks and a field of 36–40 chunks thrown all round
+  (`THROW.big`, cold rims 2.6× lit) that lies until 8 s. The cloud hides
+  the horde behind it for 1–3 s and `f8` does not count that: if play
+  loses foes, lower the body's alpha first. `f1f`
+  checks the field mark (≥ 8,000 px at 720p, beam or not) and the spark;
+  `f6b` measures the cloud against the frame before the kill. `src/`
+  12,787 lines (the excess is `main.ts` and `hud.ts`: split in R2).
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.
