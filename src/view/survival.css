@@ -210,8 +210,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 /* Armory and the loadout's gun cards. */
 .sv-guns { display: grid; grid-template-columns: 1fr 1fr; gap: calc(10px * var(--ui)); margin-top: calc(12px * var(--ui)); text-align: left; }
 .sv-gun-card { padding: calc(10px * var(--ui)) calc(12px * var(--ui)); background: var(--screen); border: 1px solid var(--line); border-top: calc(3px * var(--ui)) solid var(--gun); color: var(--gun); }
-.sv-gun-card header b { font: 700 calc(18px * var(--ui)) var(--font-title); letter-spacing: 0.16em; margin-right: 8px; }
-.sv-gun-card header small { font: 600 calc(13px * var(--ui)) var(--font-battle); color: var(--muted); }
+.sv-gun-card header b { font: 700 calc(18px * var(--ui)) var(--font-title); letter-spacing: 0.16em; margin-right: 8px; white-space: nowrap; }
+.sv-gun-card header small { font: 600 calc(13px * var(--ui)) var(--font-battle); color: var(--muted); white-space: nowrap; }
 .sv-gun-card p { margin: 6px 0 0 !important; font-size: calc(13px * var(--ui)) !important; color: var(--soft) !important; }
 .sv-learning { margin: calc(12px * var(--ui)) 0 0; padding-left: 1.2em; text-align: left; font: 500 calc(13px * var(--ui)) var(--font-battle); color: var(--soft); }
 
@@ -231,10 +231,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-foes span { display: block; color: var(--typing); font-size: 0.95em; }
 .sv-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: calc(8px * var(--ui)); margin-top: calc(10px * var(--ui)); text-align: left; }
 .sv-cards .sv-gun-card { cursor: pointer; transition: box-shadow 0.1s, transform 0.1s; }
-.sv-cards .sv-gun-card header { display: flex; align-items: center; gap: 6px; }
-.sv-cards .sv-gun-card header b { font-size: calc(15px * var(--ui)); letter-spacing: 0.1em; margin-right: 0; }
+.sv-cards .sv-gun-card header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.sv-cards .sv-gun-card header b { font-size: calc(15px * var(--ui)); letter-spacing: 0.1em; margin-right: 0; white-space: nowrap; }
 .sv-cards .sv-gun-card kbd { font: 700 calc(12px * var(--ui)) var(--font-title); padding: 0 5px; border: 1px solid var(--line-strong); color: var(--soft); }
-.sv-cards .sv-gun-card em { margin-left: auto; font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.1em; color: var(--ink); background: var(--gun); padding: 1px 5px; font-style: normal; }
+.sv-cards .sv-gun-card em { margin-left: auto; white-space: nowrap; font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.1em; color: var(--ink); background: var(--gun); padding: 1px 5px; font-style: normal; }
 .sv-cards .sv-gun-card small { display: block; font: 600 calc(12px * var(--ui)) var(--font-battle); color: var(--muted); }
 .sv-cards .sv-gun-card p { margin: 5px 0 0 !important; font-size: calc(13px * var(--ui)) !important; line-height: 1.35; color: var(--soft) !important; }
 .sv-cards .sv-gun-card .sv-good { color: var(--typing) !important; }

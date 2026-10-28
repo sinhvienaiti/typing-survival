@@ -41,7 +41,7 @@ export default async function (page) {
   const checks = {
     ready,
     warned,
-    warningOnItsSide: /is-(left|right)/.test(warning.side) && /VẾT NỨT/.test(warning.text),
+    warningOnItsSide: /is-(left|right)/.test(warning.side) && /Rift/.test(warning.text),
     oneTelegraphAtATime: warning.banners === 0,
     opened: after.events[EV.rift] > 0,
     noConsoleErrors: page.logs.filter((line) => line.startsWith("error")).length === 0,

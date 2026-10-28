@@ -270,12 +270,12 @@ export class Journey {
 }
 
 export const ROW_LABELS = {
-  swarmFar: "Bầy giữa sân",
-  swarmNear: "Bầy sát vạch",
-  scout: "Lính và đạn lính",
-  armoured: "Trâu, Đầu Đàn (Vỏ)",
-  shield: "Khiên",
-  splitter: "Tách và mảnh",
+  swarmFar: "Swarm giữa sân",
+  swarmNear: "Swarm sát vạch",
+  scout: "Scout và đạn Scout",
+  armoured: "Brute, Pack Leader (Vỏ)",
+  shield: "Shield Guard",
+  splitter: "Splitter và Shard",
 } as const;
 
 /** "khắc: Ray · được: Pháo Sao" for a row. */
@@ -294,7 +294,7 @@ function rowsWhere(gun: number, mark: number): string {
 /** A stage's line on the stage select: objective, hazard, rule. */
 export function stageNote(stage: Stage): string {
   const parts = [objectiveText(stage)];
-  if (stage.hazard !== null) parts.push("Vết nứt");
+  if (stage.hazard !== null) parts.push("Rift");
   parts.push("Luật " + LEARN_RULES[stage.learn].label);
   return parts.join(" · ");
 }
@@ -302,5 +302,5 @@ export function stageNote(stage: Stage): string {
 export function objectiveText(stage: Stage): string {
   const o = stage.objective;
   if (o.kind === "hold") return "Trụ vững " + Math.floor(o.seconds / 60) + ":" + String(o.seconds % 60).padStart(2, "0");
-  return "Săn " + o.need + " trong " + o.leaders.length + " Đầu Đàn";
+  return "Săn " + o.need + " trong " + o.leaders.length + " Pack Leader";
 }

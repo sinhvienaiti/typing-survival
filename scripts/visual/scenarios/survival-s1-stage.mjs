@@ -85,7 +85,7 @@ export default async function (page) {
     ready: hunt.ready && missing.ready,
     huntEnded: !hunt.reloaded && (hunt.final?.phase === "won" || hunt.final?.phase === "lost"),
     missingEnded: !missing.reloaded && (missing.final?.phase === "won" || missing.final?.phase === "lost"),
-    huntPlateCounts: /^ĐẦU ĐÀN \d\/3 · LỌT \d\/2$|^BẦY RÚT LUI$/.test(hunt.goal) && (hunt.final?.objective?.done ?? 0) + (hunt.final?.objective?.leaked ?? 0) > 0,
+    huntPlateCounts: /^Pack Leader \d\/3 · LỌT \d\/2$|^Swarm RÚT LUI$/.test(hunt.goal) && (hunt.final?.objective?.done ?? 0) + (hunt.final?.objective?.leaked ?? 0) > 0,
     huntRetreatsWhenWon: hunt.final?.phase !== "won" || hunt.final?.objective?.retreat >= 0,
     hiddenLettersShown: missing.masked > 0,
     neverFirstHidden: missing.firstHidden === 0 && hunt.firstHidden === 0,
