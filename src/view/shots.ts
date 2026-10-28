@@ -22,7 +22,7 @@ import type { World } from "../sim/world";
 import { BeamFx } from "./beams";
 import { BOLT, type Bolts } from "./bolts";
 import { CELL, FLAT, Streaks, type Glows, type Strips } from "./fx";
-import { FEEL, LIGHT, joinWeight, screenMetres } from "./gun-rules";
+import { AFTER, FEEL, LIGHT, joinWeight, screenMetres } from "./gun-rules";
 import type { GunLights } from "./lights";
 import type { Stage } from "./scene";
 import { MUZZLE, PILOT_COLORS, type Pilot, type Ship } from "./ship";
@@ -69,6 +69,11 @@ export class ShotFx {
   private readonly sz = new Float32Array(STORE.shells);
   private side = 0;
   private tiaHits = 0;
+  /** The last draw's clock (s), the last Xung scorch, the ship's last hurt and its last puff of smoke (F). */
+  private clock = 0;
+  private scorchAt = -1e9;
+  private hurtAt = -1e9;
+  private puffAt = -1e9;
   /** Metres per view height at the muzzle's depth (× a share of the view: a flash's size). */
   private mPerView = 1;
   private readonly at = new THREE.Vector3();
@@ -155,11 +160,16 @@ export class ShotFx {
       }
       const crit = (R.flags[i]! & FLAG.crit) !== 0;
       const soft = this.size(first ? 0.08 : 0.04) * 2.2;
-      g.burst(CELL.star4, m.x, m.y, m.z, 0.5, first ? 1.6 : 1.1, 3 * F, crit ? C.crit : this.shot, 3);
+      // A magazine's first star stands 0.7 m out along the shot, clear of the core's load flash.
+      const o = first ? 0.7 : 0;
+      g.burst(CELL.star4, m.x + dx * o, m.y, m.z - dz * o, 0.5, first ? 2 : 1.1, 3 * F, crit ? C.crit : this.shot, 3);
       g.burst(CELL.soft, m.x, m.y, m.z, soft * 0.7, soft, (first ? 4 : 3) * F, this.shot, first ? 2.6 : 2);
       g.burst(CELL.core, m.x, m.y, m.z, soft * 0.25, soft * 0.4, (first ? 4 : 3) * F, C.hot, 2.4);
-      this.p.lights.flash(first ? LIGHT.xungFirst : LIGHT.xung, m.x, m.y, m.z, this.shot);
+      // Its light 1.2 m out along the shot, off the hull (on the muzzle it lit the ship white, as Tia's and Ray's did: §12).
+      this.p.lights.flash(first ? LIGHT.xungFirst : LIGHT.xung, m.x + dx * 1.2, m.y, m.z - dz * 1.2, this.shot);
       if (first) {
+        // The magazine's release reads off the core's load flash: a tongue of the gun's colour 1.6 m along the shot (4 frames).
+        this.streaks.add(m.x, m.y, m.z, m.x + dx * 1.6, m.y, m.z - dz * 1.6, 0.45, this.shot, 3, 0.25, 4 * F);
         this.spark(m.x, m.y, m.z, dx, 0.4, -dz, 6, 7, this.shotHi, 0.22, 0.35, 1.6);
         this.p.trauma.kick(-dx, dz, 1.5);
       }
@@ -307,11 +317,58 @@ export class ShotFx {
     g.burst(row.rays === 12 ? CELL.star12 : row.rays === 8 ? CELL.star8 : CELL.star4, x, 0.9, -z, 0.45 * k, (1.1 + (t - 1) * 0.55) * k, (3 + t - 1) * F, color, 2);
     if (row.ring) g.burst(CELL.ring, x, 0.9, -z, 0.4, 3.2, 0.3, C.perfect, 2);
     this.spark(x, 0.9, -z, -dx, 0.3, dz, Math.max(4, row.sparks), 6 + t * 2, color, 0.24, 0.4, 1.6);
+    // F: a scorch where it struck (one each AFTER.scorch.every s) with cracks glowing the gun's colour as they cool, embers rising.
+    const A = AFTER.scorch;
+    if (this.clock - this.scorchAt >= A.every) {
+      this.scorchAt = this.clock;
+      this.p.smoke.burst(CELL.soft + FLAT, x, 0.061, -z, A.size * k, A.size * 1.1 * k, A.life, C.scorch, A.alpha);
+      g.burst(CELL.star8 + FLAT, x, 0.066, -z, A.size * 0.6 * k, A.size * 0.65 * k, A.glow, this.shotHi, 0.8);
+    }
+    for (let e = 0; e < (this.p.trauma.reduced ? 1 : A.embers); e += 1) {
+      this.p.sparks.spawn(this.w3.set(x + (Math.random() - 0.5) * 0.5, 0.6 + Math.random() * 0.5, -z), this.v.set((Math.random() - 0.5) * 0.8, 0.9 + Math.random() * 0.9, (Math.random() - 0.5) * 0.5), this.shotHi, 0.26, 0.7 + Math.random() * 0.5, { drag: 1.2, gravity: -0.4 });
+    }
+  }
+
+  /** The ship was hit (a breach, a scout's shot): sparks off the hull and a dark puff under the red flash (I), then smoke and sparks for AFTER.hurt.smoke s (F, in draw()). */
+  hurt(): void {
+    const c = this.p.ship.core(this.at);
+    this.hurtAt = this.clock;
+    this.p.smoke.burst(CELL.puff, c.x, c.y + 0.2, c.z, 0.6, 1.8, 0.8, C.smokeBody, 1.2, 0, 0.6, 0.4, 0.5);
+    this.spark(c.x, c.y + 0.2, c.z, 0, 1, 0, this.p.trauma.reduced ? 6 : 10, 7, C.hot, 0.24, 0.45, 2.4);
+  }
+
+  /** The hurt ship's F: a grey puff rising off either side of the hull each AFTER.hurt.puff s, thinning; the hull red-hot and arcing 0.6 s; sparks spitting the first second. */
+  private smoking(time: number, dt: number): void {
+    const H = AFTER.hurt;
+    const h = time - this.hurtAt;
+    if (h < 0 || h >= H.smoke) return;
+    const k = 1 - h / H.smoke;
+    const c = this.p.ship.core(this.at);
+    const reduced = this.p.trauma.reduced;
+    if (time - this.puffAt >= H.puff) {
+      // Smoke lies on the deck in depth (fx.ts): it trails off the wings, beside and behind the hull, never over it.
+      this.puffAt = time;
+      const side = (Math.random() < 0.5 ? -1 : 1) * (0.6 + Math.random() * 0.4);
+      this.p.smoke.burst(CELL.puff, c.x + side, c.y + 0.3, c.z + 0.3, 0.6, 1.8 + Math.random() * 0.8, 0.9 + Math.random() * 0.5, Math.random() < 0.7 ? C.smokeLit : C.smoke, H.alpha * (0.4 + 0.6 * k) * (reduced ? 0.6 : 1), side * 0.6, 0.7 + Math.random() * 0.4, 0.5, Math.random() - 0.5);
+    }
+    if (h < 0.6) {
+      // The hull red-hot where it was struck and two arcs crackling over it (a new pair each frame), drawn 0.9 m toward the camera so the hull never hides them.
+      const e = this.w3.copy(this.p.stage.camera.position).sub(c).normalize().multiplyScalar(0.9).add(c);
+      this.p.glows.stamp(CELL.soft, e.x, e.y, e.z, 1.6, 0, C.danger, 1.8 * (1 - h / 0.6));
+      if (!reduced) for (let a = 0; a < 2; a += 1) {
+        const x0 = e.x + (Math.random() - 0.5) * 1.1;
+        const y0 = e.y + (Math.random() - 0.5) * 0.4;
+        this.p.strips.add(x0, y0, e.z, x0 + (Math.random() - 0.5) * 0.9, y0 + (Math.random() - 0.5) * 0.5, e.z + (Math.random() - 0.5) * 0.3, 0.12, C.elite, 2.6 * (1 - h / 0.6), 0.5);
+      }
+    }
+    if (h < H.sparks && Math.random() < dt * H.rate) this.spark(c.x + (Math.random() - 0.5) * 0.8, c.y + 0.1, c.z + (Math.random() - 0.5) * 0.6, 0, 1, 0, reduced ? 2 : 4, 5, Math.random() < 0.5 ? C.hot : C.danger, 0.2, 0.35, 2.4);
   }
 
   /** Per frame: bolts, tracers, pellets, shells, the beams (Ray, Tia), timed streaks, the light pool, Xung's tails. */
   draw(w: World, dt: number, time: number, lead: number): void {
     const now = time * 1000;
+    this.clock = time;
+    this.smoking(time, dt);
     const S = this.p.strips;
     const g = this.p.glows;
     const bolts = this.p.bolts;

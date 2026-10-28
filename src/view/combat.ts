@@ -212,11 +212,12 @@ export class Combat {
         }
         case EV.breach:
           this.glows.burst(CELL.ring + FLAT, x, 0.08, -z, 0.6, 6, 0.5, C.danger, 2.6);
-          this.glows.burst(CELL.core, x, 0.8, -z, 2, 3.5, 0.2, C.danger, 2.2);
+          this.glows.burst(CELL.core, x, 0.8, -z, 3, 3.5, 0.2, C.danger, 2.2); // whole on f0: grown from 2 m, f1 outshone it (first/peak 0.93)
           this.spark(x, 0.6, z, 0, 1, 14, 9, C.ember, 0.3, 0.5);
           this.trauma.add(0.22);
           this.audio.hurt(true);
           this.ship.hurt();
+          this.shots.hurt();
           this.hooks.hurt();
           break;
         case EV.playerHit:
@@ -226,6 +227,7 @@ export class Combat {
           this.trauma.kick(dx, -dz, 6);
           this.audio.hurt(false);
           this.ship.hurt();
+          this.shots.hurt();
           this.hooks.hurt();
           break;
         case EV.foeShot:
