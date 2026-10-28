@@ -47,6 +47,8 @@ export default async function (page) {
   await page.sleep(200);
   const picked = await screen();
   const warnings = await page.eval("[...document.querySelectorAll('.sv-threats span.is-open')].map((n) => n.textContent)");
+  // Each card's gun name on one line; a picked card's badge goes beside it or under it (English names, 28/10).
+  const cardNames = await page.eval("[...document.querySelectorAll('.sv-cards .sv-gun-card header b')].map((b) => { const r = document.createRange(); r.selectNodeContents(b); return new Set([...r.getClientRects()].map((x) => Math.round(x.top))).size; })");
   shots.push(await page.shot(out("survival-s1-loadout-cards-" + size + ".png")));
   // To the start button (after card 5) and in.
   for (let k = 0; k < 5 - (picked.journey.cursor ?? 0); k += 1) await key(page, "ArrowRight");
@@ -99,6 +101,7 @@ export default async function (page) {
     briefingShowsCounters: log[2][1].screen === "journey-briefing" && briefing.some((line) => /Brute/.test(line) && /khắc: Rail Gun/.test(line)),
     fiveCards: log[3][1].screen === "journey-loadout" && cards === 5,
     keysPick: JSON.stringify(picked.journey.picked) === "[0,2]" && picked.journey.ready === true,
+    cardNamesOneLine: cardNames.length === 5 && cardNames.every((lines) => lines === 1),
     warnsOpenRows: warnings.length > 0 && warnings.some((text) => /Brute/.test(text)),
     stageCardWaits: card?.mode === "intro" && /ẢI 1/.test(card.text) && still === 0,
     fightOnStage: started?.mode === "play" && started.state.stage === "c1-s1" && JSON.stringify(started.state.guns) === '["xung","tan"]',
@@ -114,5 +117,5 @@ export default async function (page) {
   };
   const pass = Object.values(checks).every(Boolean);
   if (!pass) process.exitCode = 1;
-  return { pass, checks, log, briefing, warnings, card, still, hud, learnWidth, ui, armory, shots };
+  return { pass, checks, log, briefing, warnings, cardNames, card, still, hud, learnWidth, ui, armory, shots };
 }
