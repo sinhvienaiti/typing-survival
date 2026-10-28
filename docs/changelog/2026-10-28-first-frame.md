@@ -40,3 +40,24 @@ Máy chủ Vite riêng của nhánh (`127.0.0.1:4161`), đồng hồ giữ, ải
 
 - `main` đã đi tiếp (`ea8e0f9`, `f8fa756`, `3f63fcf`): `git merge-tree` báo **một xung đột** ở `src/view/shots.ts` dòng cụm lửa của lóe hạ to (`main` đổi đời cụm lửa thành `0.3 + r() * 0.15`, nhánh này bỏ `, F`). Cách gộp: giữ đời của `main`, bỏ `, F`. `fx.ts` tự gộp (`main` chỉ đổi shader).
 - Sau khi gộp mới sửa tài liệu trên `main`: đoạn "Bùng ở khung đầu" của `FEEL_PASS_S1.md` §12 và dòng `early` ở mục cuối §12, dòng `Glows.burst(…, early = F)` trong `AGENTS.md`, mục "Lóe cũ mất khung đầu" của changelog N4/N6. Nhánh này không sửa các file đó để khỏi đụng làn đang ghi ở bản checkout chính.
+
+## Đã gộp vào `main` (28/10, làn V của TS-M1-04)
+
+Gộp `main` (`bf0e6f9`, đã có bản sửa khói và tên tiếng Anh) vào `ts-vfx` ở `b70f743`, rồi `main` tiến thẳng (fast-forward) lên nhánh này.
+
+- **Một xung đột, đúng như dự đoán**, ở dòng cụm lửa của `ShotFx.bigKill` (`shots.ts`): giữ đời `0.3 + r() * 0.15` của `main`, bỏ `, F` của phiếu. Hai dòng độ sâu của shader khói (`vY` thành `vec2` ở vertex, `gl_FragDepth` ở fragment) lấy nguyên từ `main`. Sau khi gộp, cây chỉ khác `main` ở 6 file của phiếu: `fx.ts`, `lights.ts`, `shots.ts`, `typing-feel.ts`, `tests/first-frame.test.ts` và changelog này.
+- **Giấy tờ sửa sau khi gộp**: đoạn "Bùng ở khung đầu" của `FEEL_PASS_S1.md` §12, dòng `early` ở §12.1 và mục "Còn mở" của §13.3; hai dòng về `early` và phiếu 035 trong `AGENTS.md`; hai mục "Lóe cũ mất khung đầu" của changelog N4/N6.
+
+### Kiểm lại trên cây đã gộp (`b70f743`, Mac mini M4, Chrome có GPU, Vite riêng ở `127.0.0.1:4180`)
+
+- `pnpm check`: 151/151 test trong 15 file (có `tests/s0-trace.test.ts`), `tsc` và `vite build` đạt.
+- Mã băm 152 chương (`node --import tsx scripts/chapter-hashes.ts`) trùng từng dòng với `bf0e6f9`; `src/sim`, `src/content`, `tests/golden` không đổi.
+
+| Kịch bản | 1280×720 | 1920×1080 |
+|---|---|---|
+| `survival-feel` `f8` | Đạt mọi kiểm trừ "mắt → đòn" (có từ bước 1): tương phản dòng từ p99 **7,80**; nền dưới dòng từ p50 **0,204** (bước 1: 0,200, tức +0,004, trần +0,02); hai bến 8,55 / 7,64; quái bị ánh sáng che còn sống sau 0,5 s: ải 1 **1,9 %**, ải 4 **6,5 %** (trần 10 %); số thô 3,2 / 8,2 %; số đè dòng từ 0; mắt → đòn gộp 228 px (ải 1 202, ải 4 283; đích 210) | Như vậy: **7,73**; **0,200** (bước 1: 0,192, +0,008); 8,55 / 7,68; **3,8 %** và **4,9 %** (thô 5,9 / 6,8 %); số đè 0; mắt → đòn 213 (195 / 276) |
+| `survival-feel-guns` `f5` | Đạt: năm súng bắn ở khung phím cuối; bán kính lóe nòng Xung 81 px (cần 46), Tia 89 (40), Tán 99 (58), Ray 78 (69), Pháo Sao 58 (35); sàn quanh nòng sáng thêm 0,21–0,37 | Đạt: 120 / 133 / 152 / 124 / 83 px (cần 69 / 60 / 86 / 104 / 52); sàn +0,21–0,35 |
+| `survival-feel-guns` `f6b` | Đạt cả 11 cảnh (`cloudKeepsFoes`, `cloudReads`, `emberStar`, `chunksLie`); độ lệch luma thấp nhất của quái trong hộp 0,115–0,172 | 10 / 11 cảnh đạt; `phao-leader` trượt `cloudKeepsFoes` (độ lệch của hộp vẫn ≥ 0,132; tỉ số với chính quái 0,36–0,57 ở 0,3–0,7 s và 2 s) |
+| `survival-s1-stage` | Đạt mọi kiểm (hai trận kết thúc, bảng mục tiêu, chữ ẩn, không số đè, replay trong Node ra đúng mã băm) | Đạt mọi kiểm |
+
+**Về `phao-leader` ở 1080p.** Chạy lại riêng cảnh này 3 lần trên cây gộp và 3 lần trên `bf0e6f9` (trước phiếu), cùng máy: `bf0e6f9` trượt 1 / 3 lần (hai khung 0,7–0,8 s, tỉ số thấp nhất 0,49), cây gộp trượt 1 / 3 lần (0,3–0,9 s, 0,285), cộng lượt trong chuỗi kiểm. Chỗ tụt là lúc loạt đạn kế của chính Pháo Sao rơi vào hộp (khung 2 s là một chùm nổ trắng), không phải đám khói: kiểm này đã lung lay trước khi gộp, và phiếu (lóe tắt chậm đúng một khung) có thể làm nó tụt sâu hơn một chút. Đề xuất: ở lô VFX thứ hai (TS-M1-16, có Pháo Sao) cho `cloudKeepsFoes` bỏ qua khung có chùm nổ Pháo Sao trong hộp, hoặc giảm lóe của chùm nổ đó.

@@ -543,7 +543,7 @@ Lần kiểm lại trên `4788022` còn hai lỗi nặng: N4 (mỗi phím trên 
 
 **Đơn vị.** Cỡ một billboard (`Glows.burst`) là **bề ngang cả quad** (m), không phải bán kính: vòng sáng (`CELL.ring`) có bán kính 0,4 × bề ngang. Vòng "1,4 → 2,8 m" của §11.5 thật ra có bán kính 0,56 → 1,12 m, nằm dưới thân tàu và trong vòng sơn của sàn (bán kính 2,6 m): đó là lý do nó thành "một cung màu nhỏ dưới thân".
 
-**Bùng ở khung đầu.** Một burst tạo giữa hai khung đã già một khung khi vẽ lần đầu (`Glows.step` cộng `dt` trước khi vẽ): lóe "3 khung" thật ra hiện 44 % rồi 11 % rồi tắt. Burst mới của lượt này truyền `early = F` để hiện trọn ở khung đầu. Các burst cũ giữ nguyên (đổi hết là đổi cả độ sáng các súng, cần đo lại §4.1 và F8; để lượt sau).
+**Bùng ở khung đầu.** Lượt này tìm ra lỗi: một burst tạo giữa hai khung đã già một khung khi vẽ lần đầu (`Glows.step` cộng `dt` trước khi vẽ), nên lóe "3 khung" chỉ hiện 44 % rồi 11 % rồi tắt; đèn mới cũng mất khung đầu. Lượt N4/N6 tạm truyền `early = F` cho các burst mới của nó. Phiếu Codex 035 sửa tận gốc và đã gộp vào `main` (28/10, changelog [`2026-10-28-first-frame.md`](changelog/2026-10-28-first-frame.md)): `Glows.flush` ghi mọi burst mới ở tuổi 0 ngay khung tạo ra nó, `GunLights` cho đèn mới sáng đủ `power` ở khung đầu, tham số `early` đã bỏ. Sau khi gộp đã đo lại `f5`, `f6b`, `f8` ở hai cỡ (số trong changelog đó).
 
 ### 12.1 Mỗi phím đúng (N4; `KEY_MARK` trong `type-rules.ts`, `typing-feel.ts`)
 
@@ -555,7 +555,7 @@ Lần kiểm lại trên `4788022` còn hai lỗi nặng: N4 (mỗi phím trên 
 | Sàn dưới tàu sáng | ngang 3,2 → 4 m, cường độ 0,35 | f0–f2 |
 | Vòng sàn | bán kính 1,4 → 3,2 m (qua vòng sơn 2,6 m), 0,16 s, cường độ 2,2 | f0–f9 |
 
-- Mọi phần hiện trọn ở f0 (`early`). Mực của Ray trên sân là `#8fa3ff` (trắng xanh của nó chìm trong ánh Tia).
+- Mọi phần hiện trọn ở f0 (burst mới vẽ ở tuổi 0 từ phiếu 035; trước đó là `early`). Mực của Ray trên sân là `#8fa3ff` (trắng xanh của nó chìm trong ánh Tia).
 - Chữ không bị vẽ đè: tia rời từ mép dưới tấm (`WordStrip.anchor` trả về đáy tấm dưới chữ).
 - Bến đầy: tia văng sang ngang 1,6 m, không vào lõi, không sao lõi, không vòng.
 - Thay mảnh 0,6 m của §11.5. Đèn động riêng cho mỗi phím đã thử rồi bỏ: phủ thân tàu một quầng xanh trắng, lóe nòng của phát đầu không còn đọc được.
@@ -631,7 +631,7 @@ Changelog: [`2026-10-27-feel-n4n6.md`](changelog/2026-10-27-feel-n4n6.md), phầ
 
 - `survival-feel` `f1f`: thêm `fieldMarkEveryKey`, kiểm vùng sáng lên ≥ 0,25 ở f0 trên sân (từ đáy tấm tới dưới tàu, 600 px ngang) ≥ 8.000 px (720p) ở cả bốn lượt, có tia hay không. Thêm `sparkOnLetter`: tia lửa đủ sáng ở f0, tâm cách tâm chữ vừa gõ ≤ nửa bề ngang và nửa bề cao chữ, tắt ở f5.
 - `survival-feel-guns` `f6b`: thêm số đo `soot` (px tối hơn khung 9,8 s) và `cloud` (px xám, tối hay sáng, khác khung trước khi hạ, ngoài dải tia Ray, trong hộp cỡ lóe). Chỉ đo, chưa có ngưỡng: quái đi qua làm số nhiễu.
-- Còn mở: các burst cũ (lóe nòng, sao trúng, lóe hạ thường) và đèn mới vẫn mất khung đầu (§12, `early` chỉ dùng cho burst mới). Phiếu Codex 035 sửa `Glows` và `GunLights` (nhánh `ts-vfx`); sau phiếu đo lại `f5`, `f8` và sửa đoạn "Bùng ở khung đầu" của §12.
+- Đã đóng (28/10): các burst cũ (lóe nòng, sao trúng, lóe hạ thường) và đèn mới nay hiện trọn ở khung đầu. Phiếu Codex 035 sửa `Glows` và `GunLights`, đã gộp vào `main`; `f5`, `f6b`, `f8` đo lại sau khi gộp (changelog `2026-10-28-first-frame.md`), đoạn "Bùng ở khung đầu" của §12 đã sửa.
 
 ## 14. Đám khói nằm dưới bầy (28/10, sau phán xét độc lập lần 2; chủ dự án xem ở §7.6)
 
