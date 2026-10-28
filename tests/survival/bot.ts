@@ -46,6 +46,6 @@ export function botKeys(w: World, b: Bot): CommandBody[] {
 
 /** Levels 1–3 of the shared vocabulary, as the page builds its deck. */
 export function sharedDeck(): string[] {
-  const level = (n: number) => JSON.parse(readFileSync(new URL("../../../../shared/vocabulary/levels/" + String(n).padStart(3, "0") + ".json", import.meta.url), "utf8")).entries as { en: string }[];
+  const level = (n: number) => JSON.parse(readFileSync(new URL("../../public/vocabulary/levels/" + String(n).padStart(3, "0") + ".json", import.meta.url), "utf8")).entries as { en: string }[];
   return buildDeck([level(1), level(2), level(3)]);
 }
