@@ -59,8 +59,8 @@ export type Stage = {
   readonly pace: PaceTable;
 };
 
-export const OBJECTIVE_LABELS: Readonly<Record<ObjectiveKind, string>> = { hold: "Trụ vững", hunt: "Săn Đầu Đàn" };
-export const HAZARD_LABELS: Readonly<Record<HazardKind, string>> = { rift: "Vết nứt" };
+export const OBJECTIVE_LABELS: Readonly<Record<ObjectiveKind, string>> = { hold: "Trụ vững", hunt: "Săn Pack Leader" };
+export const HAZARD_LABELS: Readonly<Record<HazardKind, string>> = { rift: "Rift" };
 /** Heavy hazards halve the storm chance and never meet a hard learning rule (§7.2, §7.3). */
 export const HAZARD_HEAVY: Readonly<Record<HazardKind, boolean>> = { rift: false };
 

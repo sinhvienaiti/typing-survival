@@ -14,28 +14,28 @@ import { FOES, KIND } from "../content/foes";
 import { LEARN_RULES, RIFT, type Stage } from "../content/stage-rules";
 import { escapeHtml, hints, menu } from "./screens";
 
-const NEW: Readonly<Record<string, string>> = { brute: "quái Trâu", leader: "quái Đầu Đàn", shield: "quái Khiên", hunt: "luật Săn", rift: "hiểm họa Vết nứt", missing: "luật Thiếu chữ" };
+const NEW: Readonly<Record<string, string>> = { brute: "quái Brute", leader: "quái Pack Leader", shield: "quái Shield Guard", hunt: "luật Săn", rift: "hiểm họa Rift", missing: "luật Thiếu chữ" };
 
 /** The foes a stage sends, with their counter tags. */
 function foes(stage: Stage): { name: string; note: string; tag: string; fresh: boolean }[] {
-  const out = [{ name: "Bầy", note: FOES[KIND.mine]!.hp + " máu, đông", tag: counterTag("swarmNear"), fresh: false }];
-  if (stage.scouts.share > 0) out.push({ name: "Lính", note: "đứng 6–9 m bắn tàu", tag: counterTag("scout"), fresh: false });
-  if (stage.packs.brute !== undefined) out.push({ name: "Trâu", note: "Vỏ " + FOES[KIND.brute]!.armour + " · " + FOES[KIND.brute]!.hp + " máu, dẫn 5 bầy", tag: counterTag("armoured"), fresh: stage.teach.includes("brute") });
-  if (stage.objective.kind === "hunt") out.push({ name: "Đầu Đàn", note: "Vỏ " + FOES[KIND.leader]!.armour + " · " + FOES[KIND.leader]!.hp + " máu, 8 bầy hộ tống", tag: counterTag("armoured"), fresh: stage.teach.includes("leader") });
-  if (stage.packs.shield !== undefined) out.push({ name: "Khiên", note: "khiên " + FOES[KIND.shield]!.shield + " chắn đạn từ phía trước", tag: counterTag("shield"), fresh: stage.teach.includes("shield") });
-  if (stage.packs.splitter !== undefined) out.push({ name: "Tách", note: "vỡ thành 3 mảnh", tag: counterTag("splitter"), fresh: stage.teach.includes("splitter") });
+  const out = [{ name: "Swarm", note: "(bầy quái) " + FOES[KIND.mine]!.hp + " máu, đông", tag: counterTag("swarmNear"), fresh: false }];
+  if (stage.scouts.share > 0) out.push({ name: "Scout", note: "(lính trinh sát) đứng 6–9 m bắn tàu", tag: counterTag("scout"), fresh: false });
+  if (stage.packs.brute !== undefined) out.push({ name: "Brute", note: "(quái lực lưỡng) Vỏ " + FOES[KIND.brute]!.armour + " · " + FOES[KIND.brute]!.hp + " máu, dẫn 5 Swarm", tag: counterTag("armoured"), fresh: stage.teach.includes("brute") });
+  if (stage.objective.kind === "hunt") out.push({ name: "Pack Leader", note: "(thủ lĩnh bầy) Vỏ " + FOES[KIND.leader]!.armour + " · " + FOES[KIND.leader]!.hp + " máu, 8 Swarm hộ tống", tag: counterTag("armoured"), fresh: stage.teach.includes("leader") });
+  if (stage.packs.shield !== undefined) out.push({ name: "Shield Guard", note: "(lính mang khiên) khiên " + FOES[KIND.shield]!.shield + " chắn đạn từ phía trước", tag: counterTag("shield"), fresh: stage.teach.includes("shield") });
+  if (stage.packs.splitter !== undefined) out.push({ name: "Splitter", note: "(quái tách mảnh) vỡ thành 3 Shard", tag: counterTag("splitter"), fresh: stage.teach.includes("splitter") });
   return out;
 }
 
 function objectiveDetail(stage: Stage): string {
   const o = stage.objective;
   if (o.kind === "hold") return "Giữ tuyến tới khi hết giờ. Hết giáp là thua.";
-  return "Đầu Đàn tới ở giây " + o.leaders.join(", ") + " (tiếng tù và). Hạ " + o.need + " con thì bầy rút lui; để lọt quá " + (o.leaders.length - o.need) + " con là thua.";
+  return "Pack Leader tới ở giây " + o.leaders.join(", ") + " (tiếng tù và). Hạ " + o.need + " con thì Swarm rút lui; để lọt quá " + (o.leaders.length - o.need) + " con là thua.";
 }
 
 function hazardDetail(stage: Stage): string {
   if (stage.hazard === null) return "Không có hiểm họa.";
-  return "Vết nứt: mỗi " + stage.hazard.period + " s, tường trái hoặc phải sáng cam " + String(RIFT.warn).replace(".", ",") + " s trước khi đổ bầy ra ở " + RIFT.zMin + "–" + RIFT.zMax + " m. Giữ một súng gần có băng lúc sắp nứt.";
+  return "Rift (vết nứt không gian): mỗi " + stage.hazard.period + " s, tường trái hoặc phải sáng cam " + String(RIFT.warn).replace(".", ",") + " s trước khi đổ Swarm ra ở " + RIFT.zMin + "–" + RIFT.zMax + " m. Giữ một súng gần có băng lúc sắp nứt.";
 }
 
 function ruleDetail(stage: Stage): string {

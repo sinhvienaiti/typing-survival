@@ -54,10 +54,10 @@ const BAY_COLUMN = [2, 4, 1, 5] as const;
 const MIN_FIT = 26 / 32;
 /** The "new" card per kind a stage teaches. */
 const NEW_CARD: Readonly<Record<number, string>> = {
-  [KIND.brute]: "MỚI · TRÂU · Vỏ " + FOES[KIND.brute]!.armour,
-  [KIND.leader]: "MỚI · ĐẦU ĐÀN · Vỏ " + FOES[KIND.leader]!.armour,
-  [KIND.shield]: "MỚI · KHIÊN · chắn đạn phía trước",
-  [KIND.splitter]: "MỚI · TÁCH · vỡ 3 mảnh",
+  [KIND.brute]: "MỚI · Brute · (quái lực lưỡng) Vỏ " + FOES[KIND.brute]!.armour,
+  [KIND.leader]: "MỚI · Pack Leader · (thủ lĩnh bầy) Vỏ " + FOES[KIND.leader]!.armour,
+  [KIND.shield]: "MỚI · Shield Guard · (lính mang khiên) chắn đạn phía trước",
+  [KIND.splitter]: "MỚI · Splitter · (quái tách mảnh) vỡ 3 Shard",
 };
 const TEACH_KIND: Readonly<Record<string, number>> = { brute: KIND.brute, leader: KIND.leader, shield: KIND.shield, splitter: KIND.splitter };
 
@@ -359,10 +359,10 @@ export class Hud {
   /** The objective's plate: Săn counts leaders down and through. */
   private updateGoal(w: World): void {
     const O = w.objective;
-    const text = O.need > 0 ? (O.retreat >= 0 ? "BẦY RÚT LUI" : "ĐẦU ĐÀN " + O.done + "/" + O.need + " · LỌT " + O.leaked + "/" + (O.of - O.need)) : "";
+    const text = O.need > 0 ? (O.retreat >= 0 ? "Swarm RÚT LUI" : "Pack Leader " + O.done + "/" + O.need + " · LỌT " + O.leaked + "/" + (O.of - O.need)) : "";
     if (text === this.last.goal) return;
     // The hunt won: said in the middle of the view too, not only on the plate up top.
-    if (O.retreat >= 0 && this.last.goal !== "") this.showBanner("BẦY RÚT LUI!", this.lastNow);
+    if (O.retreat >= 0 && this.last.goal !== "") this.showBanner("Swarm RÚT LUI!", this.lastNow);
     this.last.goal = text;
     this.goal.textContent = text;
     this.goal.hidden = text === "";
@@ -376,10 +376,10 @@ export class Hud {
     let side = 0;
     if (H.state === 1 && H.next < H.count) {
       side = H.side[H.next]!;
-      text = "⚠ VẾT NỨT · " + Math.max(0, H.at[H.next]! - w.time).toFixed(1).replace(".", ",") + " s";
+      text = "⚠ Rift · " + Math.max(0, H.at[H.next]! - w.time).toFixed(1).replace(".", ",") + " s";
     } else if (H.state === 2) {
       side = H.side[H.next]!;
-      text = "⚠ VẾT NỨT";
+      text = "⚠ Rift";
     }
     const key = text + side;
     if (key === this.last.warn) return;

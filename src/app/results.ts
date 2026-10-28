@@ -54,7 +54,7 @@ export function adviceText(report: SkillReport, settled: SkillUpdate | null, won
   if (settled !== null && !settled.accepted) return "";
   if (report.advice !== ADVICE_VI["keep-going"]) return report.advice;
   if (report.runs === 0) return "Chưa có số đo: chơi vài trận để có lời khuyên theo cách bạn gõ.";
-  if (won === false) return "Tuyến vỡ: nạp súng trước đỉnh tràn, và khi bầy dày, gõ dứt điểm từng từ.";
+  if (won === false) return "Tuyến vỡ: nạp súng trước đỉnh tràn, và khi Swarm dày, gõ dứt điểm từng từ.";
   if (report.runs < 2) return "Trận đầu đã vào hồ sơ gõ: chơi thêm để có lời khuyên theo cách bạn gõ.";
   return report.advice;
 }

@@ -258,7 +258,7 @@ export class ShotFx {
     // The fireball, sized on the view: lumpy puffs of flame, white-hot and gold (not Tia's orange), rolling up and out to both sides (Ray's line stays thin between them).
     for (let i = 0; i < 9; i += 1) {
       const side = (i % 2 === 0 ? -1 : 1) * (0.3 + r());
-      g.burst(CELL.puff, x + side * 0.25 * v, 0.9 + r() * 0.6, -z, 0.35 * v, (0.9 + r() * 0.4) * v, 0.5 + r() * 0.35, i < 3 ? C.hot : gold, 1.2, side * 0.45 * v, (0.35 + r() * 0.35) * v, 0, (r() - 0.5) * 2, NaN);
+      g.burst(CELL.puff, x + side * 0.25 * v, 0.9 + r() * 0.6, -z, 0.35 * v, (0.9 + r() * 0.4) * v, 0.3 + r() * 0.15, i < 3 ? C.hot : gold, 1.2, side * 0.45 * v, (0.35 + r() * 0.35) * v, 0, (r() - 0.5) * 2, NaN);
     }
     // The cloud (Glows smoke mode, over the beams), as wide as the flash, rising slowly 3.5–4.5 s: a sooty base, a dark body, lit tops.
     for (let i = 0, l = 0; i < CLOUD.n[2]; i += 1) {
