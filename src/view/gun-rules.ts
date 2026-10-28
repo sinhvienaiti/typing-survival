@@ -40,12 +40,30 @@ export const LIGHT = {
   xungFirst: { prio: 3, power: 2, life: 0.08, pool: 2.4 },
   tia: { prio: 2, power: 0.9, life: 0, pool: 2.4 },
   tiaSlide: { prio: 2, power: 1, life: 0, pool: 2.4 },
+  /** Heat Beam's primer (its release, TS-M1-05), as bright as Xung's first round. */
+  tiaPrime: { prio: 3, power: 2, life: 0.08, pool: 2.4 },
   tan: { prio: 3, power: 2, life: 0.08, pool: 3 },
   ray: { prio: 4, power: 3, life: 0.1, pool: 2.6 },
   phao: { prio: 5, power: 3.5, life: 0.12, pool: 4 },
   big: { prio: 5, power: 5, life: 0.15, pool: 6 },
 } as const;
 export type LightSpec = (typeof LIGHT)[keyof typeof LIGHT];
+
+/**
+ * Phase F of the first gun pair and the ship (VFX_STANDARD §3.3; TS-M1-05).
+ * Xung: a scorch on the deck where a round struck, `size` m × the far scale,
+ * `life` s at `alpha` (one each `every` s: ≤ 24 lie at once), a hot spot of
+ * cracks of the gun's colour cooling in `glow` s over it, `embers` rising. Heat Beam:
+ * its core a narrow strip in the gun's own colour at `core` × the glow with
+ * `white` of white (≤ 0.3: not a white column). The ship hit: smoke from the
+ * hull every `puff` s for `smoke` s at `alpha`, sparks spitting for `sparks`
+ * s at `rate` a second.
+ */
+export const AFTER = {
+  scorch: { every: 0.1, size: 1.5, life: 2.4, alpha: 0.9, glow: 0.6, embers: 2 },
+  tiaCore: { core: 0.55, white: 0.06, floorWhite: 0.1 },
+  hurt: { smoke: 1.6, puff: 0.08, alpha: 1.5, sparks: 1, rate: 14 },
+} as const;
 
 /** The slot a new light takes: the first dark one, else the one with the least priority × light left. */
 export function pickLight(prio: ArrayLike<number>, left: ArrayLike<number>, count: number): number {

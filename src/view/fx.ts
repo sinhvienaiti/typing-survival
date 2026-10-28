@@ -342,9 +342,9 @@ void main() {
   float flow = 0.65 + 0.35 * sin(vUv.y * 60.0 - uTime * 38.0) * sin(vUv.y * 13.0 + uTime * 9.0);
   float core = smoothstep(0.3, 0.0, across) * flow;
   float glow = pow(1.0 - across, 3.0);
-  // It rises over its first fifth (2.4 m): no orange sheet on the deck round the ship (§12).
+  // It rises over its first fifth (2.4 m): no orange sheet on the deck round the ship (§12). Its core is the gun's orange, a fifth hot (TS-M1-05: not white).
   float far = smoothstep(1.0, 0.82, vUv.y) * smoothstep(0.0, 0.2, vUv.y);
-  vec3 color = (uColor * glow * 0.5 + vec3(1.0, 0.95, 0.85) * core * 1.0) * far * uPower;
+  vec3 color = (uColor * glow * 0.5 + mix(uColor, vec3(1.0, 0.85, 0.6), 0.2) * core) * far * uPower;
   gl_FragColor = vec4(color, 1.0);
 }`;
 
