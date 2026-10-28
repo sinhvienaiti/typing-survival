@@ -47,6 +47,7 @@ export class GunLights {
   /** A held light's key + 1 (Tia's), 0 for a flash; touched this frame. */
   private readonly key: Uint8Array;
   private readonly touched: Uint8Array;
+  private readonly fresh: Uint8Array;
   private readonly colors: THREE.Color[];
 
   constructor(scene: THREE.Scene, private readonly deck: DeckLightUniforms, readonly count: number) {
@@ -54,6 +55,7 @@ export class GunLights {
     [this.prio, this.power, this.life, this.age, this.left, this.pool] = [f(), f(), f(), f(), f(), f()];
     this.key = new Uint8Array(count);
     this.touched = new Uint8Array(count);
+    this.fresh = new Uint8Array(count);
     this.colors = Array.from({ length: count }, () => new THREE.Color());
     for (let i = 0; i < count; i += 1) {
       const light = new THREE.PointLight(0xffffff, 0, RANGE, 2);
@@ -68,6 +70,7 @@ export class GunLights {
     if (i < 0) return;
     this.set(i, spec, x, y, z, color, scale);
     this.key[i] = 0;
+    this.fresh[i] = 1;
   }
 
   /** A light held while called every frame (`key` 1 … 255 tells holders apart), × `scale`. */
@@ -78,6 +81,7 @@ export class GunLights {
     if (i < 0) return;
     this.set(i, spec, x, y, z, color, scale);
     this.key[i] = key;
+    this.fresh[i] = 0;
     this.touched[i] = 1;
   }
 
@@ -92,7 +96,7 @@ export class GunLights {
     this.colors[i]!.copy(color);
   }
 
-  /** Ages the flashes, drops held lights not held this frame, writes the lights and the deck's pools. */
+  /** Writes new flashes at age zero, ages older ones, drops unheld lights and writes the deck's pools. */
   update(dt: number): void {
     const pos = this.deck.uLightPos.value;
     const col = this.deck.uLightColor.value;
@@ -104,6 +108,8 @@ export class GunLights {
       if (this.key[i]! > 0) {
         if (this.touched[i] === 0) this.left[i] = this.key[i] = 0;
         this.touched[i] = 0;
+      } else if (this.fresh[i] === 1) {
+        this.fresh[i] = 0;
       } else if (this.left[i]! > 0) {
         this.age[i] = this.age[i]! + dt;
         this.left[i] = this.power[i]! * lightLevel(this.age[i]!, this.life[i]!);

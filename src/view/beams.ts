@@ -3,7 +3,9 @@
  * the centre muzzle and join the sim's line 3 m out. Ray: its frost bolt
  * armed over the muzzle, pulled in as it charges, then a 3.4 m streak, a star
  * 12 % of the view 1 m out and a line held 0.35 s with ion rings and a band on
- * the deck. Tia: a white-hot core in a hot glow and haze, out in 3 frames,
+ * the deck. Tia: a primer at the muzzle whole on its first frame (an orange
+ * flash, a star, a flare, a ring, sparks, a light), then a core of its own
+ * orange (not white: AFTER.tiaCore) in a hot glow and haze, out in 3 frames,
  * gone in 6. Over the ship (their first 3 m) both are tamed and their lights
  * sit 1.5 m out, so a key's mark shows through. Their loops (gun.ray.armed,
  * gun.tia.loop) follow. Reads the world, never writes it.
@@ -16,8 +18,8 @@ import { beamEnd } from "../sim/guns/aim";
 import { bayOf, firing } from "../sim/weapons";
 import type { World } from "../sim/world";
 import { BOLT } from "./bolts";
-import { CELL, Column, type Streaks } from "./fx";
-import { LIGHT } from "./gun-rules";
+import { CELL, Column, FLAT, type Streaks } from "./fx";
+import { AFTER, LIGHT } from "./gun-rules";
 import type { ShotParts } from "./shots";
 import { MUZZLE } from "./ship";
 import { AIM_PRIO } from "./ship-rules";
@@ -87,9 +89,19 @@ export class BeamFx {
     } else if (kind === EV.beamStart) {
       this.tiaOn = now / 1000;
       const m = this.p.ship.muzzle(this.m, MUZZLE.centre);
+      const len = Math.hypot(R.x[i]!, R.z[i]! - FIELD.muzzleZ) || 1;
+      const ux = R.x[i]! / len;
+      const uz = (R.z[i]! - FIELD.muzzleZ) / len;
+      // The primer (R, whole on the load's frame): the gun's orange round the muzzle, a hot core a quarter of it, a star 0.6 m out along
+      // the beam, a flare across, a ring on the deck, sparks thrown forward, a light 1.5 m out (off the hull, §12).
       const soft = this.p.size(0.07) * 2.2;
-      g.burst(CELL.soft, m.x, m.y, m.z, soft * 0.7, soft, 3 * F, C.hot, 2.6);
-      g.burst(CELL.core, m.x, m.y, m.z, soft * 0.25, soft * 0.4, 3 * F, C.white, 2.4);
+      g.burst(CELL.soft, m.x, m.y, m.z, soft * 0.8, soft * 1.2, 4 * F, this.tia, 2.6);
+      g.burst(CELL.core, m.x, m.y, m.z, soft * 0.22, soft * 0.3, 3 * F, C.hot, 2.2);
+      g.burst(CELL.star8, m.x + ux * 0.6, m.y, m.z - uz * 0.6, soft * 0.7, soft * 1.5, 5 * F, this.tia, 2.4);
+      g.burst(CELL.flare, m.x, m.y, m.z, soft * 1.4, soft * 2.4, 4 * F, this.tia, 1.8, 0, 0, 0, 0, 0);
+      g.burst(CELL.ring + FLAT, m.x, 0.08, m.z - 0.4, 0.8, 3, 0.25, this.tia, 1.6);
+      this.p.lights.flash(LIGHT.tiaPrime, m.x + ux * 1.5, m.y, m.z - uz * 1.5, this.tia);
+      for (let k = 0; k < 8; k += 1) this.p.sparks.spawn(this.w3.copy(m), this.v.set(ux * 7 + (Math.random() - 0.5) * 4, 1 + Math.random() * 2, -uz * 7 + (Math.random() - 0.5) * 2), k < 3 ? C.hot : this.tia, 0.24, 0.3 + Math.random() * 0.2, { drag: 3, gravity: 8 });
     } else if (kind === EV.beamEnd) this.tiaOff = now / 1000;
   }
 
@@ -192,16 +204,17 @@ export class BeamFx {
       const x1 = seg === 0 ? jx : fx;
       const y1 = seg === 0 ? jy : 0.55;
       const z1 = seg === 0 ? jz : fz;
-      // A faint haze 2.4 m (none over the ship), the hot glow 1.1 m (0.55 at 0.7), the white-hot core 0.22 m (0.7); the light it throws on the deck.
+      // A faint haze 2.4 m (none over the ship), the hot glow 1.1 m (0.55 at 0.7), a core 0.22 m of the gun's own orange with a thread of white (0.7); the light it throws on the deck.
       const near = seg === 0 ? 0.7 : 1;
+      const T = AFTER.tiaCore;
       if (seg === 1) S.add(x0, y0, z0, x1, y1, z1, 2.4 * thin, this.tia, 0.18 * k, 0);
       S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 0.55 : 1.1) * thin, this.tia, (seg === 0 ? 0.7 : 1.3) * k, 0);
-      S.add(x0, y0, z0, x1, y1, z1, 0.22 * thin, C.hot, 1.4 * k * near, 0.6 * near);
-      S.add(x0, 0.4, z0, x1, 0.4, z1, 1.1 * thin, this.tia, 0.5 * k * near * near, 0.4 * k * near);
+      S.add(x0, y0, z0, x1, y1, z1, 0.22 * thin, this.tia, T.core * k * near, T.white * near);
+      S.add(x0, 0.4, z0, x1, 0.4, z1, 1.1 * thin, this.tia, 0.5 * k * near * near, T.floorWhite * k * near);
     }
     const g = this.p.glows;
     g.stamp(CELL.star8, m.x, m.y, m.z, 1 * k, time * 3, this.tia, 1.2 * k);
-    g.stamp(CELL.soft, fx, 0.6, fz, 2.4 * k, 0, this.tia, 1.8 * k);
+    g.stamp(CELL.soft, fx, 0.6, fz, 2.4 * k, 0, this.tia, 1.5 * k);
     if (on) {
       this.p.lights.hold(1, LIGHT.tia, m.x + ux * 1.5, m.y, m.z - uz * 1.5, this.tia);
       this.p.lights.hold(2, LIGHT.tiaSlide, m.x + (ex - m.x) * 0.6, 0.9, m.z + (-ez - m.z) * 0.6, this.tia);

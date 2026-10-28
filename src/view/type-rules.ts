@@ -28,6 +28,21 @@ export const KEY_MARK = { life: 5 / 60, width: 0.64, power: 4, jitter: 0.3, bow:
 /** Billboards and strips a key's mark holds `age` s after its key: 5 strips to 5 frames, 2 stars to 4, the pool to 3, the ring to ringLife. */
 export const keyMarkLive = (age: number, f = age * 60 + 1e-6): number => (age < 0 ? 0 : (age < KEY_MARK.life ? 5 : 0) + (f < 4 ? 2 : 0) + (f < 3 ? 1 : 0) + (age < KEY_MARK.ringLife ? 1 : 0));
 
+/**
+ * Phase A of Pulse Gun and Heat Beam (VFX_STANDARD §3.3; TS-M1-05): their
+ * muzzles gather the locked word. A glow `size` m wide (no letter → the whole
+ * word) at `power`, a hot core `core` of its width, a star from half the word
+ * spinning faster; each key pops it ×(1 + `pop`) for `popMs` and draws
+ * `embers` in from `reach` m in `emberLife` s. It lets go on the load's frame,
+ * where the release (phase R) takes over.
+ */
+export const CHARGE = { size: [0.5, 1.5], power: [0.8, 2.2], core: 0.3, star: 0.5, pop: 0.45, popMs: 90, embers: 3, reach: [0.8, 1.4], emberLife: 0.14 } as const;
+const ease = (p: number, [a, b]: readonly [number, number]): number => a + (b - a) * Math.min(1, Math.max(0, p));
+const popOf = (ms: number): number => 1 + CHARGE.pop * Math.max(0, 1 - Math.max(0, ms) / CHARGE.popMs);
+/** The charge's width (m) and power at `p` of the word typed, `ms` after its last key. */
+export const chargeSize = (p: number, ms: number): number => ease(p, CHARGE.size) * popOf(ms);
+export const chargePower = (p: number, ms: number): number => ease(p, CHARGE.power) * popOf(ms);
+
 /** The word line's spark on a typed letter, `t` ms after its key: whole at f0, gone by f5 (strip.ts, survival.css). */
 export const sparkLevel = (t: number): number => (t < 0 ? 0 : Math.max(0, 1 - t / KEY_MARK.spark));
 

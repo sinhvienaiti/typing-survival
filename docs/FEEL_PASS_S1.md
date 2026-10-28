@@ -543,7 +543,7 @@ Lần kiểm lại trên `4788022` còn hai lỗi nặng: N4 (mỗi phím trên 
 
 **Đơn vị.** Cỡ một billboard (`Glows.burst`) là **bề ngang cả quad** (m), không phải bán kính: vòng sáng (`CELL.ring`) có bán kính 0,4 × bề ngang. Vòng "1,4 → 2,8 m" của §11.5 thật ra có bán kính 0,56 → 1,12 m, nằm dưới thân tàu và trong vòng sơn của sàn (bán kính 2,6 m): đó là lý do nó thành "một cung màu nhỏ dưới thân".
 
-**Bùng ở khung đầu.** Một burst tạo giữa hai khung đã già một khung khi vẽ lần đầu (`Glows.step` cộng `dt` trước khi vẽ): lóe "3 khung" thật ra hiện 44 % rồi 11 % rồi tắt. Burst mới của lượt này truyền `early = F` để hiện trọn ở khung đầu. Các burst cũ giữ nguyên (đổi hết là đổi cả độ sáng các súng, cần đo lại §4.1 và F8; để lượt sau).
+**Bùng ở khung đầu.** Lượt này tìm ra lỗi: một burst tạo giữa hai khung đã già một khung khi vẽ lần đầu (`Glows.step` cộng `dt` trước khi vẽ), nên lóe "3 khung" chỉ hiện 44 % rồi 11 % rồi tắt; đèn mới cũng mất khung đầu. Lượt N4/N6 tạm truyền `early = F` cho các burst mới của nó. Phiếu Codex 035 sửa tận gốc và đã gộp vào `main` (28/10, changelog [`2026-10-28-first-frame.md`](changelog/2026-10-28-first-frame.md)): `Glows.flush` ghi mọi burst mới ở tuổi 0 ngay khung tạo ra nó, `GunLights` cho đèn mới sáng đủ `power` ở khung đầu, tham số `early` đã bỏ. Sau khi gộp đã đo lại `f5`, `f6b`, `f8` ở hai cỡ (số trong changelog đó).
 
 ### 12.1 Mỗi phím đúng (N4; `KEY_MARK` trong `type-rules.ts`, `typing-feel.ts`)
 
@@ -555,7 +555,7 @@ Lần kiểm lại trên `4788022` còn hai lỗi nặng: N4 (mỗi phím trên 
 | Sàn dưới tàu sáng | ngang 3,2 → 4 m, cường độ 0,35 | f0–f2 |
 | Vòng sàn | bán kính 1,4 → 3,2 m (qua vòng sơn 2,6 m), 0,16 s, cường độ 2,2 | f0–f9 |
 
-- Mọi phần hiện trọn ở f0 (`early`). Mực của Ray trên sân là `#8fa3ff` (trắng xanh của nó chìm trong ánh Tia).
+- Mọi phần hiện trọn ở f0 (burst mới vẽ ở tuổi 0 từ phiếu 035; trước đó là `early`). Mực của Ray trên sân là `#8fa3ff` (trắng xanh của nó chìm trong ánh Tia).
 - Chữ không bị vẽ đè: tia rời từ mép dưới tấm (`WordStrip.anchor` trả về đáy tấm dưới chữ).
 - Bến đầy: tia văng sang ngang 1,6 m, không vào lõi, không sao lõi, không vòng.
 - Thay mảnh 0,6 m của §11.5. Đèn động riêng cho mỗi phím đã thử rồi bỏ: phủ thân tàu một quầng xanh trắng, lóe nòng của phát đầu không còn đọc được.
@@ -631,7 +631,7 @@ Changelog: [`2026-10-27-feel-n4n6.md`](changelog/2026-10-27-feel-n4n6.md), phầ
 
 - `survival-feel` `f1f`: thêm `fieldMarkEveryKey`, kiểm vùng sáng lên ≥ 0,25 ở f0 trên sân (từ đáy tấm tới dưới tàu, 600 px ngang) ≥ 8.000 px (720p) ở cả bốn lượt, có tia hay không. Thêm `sparkOnLetter`: tia lửa đủ sáng ở f0, tâm cách tâm chữ vừa gõ ≤ nửa bề ngang và nửa bề cao chữ, tắt ở f5.
 - `survival-feel-guns` `f6b`: thêm số đo `soot` (px tối hơn khung 9,8 s) và `cloud` (px xám, tối hay sáng, khác khung trước khi hạ, ngoài dải tia Ray, trong hộp cỡ lóe). Chỉ đo, chưa có ngưỡng: quái đi qua làm số nhiễu.
-- Còn mở: các burst cũ (lóe nòng, sao trúng, lóe hạ thường) và đèn mới vẫn mất khung đầu (§12, `early` chỉ dùng cho burst mới). Phiếu Codex 035 sửa `Glows` và `GunLights` (nhánh `ts-vfx`); sau phiếu đo lại `f5`, `f8` và sửa đoạn "Bùng ở khung đầu" của §12.
+- Đã đóng (28/10): các burst cũ (lóe nòng, sao trúng, lóe hạ thường) và đèn mới nay hiện trọn ở khung đầu. Phiếu Codex 035 sửa `Glows` và `GunLights`, đã gộp vào `main`; `f5`, `f6b`, `f8` đo lại sau khi gộp (changelog `2026-10-28-first-frame.md`), đoạn "Bùng ở khung đầu" của §12 đã sửa.
 
 ## 14. Đám khói nằm dưới bầy (28/10, sau phán xét độc lập lần 2; chủ dự án xem ở §7.6)
 
@@ -655,3 +655,14 @@ Phán xét độc lập trên `ea8e0f9` thấy một hồi quy từ `ce9dea3` (�
 
 - Pha đám khói (1–4 s), 11 lần hạ × 2 cỡ: trung vị độ lệch luma của quái trong hộp thấp nhất 0,137–0,174 (trên `ea8e0f9` 0,003–0,050), tỉ số với chính chúng thấp nhất 0,64–0,94 (trước 0,02–0,59).
 - Pha quả cầu lửa (0,3–0,9 s): thấp nhất 0,122–0,201, trừ ba khung đơn ở 720p (Tán hạ Đầu Đàn 0,7 s 0,103; Pháo Sao hạ Đầu Đàn 0,4 s 0,114 và 0,7 s 0,108), đều là phát kế của chính súng; tỉ số với chính chúng ở ba khung đó ≥ 0,69.
+
+## 15. Cặp súng đầu và tàu bị đánh đủ năm pha (28/10, TS-M1-05; chủ dự án xem ở §7.6)
+
+Theo chuẩn VFX nhiều lớp của repo cha (`docs/games/VFX_STANDARD.md` §3.1, §3.3, §5.6): Pulse Gun (Xung) và Heat Beam (Tia), cặp súng người mới gặp đầu tiên, và tàu khi bị đánh. Changelog: [`2026-10-28-vfx-pair.md`](changelog/2026-10-28-vfx-pair.md). Sim không đổi.
+
+- **A gồng ở nòng** (`CHARGE` trong `type-rules.ts`, `TypeFeel.charge` và `gather`): khi từ của bến Xung hoặc Tia đang khóa, nòng của súng đó (hai nòng Xung, nòng giữa của Tia) gom từ: quầng màu súng rộng 0,5 → 1,5 m, cường độ 0,8 → 2,2 theo phần từ đã gõ, lõi 30 % (không trắng), sao (4 tia Xung, 8 tia Tia) từ nửa từ, quay nhanh dần; mỗi phím nảy × 1,45 trong 90 ms và hút 3 đốm sáng mỗi nòng từ 0,8–1,4 m vào trong 0,14 s. Tắt ở khung nạp (pha R thay chỗ). Các súng khác giữ tia nhấp nháy từ nửa từ (§3.4).
+- **R tung đòn**: viên đầu băng Xung có sao 2 m đặt 0,7 m ra theo hướng bắn và lưỡi lửa màu súng 1,6 m (4 khung); đèn Xung đặt 1,2 m ra khỏi thân tàu. Lóe nạp ở lõi khi nạp vào Xung hoặc Tia × 1,35 với cường độ 3 (các súng khác giữ × 1,8 và 4). Tia có lóe mồi trọn ở khung phím cuối: quầng cam, lõi nóng một phần tư, sao 8 tia 0,6 m ra theo tia, vệt lóe ngang, vòng trên sàn, 8 tia lửa, đèn `LIGHT.tiaPrime` 1,5 m ra.
+- **T của Tia giữ màu súng** (`AFTER.tiaCore`): lõi là dải màu cam của súng × 0,55 với 0,06 trắng (trước `#fff0d8` × 1,4 với 0,6 trắng); dải sàn 0,1 trắng (trước 0,4); lõi cột trên sàn trộn 20 % trắng ấm vào màu súng (trước gần trắng).
+- **F**: mỗi viên Xung để một vết cháy trên sàn (`AFTER.scorch`: 1,5 m, 2,4 s, một vết mỗi 100 ms) với vết nứt 8 tia xanh trắng nguội trong 0,6 s và 2 đốm than bay lên. Tàu bị đánh (`ShotFx.hurt`, `smoking`): ở f0 10 tia lửa văng khỏi thân và một cụm khói tối dưới lóe đỏ; thân đỏ rực 0,6 s với hai tia điện (vẽ lệch về camera); khói bốc từ hai cánh 1,6 s, tia lửa tóe 1 s. Lõi đỏ của quái chạm vạch hiện trọn ở f0 (3 → 3,5 m; trước 2 → 3,5 m, khung sau sáng hơn khung đầu).
+- **Giảm chuyển động**: gồng giữ cỡ và độ sáng, sao không quay, ít đốm hơn; khói tàu × 0,6, không tia điện.
+- **Kiểm**: `survival-vfx-pair` (A, R, I, T, F theo nhịp của chuẩn §4.5; `ACTIONS=xung,tia,hurt`, `VARIANT=lit` cho nền sáng), `tests/vfx-pair.test.ts`; `survival-feel` `f1`, `f1f`, `f8`, `survival-feel-guns` `f5`, `f6b`, `survival-s1-stage`, `survival-s1-perf` ở hai cỡ (số trong changelog).

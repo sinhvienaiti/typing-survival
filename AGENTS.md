@@ -237,9 +237,9 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   event (`ShotFx.bigKill`: a warm flash, a fireball, smoke laid over the
   deck by `Glows` in its smoke mode, a bed of embers, a heap of light steel
   chunks). A billboard's size is its full width (a ring's radius is 0.4 of
-  it); `Glows.burst(…, early = F)` shows a new burst whole on its first
-  frame, the older bursts and new lights still lose theirs (Codex ticket
-  035 fixes `Glows` and `GunLights` on branch `ts-vfx`). Scenes `survival-feel`
+  it); every new burst and gun light shows whole on the frame that
+  makes it (Codex 035, merged 28/10: `Glows.flush` writes a new burst at
+  age 0, `GunLights` a new flash at its power; no `early` argument). Scenes `survival-feel`
   `f1f` and `survival-feel-guns` `f6b`; `f5` types its last key 300 ms
   late (a key now lights the deck round the muzzle). Round 2 (after an
   independent judge, same changelog, `FEEL_PASS_S1.md` §13): the bolt bows
@@ -271,7 +271,21 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   (live foes in the 480 × 340 px box keep a luma spread ≥ 0.12, ≥ 60 % of
   the box's and of their own at 4.5 s, every frame 0.3–4 s; a lone frame
   does not count), `cloudReads`, `emberStar`, `chunksLie` (the aftermath
-  at 2–3 s over floors). Codex ticket 035 (`ts-vfx`) edits the same
-  fireball line in `shots.ts`: keep the 0.3–0.45 s life when merging.
+  at 2–3 s over floors). Codex 035 was merged over it (28/10) with
+  the 0.3–0.45 s life kept (`docs/changelog/2026-10-28-first-frame.md`).
+- VFX pair (28/10, TS-M1-05, parent `docs/games/VFX_STANDARD.md`;
+  `docs/changelog/2026-10-28-vfx-pair.md`, `FEEL_PASS_S1.md` §15): Pulse
+  Gun and Heat Beam have all five phases. A: their muzzles gather the
+  locked word (`CHARGE` in `type-rules.ts`, `TypeFeel.charge`/`gather`),
+  let go on the load's frame; R: Xung's first star and a tongue 0.7–1.6 m
+  out along the shot, its light 1.2 m off the hull, the core's load flash
+  ×1.35 at 3 into these two guns; Tia's primer (`LIGHT.tiaPrime`); T: Tia's
+  core in its own orange (`AFTER.tiaCore`, ≤ 0.3 white); F: Xung's
+  scorches (`AFTER.scorch`, one each 100 ms), the hurt ship's smoke and
+  sparks (`ShotFx.hurt`, `AFTER.hurt`; smoke lies on the deck in depth, so it
+  trails beside the hull). Captures: `survival-vfx-pair.mjs`
+  (`ACTIONS=xung,tia,hurt`, `VARIANT=lit`); the rules in
+  `tests/vfx-pair.test.ts`. Scatter Gun, Rail Gun and Star Mortar are
+  TS-M1-16.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.
