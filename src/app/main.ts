@@ -30,7 +30,7 @@ import { Ship, type Pilot } from "../view/ship";
 import { foesOnScreen, shipProbe } from "../view/probes";
 import { TypeFeel } from "../view/typing-feel";
 import { warmPrograms } from "../view/warm";
-import { FrameCosts, bays, eventCounts, installDevHandle, numberBoxes, runState, snapshot } from "./dev";
+import { FrameCosts, bays, devHandleWanted, eventCounts, installDevHandle, numberBoxes, runState, snapshot } from "./dev";
 import { Journey, NEXT_KEY, objectiveText, recordStage, starsOf, takeChoice, type RunChoice } from "./journey";
 import { adviceText, countedText, profileView, runStats, runWords } from "./results";
 import { ImeNotice, installAutoPause, installKeys, type KeyAction } from "./input";
@@ -47,8 +47,8 @@ import { loadVocab, type Word } from "./vocab";
  * loads, the title screen waits (keyboard first: Bắt đầu, Chơi tiếp, Cài đặt,
  * Kho súng · Học từ), the world steps at 60 Hz in a session, the 3D stage
  * draws it, the combat view turns its events into feedback and the theme's
- * sound, the DOM HUD shows the words; window.__survival lets the browser
- * scenarios drive it. Storage: only survival.* keys (quality, ship and the
+ * sound, the DOM HUD shows the words; window.__survival lets browser scenarios
+ * drive it in dev or with ?debug=1. Storage: only survival.* keys (quality, ship and the
  * settings screen's volumes, shake, pronunciation, mode and "Nhịp tự điều"),
  * the skill profile (survival.skill, the kit's key) and the words finished
  * here (survival.seen). Each typed word goes to the portal's learning record
@@ -678,7 +678,7 @@ function onScreen(): number {
   return n;
 }
 
-installDevHandle({
+if (devHandleWanted(import.meta.env.DEV, location.search)) installDevHandle({
   ready: () => painted && loaded && combat.ready,
   models: () => ({ mine: crowd.loaded[0], scout: crowd.loaded[1], brute: crowd.loaded[2], shield: crowd.loaded[3], splitter: crowd.loaded[4], ship: ship.loaded }),
   start: () => (mode === "start" || mode === "intro") && setMode("play"),

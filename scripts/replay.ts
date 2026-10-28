@@ -5,7 +5,7 @@
  * input is what a survival scenario writes: window.__survival.snapshot() =
  * { seed, tier, deck, vocabulary, mode, pace, expected, director, stage, kit,
  * learn, telegraph, recall, tick, hash, log, pace log }.
- * The deck is rebuilt from shared/vocabulary (or the built-in list the page
+ * The deck is rebuilt from the pinned copy in public/vocabulary (or the built-in list the page
  * fell back to) and must have the browser's deck hash.
  *   node --import tsx scripts/replay.ts <OUT_DIR>/survival-s0-fight-replay-1280x720.json
  * Prints one JSON line; exits 1 on any difference.
@@ -31,7 +31,7 @@ if (file === undefined) {
   process.exit(2);
 }
 const run = JSON.parse(readFileSync(file, "utf8")) as BrowserRun;
-const level = (n: number) => JSON.parse(readFileSync(new URL("../../../shared/vocabulary/levels/" + String(n).padStart(3, "0") + ".json", import.meta.url), "utf8")).entries;
+const level = (n: number) => JSON.parse(readFileSync(new URL("../public/vocabulary/levels/" + String(n).padStart(3, "0") + ".json", import.meta.url), "utf8")).entries;
 const deck = run.vocabulary === "fallback" ? fallbackVocab().deck : buildDeck([level(1), level(2), level(3)]);
 const world = createWorld({ seed: run.seed, deck, tier: run.tier, mode: run.mode, pace: run.pace, expected: run.expected, director: run.director, stage: run.stage, kit: run.kit, learn: run.learn, telegraph: run.telegraph, recall: run.recall });
 // Steps like runLog, counting the keys that landed while the world was slowed by a hit stop.
