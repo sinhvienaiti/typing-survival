@@ -56,7 +56,7 @@ export const CHAPTER_1: readonly Stage[] = [
     ...common,
     id: "c1-s2",
     index: 2,
-    name: "Đầu Đàn",
+    name: "Săn Pack Leader",
     objective: { kind: "hunt", need: 3, leaders: [20, 58, 96, 134, 172], cap: 240 },
     hazard: null,
     learn: "standard",

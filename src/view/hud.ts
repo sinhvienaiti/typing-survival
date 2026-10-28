@@ -15,8 +15,8 @@
  * lines (test pass 27/10: "IPA · meaning" on one line was cut). A finished
  * word's meaning stays with the word on the line (strip.ts), never under the
  * bay's next word. A bay without a gun
- * is a dark plate ("MỞ Ở MỐC" for bay 3 in the chapter, a lock for bay 4).
- * Top: armour, clock, kills, the objective's plate (Săn: "ĐẦU ĐÀN 1/3"), a
+ * is a dark plate with a lock (bays 3–4 in R1).
+ * Top: armour, clock, kills, the objective's plate (Săn: "PACK LEADER 1/3"), a
  * rift's warning on its wall's side (and its countdown beside the word line),
  * a 2 s card when something new first appears; an input notice just above
  * the word line. It publishes the rectangles damage numbers must not cover.
@@ -54,10 +54,10 @@ const BAY_COLUMN = [2, 4, 1, 5] as const;
 const MIN_FIT = 26 / 32;
 /** The "new" card per kind a stage teaches. */
 const NEW_CARD: Readonly<Record<number, string>> = {
-  [KIND.brute]: "MỚI · Brute · (quái lực lưỡng) Vỏ " + FOES[KIND.brute]!.armour,
-  [KIND.leader]: "MỚI · Pack Leader · (thủ lĩnh bầy) Vỏ " + FOES[KIND.leader]!.armour,
-  [KIND.shield]: "MỚI · Shield Guard · (lính mang khiên) chắn đạn phía trước",
-  [KIND.splitter]: "MỚI · Splitter · (quái tách mảnh) vỡ 3 Shard",
+  [KIND.brute]: "MỚI · BRUTE · (QUÁI LỰC LƯỠNG) VỎ " + FOES[KIND.brute]!.armour,
+  [KIND.leader]: "MỚI · PACK LEADER · (THỦ LĨNH BẦY) VỎ " + FOES[KIND.leader]!.armour,
+  [KIND.shield]: "MỚI · SHIELD GUARD · (LÍNH MANG KHIÊN) CHẮN ĐẠN PHÍA TRƯỚC",
+  [KIND.splitter]: "MỚI · SPLITTER · (QUÁI TÁCH MẢNH) VỠ 3 SHARD",
 };
 const TEACH_KIND: Readonly<Record<string, number>> = { brute: KIND.brute, leader: KIND.leader, shield: KIND.shield, splitter: KIND.splitter };
 
@@ -150,7 +150,6 @@ export class Hud {
     this.bottom = el("div", "sv-bottom", root);
     this.strip = new WordStrip(root);
     const kit = w.header.kit;
-    const chapter = w.stage.id !== "s0";
     // Columns: bay 3, bay 1, the ship's gap, bay 2, bay 4.
     for (let bay = 0; bay < 4; bay += 1) {
       const gun = bay < kit.bays ? (w.guns.gun[bay] ?? -1) : -1;
@@ -158,8 +157,7 @@ export class Hud {
         const plate = el("section", "sv-bay-lock sv-panel", this.bottom);
         plate.dataset.bay = String(bay + 1);
         plate.style.gridArea = "1 / " + BAY_COLUMN[bay];
-        if (bay === 2 && chapter) el("span", "", plate, "MỞ Ở MỐC");
-        else el("i", "sv-lock", plate);
+        el("i", "sv-lock", plate);
         continue;
       }
       const spec = GUN_SPECS[gun]!;
@@ -359,10 +357,10 @@ export class Hud {
   /** The objective's plate: Săn counts leaders down and through. */
   private updateGoal(w: World): void {
     const O = w.objective;
-    const text = O.need > 0 ? (O.retreat >= 0 ? "Swarm RÚT LUI" : "Pack Leader " + O.done + "/" + O.need + " · LỌT " + O.leaked + "/" + (O.of - O.need)) : "";
+    const text = O.need > 0 ? (O.retreat >= 0 ? "SWARM RÚT LUI" : "PACK LEADER " + O.done + "/" + O.need + " · LỌT " + O.leaked + "/" + (O.of - O.need)) : "";
     if (text === this.last.goal) return;
     // The hunt won: said in the middle of the view too, not only on the plate up top.
-    if (O.retreat >= 0 && this.last.goal !== "") this.showBanner("Swarm RÚT LUI!", this.lastNow);
+    if (O.retreat >= 0 && this.last.goal !== "") this.showBanner("SWARM RÚT LUI!", this.lastNow);
     this.last.goal = text;
     this.goal.textContent = text;
     this.goal.hidden = text === "";

@@ -39,8 +39,8 @@ function hazardDetail(stage: Stage): string {
 }
 
 function ruleDetail(stage: Stage): string {
-  if (stage.learn === "missing") return "mỗi từ ẩn 1 chữ (từ 7 chữ trở lên: 2), không bao giờ là chữ đầu. IPA và nghĩa vẫn hiện. Gõ sai ô ẩn thì chữ đúng hiện ra.";
-  return "từ và nghĩa trên bến; khi gõ, từ hiện to trên dòng gõ trên mũi tàu, bến đang gõ hiện IPA và nghĩa; gõ xong hiện \"từ · nghĩa ✓\".";
+  if (stage.learn === "missing") return "Mỗi từ ẩn một chữ, từ có ít nhất bảy chữ ẩn hai. Chữ đầu luôn hiện. Nghĩa và phiên âm vẫn hiện. Gõ sai chữ ẩn sẽ hiện chữ đúng.";
+  return "Từ và nghĩa hiện trên bến. Từ đang gõ hiện lớn phía trên mũi tàu. Bến đang gõ hiện phiên âm và nghĩa. Gõ xong, từ và nghĩa hiện cùng dấu ✓.";
 }
 
 export function renderJourney(journey: Journey): string {
