@@ -8,6 +8,8 @@
  *   one; the core glows brighter with each letter of the locked word; a note
  *   climbs the A-minor pentatonic;
  * - a wrong key dims the core with red sparks; a stray key only ghosts;
+ * - Pulse Gun's two muzzles and Heat Beam's gather the locked word (CHARGE:
+ *   phase A, growing with each letter, embers drawn in on each key);
  * - a finished word flashes the core and runs a stream to the muzzle; into a
  *   full bay its last key's bolt is thrown aside;
  * - the clean streak widens the marks, adds an octave, keeps the core aglow.
@@ -16,14 +18,15 @@
 import * as THREE from "three";
 import type { ThemeAudio } from "../audio/theme-audio";
 import type { ParticlePool } from "../kit/three";
+import { GUN } from "../content/guns";
 import { EV, FLAG } from "../sim/events";
 import type { World } from "../sim/world";
 import { CELL, FLAT, type Glows, type Strips } from "./fx";
 import type { Hud } from "./hud";
 import type { Stage } from "./scene";
-import type { Ship } from "./ship";
+import { MUZZLE, type Ship } from "./ship";
 import { BLOW } from "./theme";
-import { CleanStreak, KEY_MARK as K, keyMarkLive } from "./type-rules";
+import { CHARGE, CleanStreak, KEY_MARK as K, chargePower, chargeSize, keyMarkLive } from "./type-rules";
 
 /** Key marks kept (10 keys a second hold 2 at once). */
 const MARKS = 8;
@@ -68,6 +71,7 @@ export class TypeFeel {
   private readonly core = new THREE.Vector3();
   private readonly glow = new THREE.Vector3();
   private readonly tip = new THREE.Vector3();
+  private readonly from = new THREE.Vector3();
   private readonly v = new THREE.Vector3();
   private readonly point = { x: 0, y: 0 };
 
@@ -180,6 +184,7 @@ export class TypeFeel {
       if (!reduced) for (let k = 0; k < 3; k += 1) this.sparks.spawn(tip, this.v.set((Math.random() - 0.5) * 3, -1 - Math.random() * 2, (Math.random() - 0.5) * 2), c, 0.2, 0.3, { drag: 3, gravity: 6 });
       if (aside) continue;
       this.hitAt = now;
+      this.gather(this.pGun[p]!, c, reduced);
       const wide = (tier >= 1 ? 1.15 : 1) * (reduced ? 0.8 : 1);
       this.glows.burst(CELL.star8, this.glow.x, this.glow.y, this.glow.z, K.core * 0.5, K.core, 4 * F, c, K.power * 0.85, 0, 0, 0, 0, NaN);
       const lit = this.lit ? K.lit : 1;
@@ -249,14 +254,17 @@ export class TypeFeel {
     if (bad >= 0 && bad < 200) intensity *= bad < 50 && Math.floor(bad / 16.7) % 2 === 0 ? 0.45 : 0.75;
     const flash = now - this.flashAt;
     // 3 frames (0, 16.7, 33.3 ms; the frame clock's sums sit a hair under 50 at the fourth).
+    // Into Pulse Gun or Heat Beam it is smaller (× 1.35, 3): their muzzles carry the release (phase R), the core no longer whites them out.
     if (flash >= 0 && flash < 45) {
-      radius *= 1.8;
-      intensity = 4;
+      const muzzle = this.coreGun === GUN.xung || this.coreGun === GUN.tia;
+      radius *= muzzle ? 1.35 : 1.8;
+      intensity = muzzle ? 3 : 4;
     }
     this.shown = intensity;
     if (intensity > 0.01) this.glows.stamp(CELL.core, this.glow.x, this.glow.y, this.glow.z, radius, 0, color, intensity);
-    // From half the word, a small spark flickers at the muzzle (12 Hz): the gun is about to be fed.
-    if (locked && this.coreL >= 0.5 && Math.sin(time * Math.PI * 24) > 0) {
+    // Pulse Gun's and Heat Beam's muzzles gather the word (A) and let go on the load's frame, where the release takes over (R); the other guns' muzzle flickers from half the word (12 Hz).
+    if (locked && (this.coreGun === GUN.xung || this.coreGun === GUN.tia)) this.charge(this.coreL, now, time, reduced);
+    else if (locked && this.coreL >= 0.5 && Math.sin(time * Math.PI * 24) > 0) {
       this.ship.muzzle(this.tip);
       this.glows.stamp(CELL.star4, this.tip.x, this.tip.y, this.tip.z, 0.3, time * 4, color, 2);
     }
@@ -270,5 +278,32 @@ export class TypeFeel {
       this.strips.add(this.glow.x, this.glow.y, this.glow.z, this.glow.x + (this.tip.x - this.glow.x) * k, this.glow.y + (this.tip.y - this.glow.y) * k, this.glow.z + (this.tip.z - this.glow.z) * k, 0.35, c, 2.4 * fade, 0.8 * fade);
     }
     this.ship.boost = this.streak.tier >= 3 ? 1.3 : 1;
+  }
+
+  /** Phase A at Pulse Gun's two muzzles or Heat Beam's: a glow in the gun's colour, a core a third of it, a star from half the word. */
+  private charge(p: number, now: number, time: number, reduced: boolean): void {
+    const gun = this.coreGun;
+    const c = GUN_COLOR[gun] ?? BLOW.volt;
+    const size = chargeSize(p, now - this.hitAt);
+    const power = chargePower(p, now - this.hitAt);
+    for (let s = 0; s < (gun === GUN.xung ? 2 : 1); s += 1) {
+      const m = this.ship.muzzle(this.tip, gun === GUN.xung ? MUZZLE.left + s : MUZZLE.centre);
+      this.glows.stamp(CELL.soft, m.x, m.y, m.z, size, 0, c, power);
+      this.glows.stamp(CELL.core, m.x, m.y, m.z, size * CHARGE.core, 0, c, power * 1.3);
+      if (p >= CHARGE.star) this.glows.stamp(gun === GUN.xung ? CELL.star4 : CELL.star8, m.x, m.y, m.z, size * 1.3, reduced ? 0.4 : time * (3 + 6 * p) + s, c, power * 0.7);
+    }
+  }
+
+  /** A key into Pulse Gun or Heat Beam: embers drawn into its muzzles from CHARGE.reach m (fewer under reduced motion). */
+  private gather(gun: number, c: THREE.Color, reduced: boolean): void {
+    if (gun !== GUN.xung && gun !== GUN.tia) return;
+    const [r0, r1] = CHARGE.reach;
+    for (let k = 0; k < (reduced ? 2 : CHARGE.embers) * (gun === GUN.xung ? 2 : 1); k += 1) {
+      const m = this.ship.muzzle(this.tip, gun === GUN.xung ? MUZZLE.left + (k & 1) : MUZZLE.centre);
+      const a = Math.random() * 6.283;
+      const r = r0 + Math.random() * (r1 - r0);
+      this.v.set(Math.cos(a) * r, Math.abs(Math.sin(a)) * r * 0.8, -0.3 * r);
+      this.sparks.spawn(this.from.copy(m).add(this.v), this.v.multiplyScalar(-1 / CHARGE.emberLife), c, 0.2, CHARGE.emberLife, { drag: 0, gravity: 0 });
+    }
   }
 }
