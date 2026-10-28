@@ -20,6 +20,11 @@ import type { TextStore } from "./skill";
 export const NEXT_KEY = "survival.next";
 export const STAGES_KEY = "survival.stages";
 
+/** The card goes back only when its previous screen is known. */
+export function introKey(key: string, from: "loadout" | "journey" | "direct"): "back" | "enter" | "none" {
+  return key === "Escape" ? (from === "direct" ? "none" : "back") : "enter";
+}
+
 /** What the next page plays: a stage and the guns picked for it. */
 export type RunChoice = { readonly stage: string; readonly guns: readonly GunId[] };
 

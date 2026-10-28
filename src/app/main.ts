@@ -31,7 +31,7 @@ import { foesOnScreen, shipProbe } from "../view/probes";
 import { TypeFeel } from "../view/typing-feel";
 import { warmPrograms } from "../view/warm";
 import { FrameCosts, bays, devHandleWanted, eventCounts, installDevHandle, numberBoxes, runState, snapshot } from "./dev";
-import { Journey, NEXT_KEY, objectiveText, recordStage, starsOf, takeChoice, type RunChoice } from "./journey";
+import { Journey, NEXT_KEY, introKey, objectiveText, recordStage, starsOf, takeChoice, type RunChoice } from "./journey";
 import { adviceText, countedText, profileView, runStats, runWords } from "./results";
 import { ImeNotice, installAutoPause, installKeys, type KeyAction } from "./input";
 import { reportWord } from "./learning";
@@ -455,7 +455,7 @@ function take(): void {
 }
 
 function act(action: KeyAction): void {
-  // The stage card takes its own keys (below); Esc there does nothing.
+  // The stage card takes its own keys below.
   if (mode === "intro") return;
   if (action === "repeat") {
     if (mode === "play" && world.typing.lock >= 0) speakEnglish(wordOf(world.typing.word[world.typing.lock]!).en, speech);
@@ -532,13 +532,43 @@ hud.overlay.addEventListener("click", (event) => {
   take();
 });
 
-for (const type of ["pointerdown", "keydown"]) window.addEventListener(type, () => audio.resume());
-// The stage card: any key but Esc goes in; that key opened the audio above and types nothing.
+for (const type of ["pointerdown", "keydown"]) window.addEventListener(type, (event) => {
+  if (mode === "intro" && type === "keydown" && (event as KeyboardEvent).code === "Escape") return;
+  audio.resume();
+});
+// Keep the card's origin across the reload, once and for this exact run choice.
+const CARD_FROM_KEY = "survival.cardFrom";
+const introFrom = (() => {
+  const raw = safeSessionStorage.getItem(CARD_FROM_KEY);
+  safeSessionStorage.setItem(CARD_FROM_KEY, "");
+  try {
+    const saved = JSON.parse(raw ?? "null") as { from?: unknown; choice?: unknown } | null;
+    const next = JSON.stringify({ stage: level.id, guns: world.header.kit.guns.map((gun) => GUN_KEYS[gun]) });
+    if ((saved?.from === "loadout" || saved?.from === "journey") && saved.choice === next) return saved.from;
+  } catch {
+    // A broken marker leaves a directly opened card in place.
+  }
+  return "direct";
+})();
+window.addEventListener("pagehide", () => {
+  const from = journey.screen === "loadout" ? "loadout" : journey.active || screen === "end" ? "journey" : null;
+  const next = safeSessionStorage.getItem(NEXT_KEY);
+  safeSessionStorage.setItem(CARD_FROM_KEY, from === null || !next ? "" : JSON.stringify({ from, choice: next }));
+});
+// Consume the card's key before the typing listener, including Esc on a direct URL.
 window.addEventListener("keydown", (event) => {
-  if (mode !== "intro" || event.repeat || event.code === "Escape" || !(event.isTrusted || params.get("untrusted") === "1")) return;
+  if (mode !== "intro" || event.repeat || !(event.isTrusted || params.get("untrusted") === "1")) return;
   event.preventDefault();
   event.stopImmediatePropagation();
-  enterFight();
+  const action = introKey(event.code, introFrom);
+  if (action === "enter") enterFight();
+  else if (action === "back") {
+    setMode("start");
+    journey.stage = level;
+    journey.picked = world.header.kit.guns.slice();
+    if (introFrom === "loadout") journey.loadout();
+    else journey.open(level.id);
+  }
 });
 
 /** From the stage card into the fight (once the page is ready): its name as a banner, a sound. */
