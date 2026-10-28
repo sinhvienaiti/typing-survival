@@ -8,12 +8,14 @@
  * finished them here (`survival.seen`). No DOM: storage comes in.
  */
 import {
-  ADVICE_VI, blendSkill, parseSkill, serializeSkill, skillAdvice, skillStorageKey, suggestDifficulty, updateSkill,
+  blendSkill, parseSkill, serializeSkill, skillAdvice, skillStorageKey, suggestDifficulty, updateSkill,
   type DifficultySuggestion, type Familiarity, type FlowSummary, type SkillProfile, type SkillSample, type SkillUpdate, type SkillView,
 } from "../kit/balance";
 import { MODE_SPECS, MODES, runHeader, type Mode, type RunPace } from "../content/balance";
 import { LEARN_RULES } from "../content/stage-rules";
 import type { World } from "../sim/world";
+
+import { ADVICE_EN } from "./english";
 
 export const SKILL_KEY = skillStorageKey("survival");
 export const SEEN_KEY = "survival.seen";
@@ -156,9 +158,9 @@ export function skillReport(profile: SkillProfile, mode: Mode): SkillReport {
   const down = MODES[index - 1];
   const suggestionText =
     suggestion === "up" && up !== undefined
-      ? "Hai trận thắng dễ liền: thử chế độ " + MODE_SPECS[up].label + "?"
+      ? "Two easy wins in a row: try " + MODE_SPECS[up].label + "?"
       : suggestion === "down" && down !== undefined
-        ? "Hai trận thua liền: chế độ " + MODE_SPECS[down].label + " sẽ dễ thở hơn."
+        ? "Two losses in a row: " + MODE_SPECS[down].label + " may feel easier."
         : "";
-  return { view, measured: view.confidence.e > 0, runs: profile.trend.stages, advice: ADVICE_VI[skillAdvice(view)], suggestion, suggestionText };
+  return { view, measured: view.confidence.e > 0, runs: profile.trend.stages, advice: ADVICE_EN[skillAdvice(view)], suggestion, suggestionText };
 }

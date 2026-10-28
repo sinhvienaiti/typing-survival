@@ -4,21 +4,22 @@
  * the line saying whether the run counted for the typing profile, and the
  * "Hồ sơ gõ" panel.
  */
-import { ADVICE_VI, type SkillProfile, type SkillUpdate } from "../kit/balance";
+import { type SkillProfile, type SkillUpdate } from "../kit/balance";
 import { MODE_SPECS, lengthFor, type Mode } from "../content/balance";
 import type { World } from "../sim/world";
 import { headerFor, skillReport, type SkillReport } from "./skill";
 import type { Word } from "./vocab";
+import { ADVICE_EN } from "./english";
 
 export function runStats(w: World): { value: string; label: string }[] {
   const s = w.stats;
   const keys = s.keysOk + s.keysBad;
   const time = Math.min(w.seconds, w.time);
   return [
-    { value: Math.floor(time / 60) + ":" + String(Math.floor(time % 60)).padStart(2, "0"), label: "Thời gian" },
-    { value: String(s.kills), label: "Hạ" },
-    { value: (keys === 0 ? 100 : Math.round((s.keysOk / keys) * 100)) + " %", label: "Chính xác" },
-    { value: String(s.words), label: "Từ đã gõ" },
+    { value: Math.floor(time / 60) + ":" + String(Math.floor(time % 60)).padStart(2, "0"), label: "Time" },
+    { value: String(s.kills), label: "Kills" },
+    { value: (keys === 0 ? 100 : Math.round((s.keysOk / keys) * 100)) + "%", label: "Accuracy" },
+    { value: String(s.words), label: "Words" },
   ];
 }
 
@@ -38,10 +39,10 @@ export function runWords(w: World, wordOf: (index: number) => Word): { en: strin
 
 export function countedText(settled: SkillUpdate | null, report: SkillReport): string {
   if (settled === null) return "";
-  if (settled.accepted) return "Hồ sơ gõ (trung bình các trận) nay là " + Math.round(report.view.e) + " WPM, chính xác " + Math.round(report.view.a * 100) + " %.";
-  if (settled.reason === "short") return "Trận này ít từ quá, chưa tính vào hồ sơ gõ.";
-  if (settled.reason === "afk") return "Bạn rời bàn phím lâu, trận này không tính vào hồ sơ gõ.";
-  return "Trận này lệch xa thường lệ, chưa tính vào hồ sơ gõ.";
+  if (settled.accepted) return "Typing profile (all runs): " + Math.round(report.view.e) + " WPM, " + Math.round(report.view.a * 100) + "% accuracy.";
+  if (settled.reason === "short") return "Too few words to count toward your profile.";
+  if (settled.reason === "afk") return "You were away too long, so this run does not count.";
+  return "This run was far off your usual, so it does not count.";
 }
 
 /**
@@ -52,10 +53,10 @@ export function countedText(settled: SkillUpdate | null, report: SkillReport): s
  */
 export function adviceText(report: SkillReport, settled: SkillUpdate | null, won: boolean | null): string {
   if (settled !== null && !settled.accepted) return "";
-  if (report.advice !== ADVICE_VI["keep-going"]) return report.advice;
-  if (report.runs === 0) return "Chưa có số đo: chơi vài trận để có lời khuyên theo cách bạn gõ.";
-  if (won === false) return "Tuyến vỡ: nạp súng trước đỉnh tràn, và khi Swarm dày, gõ dứt điểm từng từ.";
-  if (report.runs < 2) return "Trận đầu đã vào hồ sơ gõ: chơi thêm để có lời khuyên theo cách bạn gõ.";
+  if (report.advice !== ADVICE_EN["keep-going"]) return report.advice;
+  if (report.runs === 0) return "Play a few runs to get advice based on your typing.";
+  if (won === false) return "Line lost: reload before surges. Finish each word before switching when Swarm crowds in.";
+  if (report.runs < 2) return "Your first run is in your profile. Play more for personal advice.";
   return report.advice;
 }
 
@@ -65,21 +66,21 @@ export function profileView(profile: SkillProfile, mode: Mode, adapt: boolean) {
   const v = report.view;
   const next = headerFor(profile, mode, adapt);
   const [lo, hi] = lengthFor(next.expected);
-  const fixed = (value: number, digits: number): string => value.toFixed(digits).replace(".", ",");
-  const sure = (confidence: number): string => (confidence >= 1 ? "đo đủ" : confidence > 0 ? "đang đo " + Math.round(confidence * 100) + " %" : "mặc định");
+  const fixed = (value: number, digits: number): string => value.toFixed(digits);
+  const sure = (confidence: number): string => (confidence >= 1 ? "measured" : confidence > 0 ? "measuring " + Math.round(confidence * 100) + "%" : "default");
   return {
     stats: [
-      { value: String(Math.round(v.e)), label: "Tốc độ (WPM)", note: sure(v.confidence.e) },
-      { value: Math.round(v.a * 100) + " %", label: "Chính xác", note: sure(v.confidence.a) },
-      { value: fixed(v.recognize.new, 1) + " s", label: "Nhận từ mới", note: sure(v.confidence.recognize.new) },
-      { value: Math.round(Math.max(0, 1 - v.cv) * 100) + " %", label: "Độ đều", note: "lệch ±" + Math.round(v.cv * 100) + " % mỗi từ" },
+      { value: String(Math.round(v.e)), label: "Speed (WPM)", note: sure(v.confidence.e) },
+      { value: Math.round(v.a * 100) + "%", label: "Accuracy", note: sure(v.confidence.a) },
+      { value: fixed(v.recognize.new, 1) + " s", label: "New-word read", note: sure(v.confidence.recognize.new) },
+      { value: Math.round(Math.max(0, 1 - v.cv) * 100) + "%", label: "Steadiness", note: "±" + Math.round(v.cv * 100) + "% per word" },
     ],
     advice: adviceText(report, null, null),
     lines: [
-      report.runs > 0 ? "Đã chơi " + report.runs + " trận" + (report.measured ? "" : ", chưa đủ số đo: đang dùng mặc định của chế độ") + "." : "Chưa có trận nào: hồ sơ đang dùng mặc định của chế độ " + MODE_SPECS[mode].label + ".",
+      report.runs > 0 ? "Played " + report.runs + (report.runs === 1 ? " run" : " runs") + (report.measured ? "" : "; still measuring, so mode defaults apply") + "." : "No runs yet: using defaults for " + MODE_SPECS[mode].label + ".",
       adapt
-        ? "Trận tới: " + MODE_SPECS[mode].label + ", nhịp ×" + fixed(next.pace, 2) + ", từ " + lo + "–" + hi + " chữ, tự điều trong trận."
-        : "Trận tới: " + MODE_SPECS[mode].label + ", nhịp chuẩn cố định (đã tắt tự điều).",
+        ? "Next run: " + MODE_SPECS[mode].label + ", pace ×" + fixed(next.pace, 2) + ", words " + lo + "–" + hi + " letters, adapting during play."
+        : "Next run: " + MODE_SPECS[mode].label + ", fixed pace (adaptation off).",
       ...(report.suggestionText ? [report.suggestionText] : []),
     ],
   };

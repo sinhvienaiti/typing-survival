@@ -25,9 +25,9 @@ export type Mode = (typeof MODES)[number];
  */
 export type ModeSpec = { readonly label: string; readonly note: string; readonly rate: number; readonly surge: number; readonly speed: number; readonly drain: number };
 export const MODE_SPECS: { readonly [M in Mode]: ModeSpec } = {
-  relax: { label: "Thư giãn", note: "Swarm thưa, đi chậm: gõ thong thả, học từ là chính", rate: 0.66, surge: 0.5, speed: 0.9, drain: 0.5 },
-  balanced: { label: "Cân bằng", note: "Căng vừa sức: lúc dồn, lúc thở", rate: 1, surge: 1, speed: 1, drain: 1 },
-  challenge: { label: "Thử thách", note: "Swarm dày, đỉnh tràn gắt: giữ tuyến là kỳ công", rate: 1.12, surge: 1.1, speed: 1.06, drain: 1.15 },
+  relax: { label: "Relaxed", note: "Sparse, slow Swarm: take your time and learn words", rate: 0.66, surge: 0.5, speed: 0.9, drain: 0.5 },
+  balanced: { label: "Balanced", note: "Fair pressure, room to breathe", rate: 1, surge: 1, speed: 1, drain: 1 },
+  challenge: { label: "Challenge", note: "Dense Swarm, fierce surges: hold the line", rate: 1.12, surge: 1.1, speed: 1.06, drain: 1.15 },
 };
 
 export const DEFAULT_MODE: Mode = "balanced";

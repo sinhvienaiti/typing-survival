@@ -54,10 +54,10 @@ const BAY_COLUMN = [2, 4, 1, 5] as const;
 const MIN_FIT = 26 / 32;
 /** The "new" card per kind a stage teaches. */
 const NEW_CARD: Readonly<Record<number, string>> = {
-  [KIND.brute]: "MỚI · BRUTE · (QUÁI LỰC LƯỠNG) VỎ " + FOES[KIND.brute]!.armour,
-  [KIND.leader]: "MỚI · PACK LEADER · (THỦ LĨNH BẦY) VỎ " + FOES[KIND.leader]!.armour,
-  [KIND.shield]: "MỚI · SHIELD GUARD · (LÍNH MANG KHIÊN) CHẮN ĐẠN PHÍA TRƯỚC",
-  [KIND.splitter]: "MỚI · SPLITTER · (QUÁI TÁCH MẢNH) VỠ 3 SHARD",
+  [KIND.brute]: "NEW · BRUTE · HEAVY FOE · ARMOR " + FOES[KIND.brute]!.armour,
+  [KIND.leader]: "NEW · PACK LEADER · ARMOR " + FOES[KIND.leader]!.armour,
+  [KIND.shield]: "NEW · SHIELD GUARD · BLOCKS FRONTAL SHOTS",
+  [KIND.splitter]: "NEW · SPLITTER · SPLITS INTO 3 SHARDS",
 };
 const TEACH_KIND: Readonly<Record<string, number>> = { brute: KIND.brute, leader: KIND.leader, shield: KIND.shield, splitter: KIND.splitter };
 
@@ -128,7 +128,7 @@ export class Hud {
     const top = el("div", "sv-top", root);
     const left = el("div", "sv-left", top);
     this.hp = el("div", "sv-hp sv-panel", left);
-    el("span", "sv-label", this.hp, "GIÁP");
+    el("span", "sv-label", this.hp, "HULL");
     const bar = el("div", "sv-hp-bar", this.hp);
     this.hpFill = el("i", "", bar);
     this.hpText = el("b", "", this.hp);
@@ -136,12 +136,12 @@ export class Hud {
     this.time = el("b", "", clock);
     // Unlit LED segments behind the digits (CSS draws them from the attribute; the text stays the time).
     this.time.dataset.ghost = "8:88";
-    el("small", "", clock, "còn lại");
+    el("small", "", clock, "left");
     this.goal = el("div", "sv-goal sv-panel", top);
     this.goal.hidden = true;
     const kills = el("div", "sv-kills sv-panel", top);
     this.kills = el("b", "", kills);
-    el("small", "", kills, "hạ / 3 s");
+    el("small", "", kills, "kills / 3 s");
     this.total = el("em", "", kills);
     this.banner = el("div", "sv-banner", root);
     this.fresh = el("div", "sv-fresh", root);
@@ -266,7 +266,7 @@ export class Hud {
     if (peak !== this.last.peak) {
       this.last.peak = peak;
       // A storm surge says so: the horde is far thicker this time.
-      if (peak > 0) this.showBanner("ĐỈNH TRÀN " + peak + (w.plan.storm[peak - 1] === 1 || w.plan.strength[peak - 1]! >= STAGE_S0.storm.spread[0] ? " · DỮ DỘI" : ""), now);
+      if (peak > 0) this.showBanner("SURGE " + peak + (w.plan.storm[peak - 1] === 1 || w.plan.strength[peak - 1]! >= STAGE_S0.storm.spread[0] ? " · FIERCE" : ""), now);
     }
     if (now > this.bannerUntil) this.banner.classList.remove("is-on");
     if (killsRecent !== this.last.kills) {
@@ -275,7 +275,7 @@ export class Hud {
       this.kills.parentElement!.classList.toggle("is-hot", killsRecent >= 15);
       this.last.kills = killsRecent;
     }
-    text(this.total, "Tổng " + w.stats.kills);
+    text(this.total, "Total " + w.stats.kills);
     this.updateGoal(w);
     this.updateWarn(w);
     this.updateFresh(w, now);
@@ -357,10 +357,10 @@ export class Hud {
   /** The objective's plate: Săn counts leaders down and through. */
   private updateGoal(w: World): void {
     const O = w.objective;
-    const text = O.need > 0 ? (O.retreat >= 0 ? "SWARM RÚT LUI" : "PACK LEADER " + O.done + "/" + O.need + " · LỌT " + O.leaked + "/" + (O.of - O.need)) : "";
+    const text = O.need > 0 ? (O.retreat >= 0 ? "SWARM RETREATS" : "PACK LEADER " + O.done + "/" + O.need + " · ESCAPED " + O.leaked + "/" + (O.of - O.need)) : "";
     if (text === this.last.goal) return;
     // The hunt won: said in the middle of the view too, not only on the plate up top.
-    if (O.retreat >= 0 && this.last.goal !== "") this.showBanner("SWARM RÚT LUI!", this.lastNow);
+    if (O.retreat >= 0 && this.last.goal !== "") this.showBanner("SWARM RETREATS!", this.lastNow);
     this.last.goal = text;
     this.goal.textContent = text;
     this.goal.hidden = text === "";
@@ -374,7 +374,7 @@ export class Hud {
     let side = 0;
     if (H.state === 1 && H.next < H.count) {
       side = H.side[H.next]!;
-      text = "⚠ Rift · " + Math.max(0, H.at[H.next]! - w.time).toFixed(1).replace(".", ",") + " s";
+      text = "⚠ Rift · " + Math.max(0, H.at[H.next]! - w.time).toFixed(1) + " s";
     } else if (H.state === 2) {
       side = H.side[H.next]!;
       text = "⚠ Rift";

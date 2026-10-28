@@ -53,7 +53,7 @@ export const TRIAL: Stage = {
   id: "s0",
   chapter: 0,
   index: 0,
-  name: "Trận thử",
+  name: "Trial",
   objective: { kind: "hold", seconds: STAGE_S0.seconds },
   hazard: null,
   learn: "standard",
