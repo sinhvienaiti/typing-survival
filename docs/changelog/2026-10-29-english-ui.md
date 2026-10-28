@@ -23,5 +23,5 @@ Duyệt bảng chữ và diff, sửa thẳng trong worktree khoảng 80 chuỗi:
 - **Kiểu Mỹ:** số thập phân dùng dấu chấm (`×1.00`, `1.2 s`, `⚠ Rift · 1.5 s`, trước là dấu phẩy), phần trăm liền số (`95%`), số ít `PICK 1 GUN`, `Played 1 run`.
 - **Tràn chữ (trình duyệt 1280×720 và 1920×1080):** lời dẫn màn tựa lên 3 dòng làm thẻ tựa cuộn 18 px ở 720p, rút còn 2 dòng; tên ải 2 `Hunt Pack Leader` làm tiêu đề thẻ vào trận xuống 2 dòng, đổi thành `Leader Hunt`; tiêu đề súng dài làm Armory cuộn ngang 21 px, rút gọn (`rapid-fire cannon`, `sweeping beam`, `knockback spread`); luật học Standard rút gọn để không mồ côi `a ✓.`; tiêu đề Armory `ARMORY · LEARN` → `ARMORY · LEARNING`. Tên ải 4 `Shield Glow` → `Shining Shields`.
 - Không đổi id, khóa lưu, event, số hay luật: `scripts/chapter-hashes.ts` 152/152 dòng giống hệt bản trước phiếu; `pnpm check` xanh 21 file, 196 test; kit 59/59.
-- Còn lại (chưa sửa, có từ trước): ở 1280×720 huy hiệu `BAY 2` trên thẻ Star Mortar xuống dòng dưới tên súng (cùng độ dài với `BẾN 2` cũ); ở 1920 vừa một dòng.
+- Huy hiệu bến trên thẻ loadout (`BAY 2`, `BAY 1 · FORGE 2`) xuống dòng dưới tên dài ở 1280×720 (Scatter Gun, Star Mortar). Huy hiệu nay nằm trên mép trên của thẻ, bên phải, như một tab; tiêu đề thẻ luôn một dòng ở 1280 và 1920 (lượt sửa bố cục 29/10, `src/view/survival.css`).
 
