@@ -226,7 +226,7 @@ function items(which: Screen): MenuItem[] {
     case "title":
       return [
         { id: "journey", label: "Hành trình", note: "Chương 1 · ải 1–" + CHAPTER_1.length + " · chọn ải, nạp súng", enabled: true },
-        { id: "start", label: started ? "Trận thử lại" : "Trận thử", note: started ? "Bỏ " + (level.id === "s0" ? "trận" : "Ải " + level.index) + " đang dở, vào trận thử mới" : "Xung và Tia · giữ hành lang " + STAGE_S0.seconds / 60 + " phút", enabled: true },
+        { id: "start", label: started ? "Trận thử lại" : "Trận thử", note: started ? "Bỏ " + (level.id === "s0" ? "trận" : "Ải " + level.index) + " đang dở, vào trận thử mới" : "Pulse Gun và Heat Beam · giữ hành lang " + STAGE_S0.seconds / 60 + " phút", enabled: true },
         { id: "continue", label: "Chơi tiếp", note: started ? "Về trận đang tạm dừng" : "Chưa có trận đang dở", enabled: started },
         { id: "mode", label: "Chế độ", value: MODE_SPECS[settings.mode].label, note: nextRun() ?? MODE_SPECS[settings.mode].note, enabled: true },
         { id: "profile", label: "Hồ sơ gõ", note: "Tốc độ, độ chính xác, lời khuyên", enabled: true },
@@ -241,7 +241,7 @@ function items(which: Screen): MenuItem[] {
         { id: "shake", label: "Rung màn hình", value: onOff(settings.screenShake), note: shakeAllowed ? undefined : "Đang tắt bởi ?shake=0", enabled: true },
         { id: "motion", label: "Giảm chuyển động", value: MOTION_NAMES[motionPreference()], note: "Tàu không trôi, không lao; chữ không nảy", enabled: true },
         { id: "speak", label: "Đọc từ tiếng Anh", value: onOff(settings.pronunciationEnabled), enabled: true },
-        { id: "adapt", label: "Nhịp tự điều theo cách bạn gõ", value: onOff(settings.paceAdapt), note: nextRun() ?? (settings.paceAdapt ? "Bầy dày thưa theo hồ sơ gõ của bạn" : "Nhịp chuẩn cố định, không điều trong trận"), enabled: true },
+        { id: "adapt", label: "Nhịp tự điều theo cách bạn gõ", value: onOff(settings.paceAdapt), note: nextRun() ?? (settings.paceAdapt ? "Swarm dày thưa theo hồ sơ gõ của bạn" : "Nhịp chuẩn cố định, không điều trong trận"), enabled: true },
         { id: "pilot", label: "Tàu", value: PILOT_NAMES[chosen.pilot], note: later, enabled: !started },
         { id: "quality", label: "Chất lượng hình", value: TIER_NAMES[chosen.tier], note: later, enabled: !started },
         { id: "done", label: "Xong", enabled: true },

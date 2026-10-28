@@ -127,11 +127,11 @@ export type GunSpec = {
 };
 
 export const GUN_SPECS: readonly GunSpec[] = [
-  { key: "xung", name: "XUNG", en: "pulse", title: "pháo xung liên thanh", magazine: XUNG_CHAPTER.rounds + " viên trong 2,4\u00a0s vào con gần vạch nhất", trial: "Trận thử: " + XUNG.rounds + " viên", range: "10\u00a0m", heavy: false, armour: 1, crit: XUNG.crit, nominal: XUNG.rounds * XUNG.damage },
-  { key: "tia", name: "TIA", en: "beam", title: "tia nhiệt quét", magazine: "tia 12\u00a0m cháy 2,5\u00a0s, quét về cụm dày", trial: "", range: "12\u00a0m", heavy: false, armour: 1, crit: TIA.crit, nominal: XUNG.rounds * XUNG.damage },
-  { key: "tan", name: "TÁN", en: "scatter", title: "súng chùm đẩy lùi", magazine: "6 loạt × 7 viên xòe, đẩy lùi bầy sát tàu", trial: "", range: TAN.range + "\u00a0m", heavy: false, armour: 1, crit: TAN.crit, nominal: TAN.volleys * 7 * TAN.damage },
-  { key: "ray", name: "RAY", en: "rail", title: "súng ray xuyên hàng", magazine: "3 phát xuyên 6 con, phá khiên", trial: "", range: "30\u00a0m", heavy: true, armour: RAY.armour, crit: RAY.crit, nominal: RAY.shots * RAY.damage },
-  { key: "phao", name: "PHÁO SAO", en: "flak", title: "pháo cối nổ vùng", magazine: "4 quả nổ 2,5\u00a0m vào cụm nặng", trial: "", range: PHAO.near + "\u2060–\u2060" + PHAO.far + "\u00a0m", heavy: true, armour: PHAO.armour, crit: PHAO.crit, nominal: PHAO.shells * PHAO.damage * 1.5 },
+  { key: "xung", name: "Pulse Gun", en: "pulse", title: "(súng xung) pháo xung liên thanh", magazine: XUNG_CHAPTER.rounds + " viên trong 2,4\u00a0s vào con gần vạch nhất", trial: "Trận thử: " + XUNG.rounds + " viên", range: "10\u00a0m", heavy: false, armour: 1, crit: XUNG.crit, nominal: XUNG.rounds * XUNG.damage },
+  { key: "tia", name: "Heat Beam", en: "beam", title: "(tia nhiệt) tia nhiệt quét", magazine: "tia 12\u00a0m cháy 2,5\u00a0s, quét về cụm dày", trial: "", range: "12\u00a0m", heavy: false, armour: 1, crit: TIA.crit, nominal: XUNG.rounds * XUNG.damage },
+  { key: "tan", name: "Scatter Gun", en: "scatter", title: "(súng bắn chùm) súng chùm đẩy lùi", magazine: "6 loạt × 7 viên xòe, đẩy lùi Swarm sát tàu", trial: "", range: TAN.range + "\u00a0m", heavy: false, armour: 1, crit: TAN.crit, nominal: TAN.volleys * 7 * TAN.damage },
+  { key: "ray", name: "Rail Gun", en: "rail", title: "(súng ray) súng ray xuyên hàng", magazine: "3 phát xuyên 6 con, phá khiên", trial: "", range: "30\u00a0m", heavy: true, armour: RAY.armour, crit: RAY.crit, nominal: RAY.shots * RAY.damage },
+  { key: "phao", name: "Star Mortar", en: "flak", title: "(pháo cối sao) pháo cối nổ vùng", magazine: "4 quả nổ 2,5\u00a0m vào cụm nặng", trial: "", range: PHAO.near + "\u2060–\u2060" + PHAO.far + "\u00a0m", heavy: true, armour: PHAO.armour, crit: PHAO.crit, nominal: PHAO.shells * PHAO.damage * 1.5 },
 ];
 
 /**
@@ -145,12 +145,12 @@ export const GUN_SPECS: readonly GunSpec[] = [
 export const COUNTER_ROWS = ["swarmFar", "swarmNear", "scout", "armoured", "shield", "splitter"] as const;
 export type CounterRow = (typeof COUNTER_ROWS)[number];
 export const COUNTER_LABELS: Readonly<Record<CounterRow, string>> = {
-  swarmFar: "Bầy giữa sân",
-  swarmNear: "Bầy sát vạch",
-  scout: "Lính và đạn lính",
-  armoured: "Trâu, Đầu Đàn (Vỏ)",
-  shield: "Khiên và toán sau khiên",
-  splitter: "Tách và mảnh",
+  swarmFar: "Swarm giữa sân",
+  swarmNear: "Swarm sát vạch",
+  scout: "Scout và đạn Scout",
+  armoured: "Brute, Pack Leader (Vỏ)",
+  shield: "Shield Guard và toán sau khiên",
+  splitter: "Splitter và Shard",
 };
 export const COUNTERS: Readonly<Record<CounterRow, readonly [number, number, number, number, number]>> = {
   swarmFar: [1, 1, 1, 0, 2],
