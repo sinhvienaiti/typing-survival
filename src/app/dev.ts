@@ -11,6 +11,11 @@ import { hashHex } from "../sim/hash";
 import { bayOf } from "../sim/weapons";
 import type { Session } from "./session";
 
+/** Enable the handle in dev or with an explicit debug query. */
+export function devHandleWanted(dev: boolean, search: string): boolean {
+  return dev || new URLSearchParams(search).get("debug") === "1";
+}
+
 export function installDevHandle(handle: object): void {
   (window as unknown as { __survival?: object }).__survival = handle;
 }
