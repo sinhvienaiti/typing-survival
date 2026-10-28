@@ -251,11 +251,27 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   smoke shader shades by thickness and fades a puff over its lowest 1.2 m,
   so the deck never cuts it on a straight line; drawn over the beams), a
   scorch with glowing cracks and a field of 36–40 chunks thrown all round
-  (`THROW.big`, cold rims 2.6× lit) that lies until 8 s. The cloud hides
-  the horde behind it for 1–3 s and `f8` does not count that: if play
-  loses foes, lower the body's alpha first. `f1f`
+  (`THROW.big`, cold rims 2.6× lit) that lies until 8 s. `f1f`
   checks the field mark (≥ 8,000 px at 720p, beam or not) and the spark;
   `f6b` measures the cloud against the frame before the kill. `src/`
   12,787 lines (the excess is `main.ts` and `hud.ts`: split in R2).
+- Cloud fix (28/10, after a second judge: `ce9dea3`'s cloud hid the live
+  foes near a big kill for 1–3 s; `docs/changelog/2026-10-28-cloud-fix.md`,
+  `FEEL_PASS_S1.md` §14): in depth the smoke lies on the deck. The smoke
+  shader writes the floor's depth along each pixel's ray (`fx.ts`,
+  `gl_FragDepth`; the deck writes none, the slab under it sits at
+  −0.02 m), so it still covers the deck, the beams and Tia's column, while
+  foes, chunks, the ship and the rails stand over it. The cloud's colours,
+  alpha, sizes and life as §13; the fireball's puffs live 0.3–0.45 s (were
+  0.5–0.85 s: they washed the foes in front at 0.3–0.6 s). The foes' look
+  in the cloud now matches a run with the smoke switched off; what still
+  dips, for one frame at 0.4–0.7 s, is the gun's own next hit (a Tán
+  flash, a Pháo Sao burst). `f6b` runs the judge's set too (each gun on a
+  Trâu and a Đầu Đàn; `KILLS=` picks) and checks it: `cloudKeepsFoes`
+  (live foes in the 480 × 340 px box keep a luma spread ≥ 0.12, ≥ 60 % of
+  the box's and of their own at 4.5 s, every frame 0.3–4 s; a lone frame
+  does not count), `cloudReads`, `emberStar`, `chunksLie` (the aftermath
+  at 2–3 s over floors). Codex ticket 035 (`ts-vfx`) edits the same
+  fireball line in `shots.ts`: keep the 0.3–0.45 s life when merging.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.

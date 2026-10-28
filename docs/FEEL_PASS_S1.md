@@ -632,3 +632,26 @@ Changelog: [`2026-10-27-feel-n4n6.md`](changelog/2026-10-27-feel-n4n6.md), phầ
 - `survival-feel` `f1f`: thêm `fieldMarkEveryKey`, kiểm vùng sáng lên ≥ 0,25 ở f0 trên sân (từ đáy tấm tới dưới tàu, 600 px ngang) ≥ 8.000 px (720p) ở cả bốn lượt, có tia hay không. Thêm `sparkOnLetter`: tia lửa đủ sáng ở f0, tâm cách tâm chữ vừa gõ ≤ nửa bề ngang và nửa bề cao chữ, tắt ở f5.
 - `survival-feel-guns` `f6b`: thêm số đo `soot` (px tối hơn khung 9,8 s) và `cloud` (px xám, tối hay sáng, khác khung trước khi hạ, ngoài dải tia Ray, trong hộp cỡ lóe). Chỉ đo, chưa có ngưỡng: quái đi qua làm số nhiễu.
 - Còn mở: các burst cũ (lóe nòng, sao trúng, lóe hạ thường) và đèn mới vẫn mất khung đầu (§12, `early` chỉ dùng cho burst mới). Phiếu Codex 035 sửa `Glows` và `GunLights` (nhánh `ts-vfx`); sau phiếu đo lại `f5`, `f8` và sửa đoạn "Bùng ở khung đầu" của §12.
+
+## 14. Đám khói nằm dưới bầy (28/10, sau phán xét độc lập lần 2; chủ dự án xem ở §7.6)
+
+Phán xét độc lập trên `ea8e0f9` thấy một hồi quy từ `ce9dea3` (đám khói rộng, dày và tối hơn): trong 1–3 s sau một lần hạ to, đám khói che các quái sống quanh nó. Cách đo của người chấm: độ lệch chuẩn độ sáng (luma) trong ô 2r quanh mỗi quái sống (z ≤ 25) nằm trong hộp 480 × 340 px (720p) quanh chỗ chết, lấy trung vị; quái ngoài hộp và chính các quái đó ở 4,5 s là 0,15–0,23. Trên `ea8e0f9`: Tia hạ Đầu Đàn ở 5,9 m, 44–49 quái trong hộp ở 0,013–0,055 lúc 2–3 s; Ray ở 12 m 0,009–0,038 lúc 1–3 s; Tán 0,015–0,076; Pháo Sao 0,019–0,088. Mốc của phần sau là Typing Break H_64: khói, mảnh và than ở lại mà vẫn đọc được sân. Changelog: [`2026-10-28-cloud-fix.md`](changelog/2026-10-28-cloud-fix.md). Sim không đổi.
+
+### 14.1 Đổi (chỉ ở hình, `fx.ts`, `shots.ts`)
+
+- **Theo độ sâu, khói nằm trên sàn.** Shader khói (chế độ `smoke` của `Glows`) ghi cho mỗi điểm ảnh độ sâu của sàn dọc tia nhìn qua điểm đó: `a − (a − z) · t`, với `z` độ sâu của điểm khói, `t` = khoảng cách tới điểm khói chia khoảng cách tới mặt sàn (0,05 m), tính từ độ cao của camera và của điểm khói, `a = f / (f − n)` lấy từ ma trận chiếu. Vật liệu khói không ghi độ sâu (`depthWrite: false`), độ sâu này chỉ dùng để so. Sàn không ghi độ sâu và khối thép dưới sàn ở −0,02 m, nên khói vẫn phủ sàn, cột Tia, tia và vệt đạn như §13.2 (renderOrder 7,5 giữ nguyên). Mọi vật đứng trên sàn và ghi độ sâu thì được vẽ đè lên khói: quái, khối vỡ, tàu, lan can, cột đèn, đạn 3D. Đám khói đọc như một đám thấp trên sàn, sau bầy; quái đi qua nó vẫn rõ hình.
+- Vết cháy và vết nứt (ô phẳng của kho khói) giữ độ sâu thật; shader đánh dấu chúng bằng độ cao 1e4 (không phải 9 m: góc trên của một cụm to ở xa có thể lên quá 8,5 m). Màu, alpha, cỡ, đời và số cụm khói giữ như §13.2.
+- **Quả cầu lửa ngắn lại**: mỗi cụm lửa sống 0,3–0,45 s (trước 0,5–0,85 s); cỡ, màu, số cụm, hướng lăn, lóe f0–f2 và sao giữ như §13. Ở 0,3–0,6 s các cụm lửa cộng sáng lên những quái đứng trước chúng: với đời cũ, Xung hạ Đầu Đàn ở 720p giữ 0,109–0,119 suốt bốn khung 0,3–0,6 s.
+- Không thêm draw call, không thêm chương trình shader (cùng material, vẫn 35), không thêm dòng: `fx.ts` giữ 360 (gộp hai khai báo `sin`/`cos` trong shader thành một dòng), `shots.ts` giữ số dòng, `src/` giữ 12.787 (`.ts` và `.css` ngoài `src/kit`).
+- Chọn bằng đo (changelog, "Chọn bằng đo"): riêng độ sâu đã đưa phần che quái trong pha đám khói (1–4 s) về mức của lượt đối chứng tắt hẳn khói; không cần giảm alpha thân, rút ngắn phần đặc hay khoét lỗ trong dải quái, nên đám khói vẫn đậm như §13.
+
+### 14.2 Kiểm
+
+- `survival-feel-guns` `f6b` chạy thêm bộ cảnh của người chấm (Xung, Tia, Tán, Pháo Sao hạ một Trâu và một Đầu Đàn; `KILLS=` để chọn), chụp thêm 2,5 / 3,5 / 4 s và có bốn kiểm mới:
+  - `cloudKeepsFoes`: ở mọi khung 0,3–4 s, trung vị độ lệch luma của quái trong hộp ≥ 0,12, ≥ 60 % trung vị của hộp ở 4,5 s (cách so của người chấm) và trung vị tỉ số của từng quái với chính nó ở 4,5 s (theo id, `own`) ≥ 0,6. Một khung tụt chỉ tính khi khung trước hoặc sau nó cũng tụt: một khung của phát kế của súng (lóe trúng của Tán, chùm nổ Pháo Sao lên bầy) không phải đám khói, và lượt tắt hẳn khói cũng tụt ở đó.
+  - `cloudReads`, `emberStar`, `chunksLie`: phần sau vẫn đọc được: đám khói ở 2 s ≥ 5.000 px và ở 3 s ≥ 4.000 px, sao nứt than hồng ở 3 s ≥ 1.000 px, khối vỡ ở 3 s ≥ 3.500 px (720p; khoảng một nửa số nhỏ nhất đo được trên 22 lần hạ của bản sửa).
+
+### 14.3 Số đo (changelog)
+
+- Pha đám khói (1–4 s), 11 lần hạ × 2 cỡ: trung vị độ lệch luma của quái trong hộp thấp nhất 0,137–0,174 (trên `ea8e0f9` 0,003–0,050), tỉ số với chính chúng thấp nhất 0,64–0,94 (trước 0,02–0,59).
+- Pha quả cầu lửa (0,3–0,9 s): thấp nhất 0,122–0,201, trừ ba khung đơn ở 720p (Tán hạ Đầu Đàn 0,7 s 0,103; Pháo Sao hạ Đầu Đàn 0,4 s 0,114 và 0,7 s 0,108), đều là phát kế của chính súng; tỉ số với chính chúng ở ba khung đó ≥ 0,69.
