@@ -4,6 +4,7 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { ADVICE_EN } from "../src/app/english";
 import { fallbackVocab } from "../src/app/vocab";
+import { SHIP } from "../src/kit/feedback";
 import { FEEL } from "../src/view/gun-rules";
 
 const ROOT = new URL("../", import.meta.url);
@@ -57,7 +58,7 @@ describe("English player text (ticket 130)", () => {
     expect(problems("src/app/vocab.ts", 'const label = "Bắt đầu";')).toHaveLength(1);
   });
 
-  it("keeps the page English, localizes kit advice and feedback, and preserves word meanings", () => {
+  it("keeps the page English, advice and feedback English, and preserves word meanings", () => {
     const html = readFileSync(new URL("index.html", ROOT), "utf8");
     expect(html).toContain('<html lang="en">');
     expect(html).toContain("<title>Last Line</title>");
@@ -66,5 +67,22 @@ describe("English player text (ticket 130)", () => {
     expect(Object.values(ADVICE_EN).every((text) => !hasVietnamese(text))).toBe(true);
     expect(FEEL.numbers.label).toBe("PERFECT");
     expect(fallbackVocab().words.get("good")?.vi).toBe("tốt");
+  });
+
+  it("preserves all seven advice sentences from before the kit update", () => {
+    expect(ADVICE_EN).toEqual({
+      rest: "Your hands are slowing down. Take a few minutes to rest.",
+      "slow-down": "You type fast but make mistakes. Slow down for more perfect words.",
+      accuracy: "Focus on each letter first. Speed will follow.",
+      steady: "Keep a steady, comfortable pace for every word.",
+      "new-words": "Read new words' meanings and listen before typing.",
+      crowd: "When foes crowd in, finish one word before switching.",
+      "keep-going": "You are making steady progress. Keep it up!",
+    });
+  });
+
+  it("inherits the kit's English number settings", () => {
+    expect(SHIP.numbers.label).toBe("PERFECT");
+    expect(FEEL.numbers).toBe(SHIP.numbers);
   });
 });

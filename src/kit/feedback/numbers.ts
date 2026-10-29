@@ -13,8 +13,12 @@
  * is moved above it or dropped, and one that drifts into one is dropped (its
  * box counts its pop). A number landing on a young one of the same style
  * below T3 is taken into it (a crowd's hits read as one growing number, not a
- * tower); else it moves beside it, and only then above. Live numbers never
- * overlap for more than a frame (settle()).
+ * tower); else it moves beside it, and only then above. settle() runs
+ * passes until none touch, at most SETTLE_PASSES (4) a frame: two live
+ * numbers overlap after a frame only when four passes were not enough
+ * (dragon-hold's storms: none in any drawn frame on the Mac, 26/10).
+ * A number's box is what NumberSprites draws: the glyphs' and the label's ink
+ * in the atlas (measured once on a canvas; the whole quads without one).
  * NumberSprites draws the field in one instanced draw call.
  */
 import * as THREE from "three";
@@ -29,6 +33,12 @@ const MAX = 200;
 /** Glyph advance and height as shares of the font size. */
 const ADVANCE = 0.58;
 const LABEL = 0.42;
+/** Breathing room round a number's ink so neighbours do not kiss (CSS px). */
+const PAD_PX = 3;
+/** Edge smoothing counted past a glyph's outline (atlas px). */
+const SMOOTH = 1;
+/** settle() passes a frame at most: a number one pass lifts can land on one it already passed. */
+const SETTLE_PASSES = 4;
 
 export class NumberField {
   limit = 160;
@@ -52,6 +62,12 @@ export class NumberField {
   readonly size = new Float32Array(MAX);
   readonly pop = new Float32Array(MAX);
   live = 0;
+  /**
+   * Where NumberSprites' atlas has ink (atlas px), the measure box() sizes a
+   * number by: taken once with the atlas fonts on a canvas, or the whole
+   * quads without one (tests, workers). A game may set its own.
+   */
+  ink: NumberInk | null = null;
 
   private readonly labels: string[] = new Array<string>(MAX).fill("");
 
@@ -67,14 +83,50 @@ export class NumberField {
     this.labels[i] = this.style[i] === STYLE.tick && this.count[i]! > 1 ? digits + "×" + this.count[i] : digits;
   }
 
-  /** The number's box in screen px, centred on (x, y), as drawn now (its pop included). */
+  private inkOf(): NumberInk {
+    if (this.ink === null) this.ink = canvasInk(this.profile.numbers.label);
+    return this.ink;
+  }
+
+  /**
+   * The number's box in screen px round (x, y), as NumberSprites draws it now
+   * (its pop included), PAD_PX wider and taller. The digits' advances alone
+   * fall short of the drawing: each italic, outlined glyph's ink reaches past
+   * its advance, the glyph quads stand 1.25 font sizes tall from the number's
+   * top, and a perfect number's label sits above them, wider than a few
+   * digits. Boxes that small let side-by-side labels touch and a number's
+   * digits reach the label of the one under it (dragon-hold round 2 gate,
+   * review 2 minor 2).
+   */
   box(i: number, out: Rect, x = this.x[i]!, y = this.y[i]!): Rect {
+    const A = NUMBER_ATLAS;
     const px = this.fontPx * this.size[i]! * popScale(this.tier[i]!, this.pop[i]!, this.profile.tiers);
-    const glyphs = this.text(i).length;
-    out.w = glyphs * ADVANCE * px;
-    out.h = px * (this.style[i] === STYLE.perfect ? 1 + LABEL : 1);
-    out.x = x - out.w / 2;
-    out.y = y - px / 2 - (this.style[i] === STYLE.perfect ? LABEL * px : 0);
+    const perfect = this.style[i] === STYLE.perfect;
+    const ink = this.inkOf();
+    const advance = ADVANCE * px;
+    // Screen px per atlas column and row of a glyph quad (write(): 1.4 advances per 48 columns, 1.25 font sizes per 64 rows).
+    const column = (advance * A.glyphQuadW) / A.refCellW;
+    const row = (px * A.glyphQuadH) / A.cellH;
+    // Each glyph's ink reaches digitHalf columns either side of its advance's middle.
+    let width = this.text(i).length * advance + 2 * Math.max(0, ink.digitHalf * column - advance / 2);
+    const lh = px * LABEL;
+    if (perfect) width = Math.max(width, (lh * ink.labelWidth) / A.refCellW);
+    width += PAD_PX;
+    // Rows: full-size glyphs start at the number's top (y − px / 2); a "×N" tail is smaller and inside them.
+    const glyphTop = y - px / 2;
+    let top = glyphTop + ink.digitTop * row;
+    let bottom = glyphTop + ink.digitBottom * row;
+    if (perfect) {
+      // The label's middle sits labelMidUp label heights above the digits' top, 1.3 label heights per 64 of its rows.
+      const middle = glyphTop - A.labelMidUp * lh;
+      const labelRow = (lh * A.labelQuadH) / A.cellH;
+      top = Math.min(top, middle - ink.labelUp * labelRow);
+      bottom = Math.max(bottom, middle + ink.labelDown * labelRow);
+    }
+    out.x = x - width / 2;
+    out.w = width;
+    out.y = top - PAD_PX / 2;
+    out.h = bottom - top + PAD_PX;
     return out;
   }
 
@@ -190,6 +242,10 @@ export class NumberField {
     this.pop[other] = 1;
     this.relabel(other);
     this.kill(slot);
+    // The pop and a longer label grow the box: to the top edge, not past it, as update() keeps a floating number
+    // (until 26/10 a merge inside settle() could leave it over the edge for a frame).
+    const top = this.box(other, SCRATCH).y;
+    if (top < 0) this.y[other] = this.y[other]! - top;
     if (this.covers(this.box(other, SCRATCH)) !== null) {
       this.kill(other);
       this.dropped += 1;
@@ -218,6 +274,12 @@ export class NumberField {
       this.x[i] = this.x[i]! + this.vx[i]! * dt;
       this.y[i] = this.y[i]! + this.vy[i]! * dt;
       this.pop[i] = Math.max(0, this.pop[i]! - dt * 7);
+      // It floats up to the top edge, not past it (spawn() never places one there; a label cut off reads as a glitch).
+      const top = this.box(i, SCRATCH).y;
+      if (top < 0) {
+        this.y[i] = this.y[i]! - top;
+        if (this.vy[i]! < 0) this.vy[i] = 0;
+      }
       if (this.covers(this.box(i, SCRATCH)) !== null) {
         this.kill(i);
         this.dropped += 1;
@@ -229,9 +291,21 @@ export class NumberField {
   /**
    * Numbers that grew (a longer label) or drifted onto each other: the
    * younger merges into the older (same style, both below T3), else it moves
-   * above it. update() runs it every frame; call it after moving numbers by hand.
+   * above it, or is dropped if that puts it on a protected rectangle or past
+   * the top edge (where spawn() would not place it either). One
+   * pass can lift a number onto one it has already passed, so passes run
+   * until one finds no two boxes touching, at most SETTLE_PASSES (dragon-hold
+   * round 3: with one pass, storm numbers overlapped in 8–11 of ~2,770 frames
+   * a run, each cleared by one more pass). update() runs it every frame; call
+   * it after moving numbers by hand.
    */
   settle(): void {
+    for (let pass = 0; pass < SETTLE_PASSES; pass += 1) if (this.settlePass() === 0) return;
+  }
+
+  /** One pass over every pair of live numbers; returns how many touching pairs it moved or merged. */
+  private settlePass(): number {
+    let moved = 0;
     for (let i = 0; i < MAX; i += 1) {
       if (this.alive[i] === 0) continue;
       for (let j = i + 1; j < MAX && this.alive[i] === 1; j += 1) {
@@ -239,6 +313,7 @@ export class NumberField {
         const a = this.box(i, SCRATCH);
         const b = this.box(j, OTHER);
         if (!(a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y)) continue;
+        moved += 1;
         const older = this.born[i]! <= this.born[j]! ? i : j;
         const younger = older === i ? j : i;
         if (this.style[i] === this.style[j] && this.tier[i]! < 3 && this.tier[j]! < 3) this.absorb(older, younger);
@@ -246,9 +321,15 @@ export class NumberField {
           const top = older === i ? a.y : b.y;
           const bottom = younger === i ? a.y + a.h : b.y + b.h;
           this.y[younger] = this.y[younger]! - (bottom - top) - 2;
+          // Lifted onto a protected rectangle (a word tag above) or past the top edge: dropped, where spawn() would not place it.
+          if (this.covers(this.box(younger, SCRATCH)) !== null || SCRATCH.y < 0) {
+            this.kill(younger);
+            this.dropped += 1;
+          }
         }
       }
     }
+    return moved;
   }
 
   /** Live numbers that cover a protected rectangle (must stay 0). */
@@ -300,15 +381,101 @@ export const NUMBER_ATLAS = {
   label: LABEL,
 } as const;
 
-/** The parts of canvas TextMetrics the atlas reads. */
-export type GlyphMetrics = { readonly width: number; readonly actualBoundingBoxLeft?: number; readonly actualBoundingBoxRight?: number };
+/** The parts of canvas TextMetrics the atlas reads (ascent and descent from a "middle" baseline). */
+export type GlyphMetrics = {
+  readonly width: number;
+  readonly actualBoundingBoxLeft?: number;
+  readonly actualBoundingBoxRight?: number;
+  readonly actualBoundingBoxAscent?: number;
+  readonly actualBoundingBoxDescent?: number;
+};
 
-/** Ink half-width (px, outline and edge included) of a centred glyph: its measured box, or its advance plus an italic lean when the canvas gives no box. */
-function inkHalf(metrics: GlyphMetrics, outline: number): number {
+/** Where the atlas has ink, atlas px, as NumberField.box() reads it (outline and edge smoothing included). */
+export type NumberInk = {
+  /** The widest glyph's ink either side of its cell's middle (on screen: its advance's middle). */
+  readonly digitHalf: number;
+  /** Digit ink rows from the cell's top. */
+  readonly digitTop: number;
+  readonly digitBottom: number;
+  /** The label's ink width, and its rows above and below its row's middle. */
+  readonly labelWidth: number;
+  readonly labelUp: number;
+  readonly labelDown: number;
+};
+
+const finite = (value: number | undefined): value is number => value !== undefined && Number.isFinite(value);
+
+/** A centred glyph's ink half-width without its outline: its measured box, or its advance plus an italic lean when the canvas gives no box. */
+function glyphHalf(metrics: GlyphMetrics): number {
   const left = metrics.actualBoundingBoxLeft;
   const right = metrics.actualBoundingBoxRight;
-  const half = Number.isFinite(left) && Number.isFinite(right) ? Math.max(left!, right!) : metrics.width * 0.75;
-  return half + outline / 2 + NUMBER_ATLAS.edgePx;
+  return finite(left) && finite(right) ? Math.max(left, right) : metrics.width * 0.75;
+}
+
+/** Ink half-width (px, outline and edge included) of a centred glyph. */
+function inkHalf(metrics: GlyphMetrics, outline: number): number {
+  return glyphHalf(metrics) + outline / 2 + NUMBER_ATLAS.edgePx;
+}
+
+/**
+ * The whole quads counted as ink, for digit cells `cellW` atlas px wide (no
+ * canvas to measure with). The atlas makes a cell wider than `minCellW` when
+ * a glyph's ink needs it (digitCellWidth), so a caller that knows the cell
+ * width passes it; the default, `minCellW`, is only too big while the cells
+ * keep that width (26/10 review: the comment said "can only be too big").
+ */
+export function quadInk(label: string, cellW: number = NUMBER_ATLAS.minCellW): NumberInk {
+  const A = NUMBER_ATLAS;
+  return { digitHalf: Math.max(A.minCellW, cellW) / 2, digitTop: 0, digitBottom: A.cellH, labelWidth: Math.min(A.width - 8, label.length * 26 + 16), labelUp: A.labelRowH / 2, labelDown: A.labelRowH / 2 };
+}
+
+/**
+ * The atlas ink from canvas metrics in its fonts (`measure(font, text)`, text
+ * centred on a "middle" baseline, as NumberSprites paints): the widest glyph's
+ * reach either side of its middle, the digits' rows, the label's width and
+ * rows. A part the canvas cannot measure counts its whole quad.
+ */
+export function numberInk(label: string, measure: (font: string, text: string) => GlyphMetrics): NumberInk {
+  const A = NUMBER_ATLAS;
+  // A part the canvas cannot measure counts the whole quad of the cell the atlas paints (it may be wider than minCellW).
+  const whole = quadInk(label, digitCellWidth((glyph) => measure(A.digitFont, glyph)));
+  let half = 0;
+  let ascent = 0;
+  let descent = 0;
+  let rows = true;
+  for (const glyph of A.glyphs) {
+    const m = measure(A.digitFont, glyph);
+    half = Math.max(half, glyphHalf(m));
+    if (finite(m.actualBoundingBoxAscent) && finite(m.actualBoundingBoxDescent)) {
+      ascent = Math.max(ascent, m.actualBoundingBoxAscent);
+      descent = Math.max(descent, m.actualBoundingBoxDescent);
+    } else rows = false;
+  }
+  const words = measure(A.labelFont, label);
+  const inked = finite(words.actualBoundingBoxLeft) && finite(words.actualBoundingBoxRight) ? words.actualBoundingBoxLeft + words.actualBoundingBoxRight : words.width;
+  const up = words.actualBoundingBoxAscent;
+  const down = words.actualBoundingBoxDescent;
+  const labelRows = finite(up) && finite(down);
+  return {
+    digitHalf: half > 0 ? half + A.digitOutline / 2 + SMOOTH : whole.digitHalf,
+    digitTop: rows ? Math.max(0, A.digitMidY - ascent - A.digitOutline / 2 - SMOOTH) : whole.digitTop,
+    digitBottom: rows ? Math.min(A.cellH, A.digitMidY + descent + A.digitOutline / 2 + SMOOTH) : whole.digitBottom,
+    labelWidth: Math.max(words.width, inked) > 0 ? Math.max(words.width, inked) + A.labelOutline + 2 * SMOOTH : whole.labelWidth,
+    labelUp: labelRows ? Math.min(A.labelRowH / 2, up + A.labelOutline / 2 + SMOOTH) : whole.labelUp,
+    labelDown: labelRows ? Math.min(A.labelRowH / 2, down + A.labelOutline / 2 + SMOOTH) : whole.labelDown,
+  };
+}
+
+/** The atlas ink measured on a canvas with the atlas fonts, or the whole quads without a document. */
+function canvasInk(label: string): NumberInk {
+  const paint = globalThis.document?.createElement("canvas").getContext("2d");
+  if (!paint) return quadInk(label);
+  paint.textAlign = "center";
+  paint.textBaseline = "middle";
+  return numberInk(label, (font, text) => {
+    paint.font = font;
+    return paint.measureText(text);
+  });
 }
 
 /**

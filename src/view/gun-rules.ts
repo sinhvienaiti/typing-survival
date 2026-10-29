@@ -13,7 +13,6 @@ const POP = [1, 1.25, 1.4, 1.6, 1.7, 1.9] as const;
 const LIFE = [0, 0.55, 0.7, 0.9, 1, 1.2] as const;
 export const FEEL: FeedbackProfile = {
   ...SHIP,
-  numbers: { ...SHIP.numbers, label: "PERFECT" },
   tiers: TIERS.map((row, t) => ({ ...row, flashFrames: FLASH[t]!, number: row.number === null ? null : { ...row.number, pop: POP[t]!, life: LIFE[t]! } })),
 };
 

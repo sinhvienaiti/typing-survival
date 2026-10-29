@@ -1,0 +1,13 @@
+# 29/10/2026 · Last Line · Theo kit tiếng Anh và kiểm gói deploy
+
+Phiếu 168 chạy trong worktree `.wt-ts-codex`, nhánh `ts-codex`, HEAD `b904a548e22e926ba297950f63fa7a0649fa4901`. Lượt đồng bộ kit chưa commit do Claude chuẩn bị từ kit cha `1b1fe6cfacdc81a55d13af202da0f42023455313` được giữ nguyên; không chạy đồng bộ và không sửa `src/kit/**`.
+
+`FEEL` kế thừa trực tiếp nhãn PERFECT cùng toàn bộ cấu hình số của SHIP, bỏ phần ghi đè trùng. `src/app/english.ts` kế thừa `ADVICE_EN` của kit; chỉ bỏ câu `steady` trùng nguyên văn. Sáu câu khác vẫn giữ bản Last Line: kit mới dùng câu khác, bỏ hết phần ghi đè sẽ đổi chữ người chơi thấy. Test so khớp cả bảy câu và kiểm kế thừa cấu hình số.
+
+Thêm `deploy:pack` = `pnpm build && node src/kit/tools/deploy/check-pack.mjs dist --game typing-survival`; `deploy:pack:local` thêm `--allow-local-host`. README mới ghi cách dùng, lấy JSON và các chỗ còn chặn. Tám test dùng gói nhỏ và bộ kiểm thật để kiểm thứ tự build, dừng khi build lỗi, chặn miền nhà ở production, cho phép miền nhà ở demo và chặn tài nguyên chéo game ở cả hai chế độ.
+
+Test trước mã: 9 đỏ, 4 xanh ở hai file liên quan; lỗi đúng vào hai lệnh chưa có và phần ghi đè cấu hình số. Sau sửa, `pnpm check` mã 0 trong 14,858 giây: kit 61/61 file khớp manifest, 206/206 test trong 22 file, golden S0 18/18, TypeScript và Vite build đạt. Hai test thời gian xanh ngay: trung vị 0,896 ms và 1,148 ms, p95 1,430 ms và 1,889 ms; ngưỡng trung vị 1,5 ms. Không cần chạy riêng ba lần. Không sửa sim, nội dung, luật chơi hay golden.
+
+Chạy thật `pnpm deploy:pack`: build đạt, bộ kiểm trả mã 1 với hai lỗi thật trong `assets/index-CLt-HYPd.js`: `foreign-asset` vì `/assets/space-typing/models/manifest.json`, `local-host` vì nguồn portal `https://typing-game.local` còn ghi cứng. Kiểm lại chính `dist` bằng `--json` lưu đầu ra máy đọc được; kiểm `--allow-local-host --json` còn một lỗi `foreign-asset`. Gói có 51 file, 1.522.519 byte, chưa có model hay media. Bộ từ ghim có đủ ba level và giấy phép; 97 level khác trong index không thuộc gói, chỉ được báo thông tin. `kit.invalid` là gốc giả để phân giải URL trong kit, không phải nguồn tải; xuất hiện một lần trong mục `external`, không phải lỗi chặn. Vite cảnh báo chunk 547,18 kB, không sửa trong phiếu này.
+
+Giữ nguyên phụ thuộc Space theo hướng B ngày 29/10: model tàu chờ chủ dự án dựng lại. Rà mã còn thấy cả model quái và đạn dùng cùng thư viện; bỏ tàu riêng lẻ chưa xóa hết phụ thuộc. Bảng bàn giao ghi 10 file liên quan, 46 vị trí và 16 id model ứng viên trong báo cáo repo cha `docs/codex-queue/168-report.md`, dữ liệu `docs/codex-queue/168/space-references.json`. Không dựng server, không mở trình duyệt, không mạng, không đưa media vào Git; G7 chưa đạt và chưa được kiểm trên server tĩnh.
