@@ -31,9 +31,12 @@ export const PALETTE: Omit<TypingFxPalette, "accent"> = { hot: "#fff0d8", ink: "
 export const WORD_ID = 100000;
 /**
  * The plate at its widest, in font sizes: a long meaning wraps at 24 em of
- * its 0.36 font (plus padding) and runs to two lines under the 1.2 row.
+ * its 0.36 font (plus padding) and runs to two lines under the 1.2 row; up
+ * to 2.75 covers a one-line plate's combo badge too (0.62 over its top).
  */
-const WIDEST = { w: 9.7, h: 2.5 } as const;
+const WIDEST = { w: 9.7, h: 2.75 } as const;
+/** The word row's centre over the strip's bottom, in font sizes, before a word has shown (one meaning line). */
+const ROW_UP = 1.3;
 /** Clock steps longer than this (a background tab) count as this much (ms). */
 const MAX_STEP = 100;
 
@@ -138,7 +141,7 @@ export class TypeFx implements StripHost {
     // Reads the root's size now (its ResizeObserver would only run after this frame).
     this.strip.layout();
     this.strip.setAnchorPx(x, bottom, "bottom");
-    this.row = bottom - this.strip.fontSize * 0.75;
+    this.row = bottom - this.strip.fontSize * ROW_UP;
   }
 
   rect(): Rect {
