@@ -55,6 +55,9 @@ export type QuickSliderRow = {
 };
 
 export type QuickChoiceOption = {
+  /** Catalogue URLs, resolved relative to its base by loadKeyboardCatalog(). */
+  readonly manifest?: string;
+  readonly preview?: string;
   readonly value: string;
   readonly label: string;
   /** Shown but not selectable (for example a sound pack not made yet). */

@@ -12,6 +12,8 @@
  * controls from reaching the game's document/window handlers.
  */
 import A11yDialog from "a11y-dialog";
+import { KeyboardSoundPreview, type TypingSounds } from "../../feedback/typing-fx/audio";
+import { KeyboardSoundChoices } from "./keyboard-choices";
 import { cssUrl, installQuickSettingsStyles } from "./css";
 import {
   QUICK_KEYS,
@@ -55,6 +57,10 @@ export type QuickSettingsOptions = QuickDefaultsOptions & {
   readonly onChange: (id: string, value: QuickValue) => void;
   /** Play a short sample of a sound group ("master", "music", "effects", "keyboard", "voice", "ui"); throttled. */
   readonly onPreview?: (group: string) => void;
+  /** Gameplay sound player: catalogue selection loads samples into this same instance. */
+  readonly keyboardSounds?: TypingSounds;
+  /** Game-owned choice without a catalogue manifest (e.g. Relay). Apply it here. */
+  readonly onKeyboardUse?: (choice: import("./types").QuickChoiceOption) => void;
   /** A panel opened from play: freeze the game. */
   readonly onPause?: () => void;
   /** The countdown after closing ended: unfreeze. */
@@ -114,6 +120,8 @@ export class QuickSettings {
   private readonly rowIcons: { readonly name: QuickIconName; readonly holder: HTMLElement }[] = [];
   private readonly failedIcons = new Set<string>();
   private readonly previews: KeyedThrottle;
+  private readonly keyboardPreview: KeyboardSoundPreview;
+  private readonly keyboardChoices: KeyboardSoundChoices[] = [];
   private readonly resizeObserver: ResizeObserver | null;
   private icons: QuickIcons;
   private values: Record<string, QuickValue> = {};
@@ -130,6 +138,11 @@ export class QuickSettings {
     this.icons = { ...options.icons };
     this.rows = { settings: options.settingsRows ?? defaultSettingsRows(options), sound: options.soundRows ?? defaultSoundRows(options) };
     this.previews = createKeyedThrottle((group) => this.options.onPreview?.(group), QUICK_PREVIEW_THROTTLE_MS);
+    this.keyboardPreview = new KeyboardSoundPreview({
+      sounds: options.keyboardSounds,
+      levels: () => ({ master: Number(this.values.master ?? 100) / 100, keyboard: Number(this.values.keyboardVolume ?? 70) / 100, muted: this.values.muted === true }),
+      onUse: options.onKeyboardUse,
+    });
     installQuickSettingsStyles(this.doc);
 
     this.root = this.el("div", "kit-qs");
@@ -214,6 +227,7 @@ export class QuickSettings {
     this.icons = { ...this.icons, ...icons };
     this.paintCorners();
     this.paintRowIcons();
+    for (const picker of this.keyboardChoices) picker.setListenIcon(this.iconUrl("hud-sound") ?? undefined);
   }
 
   /** Removes the layer, its listeners and both dialog instances; calls no callback. */
@@ -222,6 +236,8 @@ export class QuickSettings {
     this.destroyed = true;
     this.cancelCountdown();
     this.previews.cancel();
+    this.keyboardPreview.destroy();
+    for (const picker of this.keyboardChoices) picker.destroy();
     for (const kind of QUICK_PANELS) {
       const panel = this.panels[kind];
       for (const cleanup of panel.cleanups.splice(0)) cleanup();
@@ -301,6 +317,7 @@ export class QuickSettings {
   }
 
   private showPanel(kind: QuickPanel): void {
+    if (kind === "sound") this.keyboardPreview.unlock();
     const panel = this.panels[kind];
     panel.dialog.show();
     this.corners[kind].setAttribute("aria-expanded", "true");
@@ -313,6 +330,7 @@ export class QuickSettings {
   private hidePanel(kind: QuickPanel): void {
     const panel = this.panels[kind];
     this.previews.cancel();
+    this.keyboardPreview.stop();
     for (const cleanup of panel.cleanups.splice(0)) cleanup();
     for (const slot of panel.slots) slot.host.replaceChildren();
     panel.dialog.hide();
@@ -322,6 +340,9 @@ export class QuickSettings {
   private readValues(): void {
     const raw = this.options.getValues() ?? {};
     this.values = { ...raw, ...readRowValues([...this.rows.settings, ...this.rows.sound], raw) };
+    // Persist a removed saved pack as the first available pack; never leave a stale id in save.
+    const keyboard = this.rows.sound.find((row) => row.kind === "choice" && row.id === "keyboard");
+    if (keyboard && raw.keyboard !== undefined && raw.keyboard !== this.values.keyboard) this.options.onChange("keyboard", this.values.keyboard!);
     this.paint();
   }
 
@@ -332,6 +353,7 @@ export class QuickSettings {
   }
 
   private paint(): void {
+    this.keyboardPreview.refreshVolume();
     for (const kind of QUICK_PANELS) for (const sync of this.panels[kind].syncers) sync();
     this.root.classList.toggle("kit-qs--still", this.values.reducedMotion === true);
     this.paintCorners();
@@ -518,6 +540,25 @@ export class QuickSettings {
 
   private renderChoice(row: QuickChoiceRow, panel: Panel): HTMLElement {
     const { line, label, control } = this.shell(row, "span");
+    if (row.id === "keyboard") {
+      line.classList.add("kit-qs__row--keyboards");
+      const picker = new KeyboardSoundChoices({
+        document: this.doc, options: row.options, label: row.label,
+        listenIcon: this.iconUrl("hud-sound") ?? undefined,
+        onPreview: (choice, delay) => { if (this.current === "sound") this.keyboardPreview.preview(choice, delay); },
+        onStop: () => this.keyboardPreview.stop(),
+        onSelect: (choice) => {
+          this.change(row.id, choice.value);
+          this.keyboardPreview.select(choice);
+          // Legacy game-owned sounds have no preview URL and keep their existing callback.
+          if (!choice.preview && choice.value !== "off" && row.preview) this.previews.call(row.preview);
+        },
+      });
+      this.keyboardChoices.push(picker);
+      control.append(picker.element);
+      panel.syncers.push(() => picker.sync(String(this.values[row.id])));
+      return line;
+    }
     const group = this.el("div", "kit-qs__opts");
     group.setAttribute("role", "radiogroup");
     group.setAttribute("aria-labelledby", label.id);

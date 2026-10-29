@@ -29,3 +29,6 @@ export {
   type QuickValue,
   type QuickValues,
 } from "./types";
+
+export { KeyboardSoundChoices, KEYBOARD_CHOICES_CSS } from "./keyboard-choices";
+export { loadKeyboardCatalog, KeyboardSoundPreview, keyboardPreviewGain, type KeyboardCatalog, type KeyboardSoundChoice, type KeyboardPreviewLevels } from "../../feedback/typing-fx/audio";

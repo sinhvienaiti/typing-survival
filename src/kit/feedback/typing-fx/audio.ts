@@ -47,8 +47,8 @@ export const TYPING_SOUND_SET: Readonly<Record<TypingSoundSet, { min: number; wa
 };
 
 /**
- * The five keyboard profiles, premium aluminium keyboards (owner 29/10, Codex ticket 182; the first
- * set was rejected, Clicky and Classic Spring are gone). Player names are English.
+ * Legacy fallback only, for games not yet given a ticket-189 catalogue.
+ * New catalogues supply their own ids and player-facing names.
  */
 export const KEYBOARD_PROFILES: readonly { readonly id: string; readonly name: string }[] = [
   { id: "creamy", name: "Creamy Linear" },
@@ -256,7 +256,7 @@ export class TypingSounds implements TypingFxSink {
       this.keyGains = Array.from({ length: this.keyPool.cap }, () => this.voice(ctx));
       this.wordGains = Array.from({ length: this.wordPool.cap }, () => this.voice(ctx));
     }
-    if (this.ctx.state === "suspended") void this.ctx.resume();
+    if (this.ctx.state === "suspended") void this.ctx.resume().catch(() => {});
     return this.ctx;
   }
 
@@ -275,7 +275,7 @@ export class TypingSounds implements TypingFxSink {
    * Fetches and decodes every file of `profile` before play. Missing or
    * broken files are listed, the rest load.
    */
-  async load(profile: TypingSoundProfile, fetchBytes: (url: string) => Promise<ArrayBuffer> = defaultFetch): Promise<{ loaded: number; missing: string[] }> {
+  async load(profile: TypingSoundProfile, fetchBytes: (url: string) => Promise<ArrayBuffer> = defaultFetch, activate = true): Promise<{ loaded: number; missing: string[] }> {
     const entry: Loaded = { profile, buffers: {}, pickers: {} };
     const missing: string[] = [];
     let loaded = 0;
@@ -302,7 +302,7 @@ export class TypingSounds implements TypingFxSink {
       }
     }
     this.loaded.set(profile.id, entry);
-    if (this.current?.profile.id === profile.id || this.current === null) this.current = entry;
+    if (activate && (this.current?.profile.id === profile.id || this.current === null)) this.current = entry;
     return { loaded, missing };
   }
 
@@ -313,15 +313,21 @@ export class TypingSounds implements TypingFxSink {
    */
   async loadKeyboard(base: string, id: string, name = id, fetchJson: (url: string) => Promise<unknown> = defaultJson, fetchBytes: (url: string) => Promise<ArrayBuffer> = defaultFetch): Promise<KeyboardLoad> {
     const folder = (base.endsWith("/") ? base : base + "/") + encodeURIComponent(id) + "/";
+    return this.loadKeyboardManifest(folder + "keys-manifest.json", id, name, fetchJson, fetchBytes, true);
+  }
+
+  /** Loads the explicit manifest URL from a catalogue (its directory owns the sample files). */
+  async loadKeyboardManifest(url: string, id: string, name = id, fetchJson: (url: string) => Promise<unknown> = defaultJson, fetchBytes: (url: string) => Promise<ArrayBuffer> = defaultFetch, activate = false): Promise<KeyboardLoad> {
+    const folder = url.slice(0, url.lastIndexOf("/") + 1);
     let manifest: unknown = null;
     try {
-      manifest = await fetchJson(folder + "keys-manifest.json");
+      manifest = await fetchJson(url);
     } catch {
       manifest = null;
     }
     const files = manifest === null ? { key: [], space: [] } : keyboardFiles(manifest, folder);
     if (files.key.length === 0 && files.space.length === 0) return { id, state: "pending", keys: 0, spaces: 0, missing: [] };
-    const result = await this.load({ id, name, source: "audio-lab", licence: "project-owned (Audio Lab)", files }, fetchBytes);
+    const result = await this.load({ id, name, source: "audio-lab", licence: "project-owned (Audio Lab)", files }, fetchBytes, activate);
     const keys = this.loaded.get(id)?.buffers.key?.length ?? 0;
     const spaces = this.loaded.get(id)?.buffers.space?.length ?? 0;
     const full = keys >= TYPING_SOUND_SET.key.want && spaces >= TYPING_SOUND_SET.space.want;
@@ -459,4 +465,214 @@ async function defaultJson(url: string): Promise<unknown> {
 /** Each set of a profile against the owner's ten keys and three spaces: what the Audio Lab still owes. */
 export function profileGaps(profile: TypingSoundProfile): { set: TypingSoundSet; have: number; min: number; want: number }[] {
   return TYPING_SOUND_SETS.map((set) => ({ set, have: profile.files[set]?.length ?? 0, ...TYPING_SOUND_SET[set] })).filter((row) => row.have < row.want);
+}
+
+/** Ticket 189 catalogue choice; compatible with quick-settings' game-owned choices. */
+export type KeyboardSoundChoice = {
+  readonly value: string;
+  readonly label: string;
+  readonly manifest?: string;
+  readonly preview?: string;
+  readonly disabled?: boolean;
+  readonly note?: string;
+};
+export type KeyboardCatalog = { readonly options: readonly KeyboardSoundChoice[]; readonly state: "ready" | "missing" | "invalid" };
+
+/** Read only the root catalogue. Samples and previews stay lazy. First duplicate id wins. */
+export async function loadKeyboardCatalog(base: string, options: {
+  readonly extra?: readonly KeyboardSoundChoice[];
+  readonly fallback?: readonly KeyboardSoundChoice[];
+  readonly fetchJson?: (url: string) => Promise<unknown>;
+} = {}): Promise<KeyboardCatalog> {
+  const root = base.endsWith("/") ? base : base + "/";
+  const resolve = (relative: string): string => {
+    // Catalogue paths are relative to its root; refuse absolute/traversing paths.
+    if (!relative || relative.startsWith("/") || relative.includes(":") || relative.includes("\\") || relative.split("/").some((part) => part === ".." || part === ".") || /[?#%]/.test(relative)) throw new Error("Invalid catalogue path");
+    return root + relative;
+  };
+  let state: KeyboardCatalog["state"] = "ready";
+  let choices: KeyboardSoundChoice[] = [];
+  try {
+    const raw = await (options.fetchJson ?? defaultJson)(root + "keys-manifest.json");
+    if (!raw || typeof raw !== "object" || !Array.isArray((raw as { profiles?: unknown }).profiles)) throw new Error("Invalid catalogue");
+    const seen = new Set(["off"]);
+    const ordered: { choice: KeyboardSoundChoice; order: number }[] = [];
+    for (const entry of (raw as { profiles: unknown[] }).profiles) {
+      if (!entry || typeof entry !== "object") continue;
+      const row = entry as Record<string, unknown>;
+      if (typeof row.id !== "string" || !/^[a-z0-9][a-z0-9-]{0,31}$/.test(row.id) || seen.has(row.id) || typeof row.name !== "string" || !row.name.trim() || typeof row.manifest !== "string" || typeof row.preview !== "string" || typeof row.order !== "number" || !Number.isFinite(row.order)) continue;
+      try {
+        const choice = { value: row.id, label: row.name, manifest: resolve(row.manifest), preview: resolve(row.preview) };
+        seen.add(row.id);
+        ordered.push({ choice, order: row.order });
+      } catch { /* A malformed entry cannot prevent the other packs loading. */ }
+    }
+    choices = ordered.sort((a, b) => a.order - b.order).map((row) => row.choice);
+  } catch (error) {
+    state = error instanceof Error && error.message === "Invalid catalogue" ? "invalid" : "missing";
+    choices = [...(options.fallback ?? KEYBOARD_PROFILES.map((p) => ({ value: p.id, label: p.name })))];
+  }
+  const merged: KeyboardSoundChoice[] = [{ value: "off", label: "Off" }];
+  const seen = new Set(["off"]);
+  // Game-specific choices (e.g. Relay) are appended and may override a catalogue entry.
+  const extras = options.extra ?? [];
+  for (const choice of [...choices.filter((c) => !extras.some((extra) => extra.value === c.value)), ...extras]) {
+    if (seen.has(choice.value)) continue;
+    seen.add(choice.value);
+    merged.push(choice);
+  }
+  return { options: merged, state };
+}
+
+export const KEYBOARD_PREVIEW_DELAY_MS = 150;
+export const KEYBOARD_PREVIEW_SECONDS = 1;
+export const KEYBOARD_PREVIEW_FADE_SECONDS = 0.03;
+export type KeyboardPreviewLevels = { readonly master: number; readonly keyboard: number; readonly muted?: boolean };
+
+/** Linear volumes 0…1, independent of the game's effects/music buses. */
+export function keyboardPreviewGain(levels: KeyboardPreviewLevels): number {
+  const clamp = (v: number): number => Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0;
+  return levels.muted ? 0 : clamp(levels.master) * clamp(levels.keyboard);
+}
+
+/**
+ * One preview voice, lazy decoded-buffer cache, and generation guards for every async boundary.
+ * Pass the gameplay TypingSounds so selection loads all samples into that same player.
+ * A shared context is borrowed; previews go straight to its destination at Master × Keyboard.
+ */
+export class KeyboardSoundPreview {
+  private readonly sounds: TypingSounds;
+  private readonly buffers = new Map<string, Promise<AudioBuffer>>();
+  private readonly packs = new Map<string, Promise<KeyboardLoad>>();
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private generation = 0;
+  private selection = 0;
+  private source: AudioBufferSourceNode | null = null;
+  private gain: GainNode | null = null;
+  private silentAt = 0;
+  private disposed = false;
+
+  constructor(private readonly options: {
+    readonly levels: () => KeyboardPreviewLevels;
+    readonly sounds?: TypingSounds;
+    readonly fetchBytes?: (url: string) => Promise<ArrayBuffer>;
+    readonly fetchJson?: (url: string) => Promise<unknown>;
+    readonly onLoad?: (result: KeyboardLoad) => void;
+    /** Game-specific already registered sounds (e.g. Relay). */
+    readonly onUse?: (choice: KeyboardSoundChoice) => void;
+  }) {
+    this.sounds = options.sounds ?? new TypingSounds();
+  }
+
+  /** Call while opening Sound from a click/key gesture, before the delayed hover callback. */
+  unlock(): void {
+    if (this.disposed) return;
+    try { this.sounds.resume(); } catch { /* Audio unavailable; the next explicit gesture can retry. */ }
+  }
+
+  /** Leaving, switching or closing invalidates even an in-flight decode. */
+  stop(): void {
+    this.generation += 1;
+    if (this.timer !== null) clearTimeout(this.timer);
+    this.timer = null;
+    const ctx = this.sounds.context;
+    if (this.source !== null && this.gain !== null && ctx !== null) {
+      const t = ctx.currentTime;
+      this.gain.gain.cancelScheduledValues(t);
+      this.gain.gain.setValueAtTime(this.gain.gain.value, t);
+      this.gain.gain.linearRampToValueAtTime(0, t + KEYBOARD_PREVIEW_FADE_SECONDS);
+      this.silentAt = t + KEYBOARD_PREVIEW_FADE_SECONDS;
+      try { this.source.stop(this.silentAt); } catch { /* Already ended. */ }
+    }
+    this.source = null;
+    this.gain = null;
+  }
+
+  /** First fetch happens only after the hover/focus dwell, or an explicit listen/select. */
+  preview(choice: KeyboardSoundChoice, delayMs = KEYBOARD_PREVIEW_DELAY_MS): void {
+    this.stop();
+    if (this.disposed || choice.disabled || !choice.preview || keyboardPreviewGain(this.options.levels()) <= 0) return;
+    const generation = this.generation;
+    const play = (): void => { this.timer = null; void this.playPreview(choice.preview!, generation); };
+    if (delayMs <= 0) play();
+    else this.timer = setTimeout(play, delayMs);
+  }
+
+  private async playPreview(url: string, generation: number): Promise<void> {
+    try {
+      const ctx = this.sounds.resume();
+      if (!this.buffers.has(url)) {
+        const pending = (this.options.fetchBytes ?? defaultFetch)(url).then((bytes) => ctx.decodeAudioData(bytes));
+        this.buffers.set(url, pending);
+        void pending.catch(() => { if (this.buffers.get(url) === pending) this.buffers.delete(url); });
+      }
+      const buffer = await this.buffers.get(url)!;
+      if (ctx.state === "suspended") await ctx.resume();
+      const level = keyboardPreviewGain(this.options.levels());
+      if (this.disposed || generation !== this.generation || level <= 0 || ctx.state !== "running") return;
+      const start = Math.max(ctx.currentTime, this.silentAt);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(level, start);
+      gain.connect(ctx.destination);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(gain);
+      source.onended = () => {
+        source.disconnect();
+        gain.disconnect();
+        if (this.source === source) { this.source = null; this.gain = null; }
+      };
+      source.start(start, 0, KEYBOARD_PREVIEW_SECONDS);
+      source.stop(start + KEYBOARD_PREVIEW_SECONDS);
+      this.source = source;
+      this.gain = gain;
+    } catch { /* Missing/blocked audio is silent; a later gesture may retry. */ }
+  }
+
+  /** Update a sounding preview immediately when the Master/Keyboard sliders or mute change. */
+  refreshVolume(): void {
+    const level = keyboardPreviewGain(this.options.levels());
+    if (level <= 0) this.stop();
+    else if (this.gain && this.sounds.context) {
+      const t = this.sounds.context.currentTime;
+      this.gain.gain.cancelScheduledValues(t);
+      this.gain.gain.setValueAtTime(level, t);
+    }
+  }
+
+  /** The caller persists the id synchronously; samples load in parallel with exactly one preview. */
+  select(choice: KeyboardSoundChoice): void {
+    if (this.disposed || choice.disabled) return;
+    const selection = ++this.selection;
+    this.sounds.use("off");
+    this.preview(choice, 0);
+    if (choice.value === "off") return;
+    if (!choice.manifest) {
+      this.sounds.use(choice.value);
+      this.options.onUse?.(choice);
+      return;
+    }
+    const key = choice.value + "\n" + choice.manifest;
+    if (!this.packs.has(key)) {
+      this.packs.set(key, this.sounds.loadKeyboardManifest(choice.manifest, choice.value, choice.label, this.options.fetchJson, this.options.fetchBytes));
+    }
+    void this.packs.get(key)!.then((result) => {
+      if (result.state !== "ready") this.packs.delete(key);
+      if (this.disposed || selection !== this.selection) return;
+      this.sounds.use(result.state === "pending" ? "off" : choice.value);
+      this.options.onLoad?.(result);
+    }).catch(() => { this.packs.delete(key); });
+  }
+
+  destroy(): void {
+    this.stop();
+    this.disposed = true;
+    this.selection += 1;
+    this.buffers.clear();
+    this.packs.clear();
+    if (!this.options.sounds) {
+      // Let the 30 ms fade finish before closing our context.
+      setTimeout(() => this.sounds.dispose(), KEYBOARD_PREVIEW_FADE_SECONDS * 1000);
+    }
+  }
 }

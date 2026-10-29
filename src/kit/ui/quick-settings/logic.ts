@@ -150,6 +150,7 @@ export function readSlider(row: QuickSliderRow, raw: unknown): number {
 export function readChoice(row: QuickChoiceRow, raw: unknown): string {
   const has = (value: unknown): value is string => typeof value === "string" && row.options.some((option) => option.value === value);
   if (has(raw)) return raw;
+  if (row.id === "keyboard" && typeof raw === "string") return row.options.find((option) => option.value !== "off" && !option.disabled)?.value ?? row.options.find((option) => !option.disabled)?.value ?? "off";
   if (has(row.default)) return row.default;
   return (row.options.find((option) => option.disabled !== true) ?? row.options[0])?.value ?? "";
 }

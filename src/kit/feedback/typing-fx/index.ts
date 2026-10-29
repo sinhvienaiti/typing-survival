@@ -14,3 +14,5 @@ export {
   KEYBOARD_PROFILES, keyboardFiles, profileGaps, TYPING_SOUND_EVENTS, TYPING_SOUND_MAP, TYPING_SOUND_SET, TYPING_SOUND_SETS, TypingSounds, VariantPicker, VoicePool,
   type KeyboardLoad, type SoundStandIn, type TypingSoundEvent, type TypingSoundProfile, type TypingSoundSet, type TypingSoundsOptions,
 } from "./audio";
+
+export { loadKeyboardCatalog, KeyboardSoundPreview, keyboardPreviewGain, KEYBOARD_PREVIEW_DELAY_MS, KEYBOARD_PREVIEW_SECONDS, KEYBOARD_PREVIEW_FADE_SECONDS, type KeyboardCatalog, type KeyboardSoundChoice, type KeyboardPreviewLevels } from "./audio";

@@ -2,8 +2,8 @@
 import type { QuickChoiceOption, QuickMount, QuickRow } from "./types";
 
 /**
- * Keyboard sound packs (owner 29/10, Codex ticket 182): the same ids and names as KEYBOARD_PROFILES in
- * feedback/typing-fx/audio.ts (ui does not import feedback). A game passes its own list with the packs
+ * Legacy fallback only, until a game supplies its ticket-189 catalogue: the same ids and names as KEYBOARD_PROFILES in
+ * feedback/typing-fx/audio.ts. A game passes its catalogue list, with unavailable packs
  * it has not staged marked disabled.
  */
 export const DEFAULT_KEYBOARD_PROFILES: readonly QuickChoiceOption[] = [
@@ -67,7 +67,7 @@ export function defaultSoundRows(options: QuickDefaultsOptions = {}): QuickRow[]
     { kind: "slider", id: "master", label: "Master", icon: "vol-master", preview: "master", toggle: { id: "muted", label: "Mute" } },
     { kind: "slider", id: "music", label: "Music", icon: "vol-music", preview: "music" },
     { kind: "slider", id: "effects", label: "Effects", icon: "vol-effects", preview: "effects" },
-    { kind: "choice", id: "keyboard", label: "Keyboard sound", icon: "vol-keyboard", options: options.keyboardProfiles ?? DEFAULT_KEYBOARD_PROFILES, default: "creamy", preview: "keyboard" },
+    { kind: "choice", id: "keyboard", label: "Keyboard sound", icon: "vol-keyboard", options: options.keyboardProfiles ?? DEFAULT_KEYBOARD_PROFILES, default: (options.keyboardProfiles ?? DEFAULT_KEYBOARD_PROFILES).find((p) => p.value !== "off" && !p.disabled)?.value ?? "off", preview: "keyboard" },
     { kind: "slider", id: "keyboardVolume", label: "Keyboard volume", preview: "keyboard" },
     { kind: "slider", id: "voice", label: "Voice", icon: "vol-voice", preview: "voice" },
     { kind: "slider", id: "ui", label: "Interface", icon: "vol-interface", preview: "ui" },

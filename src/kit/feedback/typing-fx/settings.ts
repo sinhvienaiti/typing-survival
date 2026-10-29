@@ -18,7 +18,7 @@ export type TypingFxSettings = {
   style: TypingFxStyle;
   intensity: TypingFxIntensity;
   size: TypingFxSize;
-  /** A keyboard sound profile id (KEYBOARD_PROFILES: creamy, thock, marbly, clack, dome); "off" plays none. */
+  /** A catalogue keyboard sound id; legacy games use KEYBOARD_PROFILES. "off" plays none. */
   soundProfile: string;
   /** Key sound volume 0 … 1 (under the game's own sfx volume). */
   volume: number;
