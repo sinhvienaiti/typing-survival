@@ -10,11 +10,13 @@ import { DEFAULT_MODE, isMode, type Mode } from "../content/balance";
 import { DEFAULT_TYPING_FX, sanitizeTypingFx, type TypingFxSettings } from "../kit/feedback/typing-fx";
 import type { QuickValue } from "../kit/ui";
 
-/** The game's own key sound (theme-audio.ts), the Keyboard sound choice until the keyboard packs arrive. */
+/** The game's own key sound (theme-audio.ts). */
 export const BUILT_IN_KEYS = "relay";
+/** Owner 30/10: the highest-scoring clack set is the default (Bright Clack, from Firefly folder (3), the cleanest clack source). */
+export const DEFAULT_KEYBOARD_SOUND = "bright-clack";
 
-/** Last Line's typing feedback defaults: the kit's (Stamp, Normal, Large), its own key sound at full level (as before the Sound panel). */
-export const FX_DEFAULTS: Readonly<TypingFxSettings> = Object.freeze({ ...DEFAULT_TYPING_FX, soundProfile: BUILT_IN_KEYS, volume: 1 });
+/** Last Line's typing feedback defaults: Stamp, Normal, Large, Bright Clack at full keyboard level. */
+export const FX_DEFAULTS: Readonly<TypingFxSettings> = Object.freeze({ ...DEFAULT_TYPING_FX, soundProfile: DEFAULT_KEYBOARD_SOUND, volume: 1 });
 
 export type Settings = {
   /** Effects (guns, hits, kills, alarms) and music, 0 … 1. */
@@ -75,9 +77,9 @@ export function loadSettings(raw: unknown): Settings {
   };
 }
 
-/** The levels ThemeAudio plays at. Keyboard sound "Off" silences the keys; any other choice keeps the game's own. */
+/** ThemeAudio owns Relay; Firefly and Off silence its key synth. */
 export function soundLevels(s: Settings): SoundLevels {
-  return { master: s.masterVolume, muted: s.muted, sfx: s.sfxVolume, music: s.musicVolume, ui: s.uiVolume, keys: s.typingFx.volume, keysOn: s.typingFx.soundProfile !== "off" };
+  return { master: s.masterVolume, muted: s.muted, sfx: s.sfxVolume, music: s.musicVolume, ui: s.uiVolume, keys: s.typingFx.volume, keysOn: s.typingFx.soundProfile === BUILT_IN_KEYS };
 }
 
 /** The spoken word's volume: its own level under master; nothing when muted. */

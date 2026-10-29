@@ -7,19 +7,9 @@
  * values: settings.ts maps them). No icon art yet (Codex ticket 180): the
  * kit shows plain text buttons.
  */
-import { DEFAULT_KEYBOARD_PROFILES, QuickSettings, defaultSettingsRows, defaultSoundRows, type QuickChoiceOption, type QuickMount, type QuickRow, type QuickValue } from "../kit/ui";
-import { BUILT_IN_KEYS } from "./settings";
-
-/**
- * Keyboard sound: Off, the game's own relay (so Off can be undone), and the
- * five packs, shown but not selectable ("pending": the owner paused
- * keyboard sounds, 29/10).
- */
-export const KEYBOARD_CHOICES: readonly QuickChoiceOption[] = [
-  { value: "off", label: "Off" },
-  { value: BUILT_IN_KEYS, label: "Relay" },
-  ...DEFAULT_KEYBOARD_PROFILES.filter((option) => option.value !== "off").map((option) => ({ ...option, disabled: true })),
-];
+import { QuickSettings, defaultSettingsRows, defaultSoundRows, type QuickMount, type QuickRow, type QuickValue } from "../kit/ui";
+import type { KeyboardSoundChoice, TypingSounds } from "../kit/feedback/typing-fx";
+import { defaultKeyboard } from "./keyboard";
 
 /**
  * The Settings rows: the kit's (typing effects with a preview, graphics; no
@@ -36,8 +26,11 @@ export function settingsRows(mountPreview: QuickMount): QuickRow[] {
 }
 
 /** The Sound rows: the kit's, with "Read words aloud" under Voice (the words the game speaks). */
-export function soundRows(): QuickRow[] {
-  const rows = defaultSoundRows({ keyboardProfiles: KEYBOARD_CHOICES });
+export function soundRows(choices: readonly KeyboardSoundChoice[]): QuickRow[] {
+  const rows = defaultSoundRows({ keyboardProfiles: choices });
+  const index = rows.findIndex((row) => row.id === "keyboard");
+  const keyboard = rows[index];
+  if (keyboard?.kind === "choice") rows[index] = { ...keyboard, default: defaultKeyboard(choices) };
   rows.splice(rows.findIndex((r) => r.id === "voice") + 1, 0, { kind: "toggle", id: "speak", label: "Read words aloud", default: true });
   return rows;
 }
@@ -47,6 +40,8 @@ export type QuickHooks = {
   values(): Record<string, QuickValue>;
   change(id: string, value: QuickValue): void;
   preview(group: string): void;
+  keyboardChoices: readonly KeyboardSoundChoice[];
+  keyboardSounds: TypingSounds;
   mountPreview: QuickMount;
   pause(): void;
   resume(): void;
@@ -61,12 +56,13 @@ export function createQuickSettings(hooks: QuickHooks): QuickSettings {
     getValues: hooks.values,
     onChange: hooks.change,
     onPreview: hooks.preview,
+    keyboardSounds: hooks.keyboardSounds,
     onPause: hooks.pause,
     onResume: hooks.resume,
     onQuit: hooks.quit,
     countdownMs: hooks.countdown,
     settingsRows: settingsRows(hooks.mountPreview),
-    soundRows: soundRows(),
+    soundRows: soundRows(hooks.keyboardChoices),
     icons: {},
   });
 }

@@ -33,6 +33,16 @@ function keyboard() {
 }
 
 describe("keys", () => {
+  it("Space calls only sound feedback, with repeat, shortcut and IME guards; no sim command", () => {
+    const win = target();
+    const sent: CommandBody[] = [];
+    let spaces = 0;
+    installKeys(win as unknown as Window, { send: (command) => sent.push(command), act() {}, onVietnamese() {}, allowUntrusted: false, space: () => { spaces += 1; } });
+    for (const extra of [{}, { repeat: true }, { ctrlKey: true }, { altKey: true }, { metaKey: true }, { isComposing: true }, { isTrusted: false }]) win.fire("keydown", press(" ", { code: "Space", ...extra }));
+    expect(spaces).toBe(1);
+    expect(sent).toEqual([]);
+  });
+
   it("letters type (either case), Backspace takes one back, command keys act and never type", () => {
     const k = keyboard();
     for (const key of ["g", "O", "d"]) k.win.fire("keydown", press(key));

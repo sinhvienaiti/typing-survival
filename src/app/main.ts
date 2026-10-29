@@ -41,6 +41,7 @@ import { reportWord } from "./learning";
 import { blendSkill, type SkillUpdate } from "../kit/balance";
 import { Menu, cycle, stepVolume, type MenuItem } from "./menu";
 import { createQuickSettings } from "./quick";
+import { applyKeyboardLevels, loadKeyboardChoices, loadSavedKeyboard, restoreKeyboardChoice } from "./keyboard";
 import { Session } from "./session";
 import { applyQuick, loadSettings, quickValues, soundLevels, voiceLevel, type Settings } from "./settings";
 import { SEEN_KEY, WordHistory, emptyTally, headerFor, loadProfile, recordRun, runSample, saveProfile, skillReport, tallyWord } from "./skill";
@@ -105,7 +106,8 @@ try {
   hudRoot.textContent = "This browser does not support WebGL. Last Line cannot run here.";
   throw new Error("survival: no WebGL");
 }
-const vocab = await loadVocab();
+const [vocab, keyboardChoices] = await Promise.all([loadVocab(), loadKeyboardChoices()]);
+if (restoreKeyboardChoice(settings, keyboardChoices)) safeLocalStorage.writeJson(SETTINGS_KEY, settings);
 /** The run header (content/balance.ts): from the mode and the stored skill profile; ?pace= and ?director=0 pin it (scenarios). */
 let profile = loadProfile(safeLocalStorage, settings.mode);
 const history = new WordHistory(safeLocalStorage.getItem(SEEN_KEY));
@@ -216,6 +218,9 @@ applyShake();
 combat.trauma.reduced = hud.reduced = motionReduced();
 // The word line is the kit's focus strip; the old plate keeps only its streak LED, rift countdown and near-foe ticks.
 const typeFx = new TypeFx(hud.fxRoot, stage, ship, audio, settings.typingFx, motionReduced());
+applyKeyboardLevels(typeFx.sounds, settings);
+let keyboardReady = false;
+void loadSavedKeyboard(typeFx.sounds, keyboardChoices, () => settings.typingFx.soundProfile).finally(() => { keyboardReady = true; });
 hud.strip.attach(typeFx);
 hudRoot.classList.add("is-tfx");
 const typing = (combat.typing = new TypeFeel(hud, stage, ship, combat.glows, combat.strips, combat.sparks, audio, typeFx, (index) => wordOf(index).vi));
@@ -233,6 +238,8 @@ const quick = createQuickSettings({
   values: () => quickValues(settings, { quality: chosen.tier, reducedMotion: motionReduced() }),
   change: quickChange,
   preview: quickPreview,
+  keyboardChoices,
+  keyboardSounds: typeFx.sounds,
   mountPreview: (host) => {
     const bay = world.typing.lock >= 0 ? world.typing.lock : 0;
     preview = new TypeFxPreview(host, settings.typingFx, motionReduced(), GUN_ACCENT[world.guns.gun[bay] ?? 0] ?? GUN_ACCENT[0], () => typeFx.strip.fontSize, previewWords());
@@ -432,6 +439,7 @@ function adjust(id: string, delta: number): void {
 
 function applyAudio(): void {
   audio.setLevels(soundLevels(settings));
+  applyKeyboardLevels(typeFx.sounds, settings);
   speech.enabled = settings.pronunciationEnabled;
   speech.volume = voiceLevel(settings);
 }
@@ -468,7 +476,10 @@ function quickChange(id: string, value: QuickValue): void {
 function quickPreview(group: string): void {
   audio.resume();
   if (group === "effects") audio.xung(0, true);
-  else if (group === "keyboard") for (let k = 0; k < 4; k += 1) window.setTimeout(() => audio.key(k + 1, k, false), k * 90);
+  else if (group === "keyboard") {
+    if (settings.typingFx.soundProfile === "relay") audio.key(1, 0, false);
+    else typeFx.sounds.key(0);
+  }
   else if (group === "voice") speakEnglish("ready", { ...speech, enabled: speech.volume > 0 });
   else if (group !== "music") audio.ui(group === "ui" ? "move" : "select");
 }
@@ -678,6 +689,9 @@ installKeys(window, {
   pick: (n) => {
     if (mode !== "play" && !quick.blocking) journey.pick(n);
   },
+  space: () => {
+    if (mode === "play" && live && !quick.blocking) typeFx.sounds.space();
+  },
 });
 installAutoPause(window, document, () => {
   if (mode === "play") setMode("paused");
@@ -713,7 +727,7 @@ const aim = new Float64Array(2);
 
 function update(now: number): void {
   const start = performance.now();
-  if (!live && painted && loaded && combat.ready) {
+  if (!live && painted && loaded && combat.ready && keyboardReady) {
     live = true;
     if (mode === "intro") drawScreen();
   }
@@ -807,7 +821,7 @@ function onScreen(): number {
 }
 
 if (devHandleWanted(import.meta.env.DEV, location.search)) installDevHandle({
-  ready: () => painted && loaded && combat.ready,
+  ready: () => painted && loaded && combat.ready && keyboardReady,
   models: () => ({ mine: crowd.loaded[0], scout: crowd.loaded[1], brute: crowd.loaded[2], shield: crowd.loaded[3], splitter: crowd.loaded[4], ship: ship.loaded }),
   start: () => (mode === "start" || mode === "intro") && setMode("play"),
   mode: () => mode,

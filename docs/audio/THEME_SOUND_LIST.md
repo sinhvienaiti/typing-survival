@@ -1,7 +1,7 @@
 # Tuyến Cuối — bộ âm "Vành Chân Trời"
 
 > Ngày 23/10/2026. Chủ đề: một trạm thép cũ giữ hành lang cuối cùng ở mép hố đen. Âm **industrial**: synth trầm, trống máy, bass; trong trận là thép, súng nặng, điện, kim loại vỡ. Khác hẳn tiếng laser và nhạc điện tử vũ trụ của Space Typing.
-> **Hiện tại mọi âm đều tổng hợp bằng mã** (`src/audio/theme-audio.ts`, `src/audio/music.ts`, khối dựng `src/audio/synth.ts`), không có file. Danh sách này để sau này làm file thật: mỗi id một mục, khi nào phát, cảm giác, và một prompt cho công cụ tạo âm.
+> **Cập nhật 29/10/2026:** tiếng phím Firefly đã dùng file thật (phiếu 191, mục 2.1). Relay và âm trận vẫn tổng hợp bằng mã (`src/audio/theme-audio.ts`, `src/audio/music.ts`, khối dựng `src/audio/synth.ts`). Các mục dưới giữ mô tả và prompt cho việc thay âm trận bằng file sau này.
 
 ## 1. Cách âm chạy
 
@@ -29,6 +29,26 @@
 - Prompt dưới đây viết bằng tiếng Anh vì các công cụ tạo âm hiểu tiếng Anh tốt nhất.
 - **Âm hành động** (súng, trúng, nổ, quái chết, quái bắn, tuyến bị đánh; quyết định Q6 của chủ dự án ngày 24/10/2026, ghi ở `tools/audio-lab/DECISIONS.md` của repo cha): đủ các phần mà hành động có (nạp, khóa nòng; đầu tiếng có lực; thân; đuôi vang trong hành lang thép), cỡ âm theo nguồn. Lớp sub chỉ làm lớp dưới. Không dùng hướng "bụp, thụp", "pop", "puff", tiếng trầm ngắn đứng riêng, kiểu đồ chơi. Dải 1–4 kHz chỉ ở đầu tiếng; đuôi nằm dưới 1 kHz hoặc trên 4 kHz.
 - **Mỗi file tự có thân và đuôi.** `theme-audio.ts` phát một tiếng cho mỗi bậc trúng (`flush`) và mỗi phát súng, không ghép lớp nào lúc chạy. Các lớp dùng chung hit.sub, hit.tail, gun.xung.tail mới là đề xuất của Audio Lab (`AUDIO_PIPELINE.md` §6.3 #3; §16 #6 còn mở). Audio Lab có ghép lớp thì ghép sẵn vào file của từng id.
+
+### 2.1. Bộ tiếng phím Firefly (phiếu 191, 29/10/2026)
+
+Danh mục gốc và bảy manifest bộ ở `public/assets/typing-survival/audio/keys/` được Git giữ; 98 OGG được ghi vào `media.md5` và đi qua kho media. Không chép WAV. Nguồn: bộ Firefly phiếu 189 do chủ dự án tạo, giấy phép ghi trong từng manifest; giữ nguyên byte của staging, không xử lý lại âm.
+
+| Id bộ | Tên trong Sound | File phím | File cách | Nghe thử |
+|---|---|---|---|---|
+| `deep` | Deep (mặc định) | `deep/key-01…10.ogg` | `deep/space-01…03.ogg` | `deep/preview.ogg` |
+| `warm` | Warm | `warm/key-01…10.ogg` | `warm/space-01…03.ogg` | `warm/preview.ogg` |
+| `rounded` | Rounded | `rounded/key-01…10.ogg` | `rounded/space-01…03.ogg` | `rounded/preview.ogg` |
+| `solid` | Solid | `solid/key-01…10.ogg` | `solid/space-01…03.ogg` | `solid/preview.ogg` |
+| `crisp` | Crisp | `crisp/key-01…10.ogg` | `crisp/space-01…03.ogg` | `crisp/preview.ogg` |
+| `clear` | Clear | `clear/key-01…10.ogg` | `clear/space-01…03.ogg` | `clear/preview.ogg` |
+| `bright-clack` | Bright Clack | `bright-clack/key-01…10.ogg` | `bright-clack/space-01…03.ogg` | `bright-clack/preview.ogg` |
+
+- Hàng Sound: Off, Relay, rồi các bộ theo thứ tự danh mục. Mặc định `DEFAULT_KEYBOARD_SOUND` trong `src/app/settings.ts` là `deep` theo điều phối ở báo cáo 189. Save `survival.settings.typingFx.soundProfile` giữ lựa chọn; id đã mất về mặc định còn tồn tại.
+- `TypingSounds` của kit chọn biến thể theo vòng xáo, không lặp liền; mỗi chữ đúng phát một `key-*`, Space phát `space-*`. Phím sai/lạc dùng cùng nhóm phím ở mức nhỏ hơn của kit. Hoàn tất từ chỉ giữ tiếng nạp đạn của game, không thêm một sample phím cách.
+- Firefly đi vào destination của AudioContext chung ở Master × Keyboard volume, ngoài Effects và bus Relay. Relay cũng có mức Keyboard riêng ngoài Effects; chỉ chọn Relay mới mở synth `key.ok`/`key.bad`. Off hoặc Master mute/0 làm im tiếng phím.
+- Có thể chuẩn bị context và giải mã bộ đã lưu trước khi chơi; nhạc và âm trận vẫn chờ cử chỉ đầu tiên. Trận chờ lượt nạp bộ ban đầu hoàn tất trước khi bước sim.
+- Rê chuột/focus tên bộ: chờ 150 ms rồi phát preview 1 s; rời/chuyển/đóng bảng tắt dần 30 ms, do kit phiếu 190 quản lý. Mở bảng và đếm 3-2-1 tiếp tục khóa phím gõ và dừng trận.
 
 ## 3. Gõ và nạp đạn
 

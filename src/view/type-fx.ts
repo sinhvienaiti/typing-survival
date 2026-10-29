@@ -8,9 +8,8 @@
  * typed. TypeFeel reads the sim's typing events and feeds them here through
  * the kit's TypingFxDriver.
  *
- * The kit's TypingSounds sits on the driver for the keyboard packs to come;
- * none is loaded (the owner paused keyboard sounds, 29/10), so it plays
- * nothing and the game's own key sound (theme-audio.ts) stays.
+ * The kit's TypingSounds shares the page's context; Firefly samples go
+ * through Master × Keyboard volume, independently of the Effects bus.
  *
  * The strip runs on its own clock, which stands still while the fight is
  * paused (the pause screen, the quick panels and their countdown).
@@ -22,6 +21,7 @@ import type { ThemeAudio } from "../audio/theme-audio";
 import type { Stage } from "./scene";
 import type { Ship } from "./ship";
 import type { StripHost } from "./strip";
+import { keyboardSink } from "../app/keyboard";
 
 /** Typed-letter colours by GUN id (Xung, Tia, Tán, Ray, Pháo Sao): theme.css --volt, --hot, --tan, --ray-ink, --phao. */
 export const GUN_ACCENT = ["#3db8ff", "#ff7a1f", "#ffc53d", "#8fa3ff", "#ff3f6c"] as const;
@@ -75,9 +75,11 @@ export class TypeFx implements StripHost {
         return true;
       },
     });
-    // Silent until a keyboard pack is loaded (none is: paused by the owner); it would share the page's context and keys bus.
-    this.sounds = new TypingSounds({ context: () => started(audio.context), destination: () => started(audio.input("keys")) });
-    this.driver = new TypingFxDriver([this.strip, this.sounds]);
+    this.sounds = new TypingSounds({ context: () => {
+      audio.prepare();
+      return started(audio.context);
+    } });
+    this.driver = new TypingFxDriver([this.strip, keyboardSink(this.sounds)]);
   }
 
   /** Moves the strip's clock with the page's (`running`: the fight runs). */

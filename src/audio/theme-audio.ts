@@ -100,8 +100,8 @@ export type ThemeAudioOptions = { sfx: number; music: number };
 /**
  * The player's sound levels (0 … 1; the quick Sound panel): master over
  * everything, effects (guns, impacts, kills, alerts), music, the interface;
- * the keys play at effects × keys, and not at all when `keysOn` is false
- * (Keyboard sound "Off"); `muted` silences the lot.
+ * Relay plays at its keyboard level, and only when `keysOn` is true;
+ * Firefly plays through the kit outside these buses. `muted` silences the lot.
  */
 export type SoundLevels = { master: number; muted: boolean; sfx: number; music: number; ui: number; keys: number; keysOn: boolean };
 
@@ -109,6 +109,7 @@ export class ThemeAudio {
   readonly scene = new SceneAudio<never, Bus>({ sounds: {}, buses: BUSES, defaultBus: "impacts", dragonSamples: false, sfxVolume: 1, musicVolume: 0 });
   readonly music = new Music();
   private ctx: AudioContext | null = null;
+  private started = false;
   private buffer: AudioBuffer | null = null;
   private readonly inserts = new Map<Bus, GainNode>();
   private sfx: number;
@@ -139,10 +140,10 @@ export class ThemeAudio {
     }
   }
 
-  /** Call on the first key or click: unlocks the context, builds the bus inserts, starts the music. */
-  resume(): void {
-    this.scene.unlock();
+  /** Build the shared context for sample decoding, without starting music or combat sounds. */
+  prepare(): void {
     if (this.ctx !== null) return;
+    this.scene.unlock();
     for (const bus of Object.keys(BUSES) as Bus[]) {
       this.scene.synth(
         "insert:" + bus,
@@ -159,6 +160,14 @@ export class ThemeAudio {
     }
     if (this.ctx === null) return;
     this.buffer = noiseBuffer(this.ctx);
+  }
+
+  /** Call on the first key or click: unlocks the context and starts the music once. */
+  resume(): void {
+    this.prepare();
+    this.scene.unlock();
+    if (this.started || this.ctx === null || this.buffer === null) return;
+    this.started = true;
     this.music.start(this.ctx, this.inserts.get("music")!, this.buffer);
     this.count("music.calm");
     // A loop asked for before the first gesture starts now.
@@ -166,15 +175,15 @@ export class ThemeAudio {
   }
 
   get ready(): boolean {
-    return this.ctx !== null && this.buffer !== null;
+    return this.started && this.ctx !== null && this.buffer !== null;
   }
 
-  /** The page's AudioContext once resume() built it (the kit's TypingSounds plays into it). */
+  /** The shared AudioContext, prepared silently for the kit's keyboard sample decoding. */
   get context(): AudioContext | null {
     return this.ctx;
   }
 
-  /** A bus's input (its level node) once resume() built it: the keys bus takes the kit's TypingSounds. */
+  /** A bus's input (its level node) once prepared; Relay uses keys, Firefly uses the destination. */
   input(bus: Bus): AudioNode | null {
     return this.inserts.get(bus) ?? null;
   }
@@ -195,7 +204,7 @@ export class ThemeAudio {
   private busLevel(bus: Bus): number {
     if (bus === "music") return this.musicVolume;
     if (bus === "ui") return this.uiVolume;
-    if (bus === "keys") return this.keysOn ? this.sfx * this.keysVolume : 0;
+    if (bus === "keys") return this.keysOn ? this.keysVolume : 0;
     return this.sfx;
   }
 
@@ -203,7 +212,7 @@ export class ThemeAudio {
   private voice(bus: Bus, pan: number, id: SoundId): Voice | null {
     const ctx = this.ctx;
     const input = this.inserts.get(bus);
-    if (ctx === null || input === undefined || this.buffer === null || !this.scene.enabled) return null;
+    if (!this.started || ctx === null || input === undefined || this.buffer === null || !this.scene.enabled) return null;
     const panner = new StereoPannerNode(ctx, { pan: Math.max(-0.8, Math.min(0.8, pan)) });
     panner.connect(input);
     this.count(id);

@@ -1,30 +1,36 @@
-import { describe, expect, it } from "vitest";
-import { KEYBOARD_CHOICES, settingsRows, soundRows } from "../src/app/quick";
-import { BUILT_IN_KEYS, DEFAULTS, FX_DEFAULTS, applyQuick, loadSettings, quickValues, soundLevels, voiceLevel } from "../src/app/settings";
-import { KEYBOARD_PROFILES } from "../src/kit/feedback/typing-fx";
+import { beforeAll, describe, expect, it } from "vitest";
+import { settingsRows, soundRows } from "../src/app/quick";
+import { BUILT_IN_KEYS, DEFAULT_KEYBOARD_SOUND, DEFAULTS, FX_DEFAULTS, applyQuick, loadSettings, quickValues, soundLevels, voiceLevel } from "../src/app/settings";
+import type { KeyboardSoundChoice } from "../src/kit/feedback/typing-fx";
+import { loadKeyboardChoices } from "../src/app/keyboard";
+import { readFileSync } from "node:fs";
+
+let choices: readonly KeyboardSoundChoice[];
+beforeAll(async () => {
+  choices = await loadKeyboardChoices((url) => Promise.resolve(JSON.parse(readFileSync("public" + url, "utf8"))));
+});
 
 /**
  * The quick panels' values (parent docs/games/IN_GAME_SETTINGS.md,
  * TYPING_FEEDBACK_REVIEW.md §20 item 5): the save loads field by field, the
  * typing feedback through the kit's sanitizer (Stamp, Large), every panel
- * row maps onto one setting, and the keyboard packs stay silent and
- * unselectable while Off and the game's own key sound stay choosable.
+ * row maps onto one setting, and the Firefly catalogue sits beside Off and Relay.
  */
 const page = { quality: "high", reducedMotion: false };
 
 describe("Last Line settings", () => {
-  it("loads defaults from nothing: Stamp, Normal, Large, the game's own key sound at full level", () => {
+  it("loads defaults from nothing: Stamp, Normal, Large, Bright Clack at full keyboard level", () => {
     const s = loadSettings(null);
     expect(s).toEqual({ ...DEFAULTS, typingFx: { ...FX_DEFAULTS } });
-    expect(s.typingFx).toEqual({ style: "stamp", intensity: "normal", size: "large", soundProfile: BUILT_IN_KEYS, volume: 1 });
-    expect(soundLevels(s)).toEqual({ master: 1, muted: false, sfx: 0.7, music: 0.5, ui: 0.7, keys: 1, keysOn: true });
+    expect(s.typingFx).toEqual({ style: "stamp", intensity: "normal", size: "large", soundProfile: DEFAULT_KEYBOARD_SOUND, volume: 1 });
+    expect(soundLevels(s)).toEqual({ master: 1, muted: false, sfx: 0.7, music: 0.5, ui: 0.7, keys: 1, keysOn: false });
   });
 
   it("keeps an older save (no master, interface or typingFx) as it played, and drops broken fields one by one", () => {
     const old = loadSettings({ sfxVolume: 0.4, musicVolume: 0.2, screenShake: false, pronunciationEnabled: false, mode: "relax", paceAdapt: false });
     expect(old.uiVolume).toBe(0.4);
     expect(old.masterVolume).toBe(1);
-    expect(old.typingFx.soundProfile).toBe(BUILT_IN_KEYS);
+    expect(old.typingFx.soundProfile).toBe(DEFAULT_KEYBOARD_SOUND);
     expect(old.mode).toBe("relax");
     const broken = loadSettings({ sfxVolume: "loud", musicVolume: 3, muted: "yes", mode: "insane", typingFx: { style: "comic", intensity: "high", size: 9, volume: -1 } });
     expect(broken.sfxVolume).toBe(DEFAULTS.sfxVolume);
@@ -60,9 +66,9 @@ describe("Last Line settings", () => {
     expect(JSON.stringify(s)).toBe(before);
   });
 
-  it("Off silences the keys; the built-in sound or any pack id keeps the game's own key sound", () => {
+  it("only Relay enables the game's key synth", () => {
     const s = loadSettings(null);
-    for (const [profile, on] of [["off", false], [BUILT_IN_KEYS, true], ["creamy", true], ["thock", true]] as const) {
+    for (const [profile, on] of [["off", false], [BUILT_IN_KEYS, true], ["deep", false], ["warm", false], ["creamy", false]] as const) {
       s.typingFx = { ...s.typingFx, soundProfile: profile };
       expect(soundLevels(s).keysOn, profile).toBe(on);
     }
@@ -71,17 +77,18 @@ describe("Last Line settings", () => {
 });
 
 describe("Last Line quick panels", () => {
-  it("Keyboard sound offers Off and the game's relay; the five packs show as pending (owner 29/10: paused)", () => {
-    expect(KEYBOARD_CHOICES.map((o) => o.value)).toEqual(["off", BUILT_IN_KEYS, ...KEYBOARD_PROFILES.map((p) => p.id)]);
-    expect(KEYBOARD_CHOICES.filter((o) => o.disabled !== true).map((o) => o.value)).toEqual(["off", BUILT_IN_KEYS]);
-    for (const option of KEYBOARD_CHOICES) expect(option.note).toBeUndefined();
+  it("Keyboard sound uses Off, Relay and the available Firefly catalogue", () => {
+    expect(choices.map((o) => o.value)).toEqual(["off", BUILT_IN_KEYS, "deep", "warm", "rounded", "solid", "crisp", "clear", "bright-clack"]);
+    expect(choices.every((o) => !o.disabled && !o.note)).toBe(true);
+    const keyboard = soundRows(choices).find((row) => row.id === "keyboard");
+    expect(keyboard?.kind === "choice" && keyboard.default).toBe(DEFAULT_KEYBOARD_SOUND);
   });
 
   it("Settings: typing effects with a preview, graphics (quality next run), the game's rows, Resume and Quit; Sound reads words aloud under Voice", () => {
     const rows = settingsRows(() => {});
     const ids = rows.map((row) => row.id);
     expect(ids).toEqual(["typingHeading", "fxStyle", "fxIntensity", "fxSize", "fxPreview", "graphicsHeading", "quality", "reducedMotion", "gameHeading", "shake", "resume", "quit"]);
-    expect(soundRows().map((row) => row.id)).toEqual(["master", "music", "effects", "keyboard", "keyboardVolume", "voice", "speak", "ui"]);
+    expect(soundRows(choices).map((row) => row.id)).toEqual(["master", "music", "effects", "keyboard", "keyboardVolume", "voice", "speak", "ui"]);
     const quality = rows.find((row) => row.id === "quality");
     expect(quality?.kind === "choice" && quality.label).toBe("Quality (next run)");
     expect(quality?.kind === "choice" && quality.options.map((o) => o.value)).toEqual(["low", "medium", "high", "ultra"]);
