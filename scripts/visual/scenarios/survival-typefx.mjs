@@ -13,6 +13,8 @@
 //   freeze    a letter under the open panel types nothing and the world stands; Esc counts
 //             3-2-1 (a picture), then the fight runs and the word is as it was;
 //   pause     Esc with a word locked: the pause menu covers the word line;
+//   keys      the game's own key sound plays (key.ok counted); Keyboard sound "Off" in the Sound
+//             panel silences it and is saved; "Relay" brings it back;
 //   title     the title screen with the two buttons;
 //   rift      stage 3 at its first rift's warning with a word locked: the countdown beside the strip.
 //   URL=http://127.0.0.1:4193/ OUT_DIR=tmp/typefx/raw-1280 SCENES=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-typefx.mjs --width=1280 --height=720
@@ -23,7 +25,7 @@ import { open, press, sv } from "./survival-s0-lib.mjs";
 import { openStage } from "./survival-s1-lib.mjs";
 
 const STEP = 1000 / 60;
-const SCENES = (process.env.SCENES ?? "key,wrong,done,combo,settings,sound,freeze,pause,title,rift").split(",");
+const SCENES = (process.env.SCENES ?? "key,wrong,done,combo,settings,sound,freeze,pause,keys,title,rift").split(",");
 const want = (name) => SCENES.includes(name);
 
 const hold = (page, on) => page.eval(sv("t.hold(" + on + "); return true;"));
@@ -191,6 +193,37 @@ export default async function (page) {
       checks.pause = { mode: paused.mode, screen: paused.screen, wordShown: paused.fx.word >= 0, ...menu };
       await page.key("Escape", { code: "Escape" });
       await advance(page, 2 * STEP);
+    }
+
+    if (want("keys")) {
+      const played = () => page.eval(sv("return t.sounds().played['key.ok'] ?? 0;"));
+      const typeNext = async () => {
+        const look = await slots(page);
+        const locked = look.find((slot) => slot.locked);
+        const pick = look.reduce((a, b) => (b.mags < a.mags ? b : a));
+        await press(page, locked ? locked.text[locked.typed] : pick.text[0]);
+        await advance(page, 2 * STEP);
+      };
+      const choose = async (value) => {
+        await page.key("F2", { code: "F2" });
+        await page.sleep(100);
+        await page.eval("document.querySelector('.kit-qs__dialog[data-panel=sound] [data-row=keyboard] input[value=" + value + "]').click()");
+        await page.key("Escape", { code: "Escape" });
+        // The 3-2-1, and the choice's own sample (four keys, 270 ms).
+        await page.sleep(1800);
+      };
+      const n0 = await played();
+      await typeNext();
+      const n1 = await played();
+      await choose("off");
+      await typeNext();
+      const n2 = await played();
+      const saved = await page.eval("JSON.parse(localStorage.getItem('survival.settings') ?? '{}').typingFx ?? null");
+      await choose("relay");
+      const n3 = await played();
+      await typeNext();
+      const n4 = await played();
+      checks.keys = { relayPlays: n1 > n0, offSilent: n2 === n1, offSaved: saved?.soundProfile === "off", relayBack: n4 > n3, counts: [n0, n1, n2, n3, n4] };
     }
     await hold(page, false);
   }
