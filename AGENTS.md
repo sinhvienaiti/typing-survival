@@ -94,7 +94,8 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `node scripts/sync-game-kit.mjs --target games/typing-survival` (run in the
   parent repo). Never edit it by hand; `pnpm check` verifies its sha256.
 - `tests/boundary.test.ts`: `src/` imports only `src/**`, `three`,
-  `three/examples/jsm/*`, `@fontsource/*`; never Space Typing paths.
+  `three/examples/jsm/*`, `@fontsource/*`, `a11y-dialog` (the kit's
+  quick-settings panels); never Space Typing paths.
 - Models: Space Typing's library through the URL `/assets/space-typing/models/`
   (Vite plugin in dev, nginx alias in play). Never copy models here.
 - No media in Git (images, audio, video, `.glb`, `.bin`); `public/assets/**`

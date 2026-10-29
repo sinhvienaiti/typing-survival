@@ -17,7 +17,7 @@ import { DEFAULT_PALETTE, FxCanvas, mixHex, type TypingFxPalette, type TypingFxT
 import type { TypingFxSink } from "./driver";
 import { comboParticles, comboSize, isMilestone, levelFor, PRIORITY, wordPriority, type IntensityLevel } from "./intensity";
 import { ParticlePool, PK } from "./pool";
-import { flyEase, newPose, popEnvelope, restPose, squeeze, STYLES, TONE, WRONG_MS, wrongPose, type GlyphPose, type SpawnCtx, type StyleRecipe } from "./styles";
+import { flyEase, newPose, popEnvelope, restPose, spawnWrongBeat, squeeze, STYLES, TONE, WRONG_MS, wrongPose, type GlyphPose, type SpawnCtx, type StyleRecipe, type WordCtx } from "./styles";
 import { DEFAULT_TYPING_FX, stripCapPx, type TypingFxSettings } from "./settings";
 
 export type FocusStripOptions = {
@@ -238,7 +238,7 @@ export class FocusStrip implements TypingFxSink {
       this.hitEl.push(span);
     }
 
-    this.ctx = { pool: this.pool, owner: 0, prio: 1, x: 0, y: 0, h: 52, glyph: 0, now: 0, mult: 1, size: 1, still: false, random: this.random, light: this.lightNeighbour };
+    this.ctx = { pool: this.pool, owner: 0, prio: 1, x: 0, y: 0, h: 52, glyph: 0, now: 0, mult: 1, size: 1, still: false, random: this.random, light: this.lightNeighbour, key: 0 };
     this.setFont(options.font ?? '"Be Vietnam Pro", "Segoe UI", system-ui, sans-serif', options.weight ?? 800);
     this.setPalette(options.palette ?? {});
     if (this.reducedPref === "system" && typeof matchMedia === "function") {
@@ -598,7 +598,8 @@ export class FocusStrip implements TypingFxSink {
     this.animateGlyph(layer, index, now);
   }
 
-  wrong(index: number, now: number = this.clock()): void {
+  /** A wrong key while the letter at `index` was due; `key`: what the player typed (it drops away under the row). */
+  wrong(index: number, now: number = this.clock(), key = ""): void {
     const layer = this.live;
     if (layer === null || index < 0 || index >= layer.len) return;
     if (layer.state === 3) this.show(layer, now);
@@ -613,7 +614,10 @@ export class FocusStrip implements TypingFxSink {
     this.animateGlyph(layer, index, now);
     if (this.level.particles > 0) {
       this.aim(layer, index, now, this.serial, PRIORITY.key);
+      this.ctx.key = key.length > 0 ? key.charCodeAt(0) : 0;
       this.recipe.spawnWrong(this.ctx);
+      spawnWrongBeat(this.ctx);
+      this.ctx.key = 0;
     }
   }
 
@@ -735,6 +739,8 @@ export class FocusStrip implements TypingFxSink {
     this.aimNow = now;
   }
 
+  private word: WordCtx | null = null;
+
   private spawnWord(layer: Layer, prio: number, now: number): void {
     const pool = this.pool;
     const gold = prio >= PRIORITY.perfect;
@@ -743,27 +749,20 @@ export class FocusStrip implements TypingFxSink {
     const cy = this.canvasH / 2;
     this.serial += 1;
     const owner = this.serial;
-    if (this.recipe.release === "seal") {
-      // Stamp seals the word: a double-ruled frame slams over it, paint splats at two corners.
-      const seal = pool.spawn(PK.seal, owner, prio, cx, cy, now, 420);
-      if (seal >= 0) {
-        pool.tone[seal] = gold ? TONE.gold : TONE.accent;
-        pool.size[seal] = layer.rowW / 2 + 0.12 * h;
-        pool.size2[seal] = 0.62 * h;
-        pool.aux[seal] = 0.07 * h;
-        pool.variant[seal] = Math.floor(this.random() * 4);
-      }
-      for (let k = 0; k < 2; k += 1) {
-        const side = k === 0 ? -1 : 1;
-        const sp = pool.spawn(PK.splat, owner, prio, cx + side * (layer.rowW / 2 + 0.05 * h), cy + (k === 0 ? -0.45 : 0.45) * h, now, 380);
-        if (sp < 0) break;
-        pool.tone[sp] = gold ? TONE.gold : TONE.accent;
-        pool.size[sp] = 0.32 * h;
-        pool.rot[sp] = this.random() * Math.PI * 2;
-        pool.variant[sp] = Math.floor(this.random() * 4);
-        pool.aux[sp] = this.random() * 1000;
-      }
-    }
+    const w = (this.word ??= { pool, owner: 0, prio: 0, gold: false, cx: 0, cy: 0, rowW: 0, h: 0, len: 0, sx: layer.sx, now: 0, mult: 1, still: false, random: this.random });
+    w.owner = owner;
+    w.prio = prio;
+    w.gold = gold;
+    w.cx = cx;
+    w.cy = cy;
+    w.rowW = layer.rowW;
+    w.h = h;
+    w.len = layer.len;
+    w.sx = layer.sx;
+    w.now = now;
+    w.mult = this.level.particles;
+    w.still = this.reduced;
+    this.recipe.spawnRelease(w);
     const shock = pool.spawn(PK.shock, owner, prio, cx, cy, now, prio === PRIORITY.milestone ? 320 : 240);
     if (shock >= 0) {
       pool.tone[shock] = gold ? TONE.gold : TONE.hot;
@@ -1028,7 +1027,7 @@ export class FocusStrip implements TypingFxSink {
       this.flashEl.style.opacity = "0";
     }
     const warnAge = now - this.warnAt;
-    this.warnEl.style.opacity = warnAge >= 0 && warnAge < 140 ? String(0.75 * (1 - warnAge / 140)) : "0";
+    this.warnEl.style.opacity = warnAge >= 0 && warnAge < 200 ? String(0.95 * (1 - warnAge / 200)) : "0";
     const badgeAge = now - this.badgeAt;
     if (badgeAge >= 0 && badgeAge < 900) {
       const pop = badgeAge < 120 ? 1 + 0.6 * (1 - badgeAge / 120) ** 2 : 1;

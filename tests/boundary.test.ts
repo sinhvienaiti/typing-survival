@@ -6,8 +6,8 @@ import { importTargets, read, ROOT, type Source } from "./survival/scan";
 
 /**
  * The repo's edges (docs/games/SPLIT_PLAN.md §3 in the parent repo): code in
- * src/ loads only src/**, three, three/examples/jsm/* and @fontsource/*;
- * nothing names Space Typing's source; src/kit is the kit's copy, byte for
+ * src/ loads only src/**, three, three/examples/jsm/*, @fontsource/* and
+ * a11y-dialog (MIT, the kit's ui/quick-settings panels); nothing names Space Typing's source; src/kit is the kit's copy, byte for
  * byte as its manifest says. The Node-only tools (src/kit/tools,
  * src/kit/verify-kit.mjs) may also load node:* and vite.
  */
@@ -20,7 +20,7 @@ function sources(dir: string): Source[] {
 }
 
 const code = sources("src");
-const PACKAGES = [/^three$/, /^three\/examples\/jsm\/[\w./-]+$/, /^@fontsource\/[\w-]+(\/[\w.-]+)?$/];
+const PACKAGES = [/^three$/, /^three\/examples\/jsm\/[\w./-]+$/, /^@fontsource\/[\w-]+(\/[\w.-]+)?$/, /^a11y-dialog$/];
 const NODE_TOOLS = [/^node:[\w/]+$/, /^vite$/];
 
 function allowed(file: string, target: string): boolean {
@@ -31,7 +31,7 @@ function allowed(file: string, target: string): boolean {
 }
 
 describe("typing-survival boundary", () => {
-  it("src/ loads only src/**, three, three/examples/jsm/* and @fontsource/*", () => {
+  it("src/ loads only src/**, three, three/examples/jsm/*, @fontsource/* and a11y-dialog", () => {
     expect(code.length).toBeGreaterThan(30);
     const crossing = code.flatMap((source) =>
       importTargets(source)

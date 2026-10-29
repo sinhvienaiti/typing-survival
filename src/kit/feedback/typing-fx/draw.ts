@@ -49,7 +49,7 @@ export function mixHex(a: string, b: string, t: number): string {
 
 /** Tone index → colour, in TONE order. */
 export function toneColors(p: TypingFxPalette): string[] {
-  return [p.hot, p.accent, mixHex(p.accent, "#ffffff", 0.55), p.ink, p.warn, p.gold, mixHex(p.warn, p.ink, 0.55)];
+  return [p.hot, p.accent, mixHex(p.accent, "#ffffff", 0.55), p.ink, p.warn, p.gold, mixHex(p.warn, p.ink, 0.55), mixHex(p.accent, p.ink, 0.64)];
 }
 
 /**
@@ -62,6 +62,8 @@ export type TypingFxAtlas = { readonly image: CanvasImageSource; readonly cols: 
 export type TypingFxTextures = Partial<Record<"spark" | "ink" | "seal" | "ember", TypingFxAtlas>>;
 
 const TAU = Math.PI * 2;
+/** The wrong-key bar's drop per 60 Hz frame, as a share of its kick. */
+const BAR_KICK = [1, 0.6, -0.22, 0.08, 0];
 const easeOut = (t: number): number => 1 - (1 - t) * (1 - t);
 
 export class FxCanvas {
@@ -157,6 +159,13 @@ export class FxCanvas {
       const age = pool.age(i, now);
       if (age >= 1) continue;
       ctx.globalAlpha = 1;
+      const sy = pool.sy[i]!;
+      if (sy !== 1) {
+        ctx.save();
+        ctx.translate(pool.x[i]!, pool.y[i]!);
+        ctx.scale(1, sy);
+        ctx.translate(-pool.x[i]!, -pool.y[i]!);
+      }
       switch (pool.kind[i]) {
         case PK.spark:
           this.spark(pool, i, now, age, still);
@@ -200,7 +209,23 @@ export class FxCanvas {
         case PK.seal:
           this.seal(pool, i, now, age);
           break;
+        case PK.bar:
+          this.bar(pool, i, now, age);
+          break;
+        case PK.glyph:
+          this.glyph(pool, i, now, age);
+          break;
+        case PK.beam:
+          this.beam(pool, i, now, age);
+          break;
+        case PK.sweep:
+          this.sweep(pool, i, now, age);
+          break;
+        case PK.smashWord:
+          this.smashWord(pool, i, now);
+          break;
       }
+      if (sy !== 1) ctx.restore();
     }
     ctx.globalAlpha = 1;
   }
@@ -526,48 +551,224 @@ export class FxCanvas {
   }
 
   /**
-   * A paint splat: a dark under-edge offset down-right, then the colour, a lumpy round blot with
-   * satellite drops (or an ink texture cell). Lands at 70 % of its size, opens fully in 40 ms.
+   * A paint splat that reads on a dark plate: a soft glow of its colour lights the plate, a deep
+   * body (the colour toward ink) sits under the letter so the bright letter stands on it, a bright
+   * wet rim outlines the blot, a highlight sits on its top-left, bright satellite drops fly off
+   * (or an ink texture cell). Lands at 70 % of its size, opens fully in 40 ms. `size2` flattens it
+   * (0: the default 0.86; a wrong key's splat lies flat under the line).
    */
   private splat(pool: ParticlePool, i: number, now: number, age: number): void {
     const ctx = this.ctx;
     const ms = now - pool.born[i]!;
     const grow = ms < 40 ? 0.7 + 0.3 * (ms / 40) : 1;
     const r = pool.size[i]! * grow;
-    const alpha = age < 0.45 ? 0.85 : 0.85 * (1 - (age - 0.45) / 0.55);
+    const alpha = age < 0.5 ? 1 : 1 - (age - 0.5) / 0.5;
     const x = pool.x[i]!;
     const y = pool.y[i]!;
+    const flat = pool.size2[i]! > 0 ? pool.size2[i]! : 0.86;
+    const warm = pool.tone[i] === TONE.warn;
+    const glow = this.sprites[warm ? TONE.warn : TONE.accent];
+    if (glow !== undefined) {
+      const g = r * 1.8;
+      ctx.globalAlpha = 0.62 * alpha;
+      ctx.drawImage(glow, x - g, y - g * flat, g * 2, g * 2 * flat);
+    }
     const tex = this.textures.ink;
     if (tex !== undefined) {
-      this.cell(tex, pool.variant[i]!, x, y, r * 2.6, r * 2.6, pool.rot[i]!, alpha);
+      this.cell(tex, pool.variant[i]!, x, y, r * 2.6, r * 2.6 * flat, pool.rot[i]!, alpha);
       return;
     }
     const seed = pool.aux[i]!;
-    const off = r * 0.09;
-    for (let pass = 0; pass < 2; pass += 1) {
-      ctx.fillStyle = pass === 0 ? this.tones[TONE.ink]! : this.color(pool, i);
-      ctx.globalAlpha = pass === 0 ? alpha * 0.7 : alpha * 0.62;
-      const dx = pass === 0 ? off : 0;
-      ctx.beginPath();
-      for (let k = 0; k <= 18; k += 1) {
-        const a = (k / 18) * TAU + pool.rot[i]!;
-        const rr = r * (1 + 0.15 * Math.sin(5 * a + seed) + 0.09 * Math.sin(9 * a + seed * 1.7));
-        const px = x + dx + Math.cos(a) * rr;
-        const py = y + dx * 1.4 + Math.sin(a) * rr * 0.86;
-        if (k === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-      ctx.fill();
-      for (let k = 0; k < 4; k += 1) {
-        const a = seed * 0.37 + k * 1.9 + pool.rot[i]!;
-        const d = r * (1.22 + 0.18 * Math.sin(seed + k * 3.1));
-        const dr = r * (0.09 + 0.05 * Math.sin(seed * 0.5 + k));
-        ctx.beginPath();
-        ctx.arc(x + dx + Math.cos(a) * d, y + dx * 1.4 + Math.sin(a) * d * 0.86, dr, 0, TAU);
-        ctx.fill();
-      }
+    const rim = warm ? this.tones[TONE.warn]! : this.tones[TONE.light]!;
+    ctx.beginPath();
+    for (let k = 0; k <= 22; k += 1) {
+      const a = (k / 22) * TAU + pool.rot[i]!;
+      const rr = r * (1 + 0.15 * Math.sin(5 * a + seed) + 0.09 * Math.sin(9 * a + seed * 1.7));
+      const px = x + Math.cos(a) * rr;
+      const py = y + Math.sin(a) * rr * flat;
+      if (k === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
     }
+    ctx.closePath();
+    ctx.fillStyle = warm ? this.tones[TONE.warnInk]! : this.tones[TONE.deep]!;
+    ctx.globalAlpha = 0.96 * alpha;
+    ctx.fill();
+    ctx.strokeStyle = rim;
+    ctx.lineWidth = Math.max(1.5, 0.1 * r);
+    ctx.globalAlpha = 0.95 * alpha;
+    ctx.stroke();
+    // The wet highlight on the blot's top-left.
+    ctx.fillStyle = rim;
+    ctx.globalAlpha = 0.42 * alpha;
+    ctx.beginPath();
+    ctx.ellipse(x - 0.34 * r, y - 0.42 * r * flat, 0.3 * r, 0.11 * r, -0.45, 0, TAU);
+    ctx.fill();
+    ctx.globalAlpha = 0.95 * alpha;
+    for (let k = 0; k < 4; k += 1) {
+      const a = seed * 0.37 + k * 1.9 + pool.rot[i]!;
+      const d = r * (1.22 + 0.18 * Math.sin(seed + k * 3.1));
+      const dr = r * (0.08 + 0.05 * Math.sin(seed * 0.5 + k));
+      ctx.beginPath();
+      ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d * flat, dr, 0, TAU);
+      ctx.fill();
+    }
+  }
+
+  /**
+   * A wrong key's underline kick: a thick bar under the due letter knocked down and back in 60 Hz
+   * frames, white-hot on the first two, then the warning colour with its glow; holds, then fades.
+   */
+  private bar(pool: ParticlePool, i: number, now: number, age: number): void {
+    const ctx = this.ctx;
+    const f = Math.floor((now - pool.born[i]!) / FRAME_MS);
+    const kick = f < BAR_KICK.length ? BAR_KICK[f]! : 0;
+    const w = pool.size[i]! * (f === 0 ? 1.18 : 1);
+    const t = pool.aux[i]!;
+    const x = pool.x[i]!;
+    const y = pool.y[i]! + kick * pool.size2[i]!;
+    const alpha = age < 0.55 ? 1 : 1 - (age - 0.55) / 0.45;
+    const glow = this.sprites[TONE.warn];
+    if (glow !== undefined) {
+      ctx.globalAlpha = 0.75 * alpha;
+      ctx.drawImage(glow, x - w * 1.35, y - t * 2.6, w * 2.7, t * 5.2);
+    }
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = this.tones[TONE.warnInk]!;
+    roundRect(ctx, x - w - 1.5, y - t / 2 + 1.5, w * 2 + 3, t + 1.5, t / 2);
+    ctx.fill();
+    ctx.fillStyle = f < 2 ? this.tones[TONE.hot]! : this.tones[TONE.warn]!;
+    roundRect(ctx, x - w, y - t / 2, w * 2, t, t / 2);
+    ctx.fill();
+  }
+
+  /**
+   * Flare's release: a beam of light along the word (`size`: half-length, `size2`: half-height). It
+   * flashes white over two frames, then stretches past the word and thins into the accent; an ember
+   * texture cell rides each end when the game gives one.
+   */
+  private beam(pool: ParticlePool, i: number, now: number, age: number): void {
+    const ctx = this.ctx;
+    const f = Math.floor((now - pool.born[i]!) / FRAME_MS);
+    const x = pool.x[i]!;
+    const y = pool.y[i]!;
+    const len = pool.size[i]! * (1 + 0.45 * easeOut(age));
+    const th = pool.size2[i]! * (f < 2 ? 1 : Math.max(0.12, 1 - age * 1.1));
+    // Gone by ~150 ms, when the next word shows: the slash never crosses it at full strength.
+    const fade = age < 0.2 ? 1 : Math.max(0, 1 - (age - 0.2) / 0.55);
+    const accent = this.sprites[pool.tone[i]!];
+    const hot = this.sprites[TONE.hot];
+    if (accent !== undefined) {
+      ctx.globalAlpha = 0.85 * fade;
+      ctx.drawImage(accent, x - len * 1.15, y - th * 3, len * 2.3, th * 6);
+    }
+    if (hot !== undefined) {
+      ctx.globalAlpha = (f < 2 ? 1 : 0.9) * fade;
+      ctx.drawImage(hot, x - len, y - th, len * 2, th * 2);
+    }
+    // The hard white core: a thin slash of light through the letters, longest on its second frame.
+    const core = Math.max(2, th * 0.32);
+    const reach = len * (f === 1 ? 1.12 : 1);
+    ctx.globalAlpha = fade;
+    ctx.fillStyle = this.tones[TONE.hot]!;
+    roundRect(ctx, x - reach, y - core / 2, reach * 2, core, core / 2);
+    ctx.fill();
+    const ember = this.textures.ember;
+    if (ember !== undefined) for (let k = -1; k <= 1; k += 2) this.cell(ember, pool.variant[i]! + k + 1, x + k * len, y, th * 5, th * 5, 0, fade);
+  }
+
+  /**
+   * Smash's release, T2 at the word's scale (`size`, `size2`: the ellipse's radii; `aux`: the font
+   * size): a white flash over the word (2 frames), a thick white ring (1), the accent ring on a dark
+   * edge (2), then a white arc turning into the accent and fading (5).
+   */
+  private smashWord(pool: ParticlePool, i: number, now: number): void {
+    const ctx = this.ctx;
+    const rx = pool.size[i]!;
+    const ry = pool.size2[i]!;
+    const h = pool.aux[i]!;
+    const x = pool.x[i]!;
+    const y = pool.y[i]!;
+    const f = Math.floor((now - pool.born[i]!) / FRAME_MS);
+    const hot = this.tones[TONE.hot]!;
+    if (f <= 1) {
+      const glow = this.sprites[TONE.hot];
+      if (glow !== undefined) {
+        ctx.globalAlpha = 0.6;
+        ctx.drawImage(glow, x - rx * 1.35, y - ry * 1.6, rx * 2.7, ry * 3.2);
+      }
+      ctx.globalAlpha = 0.78;
+      ctx.fillStyle = hot;
+      ctx.beginPath();
+      ctx.ellipse(x, y, rx, ry, 0, 0, TAU);
+      ctx.fill();
+      return;
+    }
+    ctx.beginPath();
+    if (f <= 4) {
+      ctx.ellipse(x, y, rx * (f === 2 ? 1 : 1.04), ry * (f === 2 ? 1 : 1.08), 0, 0, TAU);
+      if (f > 2) {
+        ctx.strokeStyle = this.tones[TONE.ink]!;
+        ctx.globalAlpha = 0.8;
+        ctx.lineWidth = 0.3 * h;
+        ctx.stroke();
+      }
+      ctx.strokeStyle = f === 2 ? hot : this.color(pool, i);
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = (f === 2 ? 0.17 : 0.18) * h;
+      ctx.stroke();
+      return;
+    }
+    const from = pool.rot[i]! + (f - 5) * 0.7;
+    const fade = f === 5 ? 1 : Math.max(0, 1 - (f - 5) / 5);
+    ctx.ellipse(x, y, rx * 1.1, ry * 1.2, 0, from, from + 5.2);
+    ctx.strokeStyle = this.tones[TONE.ink]!;
+    ctx.globalAlpha = 0.5 * fade;
+    ctx.lineWidth = 0.065 * h + 3;
+    ctx.stroke();
+    ctx.strokeStyle = f === 5 ? hot : this.color(pool, i);
+    ctx.globalAlpha = fade;
+    ctx.lineWidth = 0.065 * h;
+    ctx.stroke();
+  }
+
+  /** Minimal's release: one clean line drawn left to right under the word in 90 ms, then fading. */
+  private sweep(pool: ParticlePool, i: number, now: number, age: number): void {
+    const ctx = this.ctx;
+    const ms = now - pool.born[i]!;
+    const w = pool.size[i]!;
+    const t = Math.min(1, ms / 90);
+    const reach = -w + 2 * w * t * (2 - t);
+    const x = pool.x[i]!;
+    const y = pool.y[i]!;
+    const th = pool.aux[i]!;
+    ctx.globalAlpha = age < 0.5 ? 1 : 1 - (age - 0.5) / 0.5;
+    ctx.fillStyle = this.color(pool, i);
+    roundRect(ctx, x - w, y - th / 2, reach + w, th, th / 2);
+    ctx.fill();
+    const glow = this.sprites[TONE.hot];
+    if (glow !== undefined && t < 1) ctx.drawImage(glow, x + reach - th * 3, y - th * 3, th * 6, th * 6);
+  }
+
+  /** The wrong letter the player typed (`aux`: its char code), popping in then dropping and turning away under the row. */
+  private glyph(pool: ParticlePool, i: number, now: number, age: number): void {
+    const ctx = this.ctx;
+    const p = pool.position(i, now, this.pos);
+    const ms = now - pool.born[i]!;
+    const size = pool.size[i]! * (ms < FRAME_MS ? 1.3 : 1);
+    ctx.save();
+    ctx.translate(p[0]!, p[1]!);
+    ctx.rotate(pool.rot[i]! + pool.spin[i]! * (ms / 1000));
+    ctx.font = this.font.replace(/[\d.]+px/, size.toFixed(1) + "px");
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.globalAlpha = age < 0.45 ? 1 : 1 - (age - 0.45) / 0.55;
+    const ch = String.fromCharCode(pool.aux[i]!);
+    ctx.lineWidth = size * 0.14;
+    ctx.strokeStyle = this.tones[TONE.ink]!;
+    ctx.strokeText(ch, 0, 0);
+    ctx.fillStyle = ms < 2 * FRAME_MS ? this.tones[TONE.hot]! : this.tones[TONE.warn]!;
+    ctx.fillText(ch, 0, 0);
+    ctx.restore();
   }
 
   /** A flat ring where the stamp meets the line: an ellipse three times wider than tall, growing and thinning. */

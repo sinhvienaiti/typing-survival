@@ -17,7 +17,7 @@ export type TypingFxSink = {
   /** The letter at `index` was typed right. */
   key(index: number, now: number): void;
   /** A wrong key while the letter at `index` was due. */
-  wrong?(index: number, now: number): void;
+  wrong?(index: number, now: number, key?: string): void;
   /** A key that started nothing (no word locked). */
   stray?(now: number): void;
   /** Letters taken back: `typed` remain. */
@@ -50,6 +50,8 @@ export type TypingFxProgress = {
   perfect?: boolean;
   /** Letters the game hides (bit i: letter i shows as "_" until typed or revealed); unset: none. */
   mask?: number;
+  /** A wrong key: what the player typed (the strip drops it away under the row); unset: not shown. */
+  key?: string;
 };
 
 /**
@@ -101,7 +103,7 @@ export class TypingFxDriver {
     }
     if (p.kind === "wrong") {
       this.errors += 1;
-      for (const sink of sinks) sink.wrong?.(Math.min(p.typed, Math.max(0, this.length - 1)), now);
+      for (const sink of sinks) sink.wrong?.(Math.min(p.typed, Math.max(0, this.length - 1)), now, p.key);
       return;
     }
     if (p.typed < this.typed) {

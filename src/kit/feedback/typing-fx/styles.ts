@@ -12,7 +12,7 @@ import { ParticlePool, PK, type ParticleKind } from "./pool";
 import type { TypingFxStyle } from "./settings";
 
 /** Palette slots a particle's `tone` names; the renderer maps them to colours. */
-export const TONE = { hot: 0, accent: 1, light: 2, ink: 3, warn: 4, gold: 5, warnInk: 6 } as const;
+export const TONE = { hot: 0, accent: 1, light: 2, ink: 3, warn: 4, gold: 5, warnInk: 6, deep: 7 } as const;
 
 export const FRAME_MS = 1000 / 60;
 
@@ -86,6 +86,29 @@ export type SpawnCtx = {
   random: () => number;
   /** Lights the letter `offset` places from this one by `amount` (0 … 1) for a moment: a style's light spilling onto its neighbours. */
   light: (offset: number, amount: number) => void;
+  /** A wrong key: the char code the player typed (0: the game did not say). */
+  key: number;
+};
+
+/** The finished word, for a style's own release on top of the shared rim pop, shock ring and sparks. */
+export type WordCtx = {
+  pool: ParticlePool;
+  owner: number;
+  prio: number;
+  /** Perfect or milestone: gold. */
+  gold: boolean;
+  /** The row's centre (canvas px), its width, the font size (px), letters and their centres' x offsets from cx. */
+  cx: number;
+  cy: number;
+  rowW: number;
+  h: number;
+  len: number;
+  sx: Float32Array;
+  now: number;
+  /** Count multiplier (intensity); 0 (Low, Off) spawns nothing. */
+  mult: number;
+  still: boolean;
+  random: () => number;
 };
 
 export type StyleRecipe = {
@@ -98,8 +121,8 @@ export type StyleRecipe = {
   readonly ghost: "hot" | "light";
   /** Particle phases after the key (ms): stamp's land at 50 ms, the rest at once. */
   readonly phases: readonly number[];
-  /** The finished word's own release on top of the rim pop: Stamp seals the word. */
-  readonly release?: "seal";
+  /** The finished word's own release on top of the rim pop (Stamp seals it, Smash rings it, Flare beams…). */
+  spawnRelease(w: WordCtx): void;
   keyPose(age: number, motion: number, out: GlyphPose): GlyphPose;
   spawnKey(phase: number, c: SpawnCtx): void;
   spawnWrong(c: SpawnCtx): void;
@@ -156,6 +179,26 @@ function sparks(c: SpawnCtx, n: number, toneA: number, toneB: number, deg: numbe
   }
 }
 
+/** `n` embers: slow sparks drifting up from (x, y) within `spread` px, cooling to gold. */
+function embers(c: SpawnCtx, n: number, x: number, y: number, spread: number): void {
+  for (let k = 0; k < n; k += 1) {
+    const i = spawn(c, PK.spark, k % 2 === 0 ? TONE.gold : TONE.light, rand(c, 320, 460), x + rand(c, -spread, spread), y);
+    if (i < 0) return;
+    c.pool.aux[i] = 0.18 * c.h * c.size;
+    c.pool.size[i] = 0.06 * c.h;
+    fling(c, i, -90 + rand(c, -25, 25), rand(c, 4, 7) * c.h, 2.5, -2 * c.h);
+    if (c.still) c.pool.rot[i] = -Math.PI / 2;
+  }
+}
+
+/** A word-level particle; -1 when the intensity spawns nothing or the pool refuses. */
+function wspawn(w: WordCtx, kind: ParticleKind, tone: number, life: number, x = w.cx, y = w.cy): number {
+  if (w.mult <= 0) return -1;
+  const i = w.pool.spawn(kind, w.owner, w.prio, x, y, w.now, life);
+  if (i >= 0) w.pool.tone[i] = tone;
+  return i;
+}
+
 // ── Stamp (T1): a big copy slams down onto the letter in three frames over its own falling shadow,
 // lands with a squash, an overshoot and a settle, splashes paint with a dark under-edge, throws
 // droplets that splat on the line, and its light spills onto the next letters for a moment.
@@ -177,7 +220,6 @@ const stamp: StyleRecipe = {
   clip: null,
   ghost: "light",
   phases: [STAMP_LAND],
-  release: "seal",
   keyPose(age, m, out) {
     restPose(out);
     if (age < 0 || age >= this.keyMs) return out;
@@ -209,10 +251,11 @@ const stamp: StyleRecipe = {
     return out;
   },
   spawnKey(_phase, c) {
-    // The splat under the letter (paint with a dark under-edge, or an ink texture), the flash, the contact ring.
-    const sp = spawn(c, PK.splat, TONE.accent, 300);
+    // The splat under the letter (a deep blot with a bright rim and glow, or an ink texture), the flash, the contact ring.
+    const sp = spawn(c, PK.splat, TONE.accent, 420);
     if (sp >= 0) {
-      c.pool.size[sp] = 0.6 * c.h * c.size;
+      c.pool.size[sp] = 0.66 * c.h * c.size;
+      c.pool.size2[sp] = 0;
       c.pool.rot[sp] = c.random() * Math.PI * 2;
       c.pool.variant[sp] = Math.floor(c.random() * 4);
       c.pool.aux[sp] = c.random() * 1000;
@@ -244,20 +287,43 @@ const stamp: StyleRecipe = {
     c.light(2, 0.2);
     c.light(-1, 0.3);
   },
+  spawnRelease(w) {
+    // Stamp seals the word: a double-ruled frame slams over it, paint splats at two corners.
+    const tone = w.gold ? TONE.gold : TONE.accent;
+    const seal = wspawn(w, PK.seal, tone, 420);
+    if (seal >= 0) {
+      w.pool.size[seal] = w.rowW / 2 + 0.12 * w.h;
+      w.pool.size2[seal] = 0.62 * w.h;
+      w.pool.aux[seal] = 0.07 * w.h;
+      w.pool.variant[seal] = Math.floor(w.random() * 4);
+    }
+    for (let k = 0; k < 2; k += 1) {
+      const side = k === 0 ? -1 : 1;
+      const sp = wspawn(w, PK.splat, tone, 380, w.cx + side * (w.rowW / 2 + 0.05 * w.h), w.cy + (k === 0 ? -0.45 : 0.45) * w.h);
+      if (sp < 0) break;
+      w.pool.size[sp] = 0.32 * w.h;
+      w.pool.size2[sp] = 0;
+      w.pool.rot[sp] = w.random() * Math.PI * 2;
+      w.pool.variant[sp] = Math.floor(w.random() * 4);
+      w.pool.aux[sp] = w.random() * 1000;
+    }
+  },
   spawnWrong(c) {
-    const sp = spawn(c, PK.splat, TONE.warn, 220);
+    // A red smear lying flat under the line (never behind the red letter, never over the next ones or the meaning), drops off it.
+    const sp = spawn(c, PK.splat, TONE.warn, 320, c.x, c.y + 0.52 * c.h);
     if (sp >= 0) {
-      c.pool.size[sp] = 0.36 * c.h;
+      c.pool.size[sp] = 0.4 * c.h;
+      c.pool.size2[sp] = 0.3;
       c.pool.rot[sp] = c.random() * Math.PI * 2;
       c.pool.variant[sp] = Math.floor(c.random() * 4);
       c.pool.aux[sp] = c.random() * 1000;
     }
     for (let k = 0; k < 3; k += 1) {
-      const i = spawn(c, PK.ink, TONE.warn, rand(c, 200, 260));
+      const i = spawn(c, PK.ink, TONE.warn, rand(c, 220, 280), c.x, c.y + 0.5 * c.h);
       if (i < 0) return;
       c.pool.size[i] = rand(c, 0.035, 0.06) * c.h;
       c.pool.aux[i] = c.y + 0.6 * c.h;
-      fling(c, i, 90 + rand(c, -35, 35), rand(c, 2, 5) * c.h, 4, 22 * c.h);
+      fling(c, i, (k === 1 ? -90 : k === 0 ? -150 : -30) + rand(c, -12, 12), rand(c, 3, 5) * c.h, 4, 30 * c.h);
     }
   },
 };
@@ -290,6 +356,37 @@ const flare: StyleRecipe = {
     if (c.mult >= 1.9) {
       const i = spawn(c, PK.star, TONE.light, 130, c.x - 0.34 * c.h, c.y + 0.1 * c.h);
       if (i >= 0) c.pool.size[i] = 0.32 * c.h;
+    }
+    // Two embers drift up off the letter after the sparks, slower, and cool to gold.
+    embers(c, count(c, 2, 1), c.x, c.y - 0.2 * c.h, 0.5 * c.h);
+    c.light(1, 0.45);
+    c.light(-1, 0.3);
+    c.light(2, 0.15);
+  },
+  spawnRelease(w) {
+    // A beam of light runs the length of the word and stretches past it; embers rise off every letter.
+    const b = wspawn(w, PK.beam, w.gold ? TONE.gold : TONE.accent, 210, w.cx, w.cy - 0.06 * w.h);
+    if (b >= 0) {
+      w.pool.size[b] = w.rowW / 2 + 0.45 * w.h;
+      w.pool.size2[b] = 0.24 * w.h;
+      w.pool.variant[b] = Math.floor(w.random() * 4);
+    }
+    const n = Math.min(24, Math.round(2 * w.mult * w.len));
+    for (let k = 0; k < n; k += 1) {
+      const i = wspawn(w, PK.spark, k % 2 === 0 ? (w.gold ? TONE.gold : TONE.light) : TONE.gold, 420 + w.random() * 220, w.cx + w.sx[k % w.len]!, w.cy - 0.1 * w.h);
+      if (i < 0) break;
+      w.pool.aux[i] = 0.22 * w.h;
+      w.pool.size[i] = 0.075 * w.h;
+      if (w.still) {
+        w.pool.rot[i] = -Math.PI / 2;
+        continue;
+      }
+      const a = ((-90 + (w.random() * 2 - 1) * 35) * Math.PI) / 180;
+      const speed = (5 + w.random() * 7) * w.h;
+      w.pool.vx[i] = Math.cos(a) * speed;
+      w.pool.vy[i] = Math.sin(a) * speed;
+      w.pool.drag[i] = 2.5;
+      w.pool.grav[i] = -2 * w.h;
     }
   },
   spawnWrong(c) {
@@ -325,6 +422,18 @@ const smash: StyleRecipe = {
     }
     sparks(c, count(c, 6, 4), TONE.hot, TONE.hot, -90, 180, 20 * c.h, 30 * c.h, 0.3 * c.h, 0.07 * c.h, 90, 120);
     sparks(c, count(c, 2), TONE.accent, TONE.accent, -90, 180, 16 * c.h, 24 * c.h, 0.26 * c.h, 0.08 * c.h, 100, 130);
+    c.light(1, 0.55);
+    c.light(-1, 0.35);
+  },
+  spawnRelease(w) {
+    // T2 at the word's scale: the two-tone ring steps round the whole word, white then accent, and its arc turns.
+    const r = wspawn(w, PK.smashWord, w.gold ? TONE.gold : TONE.accent, 170);
+    if (r >= 0) {
+      w.pool.size[r] = w.rowW / 2 + 0.28 * w.h;
+      w.pool.size2[r] = 0.72 * w.h;
+      w.pool.aux[r] = w.h;
+      w.pool.rot[r] = w.random() * Math.PI * 2;
+    }
   },
   spawnWrong(c) {
     ring(c, TONE.warn, 120, 0.5 * c.h, 0.6 * c.h, 0.11 * c.h, 1.4, c.random() * Math.PI * 2);
@@ -377,6 +486,32 @@ const shatter: StyleRecipe = {
       c.pool.rot[s] = c.random() * Math.PI * 2;
       c.pool.spin[s] = c.still ? 0 : rand(c, -18, 18);
       fling(c, s, (k % 2 === 0 ? -90 : 90) + rand(c, -75, 75), rand(c, 10, 22) * c.h, 5, 24 * c.h);
+    }
+    c.light(1, 0.35);
+  },
+  spawnRelease(w) {
+    // The whole word cracks along one slash and bursts into shards before its letters fly.
+    const cr = wspawn(w, PK.crack, TONE.hot, 140);
+    if (cr >= 0) {
+      w.pool.size[cr] = w.rowW + 0.5 * w.h;
+      w.pool.rot[cr] = (-7 * Math.PI) / 180;
+    }
+    const n = Math.min(30, Math.round(3 * w.mult * w.len));
+    for (let k = 0; k < n; k += 1) {
+      const x = w.cx + w.sx[k % w.len]!;
+      const s = wspawn(w, PK.shard, k % 3 === 0 ? TONE.hot : k % 3 === 1 ? (w.gold ? TONE.gold : TONE.accent) : TONE.light, 360 + w.random() * 160, x, w.cy);
+      if (s < 0) break;
+      w.pool.size[s] = (0.12 + 0.12 * w.random()) * w.h;
+      w.pool.rot[s] = w.random() * Math.PI * 2;
+      w.pool.spin[s] = w.still ? 0 : (w.random() * 2 - 1) * 20;
+      if (w.still) continue;
+      const out = x - w.cx;
+      const a = Math.atan2((w.random() < 0.5 ? -1 : 1) * (0.4 + w.random()) * w.h, out + (w.random() * 2 - 1) * 0.6 * w.h);
+      const speed = (12 + w.random() * 14) * w.h;
+      w.pool.vx[s] = Math.cos(a) * speed;
+      w.pool.vy[s] = Math.sin(a) * speed;
+      w.pool.drag[s] = 4.5;
+      w.pool.grav[s] = 26 * w.h;
     }
   },
   spawnWrong(c) {
@@ -432,6 +567,21 @@ const rune: StyleRecipe = {
       c.pool.size[i] = 0.2 * c.h;
       fling(c, i, (a * 180) / Math.PI + 90, 3 * c.h, 6, 0);
     }
+    c.light(1, 0.3);
+    c.light(-1, 0.3);
+  },
+  spawnRelease(w) {
+    // A rune circle opens round the whole word, laid flat like a seal on the ground, and a second one turns against it.
+    const tone = w.gold ? TONE.gold : TONE.accent;
+    for (let k = 0; k < 2; k += 1) {
+      const r = wspawn(w, PK.rune, k === 0 ? tone : TONE.light, k === 0 ? 460 : 400);
+      if (r < 0) break;
+      const rx = w.rowW / 2 + (k === 0 ? 0.55 : 0.3) * w.h;
+      w.pool.size[r] = rx;
+      w.pool.sy[r] = Math.min(1, (k === 0 ? 0.95 : 0.75) * w.h / rx);
+      w.pool.rot[r] = w.random() * Math.PI * 2;
+      w.pool.spin[r] = w.still ? 0 : k === 0 ? 1.1 : -1.6;
+    }
   },
   spawnWrong(c) {
     const i = spawn(c, PK.rune, TONE.warn, 170);
@@ -449,24 +599,59 @@ const minimal: StyleRecipe = {
   keyMs: 95,
   clip: null,
   ghost: "hot",
-  phases: [],
+  phases: [0],
   keyPose(age, m, out) {
     restPose(out);
     if (age < 0 || age >= this.keyMs) return out;
     const t = clamp01(age / 95);
     out.scale = 1 + 0.12 * m * (1 - t) * (1 - t);
+    out.dy = -0.04 * m * (1 - t) * (1 - t);
     out.hot = age < 60 ? 0.35 * (1 - age / 60) : 0;
     return out;
   },
-  spawnKey() {},
+  spawnKey(_phase, c) {
+    // No particles, only a soft lift of light onto the next letter: the reader's eye goes there.
+    c.light(1, 0.18);
+  },
+  spawnRelease(w) {
+    // One clean underline drawn across the word.
+    const s = wspawn(w, PK.sweep, w.gold ? TONE.gold : TONE.accent, 260, w.cx, w.cy + 0.56 * w.h);
+    if (s >= 0) {
+      w.pool.size[s] = w.rowW / 2 - 0.2 * w.h;
+      w.pool.aux[s] = Math.max(2, 0.06 * w.h);
+    }
+  },
   spawnWrong() {},
 };
 
 export const STYLES: Readonly<Record<TypingFxStyle, StyleRecipe>> = { stamp, flare, smash, shatter, rune, minimal };
 
-/** A wrong key's twitch (every style): a short sideways shake on the due letter, never a scale (it would cover the next letters). */
-const TWITCH = [0.07, -0.05, 0.035, -0.015];
-export const WRONG_MS = 90;
+/** A wrong key's twitch (every style): a sideways shake on the due letter, never a scale (it would cover the next letters). */
+const TWITCH = [0.11, -0.08, 0.055, -0.03, 0.012];
+export const WRONG_MS = 100;
+
+/**
+ * Every style's wrong-key beat under its own: the underline under the due letter is knocked down
+ * and back (white-hot, then red), and the letter the player typed bounces off above the due letter,
+ * up and back, turning and fading. Neither crosses the row after the due letter or the meaning line.
+ */
+export function spawnWrongBeat(c: SpawnCtx): void {
+  const b = spawn(c, PK.bar, TONE.warn, 280, c.x, c.y + 0.56 * c.h);
+  if (b >= 0) {
+    c.pool.size[b] = 0.36 * c.h;
+    c.pool.size2[b] = c.still ? 0 : 0.13 * c.h;
+    c.pool.aux[b] = Math.max(3, 0.1 * c.h);
+  }
+  if (c.key <= 32) return;
+  const g = spawn(c, PK.glyph, TONE.warn, 340, c.x - 0.06 * c.h, c.y - 0.82 * c.h);
+  if (g >= 0) {
+    c.pool.size[g] = 0.56 * c.h;
+    c.pool.aux[g] = c.key;
+    c.pool.rot[g] = 0;
+    c.pool.spin[g] = c.still ? 0 : -rand(c, 1.4, 2.4);
+    fling(c, g, -125 + rand(c, -8, 8), 3.4 * c.h, 2, 8 * c.h);
+  }
+}
 
 export function wrongPose(age: number, motion: number, out: GlyphPose): GlyphPose {
   restPose(out);

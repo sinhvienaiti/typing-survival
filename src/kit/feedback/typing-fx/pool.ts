@@ -21,6 +21,11 @@ export const PK = {
   splat: 11, // a paint splat with a dark under-edge (or an ink texture cell)
   contact: 12, // a flat ring where a stamp meets the line
   seal: 13, // a seal frame stamped over the whole word (or a seal texture)
+  bar: 14, // a wrong key's underline kick under the due letter
+  glyph: 15, // the wrong letter the player typed, bouncing off above the row
+  beam: 16, // a light beam along the whole word (Flare's release)
+  sweep: 17, // an underline drawn across the whole word (Minimal's release)
+  smashWord: 18, // T2's stepped two-tone ring round the whole word (Smash's release)
 } as const;
 export type ParticleKind = (typeof PK)[keyof typeof PK];
 
@@ -52,6 +57,8 @@ export class ParticlePool {
   readonly aux: Float32Array;
   /** Which cell of a texture atlas (or which procedural shape) the particle draws. */
   readonly variant: Uint8Array;
+  /** Vertical scale the renderer applies around (x, y): word-wide rings drawn as ellipses (1: none). */
+  readonly sy: Float32Array;
   private live: number;
 
   constructor(readonly capacity: number) {
@@ -73,6 +80,7 @@ export class ParticlePool {
     this.spin = new Float32Array(capacity);
     this.aux = new Float32Array(capacity);
     this.variant = new Uint8Array(capacity);
+    this.sy = new Float32Array(capacity);
     this.live = capacity;
   }
 
@@ -134,6 +142,7 @@ export class ParticlePool {
     this.spin[slot] = 0;
     this.aux[slot] = 0;
     this.variant[slot] = 0;
+    this.sy[slot] = 1;
     return slot;
   }
 
@@ -194,6 +203,7 @@ export class ParticlePool {
       this.spin[i] = this.spin[last]!;
       this.aux[i] = this.aux[last]!;
       this.variant[i] = this.variant[last]!;
+      this.sy[i] = this.sy[last]!;
     }
     this.count = last;
   }

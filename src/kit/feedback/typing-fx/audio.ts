@@ -46,13 +46,16 @@ export const TYPING_SOUND_SET: Readonly<Record<TypingSoundSet, { min: number; wa
   space: { min: 1, want: 3 },
 };
 
-/** The first five keyboard profiles (owner 29/10; made by the audio lane). Player names are English. */
+/**
+ * The five keyboard profiles, premium aluminium keyboards (owner 29/10, Codex ticket 182; the first
+ * set was rejected, Clicky and Classic Spring are gone). Player names are English.
+ */
 export const KEYBOARD_PROFILES: readonly { readonly id: string; readonly name: string }[] = [
-  { id: "creamy", name: "Creamy" },
-  { id: "thock", name: "Thock" },
-  { id: "clicky", name: "Clicky" },
+  { id: "creamy", name: "Creamy Linear" },
+  { id: "thock", name: "Deep Thock" },
+  { id: "marbly", name: "Marbly" },
+  { id: "clack", name: "Clean Clack" },
   { id: "dome", name: "Soft Dome" },
-  { id: "spring", name: "Classic Spring" },
 ];
 
 export type TypingSoundProfile = {
