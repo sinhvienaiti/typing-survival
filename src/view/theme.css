@@ -66,6 +66,9 @@
   --led-glow: rgba(255, 160, 50, 0.55);
   --led-ghost: rgba(255, 179, 71, 0.09);
 
+  /* Room the quick panels' buttons take in the top-right corner (main.ts sets it on the HUD at run time). */
+  --qs-room: 0px;
+
   /* Surfaces. Panels keep an alpha below 1 (the boot scenario measures contrast through it). */
   --page: #050608;
   --panel: rgba(19, 22, 26, 0.97);

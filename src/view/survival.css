@@ -26,12 +26,12 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-hazard { height: calc(8px * var(--ui)); background: var(--hazard); border-top: 1px solid var(--bevel-lo); border-bottom: 1px solid var(--bevel-lo); }
 
 /* While the title (or its menus) shows, the fight's HUD steps aside (hidden, still laid out: the number field keeps its rectangles). */
-.sv-hud[data-mode="start"] .sv-top, .sv-hud[data-mode="start"] .sv-bottom, .sv-hud[data-mode="start"] .sv-strip, .sv-hud[data-mode="start"] .sv-streak, .sv-hud[data-mode="start"] .sv-marks, .sv-hud[data-mode="start"] .sv-banner, .sv-hud[data-mode="start"] .sv-strip-warn { visibility: hidden; }
+.sv-hud[data-mode="start"] .sv-top, .sv-hud[data-mode="start"] .sv-bottom, .sv-hud[data-mode="start"] .sv-strip, .sv-hud[data-mode="start"] .sv-tfx, .sv-hud[data-mode="start"] .sv-streak, .sv-hud[data-mode="start"] .sv-marks, .sv-hud[data-mode="start"] .sv-banner, .sv-hud[data-mode="start"] .sv-strip-warn { visibility: hidden; }
 /* The input notice stays on every screen (the title and the journey too), over the menus. */
 .sv-hud[data-mode="start"] .sv-notice { top: calc(18px * var(--ui)) !important; z-index: 2; }
 
-/* Top: armour, clock, kills. */
-.sv-top { position: absolute; top: calc(12px * var(--ui)); left: calc(14px * var(--ui)); right: calc(14px * var(--ui)); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+/* Top: armour, clock, kills; clear of the quick panels' buttons in the top-right corner (--qs-room, set by main.ts). */
+.sv-top { position: absolute; top: calc(12px * var(--ui)); left: calc(14px * var(--ui)); right: max(calc(14px * var(--ui)), calc(var(--qs-room) + 10px * var(--ui))); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .sv-left { display: flex; gap: calc(10px * var(--ui)); align-items: stretch; }
 .sv-hp { display: flex; align-items: center; gap: calc(10px * var(--ui)); padding: calc(8px * var(--ui)) calc(16px * var(--ui)); }
 .sv-label { font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.16em; color: var(--steel-200); }
@@ -117,6 +117,18 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 /* A loaded magazine flashes the plate from inside. */
 @keyframes sv-load { 0% { box-shadow: inset 0 0 0 300px var(--flash-load); } 100% { box-shadow: inset 0 0 0 300px transparent; } }
 @keyframes sv-perfect { 0% { box-shadow: inset 0 0 0 300px var(--flash-perfect); } 100% { box-shadow: inset 0 0 0 300px transparent; } }
+
+/* The word line is the kit's focus strip (type-fx.ts) in its own layer: under the old line's LED, ticks and the menus (z-index 0 keeps the strip's own z-index inside). */
+.sv-tfx { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+/* With it, the old plate and the stray key's ghost stay hidden (strip.ts, host mode). */
+.sv-hud.is-tfx .sv-strip, .sv-hud.is-tfx .sv-strip-ghost { display: none; }
+/* The strip's word layer sits in a zero-width box: sized to its content, the meaning wraps at its own 24 em, not at the word's width. */
+.sv-tfx .tfx-layer, .sv-tfx-preview .tfx-layer { width: max-content; }
+
+/* The quick panels (the kit's ui/quick-settings): labels in one column, so the sliders line up (no icon art yet: the icon cell stays empty). */
+.sv-hud .kit-qs__row:not(.kit-qs__row--slot) { grid-template-columns: 1.6em 9.4em minmax(0, 1fr); }
+/* The 3-2-1 back into the fight stands over the field, above the word line, not over the word. */
+.sv-hud .kit-qs__count { bottom: 56%; }
 
 /* The word line above the ship's nose (strip.ts): the word being typed, on a plate that hugs it. Nothing is drawn over it. */
 .sv-strip { position: absolute; left: 50%; top: 416px; height: calc(56px * var(--ui)); max-width: calc(420px * var(--ui)); padding: 0 calc(16px * var(--ui)); display: flex; align-items: center; justify-content: center; background: var(--strip); border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 6px 18px var(--shadow); opacity: 0; transform: translateX(-50%); transform-origin: 50% 50%; }

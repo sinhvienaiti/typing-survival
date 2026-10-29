@@ -20,6 +20,8 @@
  * rift's warning on its wall's side (and its countdown beside the word line),
  * a 2 s card when something new first appears; an input notice just above
  * the word line. It publishes the rectangles damage numbers must not cover.
+ * The word itself is drawn by the kit's focus strip (type-fx.ts) in `fxRoot`,
+ * which sits where the old plate stood in the HUD's order (under the menus).
  */
 import * as THREE from "three";
 import type { Rect } from "../kit/feedback";
@@ -104,6 +106,8 @@ export class Hud {
   private readonly warn: HTMLElement;
   private readonly bottom: HTMLElement;
   readonly strip: WordStrip;
+  /** The focus strip's layer (type-fx.ts): after the bays' row, before the old line's parts and the menus. */
+  readonly fxRoot: HTMLElement;
   private readonly hp: HTMLElement;
   private readonly slots: Slot[] = [];
   readonly overlay: HTMLElement;
@@ -113,8 +117,8 @@ export class Hud {
   private streakHot = false;
   private readonly at = new THREE.Vector3();
   reduced = false;
-  /** Where layout() put things (CSS px): the stripes' far edge, the red line's glow edge, Xung's reach (z 11.7 m). */
-  readonly placed = { stripes: 0, glow: 0, reach: 0 };
+  /** Where layout() put things (CSS px): the stripes' far edge, the red line's glow edge, Xung's reach (z 11.7 m), the word line's bottom. */
+  readonly placed = { stripes: 0, glow: 0, reach: 0, line: 0 };
   private bannerUntil = 0;
   private lastNow = 0;
   private freshUntil = 0;
@@ -148,6 +152,8 @@ export class Hud {
     this.warn = el("div", "sv-warn", root);
     this.notice = el("div", "sv-notice", root);
     this.bottom = el("div", "sv-bottom", root);
+    this.fxRoot = el("div", "sv-tfx", root);
+    this.fxRoot.setAttribute("aria-hidden", "true");
     this.strip = new WordStrip(root);
     const kit = w.header.kit;
     // Columns: bay 3, bay 1, the ship's gap, bay 2, bay 4.
@@ -185,14 +191,14 @@ export class Hud {
    */
   layout(stage: Stage, ui: number): void {
     this.placed.stripes = stage.project(0, FIELD.bottomZ + 1.05, 0, this.at, true).y;
-    const line = stage.project(0, FIELD.bottomZ + LINE_LIFT, 0, this.at, true).y - 4 * ui;
+    const line = (this.placed.line = stage.project(0, FIELD.bottomZ + LINE_LIFT, 0, this.at, true).y - 4 * ui);
     const glow = (this.placed.glow = stage.project(0, FIELD.bottomZ - 0.32, 0, this.at, true).y);
     this.placed.reach = stage.project(0, 11.7, 0, this.at, true).y;
     this.bottom.style.top = glow + "px";
     this.bottom.style.gridTemplateColumns = COLUMNS.map((px) => px * ui + "px").join(" ");
     this.strip.layout(stage, line, ui);
-    // The input notice sits just above the word line, where the eyes are while typing.
-    this.notice.style.top = line - 56 * ui - 52 * ui + "px";
+    // The input notice sits just above the word line (at its widest), where the eyes are while typing.
+    this.notice.style.top = this.strip.rect().y - 52 * ui + "px";
   }
 
   /** The rectangles no damage number may cover (CSS px), with a small margin: the word line (at its widest), the armour, the clock, the kills, the bays, the objective's plate. */

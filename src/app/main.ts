@@ -12,7 +12,7 @@ import { runFrameLoop, safeLocalStorage, safeSessionStorage } from "../kit/platf
 import { speakEnglish } from "../kit/speech";
 import { hordeIntensity } from "../audio/music";
 import { ThemeAudio } from "../audio/theme-audio";
-import { DEFAULT_MODE, MODES, MODE_SPECS, TRIAL_KIT, isMode, lengthFor, stageHeader, type Mode as Difficulty, type RunPace } from "../content/balance";
+import { MODES, MODE_SPECS, TRIAL_KIT, isMode, lengthFor, stageHeader, type RunPace } from "../content/balance";
 import { CHAPTER_1, stageById } from "../content/chapter-1";
 import { GUN_KEYS, GUN_SPECS } from "../content/guns";
 import { FIELD, FOE_CAP, type Tier } from "../content/rules";
@@ -29,7 +29,10 @@ import { renderJourney, starRow } from "../view/screens-journey";
 import { Ship, type Pilot } from "../view/ship";
 import { foesOnScreen, shipProbe } from "../view/probes";
 import { TypeFeel } from "../view/typing-feel";
+import { GUN_ACCENT, TypeFx } from "../view/type-fx";
+import { TypeFxPreview, type PreviewWord } from "../view/type-fx-preview";
 import { warmPrograms } from "../view/warm";
+import { QUICK_COUNTDOWN_STEP_MS, type QuickValue } from "../kit/ui";
 import { FrameCosts, bays, devHandleWanted, eventCounts, installDevHandle, numberBoxes, runState, snapshot } from "./dev";
 import { Journey, NEXT_KEY, introKey, objectiveText, recordStage, starsOf, takeChoice, type RunChoice } from "./journey";
 import { adviceText, countedText, profileView, runStats, runWords } from "./results";
@@ -37,7 +40,9 @@ import { ImeNotice, installAutoPause, installKeys, type KeyAction } from "./inpu
 import { reportWord } from "./learning";
 import { blendSkill, type SkillUpdate } from "../kit/balance";
 import { Menu, cycle, stepVolume, type MenuItem } from "./menu";
+import { createQuickSettings } from "./quick";
 import { Session } from "./session";
+import { applyQuick, loadSettings, quickValues, soundLevels, voiceLevel, type Settings } from "./settings";
 import { SEEN_KEY, WordHistory, emptyTally, headerFor, loadProfile, recordRun, runSample, saveProfile, skillReport, tallyWord } from "./skill";
 import { loadVocab, type Word } from "./vocab";
 
@@ -47,9 +52,11 @@ import { loadVocab, type Word } from "./vocab";
  * loads, the title screen waits (keyboard first: Bắt đầu, Chơi tiếp, Cài đặt,
  * Kho súng · Học từ), the world steps at 60 Hz in a session, the 3D stage
  * draws it, the combat view turns its events into feedback and the theme's
- * sound, the DOM HUD shows the words; window.__survival lets browser scenarios
+ * sound, the DOM HUD shows the words, the kit's focus strip the word being
+ * typed (type-fx.ts), the quick panels (quick.ts: Settings F1, Sound F2)
+ * pause the fight over it; window.__survival lets browser scenarios
  * drive it in dev or with ?debug=1. Storage: only survival.* keys (quality, ship and the
- * settings screen's volumes, shake, pronunciation, mode and "Nhịp tự điều"),
+ * settings' volumes, shake, pronunciation, typing effects, mode and "Nhịp tự điều": settings.ts),
  * the skill profile (survival.skill, the kit's key) and the words finished
  * here (survival.seen). Each typed word goes to the portal's learning record
  * as "typing-survival". Balance (docs/changelog/2026-10-23-balance.md): the
@@ -82,22 +89,12 @@ const pilot: Pilot = pick(params.get("pilot"), PILOTS) ?? pick(safeLocalStorage.
 if (params.has("q")) safeLocalStorage.setItem(QUALITY_KEY, tier);
 if (params.has("pilot")) safeLocalStorage.setItem(PILOT_KEY, pilot);
 const seed = Number(params.get("seed") ?? "") >>> 0 || (Math.floor(Math.random() * 0x7fffffff) >>> 0) || 1;
-type Settings = {
-  sfxVolume: number; musicVolume: number; screenShake: boolean; pronunciationEnabled: boolean; pronunciationRate: number; pronunciationVolume: number;
-  /** The mode (Thư giãn, Cân bằng, Thử thách) and "Nhịp tự điều theo cách bạn gõ". */
-  mode: Difficulty; paceAdapt: boolean;
-};
-const saved = (safeLocalStorage.readJson(SETTINGS_KEY) ?? {}) as Partial<Settings>;
-const DEFAULTS: Settings = { sfxVolume: 0.7, musicVolume: 0.5, screenShake: true, pronunciationEnabled: true, pronunciationRate: 0.9, pronunciationVolume: 1, mode: DEFAULT_MODE, paceAdapt: true };
-const settings: Settings = { ...DEFAULTS, ...saved };
-for (const key of ["sfxVolume", "musicVolume"] as const) if (!Number.isFinite(settings[key])) settings[key] = DEFAULTS[key];
-if (!isMode(settings.mode)) settings.mode = DEFAULT_MODE;
-if (typeof settings.paceAdapt !== "boolean") settings.paceAdapt = DEFAULTS.paceAdapt;
+const settings: Settings = loadSettings(safeLocalStorage.readJson(SETTINGS_KEY));
 const urlMode = params.get("mode");
 if (isMode(urlMode)) settings.mode = urlMode;
 if (params.has("adapt")) settings.paceAdapt = params.get("adapt") !== "0";
 if (isMode(urlMode) || params.has("adapt")) safeLocalStorage.writeJson(SETTINGS_KEY, settings);
-const speech = { enabled: settings.pronunciationEnabled, rate: settings.pronunciationRate, volume: settings.pronunciationVolume };
+const speech = { enabled: settings.pronunciationEnabled, rate: settings.pronunciationRate, volume: voiceLevel(settings) };
 const shakeAllowed = params.get("shake") !== "0";
 
 const hudRoot = byId("svHud");
@@ -137,6 +134,7 @@ const loading = Promise.all([crowd.load(), ship.load(stage.scene)]);
 let loaded = false;
 void loading.then(() => (loaded = true));
 const audio = new ThemeAudio({ sfx: settings.sfxVolume, music: settings.musicVolume });
+audio.setLevels(soundLevels(settings));
 
 /** "intro": the stage card of a page that came from the journey or a replay; the fight waits for a key (it opens the audio). */
 type Mode = "start" | "intro" | "play" | "paused" | "end";
@@ -144,6 +142,8 @@ type Mode = "start" | "intro" | "play" | "paused" | "end";
 type Screen = "title" | "settings" | "armory" | "profile" | "pause" | "end" | "intro" | "none";
 let mode: Mode = "start";
 let screen: Screen = "none";
+/** A quick panel (or its 3-2-1 back in) holds the fight still and types nothing. */
+let frozen = false;
 /** Where settings, the armory and the typing profile go back to. */
 let back: Screen = "title";
 let menu = new Menu([]);
@@ -169,7 +169,7 @@ const combat = new Combat(stage, crowd, ship, pilot, tier, audio, {
     tallyWord(tally, history.finished(text), text.length, seconds, recognize, errors === 0);
     if (vocab.source === "vocabulary") reportWord(word, perfect);
     // Said the first time it is typed in this run, at most once every 3 s.
-    if (settings.pronunciationEnabled && !spoken.has(word.en) && clock - lastSpeak >= SPEAK_GAP_MS) {
+    if (settings.pronunciationEnabled && speech.volume > 0 && !spoken.has(word.en) && clock - lastSpeak >= SPEAK_GAP_MS) {
       spoken.add(word.en);
       lastSpeak = clock;
       speakEnglish(word.en, speech);
@@ -214,7 +214,43 @@ const applyShake = (): void => {
 };
 applyShake();
 combat.trauma.reduced = hud.reduced = motionReduced();
-const typing = (combat.typing = new TypeFeel(hud, stage, ship, combat.glows, combat.strips, combat.sparks, audio));
+// The word line is the kit's focus strip; the old plate keeps only its streak LED, rift countdown and near-foe ticks.
+const typeFx = new TypeFx(hud.fxRoot, stage, ship, audio, settings.typingFx, motionReduced());
+hud.strip.attach(typeFx);
+hudRoot.classList.add("is-tfx");
+const typing = (combat.typing = new TypeFeel(hud, stage, ship, combat.glows, combat.strips, combat.sparks, audio, typeFx, (index) => wordOf(index).vi));
+
+/** The Settings panel's preview while it is open. */
+let preview: TypeFxPreview | null = null;
+/** A few short words of the run's deck for the preview. */
+function previewWords(): PreviewWord[] {
+  const out: PreviewWord[] = [];
+  for (let k = 0; k < world.deck.length && out.length < 4; k += 1) if (world.deck[k]!.length >= 4 && world.deck[k]!.length <= 7) out.push(wordOf(k));
+  return out.length > 0 ? out : [wordOf(0)];
+}
+const quick = createQuickSettings({
+  host: hudRoot,
+  values: () => quickValues(settings, { quality: chosen.tier, reducedMotion: motionReduced() }),
+  change: quickChange,
+  preview: quickPreview,
+  mountPreview: (host) => {
+    const bay = world.typing.lock >= 0 ? world.typing.lock : 0;
+    preview = new TypeFxPreview(host, settings.typingFx, motionReduced(), GUN_ACCENT[world.guns.gun[bay] ?? 0] ?? GUN_ACCENT[0], () => typeFx.strip.fontSize, previewWords());
+    return () => {
+      preview?.dispose();
+      preview = null;
+    };
+  },
+  pause: () => {
+    frozen = true;
+  },
+  resume: () => {
+    frozen = false;
+  },
+  quit: quitToTitle,
+  countdown: () => (mode === "play" ? QUICK_COUNTDOWN_STEP_MS : 0),
+});
+const quickBar = quick.root.querySelector<HTMLElement>(".kit-qs__bar");
 
 const percent = (value: number): string => Math.round(value * 100) + "%";
 const onOff = (on: boolean): string => (on ? "On" : "Off");
@@ -377,21 +413,74 @@ function adjust(id: string, delta: number): void {
   if (id === "sfx") settings.sfxVolume = stepVolume(settings.sfxVolume, delta);
   else if (id === "music") settings.musicVolume = stepVolume(settings.musicVolume, delta);
   else if (id === "shake") settings.screenShake = !settings.screenShake;
-  else if (id === "speak") settings.pronunciationEnabled = speech.enabled = !settings.pronunciationEnabled;
+  else if (id === "speak") settings.pronunciationEnabled = !settings.pronunciationEnabled;
   else if (id === "adapt") settings.paceAdapt = !settings.paceAdapt;
   else if (id === "motion") {
     setMotion(cycle(MOTIONS, motionPreference(), delta));
-    combat.trauma.reduced = hud.reduced = ship.reduced = motionReduced();
+    applyMotion();
   }
   else if (id === "mode") settings.mode = cycle(MODES, settings.mode, delta);
   else if (id === "pilot") chosen.pilot = cycle(PILOTS, chosen.pilot, delta);
   else if (id === "quality") chosen.tier = cycle(TIERS, chosen.tier, delta);
   else return;
-  audio.setVolumes(settings.sfxVolume, settings.musicVolume);
+  applyAudio();
   applyShake();
   saveSettings();
   audio.ui("move");
   show(screen === "title" ? "title" : "settings", true);
+}
+
+function applyAudio(): void {
+  audio.setLevels(soundLevels(settings));
+  speech.enabled = settings.pronunciationEnabled;
+  speech.volume = voiceLevel(settings);
+}
+
+function applyMotion(): void {
+  const reduced = motionReduced();
+  combat.trauma.reduced = hud.reduced = ship.reduced = reduced;
+  typeFx.setReduced(reduced);
+  preview?.setReduced(reduced);
+}
+
+/** A quick panel's change: applied at once and saved; the Options screen under it redrawn. */
+function quickChange(id: string, value: QuickValue): void {
+  if (id === "quality") {
+    // Taken by the next page (a new run or the title's Trial), as the Options screen's.
+    if (typeof value !== "string" || !(TIERS as readonly string[]).includes(value)) return;
+    chosen.tier = value as Tier;
+  } else if (id === "reducedMotion") {
+    setMotion(value === true ? "reduced" : "full");
+    applyMotion();
+  } else if (!applyQuick(settings, id, value)) return;
+  if (id === "fxStyle" || id === "fxIntensity" || id === "fxSize") {
+    typeFx.configure(settings.typingFx);
+    preview?.configure(settings.typingFx);
+    if (id === "fxSize") resize();
+  }
+  applyShake();
+  applyAudio();
+  saveSettings();
+  if (screen === "settings") show("settings", true);
+}
+
+/** A short sample of a sound group while its row moves (the kit throttles it). */
+function quickPreview(group: string): void {
+  audio.resume();
+  if (group === "effects") audio.xung(0, true);
+  else if (group === "keyboard") for (let k = 0; k < 4; k += 1) window.setTimeout(() => audio.key(k + 1, k, false), k * 90);
+  else if (group === "voice") speakEnglish("ready", { ...speech, enabled: speech.volume > 0 });
+  else if (group !== "music") audio.ui(group === "ui" ? "move" : "select");
+}
+
+/** "Quit to title" in a quick panel: as the pause screen's "Main menu" (a run stays paused and can be resumed). */
+function quitToTitle(): void {
+  frozen = false;
+  if (mode === "end") return reload(false);
+  audio.ui("back");
+  journey.close();
+  mode = "start";
+  show("title");
 }
 
 function leaveSettings(): void {
@@ -416,8 +505,8 @@ function take(): void {
   audio.ui("select");
   switch (item.id) {
     case "start":
-      // A run's header is fixed when its world is made: another mode or "Nhịp tự điều" takes a new page.
-      if (started || settings.mode !== pageMode || settings.paceAdapt !== pageAdapt) reload(true);
+      // A run's header is fixed when its world is made: another mode or "Nhịp tự điều" (or ship, or graphics from the quick panel) takes a new page.
+      if (started || settings.mode !== pageMode || settings.paceAdapt !== pageAdapt || chosen.pilot !== pilot || chosen.tier !== tier) reload(true);
       else setMode("play");
       break;
     case "continue":
@@ -455,8 +544,8 @@ function take(): void {
 }
 
 function act(action: KeyAction): void {
-  // The stage card takes its own keys below.
-  if (mode === "intro") return;
+  // The stage card takes its own keys below; an open quick panel takes them all.
+  if (mode === "intro" || quick.blocking) return;
   if (action === "repeat") {
     if (mode === "play" && world.typing.lock >= 0) speakEnglish(wordOf(world.typing.word[world.typing.lock]!).en, speech);
     return;
@@ -557,7 +646,7 @@ window.addEventListener("pagehide", () => {
 });
 // Consume the card's key before the typing listener, including Esc on a direct URL.
 window.addEventListener("keydown", (event) => {
-  if (mode !== "intro" || event.repeat || !(event.isTrusted || params.get("untrusted") === "1")) return;
+  if (mode !== "intro" || quick.blocking || event.repeat || !(event.isTrusted || params.get("untrusted") === "1")) return;
   event.preventDefault();
   event.stopImmediatePropagation();
   const action = introKey(event.code, introFrom);
@@ -579,15 +668,15 @@ function enterFight(): void {
   audio.ui("select");
 }
 installKeys(window, {
-  // Only a running fight takes letters: keys while paused or between runs type nothing.
+  // Only a running fight takes letters: keys while paused, under a quick panel (or its countdown) or between runs type nothing.
   send: (command) => {
-    if (mode === "play") session.send(command);
+    if (mode === "play" && !quick.blocking) session.send(command);
   },
   act,
   onVietnamese: () => imeNotice.note(clock),
   allowUntrusted: params.get("untrusted") === "1",
   pick: (n) => {
-    if (mode !== "play") journey.pick(n);
+    if (mode !== "play" && !quick.blocking) journey.pick(n);
   },
 });
 installAutoPause(window, document, () => {
@@ -600,9 +689,15 @@ function resize(): void {
   document.documentElement.style.setProperty("--ui", ui.toFixed(3));
   stage.resize(width, height);
   hud.layout(stage, ui);
-  combat.resize(height, hud.protectedRects());
+  // The HUD's top row keeps clear of the quick panels' buttons in the top-right corner (damage numbers too).
+  const bar = quickBar?.getBoundingClientRect();
+  hudRoot.style.setProperty("--qs-room", bar !== undefined && bar.width > 0 ? Math.round(width - bar.left) + "px" : "0px");
+  const keep = bar !== undefined && bar.width > 0 ? [{ x: bar.left - 6, y: bar.top - 6, w: bar.width + 12, h: bar.height + 12 }] : [];
+  combat.resize(height, [...hud.protectedRects(), ...keep]);
 }
 window.addEventListener("resize", resize);
+// The buttons' size follows the view (the kit sets it after a resize): place the HUD again when they change.
+if (quickBar !== null && typeof ResizeObserver === "function") new ResizeObserver(() => resize()).observe(quickBar);
 resize();
 void document.fonts?.ready.then(resize);
 
@@ -622,16 +717,18 @@ function update(now: number): void {
     live = true;
     if (mode === "intro") drawScreen();
   }
-  session.paused = mode !== "play" || !live;
+  session.paused = mode !== "play" || !live || frozen;
   session.frame(now);
-  if (endAt >= 0 && now >= endAt) {
+  if (endAt >= 0 && now >= endAt && !frozen) {
     endAt = -1;
     setMode("end");
   }
   combat.read(world, now);
+  typeFx.tick(now, mode === "play" && live && !frozen);
   typing.read(world, now);
   hud.update(world, combat.killsWithin(now, 3000), now);
   typing.land(now);
+  typeFx.update();
   hud.setNotice(imeNotice.on(now) ? "Switch to an English keyboard" : vocab.source === "fallback" ? "Offline word list (server words unavailable)" : "");
   // The floor glows red as the press reaches the ship (inside the guns' reach and closing); the music rises with the horde.
   let near = 0;
@@ -648,16 +745,17 @@ function update(now: number): void {
     lastPeak = peak;
     if (peak > 0 && mode === "play") audio.siren();
   }
-  audio.setMusic(mode === "play" ? hordeIntensity(shown, peak > 0) : 0, mode === "play" ? 1 : mode === "paused" ? 0.45 : 0.8);
-  // Tia's arc and Ray's armed hum hold only while the fight runs (not under the pause or end screens).
-  audio.live = mode === "play";
+  const running = mode === "play" && !frozen;
+  audio.setMusic(mode === "play" ? hordeIntensity(shown, peak > 0) : 0, running ? 1 : mode === "paused" || mode === "play" ? 0.45 : 0.8);
+  // Tia's arc and Ray's armed hum hold only while the fight runs (not under the pause or end screens, nor a quick panel).
+  audio.live = running;
   costs.update[costs.at] = performance.now() - start;
 }
 
 function draw(now: number): void {
   const start = performance.now();
   // Paused, the effects hold still with the world (the clock itself runs on for the HUD).
-  const dt = lastDraw < 0 || mode === "paused" ? 0 : Math.min(0.05, Math.max(0, (now - lastDraw) / 1000));
+  const dt = lastDraw < 0 || mode === "paused" || frozen ? 0 : Math.min(0.05, Math.max(0, (now - lastDraw) / 1000));
   lastDraw = now;
   const seconds = now / 1000;
   const trauma = combat.trauma;
@@ -734,6 +832,10 @@ if (devHandleWanted(import.meta.env.DEV, location.search)) installDevHandle({
   /** Sounds started so far by id (docs/audio/THEME_SOUND_LIST.md), and whether audio runs. */
   sounds: () => ({ ready: audio.ready, played: Object.fromEntries(audio.played) }),
   screen: () => screen,
+  /** The quick panels: which is open, whether keys are held back, whether the fight is frozen. */
+  quick: () => ({ panel: quick.panel, blocking: quick.blocking, frozen }),
+  /** The word line (the kit's focus strip): the word shown, its plate, its size and counts, the settings. */
+  typefx: () => ({ word: typeFx.driver.word, typed: typeFx.driver.typed, rect: typeFx.rect(), widest: typeFx.widest(), font: typeFx.strip.fontSize, time: typeFx.time, stats: { ...typeFx.strip.stats }, settings: { ...typeFx.strip.current }, readout: typeFx.strip.readout() }),
   info: () => ({ calls, triangles, geometries: stage.renderer.info.memory.geometries, textures: stage.renderer.info.memory.textures, programs: stage.renderer.info.programs?.length ?? 0, drawn: crowd.drawn(), glows: combat.glows.count, sparks: combat.sparks.count, debris: combat.debris.live, numbers: combat.numbers.live, stops: combat.stopsAsked, feel: typing.probe(), ...combat.probe() }),
   numbers: () => numberBoxes(combat.numbers),
   /** The ship's pose (cheap enough for every frame); live foes on screen with their body radius (CSS px; the balance pass's wash-out). */

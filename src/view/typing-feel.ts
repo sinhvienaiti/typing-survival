@@ -1,7 +1,9 @@
 /**
  * Each key of a word, seen and heard (docs/FEEL_PASS_S1.md §3, §12). Reads
  * the sim's typing events with its own cursor (never writing the world) and
- * drives the word line and bays (hud.ts, strip.ts), the field and the sounds:
+ * drives the word line (the kit's focus strip, type-fx.ts, through its
+ * driver: TYPING_FEEDBACK_REVIEW.md §20), the bays (hud.ts), the field and
+ * the sounds:
  * - a right key pops its letter and marks the field on its own frame
  *   (KEY_MARK): a bolt from under the letter into the ship's core, a star at
  *   each end, the deck under the ship lit with a ring out past the painted
@@ -26,6 +28,7 @@ import type { Hud } from "./hud";
 import type { Stage } from "./scene";
 import { MUZZLE, type Ship } from "./ship";
 import { BLOW } from "./theme";
+import { WORD_ID, type TypeFx } from "./type-fx";
 import { CHARGE, CleanStreak, KEY_MARK as K, chargePower, chargeSize, keyMarkLive } from "./type-rules";
 
 /** Key marks kept (10 keys a second hold 2 at once). */
@@ -74,6 +77,8 @@ export class TypeFeel {
   private readonly from = new THREE.Vector3();
   private readonly v = new THREE.Vector3();
   private readonly point = { x: 0, y: 0 };
+  /** wordAt() found the word's EV.word later in this frame (the bay already holds its next word). */
+  private ahead = false;
 
   constructor(
     private readonly hud: Hud,
@@ -83,6 +88,10 @@ export class TypeFeel {
     private readonly strips: Strips,
     private readonly sparks: ParticlePool,
     private readonly audio: ThemeAudio,
+    /** The word line (the kit's focus strip). */
+    readonly fx: TypeFx,
+    /** A deck word's meaning (shown under it on the line). */
+    private readonly meaning: (index: number) => string,
   ) {}
 
   /** The keys' billboards and strips alive now (§6: ≤ 12 at 10 keys a second; the scenarios read it through info()). */
@@ -116,7 +125,7 @@ export class TypeFeel {
       const tier = this.streak.tier;
       if (kind === EV.keyOk) {
         const typed = R.value[i]!;
-        this.hud.strip.typed(typed - 1, now);
+        this.feed(w, "advance", slot, typed);
         this.audio.key(typed, R.ref[i]!, tier >= 2);
         const q = this.pending;
         if (q < PENDING) {
@@ -125,15 +134,19 @@ export class TypeFeel {
         }
       } else if (kind === EV.keyBad) {
         const due = R.value[i]!;
-        this.hud.keyBad(slot, due, String.fromCharCode(97 + R.ref[i]!), now);
+        const letter = String.fromCharCode(97 + R.ref[i]!);
+        this.hud.keyBad(slot, due, letter, now);
         this.audio.keyBad(due, slot < 0);
-        if (slot >= 0) {
+        if (slot < 0) this.fx.stray();
+        else {
+          this.feed(w, "wrong", slot, due, letter);
           this.badAt = now;
           this.ship.core(this.core);
           const red = BLOW.danger;
           for (let k = 0; k < 3; k += 1) this.sparks.spawn(this.core, this.v.set((Math.random() - 0.5) * 3, 1.5 + Math.random() * 2, (Math.random() - 0.5) * 3), red, 0.22, 0.32, { drag: 3, gravity: 6 });
           const broke = this.streak.bad(true);
           this.hud.streak(this.streak.n, broke, this.streak.tier, now);
+          this.fx.setCombo(this.streak.n);
         }
       } else {
         const next = (this.cursor + 1) % R.size;
@@ -160,8 +173,50 @@ export class TypeFeel {
         const up = this.streak.word((flags & FLAG.clean) !== 0);
         if (up) this.audio.streak();
         this.hud.streak(this.streak.n, 0, this.streak.tier, now);
+        const index = R.ref[i]!;
+        this.fx.progress("done", slot * WORD_ID + index, w.deck[index]!, this.meaning(index), length, this.streak.n, undefined, undefined, perfect);
       }
     }
+    this.follow(w);
+  }
+
+  /** A key on bay `slot`'s word (the event under the cursor) into the word line: `typed` letters in, `key` a wrong key's letter. */
+  private feed(w: World, kind: "advance" | "wrong", slot: number, typed: number, key?: string): void {
+    const T = w.typing;
+    const index = this.wordAt(w, slot);
+    // The hidden letters now are this word's only while the bay still holds it.
+    const mask = this.ahead ? undefined : T.hidden[slot]! & ~T.shown[slot]!;
+    this.fx.setGun(w.guns.gun[slot]!);
+    this.fx.progress(kind, slot * WORD_ID + index, w.deck[index]!, this.meaning(index), typed, this.streak.n, mask, key);
+  }
+
+  /** The deck index of the word bay `slot` was typing at the cursor: its EV.word later in this frame (the bay deals its next word at once), else the bay's word now. */
+  private wordAt(w: World, slot: number): number {
+    const R = w.events;
+    for (let c = this.cursor + 1; c < R.written; c += 1) {
+      const i = c % R.size;
+      if (R.kind[i] === EV.word && R.slot[i] === slot) {
+        this.ahead = true;
+        return R.ref[i]!;
+      }
+    }
+    this.ahead = false;
+    return w.typing.word[slot]!;
+  }
+
+  /** Backspace makes no event: the line follows the lock, let go (a release) or with fewer letters (a step back). */
+  private follow(w: World): void {
+    const shown = this.fx.driver.word;
+    if (shown < 0) return;
+    const T = w.typing;
+    const lock = T.lock;
+    const index = lock >= 0 ? T.word[lock]! : -1;
+    if (lock < 0 || lock * WORD_ID + index !== shown) {
+      this.fx.progress("release", shown, "", "", 0, this.streak.n);
+      return;
+    }
+    const typed = T.typed[lock]!;
+    if (typed < this.fx.driver.typed) this.fx.progress("back", shown, w.deck[index]!, this.meaning(index), typed, this.streak.n, T.hidden[lock]! & ~T.shown[lock]!);
   }
 
   /** After hud.update(): this frame's keys mark the field from under their letters, whole on f0 (KEY_MARK; the bolt in draw()). */
@@ -171,7 +226,7 @@ export class TypeFeel {
     const tier = this.streak.tier;
     this.ship.core(this.core);
     for (let p = 0; p < this.pending; p += 1) {
-      if (!this.hud.strip.anchor(this.pIndex[p]!, this.point)) continue;
+      if (!this.fx.anchor(this.pIndex[p]!, this.point)) continue;
       const tip = this.stage.unproject(this.point.x, this.point.y, 0.95, this.tip);
       const m = this.marks++ % MARKS;
       const aside = this.pAside[p] === 1;

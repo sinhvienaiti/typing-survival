@@ -97,6 +97,14 @@ const DRAIN_GAP_MS = 420;
 
 export type ThemeAudioOptions = { sfx: number; music: number };
 
+/**
+ * The player's sound levels (0 … 1; the quick Sound panel): master over
+ * everything, effects (guns, impacts, kills, alerts), music, the interface;
+ * the keys play at effects × keys, and not at all when `keysOn` is false
+ * (Keyboard sound "Off"); `muted` silences the lot.
+ */
+export type SoundLevels = { master: number; muted: boolean; sfx: number; music: number; ui: number; keys: number; keysOn: boolean };
+
 export class ThemeAudio {
   readonly scene = new SceneAudio<never, Bus>({ sounds: {}, buses: BUSES, defaultBus: "impacts", dragonSamples: false, sfxVolume: 1, musicVolume: 0 });
   readonly music = new Music();
@@ -105,6 +113,9 @@ export class ThemeAudio {
   private readonly inserts = new Map<Bus, GainNode>();
   private sfx: number;
   private musicVolume: number;
+  private uiVolume: number;
+  private keysVolume = 1;
+  private keysOn = true;
   private readonly pending = { count: 0, tier: 0, pan: 0, at: 0 };
   private readonly chain = { step: 0, last: -1e9 };
   private readonly bursts: number[] = [];
@@ -122,6 +133,7 @@ export class ThemeAudio {
   constructor(options: ThemeAudioOptions) {
     this.sfx = clamp01(options.sfx);
     this.musicVolume = clamp01(options.music);
+    this.uiVolume = this.sfx;
     if (typeof window !== "undefined") {
       window.addEventListener(PRONUNCIATION_EVENT, (event) => this.scene.setPronunciationActive((event as CustomEvent<{ active?: boolean }>).detail?.active === true));
     }
@@ -136,7 +148,7 @@ export class ThemeAudio {
         "insert:" + bus,
         (context, out) => {
           this.ctx = context;
-          const level = new GainNode(context, { gain: bus === "music" ? this.musicVolume : this.sfx });
+          const level = new GainNode(context, { gain: this.busLevel(bus) });
           const glue = new DynamicsCompressorNode(context, { threshold: -12, knee: 6, ratio: 8, attack: 0.002, release: 0.14 });
           level.connect(glue).connect(out);
           this.inserts.set(bus, level);
@@ -157,11 +169,34 @@ export class ThemeAudio {
     return this.ctx !== null && this.buffer !== null;
   }
 
-  setVolumes(sfx: number, music: number): void {
-    this.sfx = clamp01(sfx);
-    this.musicVolume = clamp01(music);
+  /** The page's AudioContext once resume() built it (the kit's TypingSounds plays into it). */
+  get context(): AudioContext | null {
+    return this.ctx;
+  }
+
+  /** A bus's input (its level node) once resume() built it: the keys bus takes the kit's TypingSounds. */
+  input(bus: Bus): AudioNode | null {
+    return this.inserts.get(bus) ?? null;
+  }
+
+  /** The player's levels (SoundLevels); applied at once, fading over ~50 ms. */
+  setLevels(levels: SoundLevels): void {
+    this.sfx = clamp01(levels.sfx);
+    this.musicVolume = clamp01(levels.music);
+    this.uiVolume = clamp01(levels.ui);
+    this.keysVolume = clamp01(levels.keys);
+    this.keysOn = levels.keysOn;
+    // The scene's master gain carries master and mute over every bus (music included).
+    this.scene.setVolumes(levels.muted ? 0 : clamp01(levels.master), 0);
     if (this.ctx === null) return;
-    for (const [bus, node] of this.inserts) node.gain.setTargetAtTime(bus === "music" ? this.musicVolume : this.sfx, this.ctx.currentTime, 0.05);
+    for (const [bus, node] of this.inserts) node.gain.setTargetAtTime(this.busLevel(bus), this.ctx.currentTime, 0.05);
+  }
+
+  private busLevel(bus: Bus): number {
+    if (bus === "music") return this.musicVolume;
+    if (bus === "ui") return this.uiVolume;
+    if (bus === "keys") return this.keysOn ? this.sfx * this.keysVolume : 0;
+    return this.sfx;
   }
 
   /** A voice on `bus`, panned; null before resume(). */
@@ -220,12 +255,14 @@ export class ThemeAudio {
 
   /** A right key (type-audio.ts): the relay and the `typed`-th letter's note; `octave` from the clean streak's tier 2. */
   key(typed: number, letter: number, octave: boolean): void {
+    if (!this.keysOn) return;
     const v = this.voice("keys", 0, "key.ok");
     if (v !== null) keyOk(v, typed, letter, octave);
   }
 
   /** A wrong key after `typed` right ones; `stray`: no bay starts with it. Never a buzzer. */
   keyBad(typed: number, stray: boolean): void {
+    if (!this.keysOn) return;
     const v = this.voice("keys", 0, "key.bad");
     if (v !== null) keyBad(v, typed, stray);
   }
