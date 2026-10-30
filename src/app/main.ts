@@ -41,7 +41,7 @@ import { reportWord } from "./learning";
 import { blendSkill, type SkillUpdate } from "../kit/balance";
 import { Menu, cycle, stepVolume, type MenuItem } from "./menu";
 import { createQuickSettings } from "./quick";
-import { KEYBOARD_UNAVAILABLE, RELAY, applyKeyboardLevels, requestKeyboardCatalogue, savedKeyboardId, startKeyboard } from "./keyboard";
+import { KEYBOARD_UNAVAILABLE, RELAY, applyKeyboardLevels, pickFailed, requestKeyboardCatalogue, savedKeyboardId, startKeyboard } from "./keyboard";
 import { pendingKeyboardChoices, type KeyboardCatalog } from "../kit/feedback/typing-fx";
 import { Session } from "./session";
 import { applyQuick, loadSettings, quickValues, soundLevels, storedSettings, voiceLevel, type Settings } from "./settings";
@@ -254,6 +254,10 @@ const quick = createQuickSettings({
   // Off, Relay and the saved set "Loading…" until the catalogue settles the list (startKeyboard below).
   keyboardChoices: pendingKeyboardChoices(settings.typingFx.soundProfile, RELAY),
   keyboardSounds: typeFx.sounds,
+  // A set picked here that cannot sound: Relay stands in for it, unsaved, until the next pick.
+  keyboardFail: (choice) => {
+    pickFailed(choice, { current: () => settings.typingFx.soundProfile, standIn: standInKeyboard });
+  },
   mountPreview: (host) => {
     const bay = world.typing.lock >= 0 ? world.typing.lock : 0;
     preview = new TypeFxPreview(host, settings.typingFx, motionReduced(), GUN_ACCENT[world.guns.gun[bay] ?? 0] ?? GUN_ACCENT[0], () => typeFx.strip.fontSize, previewWords());
@@ -295,10 +299,7 @@ void startKeyboard(typeFx.sounds, keyboardFeed, savedKeyboard, {
   unavailable: () => {
     keyboardProbe.noticeUntil = clock + KEYBOARD_NOTICE_MS;
   },
-  standIn: (id) => {
-    keyboardStandIn = id;
-    applyAudio();
-  },
+  standIn: standInKeyboard,
   playable: () => {
     keyboardReady = true;
     keyboardProbe.readyAt = performance.now();
@@ -481,6 +482,12 @@ function adjust(id: string, delta: number): void {
   saveSettings();
   audio.ui("move");
   show(screen === "title" ? "title" : "settings", true);
+}
+
+/** Relay plays for the keyboard sound `id`, which cannot sound this session; never saved (keyboard.ts). */
+function standInKeyboard(id: string): void {
+  keyboardStandIn = id;
+  applyAudio();
 }
 
 function applyAudio(): void {

@@ -1,12 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  applyKeyboardLevels, FeelSounds, KEYBOARD_GATE_MS, KEYBOARD_SAMPLE_TIMEOUT_MS, keyboardSink, loadSavedKeyboard, RELAY, requestKeyboardCatalogue, savedKeyboardId, settleKeyboard, startKeyboard,
+  applyKeyboardLevels, KEYBOARD_GATE_MS, keyboardSink, loadSavedKeyboard, manifestJson, pickFailed, RELAY, requestKeyboardCatalogue, sampleBytes, savedKeyboardId, settleKeyboard, startKeyboard,
   type KeyboardHost,
 } from "../src/app/keyboard";
-import { soundRows } from "../src/app/quick";
+import { quickOptions, soundRows, type QuickHooks } from "../src/app/quick";
 import { applyQuick, BUILT_IN_KEYS, DEFAULT_KEYBOARD_SOUND, loadSettings, soundLevels, storedSettings, type Settings } from "../src/app/settings";
-import type { QuickValue } from "../src/kit/ui";
-import { KEYBOARD_DECODE_BATCH_SIZE, KEYBOARD_FIRST_BATCH_SPACES, KeyboardSoundPreview, pendingKeyboardChoices, TypingFxDriver, TypingSounds, type KeyboardCatalog, type KeyboardSoundChoice } from "../src/kit/feedback/typing-fx";
+import type { QuickChoiceOption, QuickValue } from "../src/kit/ui";
+import {
+  KEYBOARD_DECODE_BATCH_SIZE, KEYBOARD_FIRST_BATCH_SPACES, KEYBOARD_SAMPLE_TIMEOUT_MS, KeyboardSoundPreview, pendingKeyboardChoices, TypingFxDriver, TypingSounds,
+  type KeyboardCatalog, type KeyboardPreviewLevels, type KeyboardSoundChoice,
+} from "../src/kit/feedback/typing-fx";
 import { readChoice } from "../src/kit/ui/quick-settings/logic";
 import type { QuickChoiceRow } from "../src/kit/ui";
 import { ThemeAudio } from "../src/audio/theme-audio";
@@ -98,11 +101,29 @@ function host(route?: (url: string) => Promise<Response> | Response | undefined)
     return routed !== undefined ? routed : respond(url, serve(url, root));
   }));
 }
-const player = (): FeelSounds => {
-  const sounds = new FeelSounds({ context: ctx as unknown as AudioContext, random: () => 0.5 });
+const player = (): TypingSounds => {
+  const sounds = new TypingSounds({ context: ctx as unknown as AudioContext, random: () => 0.5 });
   players.push(sounds);
   return sounds;
 };
+/** main.ts's quick hooks, inert but for `keyboardFail`. */
+const quickHooks = (keyboardFail: (choice: QuickChoiceOption) => void = () => {}): QuickHooks => ({
+  host: {} as HTMLElement, values: () => ({}), change: () => {}, preview: () => {}, keyboardChoices: [], keyboardSounds: new TypingSounds(),
+  mountPreview: () => {}, pause: () => {}, resume: () => {}, quit: () => {}, countdown: () => 0, keyboardFail,
+});
+/**
+ * The Sound panel's keyboard preview as QuickSettings builds it from Last
+ * Line's options (quick.ts quickOptions): the gameplay player, the game's
+ * fetchers (keyboardFetch) and its fail hook (onKeyboardFail).
+ */
+function panelPreview(sounds: TypingSounds, levels: () => KeyboardPreviewLevels = () => ({ master: 1, keyboard: 1 }), keyboardFail?: (choice: QuickChoiceOption) => void): KeyboardSoundPreview {
+  const options = quickOptions(quickHooks(keyboardFail));
+  const preview = new KeyboardSoundPreview({
+    sounds, levels, fetchJson: options.keyboardFetch?.fetchJson, fetchBytes: options.keyboardFetch?.fetchBytes, onLoad: options.onKeyboardLoad, onFail: options.onKeyboardFail,
+  });
+  previews.push(preview);
+  return preview;
+}
 const catalogueOf = async (rootJson: Record<string, unknown> = catalogue()): Promise<KeyboardCatalog> => {
   root = rootJson;
   const catalog = await requestKeyboardCatalogue(FEEL_BASE).catalog;
@@ -508,8 +529,7 @@ describe("Last Line keyboard catalogue from Typing Feel", () => {
     await tick();
     expect(urls().filter((url) => url.endsWith(".ogg"))).toHaveLength(KEYBOARD_DECODE_BATCH_SIZE);
     // quickChange, then the kit's select (QuickSettings' onSelect order).
-    const preview = new KeyboardSoundPreview({ sounds, levels: () => ({ master: 1, keyboard: 1 }) });
-    previews.push(preview);
+    const preview = panelPreview(sounds);
     p.panel.pick("hail-stone");
     preview.select(choice("hail-stone"), false);
     await tick();
@@ -524,6 +544,94 @@ describe("Last Line keyboard catalogue from Typing Feel", () => {
     sounds.key(0);
     expect(ctx.sources.at(-1)?.buffer?.url).toMatch(/\/hail-stone\/[0-9a-f]{12}\/key-\d{2}\.ogg$/);
     expect(p.saves).toEqual(["hail-stone"]);
+  });
+});
+
+describe("Last Line Sound panel picks (QuickSettings keyboardFetch and onKeyboardFail)", () => {
+  const manifest = (id: string): string => setDir(id) + "keys-manifest.json";
+
+  it("the Sound panel hands the kit Last Line's timed fetchers and its fail hook: no TypingSounds subclass", () => {
+    const fail = vi.fn();
+    const options = quickOptions(quickHooks(fail));
+    expect(options.keyboardFetch).toEqual({ fetchJson: manifestJson, fetchBytes: sampleBytes });
+    expect(options.onKeyboardFail).toBe(fail);
+    expect(Object.getPrototypeOf(player())).toBe(TypingSounds.prototype);
+  });
+
+  it("a set picked in the panel whose manifest 404s: Relay stands in for it, the save keeps the pick, the next pick ends it", async () => {
+    host((url) => (url === manifest("solid") ? respond(url, { status: 404 }) : undefined));
+    const p = page({ typingFx: { soundProfile: "deep" } });
+    // The catalogue is in: the panel lists every set.
+    p.panel.setChoiceOptions(choices);
+    const sounds = player();
+    const preview = panelPreview(sounds, undefined, (picked) => pickFailed(picked, p.hooks));
+    p.panel.pick("solid");
+    preview.select(choice("solid"));
+    await settle();
+    expect(calls.find((call) => call.url === manifest("solid"))?.cache).toBe("default");
+    expect(p.seen.standIn).toBe("solid");
+    expect(p.relayOn()).toBe(true);
+    expect(sounds.profile).toBeNull();
+    expect(p.settings.typingFx.soundProfile).toBe("solid");
+    expect(p.saves).toEqual(["solid"]);
+    p.panel.pick("deep");
+    preview.select(choice("deep"));
+    await settle();
+    expect(p.seen.standIn).toBeNull();
+    expect(p.relayOn()).toBe(false);
+    expect(sounds.profile?.id).toBe("deep");
+    expect(p.saves).toEqual(["solid", "deep"]);
+  });
+
+  it("a picked set whose samples hang: Relay stands in after one 8 s sample timeout, with one batch asked for, not every batch in turn; no timer is left", async () => {
+    host((url) => (url.startsWith(setDir("solid")) && url.endsWith(".ogg") ? new Promise<Response>(() => {}) : undefined));
+    const p = page({ typingFx: { soundProfile: "deep" } });
+    // The catalogue is in: the panel lists every set.
+    p.panel.setChoiceOptions(choices);
+    const sounds = player();
+    const preview = panelPreview(sounds, undefined, (picked) => pickFailed(picked, p.hooks));
+    const files = sampleFiles("solid");
+    // More than one batch: without the first-batch rule the second would cost another 8 s.
+    expect(files.key.length + files.space.length).toBeGreaterThan(KEYBOARD_DECODE_BATCH_SIZE);
+    p.panel.pick("solid");
+    preview.select(choice("solid"));
+    await vi.advanceTimersByTimeAsync(KEYBOARD_SAMPLE_TIMEOUT_MS - 1);
+    expect(p.seen.standIn).toBeNull();
+    await vi.advanceTimersByTimeAsync(1);
+    await flush();
+    expect(p.seen.standIn).toBe("solid");
+    expect(urls().filter((url) => /\/(key|space)-\d+\.ogg$/.test(url))).toHaveLength(KEYBOARD_DECODE_BATCH_SIZE);
+    await settle();
+    expect(p.relayOn()).toBe(true);
+    expect(sounds.profile).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("a pick the player left before it failed never stands in", async () => {
+    let answer!: () => void;
+    host((url) => (url === manifest("solid") ? new Promise<Response>((resolve) => { answer = () => resolve(respond(url, { status: 404 })); }) : undefined));
+    const p = page({ typingFx: { soundProfile: "deep" } });
+    p.panel.setChoiceOptions(choices);
+    const preview = panelPreview(player(), undefined, (picked) => pickFailed(picked, p.hooks));
+    p.panel.pick("solid");
+    preview.select(choice("solid"));
+    await tick();
+    p.panel.pick("off");
+    preview.select(choice("off"));
+    answer();
+    await settle();
+    expect(p.seen.standIn).toBeNull();
+    expect(p.relayOn()).toBe(false);
+  });
+
+  it("pickFailed stands Relay in only for the page's current keyboard sound, never for Off or Relay", () => {
+    const standIn = vi.fn();
+    expect(pickFailed({ value: "deep" }, { current: () => "warm", standIn })).toBe(false);
+    expect(pickFailed({ value: "off" }, { current: () => "off", standIn })).toBe(false);
+    expect(pickFailed(RELAY, { current: () => BUILT_IN_KEYS, standIn })).toBe(false);
+    expect(standIn).not.toHaveBeenCalled();
+    expect(pickFailed({ value: "deep" }, { current: () => "deep", standIn })).toBe(true);
+    expect(standIn).toHaveBeenCalledWith("deep");
   });
 });
 
@@ -552,15 +660,14 @@ describe("Last Line sampled keyboard", () => {
   it.each(SAMPLE_IDS)("selects %s in the Sound panel into the gameplay player (manifest HTTP-cached), saves it, and restores it on reload", async (id) => {
     const settings = loadSettings(null);
     const sounds = player();
-    const preview = new KeyboardSoundPreview({ sounds, levels: () => ({ master: 1, keyboard: 1 }) });
-    previews.push(preview);
+    const preview = panelPreview(sounds);
     expect(applyQuick(settings, "keyboard", id)).toBe(true);
     applyKeyboardLevels(sounds, settings);
     preview.select(choice(id));
     await settle();
     expect(sounds.profile?.id).toBe(id);
     const files = sampleFiles(id);
-    // The kit's panel passes no fetcher: FeelSounds bounds the manifest and lets the HTTP cache answer.
+    // The panel loads through Last Line's fetchers (quickOptions keyboardFetch): the manifest bounded and HTTP-cached.
     expect(calls.find((call) => call.url === setDir(id) + "keys-manifest.json")?.cache).toBe("default");
     expect(urls().filter((url) => /\/(key|space)-\d+\.ogg$/.test(url)).sort()).toEqual([...files.key, ...files.space].sort());
     expect(urls().every((url) => url.startsWith(setDir(id)))).toBe(true);
@@ -652,8 +759,7 @@ describe("Last Line sampled keyboard", () => {
     const loading = loadSavedKeyboard(sounds, choices, () => settings.typingFx.soundProfile);
     settings.typingFx.soundProfile = id;
     applyKeyboardLevels(sounds, settings);
-    const preview = new KeyboardSoundPreview({ sounds, levels: () => ({ master: 1, keyboard: 1 }) });
-    previews.push(preview);
+    const preview = panelPreview(sounds);
     preview.select(choice(id));
     await tick();
     open();
@@ -720,8 +826,7 @@ describe("Last Line sampled keyboard", () => {
     expect(sounds.profile?.id).toBe(DEFAULT_KEYBOARD_SOUND);
     settings.typingFx.soundProfile = id;
     applyKeyboardLevels(sounds, settings);
-    const preview = new KeyboardSoundPreview({ sounds, levels: () => ({ master: 1, keyboard: 1 }) });
-    previews.push(preview);
+    const preview = panelPreview(sounds);
     preview.select(choice(id));
     await tick();
     open();
@@ -742,8 +847,7 @@ describe("Last Line sampled keyboard", () => {
 
   it("hover/focus previews use the same player, dwell 150 ms, play 1 s at Master × Keyboard and fade on leave", async () => {
     const sounds = player();
-    const preview = new KeyboardSoundPreview({ sounds, levels: () => ({ master: 0.5, keyboard: 0.4 }) });
-    previews.push(preview);
+    const preview = panelPreview(sounds, () => ({ master: 0.5, keyboard: 0.4 }));
     preview.unlock();
     preview.preview(choice("deep"));
     await vi.advanceTimersByTimeAsync(149);
@@ -761,8 +865,7 @@ describe("Last Line sampled keyboard", () => {
 
   it("leaving during dwell or muting Master prevents preview playback", async () => {
     const levels = { master: 1, keyboard: 1, muted: false };
-    const preview = new KeyboardSoundPreview({ sounds: player(), levels: () => levels });
-    previews.push(preview);
+    const preview = panelPreview(player(), () => levels);
     preview.preview(choice("deep"));
     preview.stop();
     await vi.advanceTimersByTimeAsync(200);

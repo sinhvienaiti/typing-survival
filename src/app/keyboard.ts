@@ -6,12 +6,14 @@
  * catalogue settles the saved choice when it arrives (a host that fails keeps
  * the player's set), and the fight waits at most KEYBOARD_GATE_MS for the
  * set's first decoded batch. A saved set that cannot sound this session has
- * Relay stand in for it (host.standIn), unsaved. The kit owns variants and
- * panel previews.
+ * Relay stand in for it (host.standIn), unsaved; so does a set the player
+ * picks in the Sound panel (pickFailed). Startup and the panel load through
+ * the same timed fetches (manifestJson, sampleBytes; quick.ts passes them to
+ * QuickSettings). The kit owns variants and panel previews.
  */
 import {
-  KEYBOARD_CATALOG_TIMEOUT_MS, KEYBOARD_DECODE_BATCH_SIZE, keyboardPreviewGain, loadKeyboardCatalog, settleKeyboardChoice, timedJson, typingFeelKeysBase, TypingSounds,
-  type KeyboardCatalog, type KeyboardLoad, type KeyboardSettlement, type KeyboardSoundChoice, type TypingFxSink,
+  KEYBOARD_CATALOG_TIMEOUT_MS, KEYBOARD_DECODE_BATCH_SIZE, KEYBOARD_SAMPLE_TIMEOUT_MS, keyboardPreviewGain, loadKeyboardCatalog, settleKeyboardChoice, timedBytes, timedJson, typingFeelKeysBase,
+  type KeyboardCatalog, type KeyboardSettlement, type KeyboardSoundChoice, type TypingFxSink, type TypingSounds,
 } from "../kit/feedback/typing-fx";
 import { BUILT_IN_KEYS, DEFAULT_KEYBOARD_SOUND, type Settings } from "./settings";
 
@@ -32,57 +34,12 @@ export const catalogueJson = timedJson(KEYBOARD_CATALOG_TIMEOUT_MS);
 /** A set manifest's URL is versioned (immutable): the HTTP cache may answer; a hung host fails it after 3 s. */
 export const manifestJson = timedJson(KEYBOARD_CATALOG_TIMEOUT_MS, { cache: "default" });
 
-/** A sample file the host has not delivered in this long is given up (it counts as missing), so a set's load always ends (§8.1). */
-export const KEYBOARD_SAMPLE_TIMEOUT_MS = 8000;
-
 /**
- * Sample bytes with a time limit: rejects on a non-OK status and after
- * `timeoutMs` (aborting the request), so a host that stalls mid-set ends the
- * load with those files missing instead of holding it for the session. The
- * timer is cleared however the fetch ends.
+ * Sample and preview bytes, startup and Sound panel alike: a file the host has
+ * not delivered in 8 s (the kit's KEYBOARD_SAMPLE_TIMEOUT_MS) is given up and
+ * counts as missing, so a set's load always ends (§8.1).
  */
-export function timedBytes(timeoutMs: number = KEYBOARD_SAMPLE_TIMEOUT_MS): (url: string) => Promise<ArrayBuffer> {
-  return (url: string): Promise<ArrayBuffer> => {
-    const abort = new AbortController();
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    // Only rejects once the timer fires; Promise.race below always handles it.
-    const expired = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => {
-        reject(new Error(`${url}: no answer in ${timeoutMs} ms`));
-        abort.abort();
-      }, timeoutMs);
-    });
-    const read = (async (): Promise<ArrayBuffer> => {
-      const response = await fetch(url, { signal: abort.signal });
-      if (!response.ok) throw new Error(url + ": " + response.status);
-      return response.arrayBuffer();
-    })();
-    return Promise.race([read, expired]).finally(() => clearTimeout(timer));
-  };
-}
-/** The game's sample fetch, startup and Sound panel alike. */
-export const sampleBytes = timedBytes();
-
-/**
- * The gameplay player. Set manifests load through manifestJson and samples
- * through sampleBytes unless the caller passes its own fetchers: the kit's
- * Sound panel passes none (its KeyboardSoundPreview takes no fetcher through
- * QuickSettings), and the kit's default fetches have no time limit (and the
- * manifest's skips the HTTP cache).
- */
-export class FeelSounds extends TypingSounds {
-  override loadKeyboardManifest(
-    url: string,
-    id: string,
-    name: string = id,
-    fetchJson: (url: string) => Promise<unknown> = manifestJson,
-    fetchBytes: (url: string) => Promise<ArrayBuffer> = sampleBytes,
-    activate = false,
-    signal?: AbortSignal,
-  ): Promise<KeyboardLoad> {
-    return super.loadKeyboardManifest(url, id, name, fetchJson, fetchBytes, activate, signal);
-  }
-}
+export const sampleBytes = timedBytes(KEYBOARD_SAMPLE_TIMEOUT_MS);
 
 /** A catalogue request started with the page: its base (null: Typing Feel off) and the catalogue it settles to (never rejects). */
 export type KeyboardFeed = { readonly base: string | null; readonly catalog: Promise<KeyboardCatalog> };
@@ -126,9 +83,10 @@ export type KeyboardHost = {
   unavailable(): void;
   /**
    * The saved set `id` cannot sound this session (Typing Feel is off or
-   * failed, so it is "Saved sound · unavailable", or its load gave no sample):
-   * Relay plays in its place (§5.1 step 5, §5.3) until the player picks a
-   * keyboard sound. The page keeps `id` and never saves the stand-in.
+   * failed, so it is "Saved sound · unavailable", or its load gave no sample),
+   * or the set `id` picked in the Sound panel cannot (pickFailed): Relay plays
+   * in its place (§5.1 step 5, §5.3) until the player picks a keyboard sound.
+   * The page keeps `id` and never saves the stand-in.
    */
   standIn(id: string): void;
   /** Once, when the fight may start. */
@@ -183,6 +141,20 @@ export async function startKeyboard(
   }
 }
 
+/**
+ * QuickSettings' onKeyboardFail (quick.ts): the set the player picked in the
+ * Sound panel cannot sound this session (no sample came, or its load failed).
+ * While it is still the page's keyboard sound, Relay stands in for it
+ * (host.standIn), unsaved, as for a saved set at startup; the save keeps the
+ * pick, and the player's next pick ends the stand-in (main.ts quickChange).
+ * True: Relay stands in.
+ */
+export function pickFailed(choice: { readonly value: string }, host: Pick<KeyboardHost, "current" | "standIn">): boolean {
+  if (choice.value === "off" || choice.value === BUILT_IN_KEYS || choice.value !== host.current()) return false;
+  host.standIn(choice.value);
+  return true;
+}
+
 /** Samples go straight to the shared context's destination, outside Effects and Relay's bus. */
 export function applyKeyboardLevels(sounds: TypingSounds, s: Settings): void {
   const gain = keyboardPreviewGain({ master: s.masterVolume, keyboard: s.typingFx.volume, muted: s.muted });
@@ -204,9 +176,10 @@ export type SavedKeyboardLoad = "playing" | "silent" | "other";
  * decode batch is in (those samples play while the rest of the set loads),
  * or when the load ends without one (Off, Relay, an unavailable or missing
  * set, blocked audio). The manifest loads through manifestJson and the
- * samples through sampleBytes by default. A first batch whose every file
- * fails ends the load (the set counts as broken, §5.3). Once `signal` aborts
- * (the player picked a keyboard sound) the load stops and touches nothing.
+ * samples through sampleBytes by default. A first batch that decodes nothing
+ * ends the load (the kit's TypingSounds.load: the set counts as broken, §5.3),
+ * here and in the Sound panel alike. Once `signal` aborts (the player picked
+ * a keyboard sound) the load stops and touches nothing.
  */
 export async function loadSavedKeyboard(
   sounds: TypingSounds,
@@ -224,9 +197,6 @@ export async function loadSavedKeyboard(
     playable();
   };
   const id = current();
-  const stop = new AbortController();
-  const follow = (): void => stop.abort();
-  signal?.addEventListener("abort", follow, { once: true });
   // The player moved on (a pick, or another id): their choice owns the player now.
   const left = (): boolean => signal?.aborted === true || current() !== id;
   try {
@@ -234,21 +204,17 @@ export async function loadSavedKeyboard(
     const choice = choices.find((c) => c.value === id);
     if (!choice?.manifest || choice.disabled) return id === "off" || id === BUILT_IN_KEYS ? "other" : "silent";
     let requested = 0;
-    let failed = 0;
-    // The kit requests batch n + 1 only once batch n has decoded, so the first
-    // request past one batch means a batch is in: play it unless the player moved on.
+    // The kit asks for the second batch only once the first has settled with a
+    // sample decoded (it stops otherwise), so the first request past one batch
+    // means a batch is in: play it unless the player moved on.
     const counted = (url: string): Promise<ArrayBuffer> => {
-      const n = requested++;
-      if (n === KEYBOARD_DECODE_BATCH_SIZE) {
+      if (requested++ === KEYBOARD_DECODE_BATCH_SIZE) {
         if (!left()) sounds.use(id);
         tell();
       }
-      const bytes = fetchBytes(url);
-      // Every file of the first batch failed: the host is broken for this set, stop asking.
-      if (n < KEYBOARD_DECODE_BATCH_SIZE) void bytes.catch(() => { if (++failed === KEYBOARD_DECODE_BATCH_SIZE) stop.abort(); });
-      return bytes;
+      return fetchBytes(url);
     };
-    const result = await sounds.loadKeyboardManifest(choice.manifest, id, choice.label, fetchJson, counted, false, stop.signal);
+    const result = await sounds.loadKeyboardManifest(choice.manifest, id, choice.label, fetchJson, counted, false, signal);
     if (signal?.aborted) return "other";
     if (current() !== id) {
       // The player chose another set while this one decoded: drop its buffers.
@@ -265,7 +231,6 @@ export async function loadSavedKeyboard(
     // Blocked audio leaves this pack silent; selecting it again retries through the kit.
     return left() ? "other" : "silent";
   } finally {
-    signal?.removeEventListener("abort", follow);
     tell();
   }
 }

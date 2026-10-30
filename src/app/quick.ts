@@ -7,8 +7,9 @@
  * values: settings.ts maps them). No icon art yet (Codex ticket 180): the
  * kit shows plain text buttons.
  */
-import { QuickSettings, defaultSettingsRows, defaultSoundRows, type QuickMount, type QuickRow, type QuickValue } from "../kit/ui";
+import { QuickSettings, defaultSettingsRows, defaultSoundRows, type QuickChoiceOption, type QuickMount, type QuickRow, type QuickSettingsOptions, type QuickValue } from "../kit/ui";
 import type { KeyboardSoundChoice, TypingSounds } from "../kit/feedback/typing-fx";
+import { manifestJson, sampleBytes } from "./keyboard";
 
 /**
  * The Settings rows: the kit's (typing effects with a preview, graphics; no
@@ -45,6 +46,8 @@ export type QuickHooks = {
   /** The keyboard row's first list: pendingKeyboardChoices until the catalogue settles it. */
   keyboardChoices: readonly KeyboardSoundChoice[];
   keyboardSounds: TypingSounds;
+  /** A set picked in the Sound panel cannot sound: Relay stands in for it (keyboard.ts pickFailed). */
+  keyboardFail(choice: QuickChoiceOption): void;
   mountPreview: QuickMount;
   pause(): void;
   resume(): void;
@@ -53,13 +56,20 @@ export type QuickHooks = {
   countdown(): number;
 };
 
-export function createQuickSettings(hooks: QuickHooks): QuickSettings {
-  return new QuickSettings({
+/**
+ * The panels' options. The keyboard row loads a picked set and every preview
+ * through the startup's timed fetches (keyboard.ts: the manifest HTTP-cached
+ * within 3 s, each file within 8 s), and reports a pick that cannot sound.
+ */
+export function quickOptions(hooks: QuickHooks): QuickSettingsOptions {
+  return {
     host: hooks.host,
     getValues: hooks.values,
     onChange: hooks.change,
     onPreview: hooks.preview,
     keyboardSounds: hooks.keyboardSounds,
+    keyboardFetch: { fetchJson: manifestJson, fetchBytes: sampleBytes },
+    onKeyboardFail: hooks.keyboardFail,
     onPause: hooks.pause,
     onResume: hooks.resume,
     onQuit: hooks.quit,
@@ -67,5 +77,9 @@ export function createQuickSettings(hooks: QuickHooks): QuickSettings {
     settingsRows: settingsRows(hooks.mountPreview),
     soundRows: soundRows(hooks.keyboardChoices),
     icons: {},
-  });
+  };
+}
+
+export function createQuickSettings(hooks: QuickHooks): QuickSettings {
+  return new QuickSettings(quickOptions(hooks));
 }
