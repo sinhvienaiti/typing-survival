@@ -5,7 +5,7 @@ import { BUILT_IN_KEYS, DEFAULT_KEYBOARD_SOUND, type Settings } from "./settings
 export const KEYS_BASE = "/assets/typing-survival/audio/keys/";
 
 /**
- * Off and Relay first, with no family (so no heading above them), then the 33
+ * Off and Relay first, with no family (so no heading above them), then the 34
  * Firefly sets in catalogue order. Each set keeps its `family` (Deep, Warm,
  * Rounded, Solid, Crisp, Clear, Bright Clack): the kit's picker draws one
  * heading per family run and PageUp/PageDown jump between them.

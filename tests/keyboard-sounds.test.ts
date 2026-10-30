@@ -7,17 +7,22 @@ import { ThemeAudio } from "../src/audio/theme-audio";
 
 // Read the shipped media through fetch's interface; these tests never use the network.
 const json = async (url: string): Promise<unknown> => JSON.parse(readFileSync("public" + url, "utf8"));
-/** The shipped root catalogue (owner 30/10: 33 Firefly sets in seven families). */
+/** The shipped root catalogue (owner 30/10: 34 Firefly sets in seven families). */
 const CATALOGUE = (JSON.parse(readFileSync("public" + KEYS_BASE + "keys-manifest.json", "utf8")) as { profiles: { id: string; name: string; family: string; score: number | null; ownerPick?: boolean; order: number }[] }).profiles;
 const IDS = [...CATALOGUE].sort((a, b) => a.order - b.order).map((p) => p.id);
 const FAMILIES = ["Deep", "Warm", "Rounded", "Solid", "Crisp", "Clear", "Bright Clack"];
-const FAMILY_SIZES = { Deep: 3, Warm: 6, Rounded: 1, Solid: 2, Crisp: 7, Clear: 4, "Bright Clack": 10 };
+const FAMILY_SIZES = { Deep: 3, Warm: 6, Rounded: 1, Solid: 3, Crisp: 7, Clear: 4, "Bright Clack": 10 };
 /**
- * Owner 30/10: the 33rd set, an owner pick with no score (the 218 metric
- * penalises the long tails the owner wants): 17 keys and 8 spaces, stereo,
- * natural tails up to 450 ms (spaces up to 535 ms), in Crisp after Crisp Silk.
+ * Owner 30/10: owner picks with no score (the 218 metric penalises the long
+ * tails the owner wants), 8 spaces each, stereo 48 kHz, natural tails up to
+ * 450 ms (spaces up to 535 ms). Raindrop Tile, the 33rd set, sits in Crisp
+ * after Crisp Silk; Hail Stone, the 34th, in Solid after Solid Amber.
  */
-const RAINDROP = "raindrop-tile";
+const OWNER_PICKS = [
+  { id: "hail-stone", name: "Hail Stone", family: "Solid", order: 12, keys: 25, after: "solid-amber", next: "crisp" },
+  { id: "raindrop-tile", name: "Raindrop Tile", family: "Crisp", order: 19, keys: 17, after: "crisp-silk", next: "clear" },
+] as const;
+const PICK_IDS: readonly string[] = OWNER_PICKS.map((p) => p.id);
 /** An Ogg Vorbis file's channels and length: its identification header, and the last page's granule over the sample rate. */
 const ogg = (data: Buffer): { channels: number; rate: number; seconds: number } => {
   const id = data.indexOf("\x01vorbis", 0, "latin1");
@@ -118,11 +123,12 @@ afterEach(() => {
 });
 
 describe("Last Line Firefly catalogue and save", () => {
-  it("reads one root catalogue, offers Off + Relay + 33 sets in seven families, and resolves all 2,677 samples and 33 previews", async () => {
+  it("reads one root catalogue, offers Off + Relay + 34 sets in seven families, and resolves all 2,710 samples and 34 previews", async () => {
     const result = await loadKeyboardChoices();
     expect(result.map((c) => c.value)).toEqual(["off", "relay", ...IDS]);
-    expect(IDS).toHaveLength(33);
-    expect(CATALOGUE.map((p) => p.order).sort((a, b) => a - b)).toEqual([...Array(33).keys()]);
+    expect(IDS).toHaveLength(34);
+    expect(new Set(IDS).size).toBe(34);
+    expect(CATALOGUE.map((p) => p.order).sort((a, b) => a - b)).toEqual([...Array(34).keys()]);
     expect(requests).toEqual([KEYS_BASE + "keys-manifest.json"]);
     let count = 0;
     for (const pack of result.filter((c) => c.manifest)) {
@@ -130,7 +136,8 @@ describe("Last Line Firefly catalogue and save", () => {
       // Exactly the files the set's own manifest lists, by set.
       const own = (await json(pack.manifest!) as { files: { file: string; set: string }[] }).files;
       for (const set of ["key", "space"] as const) expect(files[set], pack.value).toEqual(own.filter((f) => f.set === set).map((f) => KEYS_BASE + pack.value + "/" + f.file).sort());
-      if (pack.value === RAINDROP) expect(files.key, pack.value).toHaveLength(17);
+      const pick = OWNER_PICKS.find((p) => p.id === pack.value);
+      if (pick) expect(files.key, pack.value).toHaveLength(pick.keys);
       else {
         expect(files.key.length, pack.value).toBeGreaterThanOrEqual(70);
         expect(files.key.length, pack.value).toBeLessThanOrEqual(80);
@@ -142,16 +149,24 @@ describe("Last Line Firefly catalogue and save", () => {
       }
       count += files.key.length + files.space.length;
     }
-    expect(count).toBe(2677);
+    expect(count).toBe(2710);
   });
 
-  it("Raindrop Tile, an owner pick with no score, joins Crisp right after Crisp Silk and before Clear", () => {
-    expect(CATALOGUE.find((p) => p.id === RAINDROP)).toMatchObject({ name: "Raindrop Tile", family: "Crisp", score: null, ownerPick: true, order: 18 });
-    expect(IDS.slice(IDS.indexOf("crisp-silk"), IDS.indexOf("crisp-silk") + 3)).toEqual(["crisp-silk", RAINDROP, "clear"]);
+  it.each(OWNER_PICKS)("$name, an owner pick with no score, joins $family right after $after and before $next", (pick) => {
+    expect(CATALOGUE.find((p) => p.id === pick.id)).toMatchObject({ name: pick.name, family: pick.family, score: null, ownerPick: true, order: pick.order });
+    expect(IDS.indexOf(pick.id)).toBe(pick.order);
+    expect(IDS.slice(IDS.indexOf(pick.after), IDS.indexOf(pick.after) + 3)).toEqual([pick.after, pick.id, pick.next]);
     // No score is invented: the choice carries none, and nothing disables or annotates it.
-    const raindrop = choice(RAINDROP);
-    expect(raindrop).toEqual({ value: RAINDROP, label: "Raindrop Tile", family: "Crisp", manifest: KEYS_BASE + RAINDROP + "/keys-manifest.json", preview: KEYS_BASE + RAINDROP + "/preview.ogg" });
-    expect(choices.filter((c) => c.manifest && c.value !== RAINDROP).every((c) => typeof c.score === "number")).toBe(true);
+    expect(choice(pick.id)).toEqual({ value: pick.id, label: pick.name, family: pick.family, manifest: KEYS_BASE + pick.id + "/keys-manifest.json", preview: KEYS_BASE + pick.id + "/preview.ogg" });
+    expect(choices.filter((c) => c.manifest && !PICK_IDS.includes(c.value)).every((c) => typeof c.score === "number")).toBe(true);
+  });
+
+  it("Hail Stone closes Solid (Solid Velvet, Solid Amber, Hail Stone) and Crisp follows it", () => {
+    const solid = choices.filter((c) => c.family === "Solid");
+    expect(solid.map((c) => [c.value, c.label])).toEqual([["solid", "Solid Velvet"], ["solid-amber", "Solid Amber"], ["hail-stone", "Hail Stone"]]);
+    const at = choices.indexOf(solid.at(-1)!);
+    expect(choices.slice(at - 2, at + 2).map((c) => c.family)).toEqual(["Solid", "Solid", "Solid", "Crisp"]);
+    expect(choices[at + 1]?.value).toBe("crisp");
   });
 
   it("passes each set's family through for the kit's grouped list: Off and Relay first with none, then one contiguous run per family", () => {
@@ -233,25 +248,25 @@ describe("Last Line sampled keyboard", () => {
     expect(reloaded.profile?.id).toBe(id);
   });
 
-  it("selecting Raindrop Tile loads exactly its manifest, its preview and its 17 keys and 8 spaces (stereo 48 kHz), and plays only those", async () => {
+  it.each(OWNER_PICKS)("selecting $name loads exactly its manifest, its preview and its $keys keys and 8 spaces (stereo 48 kHz), and plays only those", async (pick) => {
     const sounds = player();
     const preview = new KeyboardSoundPreview({ sounds, levels: () => ({ master: 1, keyboard: 1 }) });
     previews.push(preview);
-    preview.select(choice(RAINDROP));
+    preview.select(choice(pick.id));
     await settle();
-    const dir = KEYS_BASE + RAINDROP + "/";
+    const dir = KEYS_BASE + pick.id + "/";
     const numbered = (set: string, n: number): string[] => Array.from({ length: n }, (_, i) => dir + set + "-" + String(i + 1).padStart(2, "0") + ".ogg");
-    const samples = [...numbered("key", 17), ...numbered("space", 8)];
+    const samples = [...numbered("key", pick.keys), ...numbered("space", 8)];
     expect([...requests].sort()).toEqual([dir + "keys-manifest.json", dir + "preview.ogg", ...samples].sort());
-    expect(ctx.decodeAudioData).toHaveBeenCalledTimes(26);
+    expect(ctx.decodeAudioData).toHaveBeenCalledTimes(pick.keys + 8 + 1);
     for (const url of [...samples, dir + "preview.ogg"]) expect(ogg(readFileSync("public" + url)), url).toMatchObject({ channels: 2, rate: 48000 });
-    expect(sounds.profile?.id).toBe(RAINDROP);
+    expect(sounds.profile?.id).toBe(pick.id);
     const keys = new Set<string>();
-    for (let i = 0; i < 51; i++) {
+    for (let i = 0; i < pick.keys * 3; i++) {
       sounds.key(i);
       keys.add(ctx.sources.at(-1)!.buffer!.url!);
     }
-    expect([...keys].sort()).toEqual(numbered("key", 17));
+    expect([...keys].sort()).toEqual(numbered("key", pick.keys));
     const spaces = new Set<string>();
     for (let i = 0; i < 24; i++) {
       sounds.space();
@@ -260,19 +275,19 @@ describe("Last Line sampled keyboard", () => {
     expect([...spaces].sort()).toEqual(numbered("space", 8));
   });
 
-  it("Raindrop Tile's natural tails (keys to 450 ms, spaces to 535 ms) play whole at 10 letters a second: no voice cut, no stop, no length cap", async () => {
+  it.each(OWNER_PICKS)("$name's natural tails (keys to 450 ms, spaces to 535 ms) play whole at 10 letters a second: no voice cut, no stop, no length cap", async (pick) => {
     // Decode each file to its own length, read from the Ogg file itself.
     ctx.decodeAudioData = vi.fn(async (bytes: ArrayBuffer) => {
       const url = ctx.bytes.get(bytes)!;
       return { duration: ogg(readFileSync("public" + url)).seconds, url } as unknown as AudioBuffer;
     });
-    const files = await packFiles(choice(RAINDROP));
+    const files = await packFiles(choice(pick.id));
     const length = (urls: string[]): number => Math.max(...urls.map((url) => ogg(readFileSync("public" + url)).seconds));
     expect(length(files.key)).toBeCloseTo(0.45, 3);
     expect(length(files.space)).toBeCloseTo(0.535, 3);
     const sounds = player();
-    await settled(loadSavedKeyboard(sounds, choices, () => RAINDROP));
-    expect(sounds.profile?.id).toBe(RAINDROP);
+    await settled(loadSavedKeyboard(sounds, choices, () => pick.id));
+    expect(sounds.profile?.id).toBe(pick.id);
     // Four words of four letters and a space, then more: a letter every 100 ms.
     for (let i = 0; i < 60; i++) {
       if (i % 5 === 4) sounds.space();

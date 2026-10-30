@@ -77,9 +77,9 @@ describe("Last Line settings", () => {
 });
 
 describe("Last Line quick panels", () => {
-  it("Keyboard sound uses Off, Relay and the 33 Firefly sets, each with its family for the kit's headings", () => {
+  it("Keyboard sound uses Off, Relay and the 34 Firefly sets, each with its family for the kit's headings", () => {
     expect(choices.slice(0, 2).map((o) => o.value)).toEqual(["off", BUILT_IN_KEYS]);
-    expect(choices).toHaveLength(35);
+    expect(choices).toHaveLength(36);
     expect(choices.every((o) => !o.disabled && !o.note)).toBe(true);
     expect([...new Set(choices.slice(2).map((o) => o.family))]).toEqual(["Deep", "Warm", "Rounded", "Solid", "Crisp", "Clear", "Bright Clack"]);
     const keyboard = soundRows(choices).find((row) => row.id === "keyboard");
