@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { applyKeyboardLevels, defaultKeyboard, keyboardSink, KEYS_BASE, loadKeyboardChoices, loadSavedKeyboard, restoreKeyboardChoice } from "../src/app/keyboard";
 import { applyQuick, DEFAULT_KEYBOARD_SOUND, loadSettings } from "../src/app/settings";
-import { KEYBOARD_DECODE_BATCH_SIZE, keyboardFiles, KeyboardSoundPreview, TypingFxDriver, TypingSounds, type KeyboardSoundChoice } from "../src/kit/feedback/typing-fx";
+import { KEYBOARD_DECODE_BATCH_SIZE, KEYBOARD_FIRST_BATCH_SPACES, keyboardFiles, KeyboardSoundPreview, TypingFxDriver, TypingSounds, type KeyboardSoundChoice } from "../src/kit/feedback/typing-fx";
 import { ThemeAudio } from "../src/audio/theme-audio";
 
 // Read the shipped media through fetch's interface; these tests never use the network.
@@ -377,12 +377,14 @@ describe("Last Line sampled keyboard", () => {
     const settings = loadSettings(null);
     const sounds = player();
     const files = await packFiles(choice(DEFAULT_KEYBOARD_SOUND));
-    const first = new Set(files.key.slice(0, KEYBOARD_DECODE_BATCH_SIZE));
+    // The kit's first batch: twelve keys and four spaces (parent TYPING_FEEL_SERVICE.md §4.6).
+    const firstKeys = KEYBOARD_DECODE_BATCH_SIZE - KEYBOARD_FIRST_BATCH_SPACES;
+    const first = new Set([...files.key.slice(0, firstKeys), ...files.space.slice(0, KEYBOARD_FIRST_BATCH_SPACES)]);
     let open!: () => void;
     const gate = new Promise<void>((resolve) => { open = resolve; });
     const fetch = globalThis.fetch;
-    // Hold every file past the first batch: sixteen keys are in, the other 72 files are not.
-    const rest = new Set([...files.key.slice(KEYBOARD_DECODE_BATCH_SIZE), ...files.space]);
+    // Hold every file past the first batch: its sixteen files are in, the other 72 are not.
+    const rest = new Set([...files.key.slice(firstKeys), ...files.space.slice(KEYBOARD_FIRST_BATCH_SPACES)]);
     vi.stubGlobal("fetch", async (url: string) => {
       if (rest.has(url)) await gate;
       return fetch(url);
@@ -398,9 +400,10 @@ describe("Last Line sampled keyboard", () => {
       sounds.key(i);
       expect(first.has(ctx.sources.at(-1)!.buffer!.url!)).toBe(true);
     }
-    // No space sample yet: a key stands in, never silence.
+    // The first batch's spaces already sound the spacebar: no key stands in for it.
     sounds.space();
     expect(first.has(ctx.sources.at(-1)!.buffer!.url!)).toBe(true);
+    expect(ctx.sources.at(-1)?.buffer?.url).toContain("/space-");
     open();
     await settled(loading);
     expect(done).toBe(true);
@@ -423,7 +426,8 @@ describe("Last Line sampled keyboard", () => {
     let open!: () => void;
     const gate = new Promise<void>((resolve) => { open = resolve; });
     const fetch = globalThis.fetch;
-    const rest = new Set([...files.key.slice(KEYBOARD_DECODE_BATCH_SIZE), ...files.space]);
+    const firstKeys = KEYBOARD_DECODE_BATCH_SIZE - KEYBOARD_FIRST_BATCH_SPACES;
+    const rest = new Set([...files.key.slice(firstKeys), ...files.space.slice(KEYBOARD_FIRST_BATCH_SPACES)]);
     vi.stubGlobal("fetch", async (url: string) => {
       if (rest.has(url)) await gate;
       return fetch(url);
