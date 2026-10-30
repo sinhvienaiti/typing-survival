@@ -164,7 +164,7 @@ export default async function (page) {
       await page.key("F2", { code: "F2" });
       await page.sleep(300);
       const sound = await shot("sound");
-      const soundPanel = await page.eval("(() => { const p = document.querySelector('.kit-qs__dialog[data-panel=sound] .kit-qs__panel'); const r = p.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height), scroll: p.scrollHeight - p.clientHeight, keyboard: [...document.querySelectorAll('[data-row=keyboard] .kit-qs__opt')].map((o) => o.textContent + (o.querySelector('input').disabled ? ' (disabled)' : '') + (o.querySelector('input').checked ? ' (checked)' : '')) }; })()");
+      const soundPanel = await page.eval("(() => { const p = document.querySelector('.kit-qs__dialog[data-panel=sound] .kit-qs__panel'); const r = p.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height), scroll: p.scrollHeight - p.clientHeight, keyboard: [...document.querySelectorAll('[data-row=keyboard] .kit-keyboards__list .kit-keyboards__family, [data-row=keyboard] .kit-keyboards__option')].map((o) => o.classList.contains('kit-keyboards__family') ? '[' + o.textContent + ']' : o.textContent + (o.disabled ? ' (disabled)' : '') + (o.getAttribute('aria-selected') === 'true' ? ' (checked)' : '')) }; })()");
       checks.sound = { open: sound.quick.panel === "sound", panel: soundPanel };
       // Freeze: a letter (the locked word's next) under the open panel, ten frames.
       const tick = sound.tick;
@@ -207,7 +207,7 @@ export default async function (page) {
       const choose = async (value) => {
         await page.key("F2", { code: "F2" });
         await page.sleep(100);
-        await page.eval("document.querySelector('.kit-qs__dialog[data-panel=sound] [data-row=keyboard] input[value=" + value + "]').click()");
+        await page.eval("document.querySelector('.kit-qs__dialog[data-panel=sound] [data-row=keyboard] .kit-keyboards__option[data-value=" + value + "]').click()");
         await page.key("Escape", { code: "Escape" });
         // The 3-2-1, and the choice's own sample (four keys, 270 ms).
         await page.sleep(1800);
