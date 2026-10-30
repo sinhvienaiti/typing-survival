@@ -5,7 +5,7 @@ import { BUILT_IN_KEYS, DEFAULT_KEYBOARD_SOUND, type Settings } from "./settings
 export const KEYS_BASE = "/assets/typing-survival/audio/keys/";
 
 /**
- * Off and Relay first, with no family (so no heading above them), then the 32
+ * Off and Relay first, with no family (so no heading above them), then the 33
  * Firefly sets in catalogue order. Each set keeps its `family` (Deep, Warm,
  * Rounded, Solid, Crisp, Clear, Bright Clack): the kit's picker draws one
  * heading per family run and PageUp/PageDown jump between them.
@@ -39,7 +39,7 @@ export function applyKeyboardLevels(sounds: TypingSounds, s: Settings): void {
 /**
  * Restore without a preview; a late startup load cannot undo a new selection.
  * `playable` runs once, when the fight may start: as soon as the set's first
- * decode batch is in (those samples play while the other 70-odd files load),
+ * decode batch is in (those samples play while the rest of the set loads),
  * or when the load ends without one (Off, Relay, a missing set, blocked audio).
  */
 export async function loadSavedKeyboard(sounds: TypingSounds, choices: readonly KeyboardSoundChoice[], current: () => string, playable: () => void = () => {}): Promise<void> {
@@ -65,7 +65,7 @@ export async function loadSavedKeyboard(sounds: TypingSounds, choices: readonly 
     };
     const result = await sounds.loadKeyboardManifest(choice.manifest, id, choice.label, undefined, fetchBytes);
     if (current() === id) sounds.use(result.state === "pending" ? "off" : id);
-    // The player chose another set while this one decoded: drop its 70–88 buffers.
+    // The player chose another set while this one decoded: drop its 25–88 buffers.
     else if (sounds.profile?.id !== id) sounds.release(id);
   } catch { /* Blocked audio leaves this pack silent; selecting it again retries through the kit. */ }
   finally { tell(); }

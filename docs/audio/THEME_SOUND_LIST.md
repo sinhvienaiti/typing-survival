@@ -30,9 +30,11 @@
 - **Âm hành động** (súng, trúng, nổ, quái chết, quái bắn, tuyến bị đánh; quyết định Q6 của chủ dự án ngày 24/10/2026, ghi ở `tools/audio-lab/DECISIONS.md` của repo cha): đủ các phần mà hành động có (nạp, khóa nòng; đầu tiếng có lực; thân; đuôi vang trong hành lang thép), cỡ âm theo nguồn. Lớp sub chỉ làm lớp dưới. Không dùng hướng "bụp, thụp", "pop", "puff", tiếng trầm ngắn đứng riêng, kiểu đồ chơi. Dải 1–4 kHz chỉ ở đầu tiếng; đuôi nằm dưới 1 kHz hoặc trên 4 kHz.
 - **Mỗi file tự có thân và đuôi.** `theme-audio.ts` phát một tiếng cho mỗi bậc trúng (`flush`) và mỗi phát súng, không ghép lớp nào lúc chạy. Các lớp dùng chung hit.sub, hit.tail, gun.xung.tail mới là đề xuất của Audio Lab (`AUDIO_PIPELINE.md` §6.3 #3; §16 #6 còn mở). Audio Lab có ghép lớp thì ghép sẵn vào file của từng id.
 
-### 2.1. Bộ tiếng phím Firefly (phiếu 191, 29/10/2026; 32 bộ từ 30/10/2026)
+### 2.1. Bộ tiếng phím Firefly (phiếu 191, 29/10/2026; 32 bộ từ 30/10/2026; 33 bộ từ tối 30/10/2026)
 
-Danh mục gốc và 32 manifest bộ ở `public/assets/typing-survival/audio/keys/` được Git giữ; 2.684 OGG (mỗi bộ 70–80 `key-NN.ogg`, 8 `space-NN.ogg`, một `preview.ogg` 1 s) được ghi vào `media.md5` và đi qua kho media. Không chép WAV, không chép dấu nội bộ `.firefly-builder.json`. Nguồn: bản dựng `keys-firefly/218` (Codex 218) từ các lượt Adobe Firefly của chủ dự án, giấy phép ghi trong từng manifest; giữ nguyên byte của staging `~/AudioLab/review/staging/keys-firefly/`, không xử lý lại âm. Chủ dự án 30/10: giữ 32 bộ này; làm thêm bộ theo `docs/games/audio/KEYS_FIREFLY_HANDOFF.md` của repo cha.
+Danh mục gốc và 33 manifest bộ ở `public/assets/typing-survival/audio/keys/` được Git giữ; 2.710 OGG (32 bộ của bản dựng 218, mỗi bộ 70–80 `key-NN.ogg`, 8 `space-NN.ogg`, một `preview.ogg` 1 s; cộng Raindrop Tile, 17 `key-NN.ogg`, 8 `space-NN.ogg`, một `preview.ogg` 1 s) được ghi vào `media.md5` và đi qua kho media. Không chép WAV, không chép dấu nội bộ `.firefly-builder.json`. Nguồn: bản dựng `keys-firefly/218` (Codex 218) từ các lượt Adobe Firefly của chủ dự án, giấy phép ghi trong từng manifest; giữ nguyên byte của staging `~/AudioLab/review/staging/keys-firefly/`, không xử lý lại âm. Chủ dự án 30/10: giữ 32 bộ này; làm thêm bộ theo `docs/games/audio/KEYS_FIREFLY_HANDOFF.md` của repo cha.
+
+Bộ thứ 33, `raindrop-tile` (Raindrop Tile, họ Crisp, ngay sau Crisp Silk, `order` 18; các bộ sau lùi một bậc): chủ dự án chọn bản A ngày 30/10 (đuôi tự nhiên và giọt nước, không EQ). Danh mục ghi `score: null`, `ownerPick: true`: không có điểm, vì thước đo 218 trừ điểm đúng phần đuôi dài chủ dự án muốn; đừng tự đặt điểm. Manifest bộ theo schema `typing-keys-firefly/2` (`files: [{file, set, durationMs}]`, `preview`). OGG Vorbis **stereo** 48 kHz (32 bộ kia mono); phím dài tới 450 ms, Space tới 535 ms. Kit phát hết đuôi: không cắt độ dài, preview đúng 1 s; ở 10 chữ/giây 6 giọng phím và 2 giọng Space đủ, không giọng nào bị cướp.
 
 | Họ (tiêu đề trong Sound) | Số bộ | Id bộ (tên trong Sound) |
 |---|---|---|
@@ -40,13 +42,13 @@ Danh mục gốc và 32 manifest bộ ở `public/assets/typing-survival/audio/k
 | Warm | 6 | `warm` (Warm Velvet), `warm-amber`, `warm-cedar`, `warm-pebble`, `warm-slate`, `warm-silk` |
 | Rounded | 1 | `rounded` (Rounded Velvet) |
 | Solid | 2 | `solid` (Solid Velvet), `solid-amber` |
-| Crisp | 6 | `crisp` (Crisp Velvet), `crisp-amber`, `crisp-cedar`, `crisp-pebble`, `crisp-slate`, `crisp-silk` |
+| Crisp | 7 | `crisp` (Crisp Velvet), `crisp-amber`, `crisp-cedar`, `crisp-pebble`, `crisp-slate`, `crisp-silk`, `raindrop-tile` (Raindrop Tile) |
 | Clear | 4 | `clear` (Clear Velvet), `clear-amber`, `clear-cedar`, `clear-pebble` |
 | Bright Clack | 10 | `bright-clack` (Bright Clack Velvet, mặc định), `bright-clack-amber`, `-cedar`, `-pebble`, `-slate`, `-silk`, `-copper`, `-walnut`, `-moss`, `-ember` |
 
-Bảy id cũ (`deep`, `warm`, `rounded`, `solid`, `crisp`, `clear`, `bright-clack`) vẫn còn, nên save cũ không đổi. Tên các bộ khác là "<Họ> <Chất>" (Amber, Cedar, Pebble, Slate, Silk, Copper, Walnut, Moss, Ember); thứ tự và điểm nằm trong `keys-manifest.json` gốc.
+Bảy id cũ (`deep`, `warm`, `rounded`, `solid`, `crisp`, `clear`, `bright-clack`) vẫn còn, nên save cũ không đổi. Tên các bộ khác là "<Họ> <Chất>" (Amber, Cedar, Pebble, Slate, Silk, Copper, Walnut, Moss, Ember), trừ Raindrop Tile; thứ tự và điểm nằm trong `keys-manifest.json` gốc.
 
-- Hàng Sound: Off, Relay (không có họ, không tiêu đề), rồi 32 bộ theo thứ tự danh mục, mỗi họ một tiêu đề của kit; PageUp/PageDown nhảy giữa các họ, mở bảng thì danh sách cuộn tới bộ đang chọn. Mặc định `DEFAULT_KEYBOARD_SOUND` trong `src/app/settings.ts` là `bright-clack` (chủ dự án 30/10). Save `survival.settings.typingFx.soundProfile` giữ lựa chọn; id đã mất về mặc định còn tồn tại.
+- Hàng Sound: Off, Relay (không có họ, không tiêu đề), rồi 33 bộ theo thứ tự danh mục, mỗi họ một tiêu đề của kit; PageUp/PageDown nhảy giữa các họ, mở bảng thì danh sách cuộn tới bộ đang chọn. Mặc định `DEFAULT_KEYBOARD_SOUND` trong `src/app/settings.ts` là `bright-clack` (chủ dự án 30/10). Save `survival.settings.typingFx.soundProfile` giữ lựa chọn; id đã mất về mặc định còn tồn tại.
 - `TypingSounds` của kit chọn biến thể theo vòng xáo, không lặp trong 8 phím gần nhất; giải mã theo lô 16 file, đổi bộ thì nhả bộ cũ. Bộ đã lưu nạp lúc khởi động mà người chơi chọn bộ khác giữa chừng cũng được nhả (`loadSavedKeyboard`). Mỗi chữ đúng phát một `key-*`, Space phát `space-*`. Phím sai/lạc dùng cùng nhóm phím ở mức nhỏ hơn của kit. Hoàn tất từ chỉ giữ tiếng nạp đạn của game, không thêm một sample phím cách.
 - Firefly đi vào destination của AudioContext chung ở Master × Keyboard volume, ngoài Effects và bus Relay. Relay cũng có mức Keyboard riêng ngoài Effects; chỉ chọn Relay mới mở synth `key.ok`/`key.bad`. Off hoặc Master mute/0 làm im tiếng phím.
 - Có thể chuẩn bị context và giải mã bộ đã lưu trước khi chơi; nhạc và âm trận vẫn chờ cử chỉ đầu tiên. Trận chờ lượt nạp bộ ban đầu hoàn tất trước khi bước sim.

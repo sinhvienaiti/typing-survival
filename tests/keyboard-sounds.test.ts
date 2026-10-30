@@ -7,10 +7,23 @@ import { ThemeAudio } from "../src/audio/theme-audio";
 
 // Read the shipped media through fetch's interface; these tests never use the network.
 const json = async (url: string): Promise<unknown> => JSON.parse(readFileSync("public" + url, "utf8"));
-/** The shipped root catalogue (owner 30/10: 32 Firefly sets in seven families). */
-const CATALOGUE = (JSON.parse(readFileSync("public" + KEYS_BASE + "keys-manifest.json", "utf8")) as { profiles: { id: string; family: string; order: number }[] }).profiles;
+/** The shipped root catalogue (owner 30/10: 33 Firefly sets in seven families). */
+const CATALOGUE = (JSON.parse(readFileSync("public" + KEYS_BASE + "keys-manifest.json", "utf8")) as { profiles: { id: string; name: string; family: string; score: number | null; ownerPick?: boolean; order: number }[] }).profiles;
 const IDS = [...CATALOGUE].sort((a, b) => a.order - b.order).map((p) => p.id);
 const FAMILIES = ["Deep", "Warm", "Rounded", "Solid", "Crisp", "Clear", "Bright Clack"];
+const FAMILY_SIZES = { Deep: 3, Warm: 6, Rounded: 1, Solid: 2, Crisp: 7, Clear: 4, "Bright Clack": 10 };
+/**
+ * Owner 30/10: the 33rd set, an owner pick with no score (the 218 metric
+ * penalises the long tails the owner wants): 17 keys and 8 spaces, stereo,
+ * natural tails up to 450 ms (spaces up to 535 ms), in Crisp after Crisp Silk.
+ */
+const RAINDROP = "raindrop-tile";
+/** An Ogg Vorbis file's channels and length: its identification header, and the last page's granule over the sample rate. */
+const ogg = (data: Buffer): { channels: number; rate: number; seconds: number } => {
+  const id = data.indexOf("\x01vorbis", 0, "latin1");
+  const rate = data.readUInt32LE(id + 12);
+  return { channels: data[id + 11]!, rate, seconds: Number(data.readBigInt64LE(data.lastIndexOf("OggS") + 6)) / rate };
+};
 /** The 29/10 set ids, kept by the 30/10 catalogue as the first set of each family. */
 const FIRST_OF_FAMILY = ["deep", "warm", "rounded", "solid", "crisp", "clear", "bright-clack"];
 let choices: readonly KeyboardSoundChoice[];
@@ -105,16 +118,23 @@ afterEach(() => {
 });
 
 describe("Last Line Firefly catalogue and save", () => {
-  it("reads one root catalogue, offers Off + Relay + 32 sets in seven families, and resolves all 2,652 samples and 32 previews", async () => {
+  it("reads one root catalogue, offers Off + Relay + 33 sets in seven families, and resolves all 2,677 samples and 33 previews", async () => {
     const result = await loadKeyboardChoices();
     expect(result.map((c) => c.value)).toEqual(["off", "relay", ...IDS]);
-    expect(IDS).toHaveLength(32);
+    expect(IDS).toHaveLength(33);
+    expect(CATALOGUE.map((p) => p.order).sort((a, b) => a - b)).toEqual([...Array(33).keys()]);
     expect(requests).toEqual([KEYS_BASE + "keys-manifest.json"]);
     let count = 0;
     for (const pack of result.filter((c) => c.manifest)) {
       const files = await packFiles(pack);
-      expect(files.key.length, pack.value).toBeGreaterThanOrEqual(70);
-      expect(files.key.length, pack.value).toBeLessThanOrEqual(80);
+      // Exactly the files the set's own manifest lists, by set.
+      const own = (await json(pack.manifest!) as { files: { file: string; set: string }[] }).files;
+      for (const set of ["key", "space"] as const) expect(files[set], pack.value).toEqual(own.filter((f) => f.set === set).map((f) => KEYS_BASE + pack.value + "/" + f.file).sort());
+      if (pack.value === RAINDROP) expect(files.key, pack.value).toHaveLength(17);
+      else {
+        expect(files.key.length, pack.value).toBeGreaterThanOrEqual(70);
+        expect(files.key.length, pack.value).toBeLessThanOrEqual(80);
+      }
       expect(files.space, pack.value).toHaveLength(8);
       for (const url of [...files.key, ...files.space, pack.preview!]) {
         expect(url).toMatch(new RegExp("^" + KEYS_BASE + pack.value + "/(key|space)-\\d{2}\\.ogg$|/preview\\.ogg$"));
@@ -122,7 +142,16 @@ describe("Last Line Firefly catalogue and save", () => {
       }
       count += files.key.length + files.space.length;
     }
-    expect(count).toBe(2652);
+    expect(count).toBe(2677);
+  });
+
+  it("Raindrop Tile, an owner pick with no score, joins Crisp right after Crisp Silk and before Clear", () => {
+    expect(CATALOGUE.find((p) => p.id === RAINDROP)).toMatchObject({ name: "Raindrop Tile", family: "Crisp", score: null, ownerPick: true, order: 18 });
+    expect(IDS.slice(IDS.indexOf("crisp-silk"), IDS.indexOf("crisp-silk") + 3)).toEqual(["crisp-silk", RAINDROP, "clear"]);
+    // No score is invented: the choice carries none, and nothing disables or annotates it.
+    const raindrop = choice(RAINDROP);
+    expect(raindrop).toEqual({ value: RAINDROP, label: "Raindrop Tile", family: "Crisp", manifest: KEYS_BASE + RAINDROP + "/keys-manifest.json", preview: KEYS_BASE + RAINDROP + "/preview.ogg" });
+    expect(choices.filter((c) => c.manifest && c.value !== RAINDROP).every((c) => typeof c.score === "number")).toBe(true);
   });
 
   it("passes each set's family through for the kit's grouped list: Off and Relay first with none, then one contiguous run per family", () => {
@@ -132,7 +161,8 @@ describe("Last Line Firefly catalogue and save", () => {
     const runs = sets.filter((c, i) => i === 0 || sets[i - 1]!.family !== c.family);
     expect(runs.map((c) => c.family)).toEqual(FAMILIES);
     expect(runs.map((c) => c.value)).toEqual(FIRST_OF_FAMILY);
-    expect(sets.map((c) => c.family)).toEqual(CATALOGUE.map((p) => p.family));
+    expect(sets.map((c) => c.family)).toEqual([...CATALOGUE].sort((a, b) => a.order - b.order).map((p) => p.family));
+    expect(Object.fromEntries(FAMILIES.map((f) => [f, sets.filter((c) => c.family === f).length]))).toEqual(FAMILY_SIZES);
     expect(choice(DEFAULT_KEYBOARD_SOUND)).toMatchObject({ family: "Bright Clack", label: "Bright Clack Velvet" });
   });
 
@@ -201,6 +231,59 @@ describe("Last Line sampled keyboard", () => {
     const reloaded = player();
     await settled(loadSavedKeyboard(reloaded, choices, () => saved.typingFx.soundProfile));
     expect(reloaded.profile?.id).toBe(id);
+  });
+
+  it("selecting Raindrop Tile loads exactly its manifest, its preview and its 17 keys and 8 spaces (stereo 48 kHz), and plays only those", async () => {
+    const sounds = player();
+    const preview = new KeyboardSoundPreview({ sounds, levels: () => ({ master: 1, keyboard: 1 }) });
+    previews.push(preview);
+    preview.select(choice(RAINDROP));
+    await settle();
+    const dir = KEYS_BASE + RAINDROP + "/";
+    const numbered = (set: string, n: number): string[] => Array.from({ length: n }, (_, i) => dir + set + "-" + String(i + 1).padStart(2, "0") + ".ogg");
+    const samples = [...numbered("key", 17), ...numbered("space", 8)];
+    expect([...requests].sort()).toEqual([dir + "keys-manifest.json", dir + "preview.ogg", ...samples].sort());
+    expect(ctx.decodeAudioData).toHaveBeenCalledTimes(26);
+    for (const url of [...samples, dir + "preview.ogg"]) expect(ogg(readFileSync("public" + url)), url).toMatchObject({ channels: 2, rate: 48000 });
+    expect(sounds.profile?.id).toBe(RAINDROP);
+    const keys = new Set<string>();
+    for (let i = 0; i < 51; i++) {
+      sounds.key(i);
+      keys.add(ctx.sources.at(-1)!.buffer!.url!);
+    }
+    expect([...keys].sort()).toEqual(numbered("key", 17));
+    const spaces = new Set<string>();
+    for (let i = 0; i < 24; i++) {
+      sounds.space();
+      spaces.add(ctx.sources.at(-1)!.buffer!.url!);
+    }
+    expect([...spaces].sort()).toEqual(numbered("space", 8));
+  });
+
+  it("Raindrop Tile's natural tails (keys to 450 ms, spaces to 535 ms) play whole at 10 letters a second: no voice cut, no stop, no length cap", async () => {
+    // Decode each file to its own length, read from the Ogg file itself.
+    ctx.decodeAudioData = vi.fn(async (bytes: ArrayBuffer) => {
+      const url = ctx.bytes.get(bytes)!;
+      return { duration: ogg(readFileSync("public" + url)).seconds, url } as unknown as AudioBuffer;
+    });
+    const files = await packFiles(choice(RAINDROP));
+    const length = (urls: string[]): number => Math.max(...urls.map((url) => ogg(readFileSync("public" + url)).seconds));
+    expect(length(files.key)).toBeCloseTo(0.45, 3);
+    expect(length(files.space)).toBeCloseTo(0.535, 3);
+    const sounds = player();
+    await settled(loadSavedKeyboard(sounds, choices, () => RAINDROP));
+    expect(sounds.profile?.id).toBe(RAINDROP);
+    // Four words of four letters and a space, then more: a letter every 100 ms.
+    for (let i = 0; i < 60; i++) {
+      if (i % 5 === 4) sounds.space();
+      else sounds.key(i);
+      await vi.advanceTimersByTimeAsync(100);
+    }
+    expect(sounds.stats.played).toBe(60);
+    expect(sounds.stolen).toBe(0);
+    expect(ctx.sources.every((s) => s.stop.mock.calls.length === 0)).toBe(true);
+    // Each sample starts with no offset or duration: it runs to its own end.
+    expect(ctx.sources.every((s) => s.start.mock.calls.every((args) => args.length === 1))).toBe(true);
   });
 
   it("plays one key per right letter including the final one; Space takes a space sample; no variant repeats within 8 strokes", async () => {
