@@ -13,8 +13,9 @@
 //   freeze    a letter under the open panel types nothing and the world stands; Esc counts
 //             3-2-1 (a picture), then the fight runs and the word is as it was;
 //   pause     Esc with a word locked: the pause menu covers the word line;
-//   keys      the game's own key sound plays (key.ok counted); Keyboard sound "Off" in the Sound
-//             panel silences it and is saved; "Relay" brings it back;
+//   keys      the game starts on its default Firefly set (Bright Clack), which never plays key.ok,
+//             so "Relay" is chosen in the Sound panel first; then Relay's key sound plays (key.ok
+//             counted); "Off" silences it and is saved; "Relay" brings it back;
 //   title     the title screen with the two buttons;
 //   rift      stage 3 at its first rift's warning with a word locked: the countdown beside the strip.
 //   URL=http://127.0.0.1:4193/ OUT_DIR=tmp/typefx/raw-1280 SCENES=… node src/kit/tools/cdp-run.mjs scripts/visual/scenarios/survival-typefx.mjs --width=1280 --height=720
@@ -212,6 +213,8 @@ export default async function (page) {
         // The 3-2-1, and the choice's own sample (four keys, 270 ms).
         await page.sleep(1800);
       };
+      // The default is a Firefly set (no key.ok): count from Relay.
+      await choose("relay");
       const n0 = await played();
       await typeNext();
       const n1 = await played();
