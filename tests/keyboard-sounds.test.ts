@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { applyKeyboardLevels, defaultKeyboard, keyboardSink, KEYS_BASE, loadKeyboardChoices, loadSavedKeyboard, restoreKeyboardChoice } from "../src/app/keyboard";
 import { applyQuick, DEFAULT_KEYBOARD_SOUND, loadSettings } from "../src/app/settings";
-import { keyboardFiles, KeyboardSoundPreview, TypingFxDriver, TypingSounds, type KeyboardSoundChoice } from "../src/kit/feedback/typing-fx";
+import { KEYBOARD_DECODE_BATCH_SIZE, keyboardFiles, KeyboardSoundPreview, TypingFxDriver, TypingSounds, type KeyboardSoundChoice } from "../src/kit/feedback/typing-fx";
 import { ThemeAudio } from "../src/audio/theme-audio";
 
 // Read the shipped media through fetch's interface; these tests never use the network.
@@ -273,6 +273,86 @@ describe("Last Line sampled keyboard", () => {
     expect(requests.some((url) => url.includes("/" + DEFAULT_KEYBOARD_SOUND + "/key-80.ogg"))).toBe(true);
     // The startup set finished decoding but is not kept: its buffers are gone.
     expect(sounds.use(DEFAULT_KEYBOARD_SOUND)).toBe(false);
+  });
+
+  it("startup is ready once the saved set's first batch is decoded: those samples play while the rest of the set loads", async () => {
+    const settings = loadSettings(null);
+    const sounds = player();
+    const files = await packFiles(choice(DEFAULT_KEYBOARD_SOUND));
+    const first = new Set(files.key.slice(0, KEYBOARD_DECODE_BATCH_SIZE));
+    let open!: () => void;
+    const gate = new Promise<void>((resolve) => { open = resolve; });
+    const fetch = globalThis.fetch;
+    // Hold every file past the first batch: sixteen keys are in, the other 72 files are not.
+    const rest = new Set([...files.key.slice(KEYBOARD_DECODE_BATCH_SIZE), ...files.space]);
+    vi.stubGlobal("fetch", async (url: string) => {
+      if (rest.has(url)) await gate;
+      return fetch(url);
+    });
+    let ready = 0;
+    let done = false;
+    const loading = loadSavedKeyboard(sounds, choices, () => settings.typingFx.soundProfile, () => { ready += 1; }).then(() => { done = true; });
+    await settle();
+    expect(ready).toBe(1);
+    expect(done).toBe(false);
+    expect(sounds.profile?.id).toBe(DEFAULT_KEYBOARD_SOUND);
+    for (let i = 0; i < KEYBOARD_DECODE_BATCH_SIZE; i++) {
+      sounds.key(i);
+      expect(first.has(ctx.sources.at(-1)!.buffer!.url!)).toBe(true);
+    }
+    // No space sample yet: a key stands in, never silence.
+    sounds.space();
+    expect(first.has(ctx.sources.at(-1)!.buffer!.url!)).toBe(true);
+    open();
+    await settled(loading);
+    expect(done).toBe(true);
+    expect(ready).toBe(1);
+    expect(sounds.profile?.id).toBe(DEFAULT_KEYBOARD_SOUND);
+    const later: string[] = [];
+    for (let i = 0; i < files.key.length; i++) {
+      sounds.key(i);
+      later.push(ctx.sources.at(-1)!.buffer!.url!);
+    }
+    expect(later.some((url) => !first.has(url))).toBe(true);
+    sounds.space();
+    expect(ctx.sources.at(-1)?.buffer?.url).toContain("/space-");
+  });
+
+  it.each(["warm-silk", "off"])("a %s choice made once the startup set already plays still wins, and the startup set is released", async (id) => {
+    const settings = loadSettings(null);
+    const sounds = player();
+    const files = await packFiles(choice(DEFAULT_KEYBOARD_SOUND));
+    let open!: () => void;
+    const gate = new Promise<void>((resolve) => { open = resolve; });
+    const fetch = globalThis.fetch;
+    const rest = new Set([...files.key.slice(KEYBOARD_DECODE_BATCH_SIZE), ...files.space]);
+    vi.stubGlobal("fetch", async (url: string) => {
+      if (rest.has(url)) await gate;
+      return fetch(url);
+    });
+    const loading = loadSavedKeyboard(sounds, choices, () => settings.typingFx.soundProfile);
+    await settle();
+    expect(sounds.profile?.id).toBe(DEFAULT_KEYBOARD_SOUND);
+    settings.typingFx.soundProfile = id;
+    applyKeyboardLevels(sounds, settings);
+    const preview = new KeyboardSoundPreview({ sounds, levels: () => ({ master: 1, keyboard: 1 }) });
+    previews.push(preview);
+    preview.select(choice(id));
+    await settle();
+    open();
+    await settled(loading);
+    expect(sounds.profile?.id ?? "off").toBe(id);
+    expect(sounds.use(DEFAULT_KEYBOARD_SOUND)).toBe(false);
+  });
+
+  it.each(["off", "relay", "missing"])("startup is ready at once when the saved choice has no set to decode (%s)", async (id) => {
+    const list = id === "missing" ? [...choices, { value: "missing", label: "Missing", manifest: KEYS_BASE + "missing/keys-manifest.json" }] : choices;
+    const sounds = player();
+    let ready = 0;
+    await settled(loadSavedKeyboard(sounds, list, () => id, () => { ready += 1; }));
+    expect(ready).toBe(1);
+    expect(sounds.profile).toBeNull();
+    expect(requests.filter((url) => url.endsWith(".ogg"))).toHaveLength(0);
   });
 
   it("hover/focus previews use the same player, dwell 150 ms, play 1 s at Master × Keyboard and fade on leave", async () => {

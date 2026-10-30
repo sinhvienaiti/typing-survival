@@ -23,3 +23,8 @@ Worktree `games/.wt-ts-typefx`, nhánh `ts-typefx`. Chủ dự án 30/10: giữ 
 - `pnpm check`: kit 84 file khớp, **24 file test, 264/264 test qua**, typecheck và production build qua.
 - Test tiếng phím theo 32 bộ: danh mục đủ 32 id, 2.652 sample và 32 preview đều là OGG; họ liền nhau theo thứ tự, Off/Relay không họ; chọn từng bộ trong 32 bộ vào player gameplay, lưu và tải lại; 240 phím của bộ mặc định dùng đủ 80 biến thể và không lặp trong 8 phím; tải khởi động trễ không đè lựa chọn mới và bộ đó được nhả (test này hỏng nếu bỏ dòng nhả).
 - Chưa nghe/render trong trình duyệt; media chưa `media:push`.
+
+## Sửa sau review (30/10)
+
+- Khởi động không còn chờ cả bộ đã lưu: `loadSavedKeyboard()` nhận thêm `playable`, gọi một lần khi lô giải mã đầu tiên (16 phím) đã xong. Bộ đó bật ngay nếu người chơi vẫn đang chọn nó, 16 phím ấy kêu (Space tạm dùng phím) trong lúc 70-odd file còn lại tải tiếp. Off, Relay, bộ thiếu hay âm bị chặn thì gọi ngay khi xong. `keyboardReady` trong `main.ts` (cửa của `live` và `ready()` của dev handle) giờ theo `playable`. Vẫn giữ: chọn bộ khác giữa chừng thì bộ khởi động bị nhả. Test mới (hỏng trước khi sửa): sẵn sàng sau lô đầu khi các file sau còn bị giữ, chỉ phát từ lô đầu, rồi đủ bộ khi tải xong; chọn bộ khác hay Off sau khi lô đầu đã kêu vẫn thắng và bộ khởi động được nhả; Off/Relay/bộ thiếu sẵn sàng ngay, không tải OGG.
+- Cảnh `keys` của `survival-typefx.mjs`: game mặc định là Bright Clack (Firefly, không phát `key.ok`), nên cảnh chọn Relay trước khi lấy `n0`; trước đó `relayPlays` luôn sai và `offSilent` đúng một cách vô nghĩa. Mới kiểm cú pháp, chưa chạy trong trình duyệt.

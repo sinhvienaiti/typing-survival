@@ -219,8 +219,9 @@ combat.trauma.reduced = hud.reduced = motionReduced();
 // The word line is the kit's focus strip; the old plate keeps only its streak LED, rift countdown and near-foe ticks.
 const typeFx = new TypeFx(hud.fxRoot, stage, ship, audio, settings.typingFx, motionReduced());
 applyKeyboardLevels(typeFx.sounds, settings);
+// The fight waits for the saved set's first decoded batch (it plays from then on), not for all 70–88 files.
 let keyboardReady = false;
-void loadSavedKeyboard(typeFx.sounds, keyboardChoices, () => settings.typingFx.soundProfile).finally(() => { keyboardReady = true; });
+void loadSavedKeyboard(typeFx.sounds, keyboardChoices, () => settings.typingFx.soundProfile, () => { keyboardReady = true; });
 hud.strip.attach(typeFx);
 hudRoot.classList.add("is-tfx");
 const typing = (combat.typing = new TypeFeel(hud, stage, ship, combat.glows, combat.strips, combat.sparks, audio, typeFx, (index) => wordOf(index).vi));

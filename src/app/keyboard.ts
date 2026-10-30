@@ -1,5 +1,5 @@
 /** Firefly catalogue and gameplay startup; the kit owns variants and panel previews. */
-import { keyboardPreviewGain, loadKeyboardCatalog, type KeyboardSoundChoice, type TypingSounds, type TypingFxSink } from "../kit/feedback/typing-fx";
+import { KEYBOARD_DECODE_BATCH_SIZE, keyboardPreviewGain, loadKeyboardCatalog, type KeyboardSoundChoice, type TypingSounds, type TypingFxSink } from "../kit/feedback/typing-fx";
 import { BUILT_IN_KEYS, DEFAULT_KEYBOARD_SOUND, type Settings } from "./settings";
 
 export const KEYS_BASE = "/assets/typing-survival/audio/keys/";
@@ -36,17 +36,45 @@ export function applyKeyboardLevels(sounds: TypingSounds, s: Settings): void {
   if (s.typingFx.soundProfile === "off" || s.typingFx.soundProfile === BUILT_IN_KEYS) sounds.use("off");
 }
 
-/** Restore without a preview; a late startup load cannot undo a new selection. */
-export async function loadSavedKeyboard(sounds: TypingSounds, choices: readonly KeyboardSoundChoice[], current: () => string): Promise<void> {
-  const id = current();
-  const choice = choices.find((c) => c.value === id);
-  if (!choice?.manifest) return;
+/**
+ * Restore without a preview; a late startup load cannot undo a new selection.
+ * `playable` runs once, when the fight may start: as soon as the set's first
+ * decode batch is in (those samples play while the other 70-odd files load),
+ * or when the load ends without one (Off, Relay, a missing set, blocked audio).
+ */
+export async function loadSavedKeyboard(sounds: TypingSounds, choices: readonly KeyboardSoundChoice[], current: () => string, playable: () => void = () => {}): Promise<void> {
+  let told = false;
+  const tell = (): void => {
+    if (told) return;
+    told = true;
+    playable();
+  };
   try {
-    const result = await sounds.loadKeyboardManifest(choice.manifest, id, choice.label);
+    const id = current();
+    const choice = choices.find((c) => c.value === id);
+    if (!choice?.manifest) return;
+    let requested = 0;
+    // The kit requests batch n + 1 only once batch n has decoded, so the first
+    // request past one batch means a batch is in: play it unless the player moved on.
+    const fetchBytes = (url: string): Promise<ArrayBuffer> => {
+      if (requested++ === KEYBOARD_DECODE_BATCH_SIZE) {
+        if (current() === id) sounds.use(id);
+        tell();
+      }
+      return fetchSample(url);
+    };
+    const result = await sounds.loadKeyboardManifest(choice.manifest, id, choice.label, undefined, fetchBytes);
     if (current() === id) sounds.use(result.state === "pending" ? "off" : id);
     // The player chose another set while this one decoded: drop its 70–88 buffers.
     else if (sounds.profile?.id !== id) sounds.release(id);
   } catch { /* Blocked audio leaves this pack silent; selecting it again retries through the kit. */ }
+  finally { tell(); }
+}
+
+async function fetchSample(url: string): Promise<ArrayBuffer> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(url + ": " + response.status);
+  return response.arrayBuffer();
 }
 
 /** One sample per letter; word completion already has the game's magazine cue. */
