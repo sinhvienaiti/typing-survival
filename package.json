@@ -14,6 +14,7 @@
     "check": "node src/kit/verify-kit.mjs && pnpm test && pnpm build",
     "survival:balance": "node --import tsx scripts/balance.ts",
     "survival:replay": "node --import tsx scripts/replay.ts",
+    "ui-art:prepare": "node scripts/ui-art/prepare.mjs",
     "visual": "node src/kit/tools/cdp-run.mjs"
   },
   "dependencies": {

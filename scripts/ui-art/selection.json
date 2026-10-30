@@ -1,0 +1,344 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "role": "gun-xung",
+      "kind": "icon",
+      "source": "ui/icons/gun-xung.norm",
+      "accepted": true,
+      "ticket": "108",
+      "verdict": "CODEX_QUEUE 108: Nhận 29/10",
+      "alt": "Pulse Gun"
+    },
+    {
+      "role": "gun-xung",
+      "kind": "icon",
+      "source": "ui/icons/gun-xung.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Pulse Gun"
+    },
+    {
+      "role": "gun-tia",
+      "kind": "icon",
+      "source": "ui/icons/gun-tia.norm",
+      "accepted": true,
+      "ticket": "108",
+      "verdict": "CODEX_QUEUE 108: Nhận 29/10",
+      "alt": "Heat Beam"
+    },
+    {
+      "role": "gun-tia",
+      "kind": "icon",
+      "source": "ui/icons/gun-tia.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Heat Beam"
+    },
+    {
+      "role": "gun-tan",
+      "kind": "icon",
+      "source": "ui/icons/gun-tan.norm",
+      "accepted": true,
+      "ticket": "108",
+      "verdict": "CODEX_QUEUE 108: Nhận 29/10",
+      "alt": "Scatter Gun"
+    },
+    {
+      "role": "gun-tan",
+      "kind": "icon",
+      "source": "ui/icons/gun-tan.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Scatter Gun"
+    },
+    {
+      "role": "gun-ray",
+      "kind": "icon",
+      "source": "ui/icons/gun-ray.norm",
+      "accepted": true,
+      "ticket": "108",
+      "verdict": "CODEX_QUEUE 108: Nhận 29/10",
+      "alt": "Rail Gun"
+    },
+    {
+      "role": "gun-ray",
+      "kind": "icon",
+      "source": "ui/icons/gun-ray.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Rail Gun"
+    },
+    {
+      "role": "gun-phao",
+      "kind": "icon",
+      "source": "ui/icons/gun-phao-sao.norm",
+      "accepted": true,
+      "ticket": "108",
+      "verdict": "CODEX_QUEUE 108: Nhận 29/10",
+      "alt": "Star Mortar"
+    },
+    {
+      "role": "gun-phao",
+      "kind": "icon",
+      "source": "ui/icons/gun-phao-sao.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Star Mortar"
+    },
+    {
+      "role": "foe-swarm",
+      "kind": "portrait",
+      "source": "ui/foes/swarm",
+      "accepted": true,
+      "ticket": "089",
+      "verdict": "CODEX_QUEUE 089: Nhận 28/10",
+      "alt": "Swarm"
+    },
+    {
+      "role": "foe-swarm",
+      "kind": "portrait",
+      "source": "ui/foes/swarm.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Swarm"
+    },
+    {
+      "role": "foe-scout",
+      "kind": "portrait",
+      "source": "ui/foes/scout",
+      "accepted": true,
+      "ticket": "089",
+      "verdict": "CODEX_QUEUE 089: Nhận 28/10",
+      "alt": "Scout"
+    },
+    {
+      "role": "foe-scout",
+      "kind": "portrait",
+      "source": "ui/foes/scout.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Scout"
+    },
+    {
+      "role": "foe-brute",
+      "kind": "portrait",
+      "source": "ui/foes/brute",
+      "accepted": true,
+      "ticket": "089",
+      "verdict": "CODEX_QUEUE 089: Nhận 28/10",
+      "alt": "Brute"
+    },
+    {
+      "role": "foe-brute",
+      "kind": "portrait",
+      "source": "ui/foes/brute.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Brute"
+    },
+    {
+      "role": "foe-pack-leader",
+      "kind": "portrait",
+      "source": "ui/foes/pack-leader",
+      "accepted": true,
+      "ticket": "089",
+      "verdict": "CODEX_QUEUE 089: Nhận 28/10",
+      "alt": "Pack Leader"
+    },
+    {
+      "role": "foe-pack-leader",
+      "kind": "portrait",
+      "source": "ui/foes/pack-leader.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Pack Leader"
+    },
+    {
+      "role": "foe-shield-guard",
+      "kind": "portrait",
+      "source": "ui/foes/shield-guard",
+      "accepted": true,
+      "ticket": "089",
+      "verdict": "CODEX_QUEUE 089: Nhận 28/10",
+      "alt": "Shield Guard"
+    },
+    {
+      "role": "foe-shield-guard",
+      "kind": "portrait",
+      "source": "ui/foes/shield-guard.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Shield Guard"
+    },
+    {
+      "role": "foe-splitter",
+      "kind": "portrait",
+      "source": "ui/foes/splitter",
+      "accepted": true,
+      "ticket": "089",
+      "verdict": "CODEX_QUEUE 089: Nhận 28/10",
+      "alt": "Splitter"
+    },
+    {
+      "role": "foe-splitter",
+      "kind": "portrait",
+      "source": "ui/foes/splitter.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Splitter"
+    },
+    {
+      "role": "foe-shard",
+      "kind": "portrait",
+      "source": null,
+      "accepted": false,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Chờ chấm",
+      "alt": "Shard"
+    },
+    {
+      "role": "stage-c1-s1",
+      "kind": "stage",
+      "source": "ui/stages/c1-s1",
+      "accepted": true,
+      "ticket": "109",
+      "verdict": "CODEX_QUEUE 109: Nhận tạm 8,5 ngày 29/10",
+      "alt": "First Shift"
+    },
+    {
+      "role": "stage-c1-s1",
+      "kind": "stage",
+      "source": "ui/stages-v2/c1-s1",
+      "accepted": false,
+      "ticket": "126",
+      "verdict": "CODEX_QUEUE 126: Chờ chấm",
+      "alt": "First Shift"
+    },
+    {
+      "role": "stage-c1-s2",
+      "kind": "stage",
+      "source": "ui/stages/c1-s2",
+      "accepted": true,
+      "ticket": "109",
+      "verdict": "CODEX_QUEUE 109: Nhận tạm 8,5 ngày 29/10",
+      "alt": "Leader Hunt"
+    },
+    {
+      "role": "stage-c1-s2",
+      "kind": "stage",
+      "source": "ui/stages-v2/c1-s2",
+      "accepted": false,
+      "ticket": "126",
+      "verdict": "CODEX_QUEUE 126: Chờ chấm",
+      "alt": "Leader Hunt"
+    },
+    {
+      "role": "stage-c1-s3",
+      "kind": "stage",
+      "source": "ui/stages/c1-s3",
+      "accepted": true,
+      "ticket": "109",
+      "verdict": "CODEX_QUEUE 109: Nhận tạm 8,5 ngày 29/10",
+      "alt": "Rift Wall"
+    },
+    {
+      "role": "stage-c1-s3",
+      "kind": "stage",
+      "source": "ui/stages-v2/c1-s3",
+      "accepted": false,
+      "ticket": "126",
+      "verdict": "CODEX_QUEUE 126: Chờ chấm",
+      "alt": "Rift Wall"
+    },
+    {
+      "role": "stage-c1-s4",
+      "kind": "stage",
+      "source": "ui/stages/c1-s4",
+      "accepted": true,
+      "ticket": "109",
+      "verdict": "CODEX_QUEUE 109: Nhận tạm 8,5 ngày 29/10",
+      "alt": "Shining Shields"
+    },
+    {
+      "role": "stage-c1-s4",
+      "kind": "stage",
+      "source": "ui/stages-v2/c1-s4",
+      "accepted": false,
+      "ticket": "126",
+      "verdict": "CODEX_QUEUE 126: Chờ chấm",
+      "alt": "Shining Shields"
+    },
+    {
+      "role": "bg-menu",
+      "kind": "bg",
+      "source": "ui/screens-epic/menu-bg",
+      "accepted": false,
+      "ticket": "121",
+      "verdict": "CODEX_QUEUE 121: Chờ chấm",
+      "alt": "",
+      "crop": "1536x864+0+80"
+    },
+    {
+      "role": "bg-journey",
+      "kind": "bg",
+      "source": "ui/screens-epic/journey-bg",
+      "accepted": false,
+      "ticket": "121",
+      "verdict": "CODEX_QUEUE 121: Chờ chấm",
+      "alt": "",
+      "crop": "1536x864+0+80"
+    },
+    {
+      "role": "bg-briefing",
+      "kind": "bg",
+      "source": "ui/screens-epic/briefing-bg",
+      "accepted": false,
+      "ticket": "121",
+      "verdict": "CODEX_QUEUE 121: Chờ chấm",
+      "alt": "",
+      "crop": "1536x864+0+80"
+    },
+    {
+      "role": "bg-loadout",
+      "kind": "bg",
+      "source": "ui/screens-epic/loadout-bg",
+      "accepted": false,
+      "ticket": "121",
+      "verdict": "CODEX_QUEUE 121: Chờ chấm",
+      "alt": "",
+      "crop": "1536x864+0+80"
+    },
+    {
+      "role": "bg-results-win",
+      "kind": "bg",
+      "source": "ui/screens-epic/results-win-bg",
+      "accepted": false,
+      "ticket": "121",
+      "verdict": "CODEX_QUEUE 121: Chờ chấm",
+      "alt": "",
+      "crop": "1536x864+0+80"
+    },
+    {
+      "role": "bg-results-lose",
+      "kind": "bg",
+      "source": "ui/screens-epic/results-lose-bg",
+      "accepted": false,
+      "ticket": "121",
+      "verdict": "CODEX_QUEUE 121: Chờ chấm",
+      "alt": "",
+      "crop": "1536x864+0+80"
+    }
+  ]
+}

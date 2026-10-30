@@ -9,7 +9,9 @@
  * the picked guns answer nothing, and the start button.
  */
 import type { Journey } from "../app/journey";
-import { counterTag, objectiveText } from "../app/journey";
+import { counterTag, objectiveText, ROW_LABELS } from "../app/journey";
+import type { CounterRow } from "../content/guns";
+import { artHtml, gunRole, foeRole, stageRole, rowRoles, bgRole } from "./ui-art";
 import { FOES, KIND } from "../content/foes";
 import { LEARN_RULES, RIFT, type Stage } from "../content/stage-rules";
 import { escapeHtml, hints, menu } from "./screens";
@@ -17,13 +19,13 @@ import { escapeHtml, hints, menu } from "./screens";
 const NEW: Readonly<Record<string, string>> = { brute: "Brute", leader: "Pack Leader", shield: "Shield Guard", hunt: "Hunt goal", rift: "Rift hazard", missing: "Missing letters rule" };
 
 /** The foes a stage sends, with their counter tags. */
-function foes(stage: Stage): { name: string; note: string; tag: string; fresh: boolean }[] {
-  const out = [{ name: "Swarm", note: "(horde) " + FOES[KIND.mine]!.hp + " HP, comes in numbers", tag: counterTag("swarmNear"), fresh: false }];
-  if (stage.scouts.share > 0) out.push({ name: "Scout", note: "(ranged) shoots the ship from 6–9 m", tag: counterTag("scout"), fresh: false });
-  if (stage.packs.brute !== undefined) out.push({ name: "Brute", note: "(heavy) armor " + FOES[KIND.brute]!.armour + " · " + FOES[KIND.brute]!.hp + " HP, leads 5 Swarm", tag: counterTag("armoured"), fresh: stage.teach.includes("brute") });
-  if (stage.objective.kind === "hunt") out.push({ name: "Pack Leader", note: "(leader) armor " + FOES[KIND.leader]!.armour + " · " + FOES[KIND.leader]!.hp + " HP, 8 Swarm escorts", tag: counterTag("armoured"), fresh: stage.teach.includes("leader") });
-  if (stage.packs.shield !== undefined) out.push({ name: "Shield Guard", note: "(guard) shield " + FOES[KIND.shield]!.shield + " blocks frontal shots", tag: counterTag("shield"), fresh: stage.teach.includes("shield") });
-  if (stage.packs.splitter !== undefined) out.push({ name: "Splitter", note: "breaks into 3 Shards when killed", tag: counterTag("splitter"), fresh: stage.teach.includes("splitter") });
+function foes(stage: Stage): { role: string; name: string; note: string; tag: string; fresh: boolean }[] {
+  const out = [{ role: foeRole(KIND.mine), name: "Swarm", note: "(horde) " + FOES[KIND.mine]!.hp + " HP, comes in numbers", tag: counterTag("swarmNear"), fresh: false }];
+  if (stage.scouts.share > 0) out.push({ role: foeRole(KIND.scout), name: "Scout", note: "(ranged) shoots the ship from 6–9 m", tag: counterTag("scout"), fresh: false });
+  if (stage.packs.brute !== undefined) out.push({ role: foeRole(KIND.brute), name: "Brute", note: "(heavy) armor " + FOES[KIND.brute]!.armour + " · " + FOES[KIND.brute]!.hp + " HP, leads 5 Swarm", tag: counterTag("armoured"), fresh: stage.teach.includes("brute") });
+  if (stage.objective.kind === "hunt") out.push({ role: foeRole(KIND.leader), name: "Pack Leader", note: "(leader) armor " + FOES[KIND.leader]!.armour + " · " + FOES[KIND.leader]!.hp + " HP, 8 Swarm escorts", tag: counterTag("armoured"), fresh: stage.teach.includes("leader") });
+  if (stage.packs.shield !== undefined) out.push({ role: foeRole(KIND.shield), name: "Shield Guard", note: "(guard) shield " + FOES[KIND.shield]!.shield + " blocks frontal shots", tag: counterTag("shield"), fresh: stage.teach.includes("shield") });
+  if (stage.packs.splitter !== undefined) out.push({ role: foeRole(KIND.splitter), name: "Splitter", note: "breaks into 3 Shards when killed", tag: counterTag("splitter"), fresh: stage.teach.includes("splitter") });
   return out;
 }
 
@@ -43,12 +45,17 @@ function ruleDetail(stage: Stage): string {
   return "Bays show each word and its meaning. Your current word shows large above the ship. Its bay adds the pronunciation. Finished words get a ✓.";
 }
 
+/** Preserve labels and their comma order while adding row portraits. */
+function counterRows(rows: readonly CounterRow[], fallback: string): string {
+  return rows.length ? rows.map(row => rowRoles(row).map(role => artHtml(role, "counter")).join("") + escapeHtml(ROW_LABELS[row])).join(", ") : escapeHtml(fallback || "—");
+}
+
 export function renderJourney(journey: Journey): string {
   const stage = journey.stage;
   switch (journey.screen) {
     case "stages":
       return (
-        '<div class="sv-card sv-panel sv-sheet sv-stages">' +
+        artHtml(bgRole("journey"), "bg") + '<div class="sv-card sv-panel sv-sheet sv-stages">' +
         "<h1>CAMPAIGN</h1>" +
         '<div class="sv-title-en">CHAPTER 1 · VC-7 CORRIDOR</div><div class="sv-hazard" aria-hidden="true"></div>' +
         menu(journey.menu, " sv-stage-list") +
@@ -58,8 +65,8 @@ export function renderJourney(journey: Journey): string {
       );
     case "briefing":
       return (
-        '<div class="sv-card sv-panel sv-sheet sv-brief">' +
-        "<h1>STAGE " + stage.index + " · " + escapeHtml(stage.name.toUpperCase()) + "</h1>" +
+        artHtml(bgRole("briefing"), "bg") + '<div class="sv-card sv-panel sv-sheet sv-brief">' +
+        "<h1>STAGE " + stage.index + " · " + escapeHtml(stage.name.toUpperCase()) + "</h1>" + artHtml(stageRole(stage.id), "briefing") +
         '<div class="sv-hazard" aria-hidden="true"></div>' +
         '<dl class="sv-brief-rules">' +
         "<dt>Goal</dt><dd><b>" + escapeHtml(objectiveText(stage)) + "</b> · " + escapeHtml(objectiveDetail(stage)) + "</dd>" +
@@ -68,9 +75,9 @@ export function renderJourney(journey: Journey): string {
         "<dt>Gear</dt><dd>" + stage.kit.bays + " bays · Forge " + stage.kit.levels.join("/") + " · hull " + stage.kit.armour + "</dd>" +
         "</dl>" +
         '<ul class="sv-foes">' +
-        foes(stage).map((foe) => "<li" + (foe.fresh ? ' class="is-new"' : "") + "><b>" + escapeHtml(foe.name) + "</b>" + (foe.fresh ? "<em>NEW</em>" : "") + "<small>" + escapeHtml(foe.note) + "</small><span>" + escapeHtml(foe.tag) + "</span></li>").join("") +
+        foes(stage).map((foe) => "<li" + (foe.fresh ? ' class="is-new"' : "") + ">" + artHtml(foe.role, "foe") + "<b>" + escapeHtml(foe.name) + "</b>" + (foe.fresh ? "<em>NEW</em>" : "") + "<small>" + escapeHtml(foe.note) + "</small><span>" + escapeHtml(foe.tag) + "</span></li>").join("") +
         "</ul>" +
-        (stage.teach.length > 0 ? '<p class="sv-note">This stage teaches: ' + escapeHtml(stage.teach.map((thing) => NEW[thing] ?? thing).join(", ")) + ".</p>" : "") +
+        (stage.teach.length > 0 ? '<p class="sv-note">' + stage.teach.filter(thing => ["brute", "leader", "shield", "splitter"].includes(thing)).map(thing => artHtml(foeRole(thing), "teach")).join("") + 'This stage teaches: ' + escapeHtml(stage.teach.map((thing) => NEW[thing] ?? thing).join(", ")) + ".</p>" : "") +
         menu(journey.menu, " sv-row") +
         hints("<kbd>Enter</kbd> loadout · <kbd>Esc</kbd> stages") +
         "</div>"
@@ -80,7 +87,7 @@ export function renderJourney(journey: Journey): string {
       const threats = journey.threats();
       const bays = stage.kit.bays;
       return (
-        '<div class="sv-card sv-panel sv-sheet sv-loadout">' +
+        artHtml(bgRole("loadout"), "bg") + '<div class="sv-card sv-panel sv-sheet sv-loadout">' +
         "<h1>LOADOUT</h1>" +
         '<div class="sv-title-en">STAGE ' + stage.index + " · PICK " + bays + " OF 5 · " + journey.picked.length + "/" + bays + "</div>" +
         '<div class="sv-hazard" aria-hidden="true"></div>' +
@@ -89,17 +96,17 @@ export function renderJourney(journey: Journey): string {
           .map(
             (card, n) =>
               '<section class="sv-gun-card sv-' + card.key + (card.on ? " is-on" : "") + (card.picked >= 0 ? " is-picked" : "") + '" data-card="' + n + '">' +
-              '<header><kbd>' + (n + 1) + "</kbd><b>" + escapeHtml(card.name) + "</b>" + (card.picked >= 0 ? '<em>BAY ' + (card.picked + 1) + (card.level > 1 ? " · FORGE " + card.level : "") + "</em>" : "") + "</header>" +
+              artHtml(gunRole(card.key), "loadout") + '<header><kbd>' + (n + 1) + "</kbd><b>" + escapeHtml(card.name) + "</b>" + (card.picked >= 0 ? '<em>BAY ' + (card.picked + 1) + (card.level > 1 ? " · FORGE " + card.level : "") + "</em>" : "") + "</header>" +
               "<small>" + escapeHtml(card.title) + "</small>" +
               "<p>" + escapeHtml(card.magazine) + " · range " + escapeHtml(card.range) + (card.heavy ? " · words +1 letter" : "") + "</p>" +
-              '<p class="sv-good">Strong: ' + escapeHtml(card.good || "—") + "</p>" +
-              '<p class="sv-poor">Weak: ' + escapeHtml(card.poor || "—") + "</p>" +
+              '<p class="sv-good">Strong: ' + counterRows(card.goodRows, card.good) + "</p>" +
+              '<p class="sv-poor">Weak: ' + counterRows(card.poorRows, card.poor) + "</p>" +
               "</section>",
           )
           .join("") +
         "</div>" +
         '<div class="sv-threats"><b>Threats here · share</b>' +
-        threats.map((threat) => '<span class="' + (threat.covered ? "" : "is-open") + '" title="' + escapeHtml(threat.counters) + '">' + (threat.covered ? "" : "⚠ ") + escapeHtml(threat.label) + " " + Math.round(threat.weight * 100) + "%</span>").join("") +
+        threats.map((threat) => '<span class="' + (threat.covered ? "" : "is-open") + '" title="' + escapeHtml(threat.counters) + '">' + rowRoles(threat.row).map(role => artHtml(role, "threat")).join("") + (threat.covered ? "" : "⚠ ") + escapeHtml(threat.label) + " " + Math.round(threat.weight * 100) + "%</span>").join("") +
         "</div>" +
         '<div class="sv-start' + (journey.cursor === cards.length ? " is-on" : "") + (journey.ready ? "" : " is-off") + '" data-start="1">' +
         // No "fit %" here: the threat score ranked pairs against their measured wins (G3c) the wrong way on stages 2 and 4 (test pass 27/10); the open rows carry ⚠.

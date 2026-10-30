@@ -90,6 +90,11 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   hash in Node and Chrome), `src/view` (three.js), `src/app` (page, input,
   session), `docs/` (design and build notes). Combat feedback is the kit's
   `src/kit/feedback` ("ship" profile); there is no local copy.
+- UI art: chosen in `scripts/ui-art/selection.json`, built by
+  `scripts/ui-art/prepare.mjs` (`pnpm ui-art:prepare`), read through the
+  generated table `src/view/ui-art.json`; only `src/view/ui-art.ts` builds UI
+  image URLs. The art manifest beside the WebP files is a build record and
+  stays out of `dist` (vite.config.ts).
 - `src/kit/` is copied from the parent repo's `shared/game-kit` by
   `node scripts/sync-game-kit.mjs --target games/typing-survival` (run in the
   parent repo). Never edit it by hand; `pnpm check` verifies its sha256.

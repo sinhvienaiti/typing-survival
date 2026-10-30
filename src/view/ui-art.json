@@ -1,0 +1,175 @@
+{
+  "version": 1,
+  "base": "/assets/typing-survival/ui/",
+  "roles": {
+    "foe-brute": {
+      "kind": "portrait",
+      "alt": "Brute",
+      "rev": "a79be231",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-pack-leader": {
+      "kind": "portrait",
+      "alt": "Pack Leader",
+      "rev": "7597978e",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-scout": {
+      "kind": "portrait",
+      "alt": "Scout",
+      "rev": "154782aa",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-shield-guard": {
+      "kind": "portrait",
+      "alt": "Shield Guard",
+      "rev": "17a2ec6a",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-splitter": {
+      "kind": "portrait",
+      "alt": "Splitter",
+      "rev": "3d0ac268",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-swarm": {
+      "kind": "portrait",
+      "alt": "Swarm",
+      "rev": "c801c58e",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "gun-phao": {
+      "kind": "icon",
+      "alt": "Star Mortar",
+      "rev": "29a7ca25",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "gun-ray": {
+      "kind": "icon",
+      "alt": "Rail Gun",
+      "rev": "8081eccf",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "gun-tan": {
+      "kind": "icon",
+      "alt": "Scatter Gun",
+      "rev": "82adb879",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "gun-tia": {
+      "kind": "icon",
+      "alt": "Heat Beam",
+      "rev": "f44238c3",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "gun-xung": {
+      "kind": "icon",
+      "alt": "Pulse Gun",
+      "rev": "ac11e01b",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "stage-c1-s1": {
+      "kind": "stage",
+      "alt": "First Shift",
+      "rev": "79caa17b",
+      "widths": [
+        192,
+        384,
+        768,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "stage-c1-s2": {
+      "kind": "stage",
+      "alt": "Leader Hunt",
+      "rev": "45aeb948",
+      "widths": [
+        192,
+        384,
+        768,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "stage-c1-s3": {
+      "kind": "stage",
+      "alt": "Rift Wall",
+      "rev": "fbafc6ba",
+      "widths": [
+        192,
+        384,
+        768,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "stage-c1-s4": {
+      "kind": "stage",
+      "alt": "Shining Shields",
+      "rev": "7be8ecb8",
+      "widths": [
+        192,
+        384,
+        768,
+        1536
+      ],
+      "aspect": 1.777778
+    }
+  }
+}

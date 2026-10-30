@@ -35,6 +35,14 @@ import type { Word } from "../app/vocab";
 import type { Stage } from "./scene";
 import { firstBounce, WordStrip } from "./strip";
 import { fullBlink } from "./type-rules";
+import { artAttrs, gunRole, foeRole, watchArt } from "./ui-art";
+
+function appendArt(parent: HTMLElement, attrs: ReturnType<typeof artAttrs>): void {
+  if (!attrs) return;
+  const img = document.createElement("img");
+  for (const [key, value] of Object.entries(attrs)) img.setAttribute(key, String(value));
+  parent.append(img);
+}
 
 const NEW_MS = 2000;
 /**
@@ -123,6 +131,7 @@ export class Hud {
 
   constructor(root: HTMLElement, private readonly words: (index: number) => Word, w: World) {
     this.root = root;
+    watchArt(root);
     root.replaceChildren();
     this.vignette = el("div", "sv-vignette", root);
     const top = el("div", "sv-top", root);
@@ -164,6 +173,7 @@ export class Hud {
       const root = el("section", "sv-slot sv-panel sv-" + spec.key, this.bottom);
       root.dataset.bay = String(bay + 1);
       root.style.gridArea = "1 / " + BAY_COLUMN[bay];
+      appendArt(root, artAttrs(gunRole(spec.key), "bay"));
       const head = el("header", "", root);
       el("span", "sv-gun", head, spec.name);
       const mags = el("div", "sv-mags", head);
@@ -399,7 +409,9 @@ export class Hud {
         const kind = F.kind[s]!;
         if (F.alive[s] === 1 && this.teach.has(kind) && !this.met.has(kind) && F.z[s]! < 42) {
           this.met.add(kind);
-          this.fresh.textContent = NEW_CARD[kind] ?? "";
+          this.fresh.textContent = "";
+          appendArt(this.fresh, artAttrs(foeRole(kind), "fresh"));
+          this.fresh.append(NEW_CARD[kind] ?? "");
           this.fresh.classList.add("is-on");
           this.freshUntil = now + NEW_MS;
         }

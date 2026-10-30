@@ -9,6 +9,7 @@ export type MenuItem = {
   readonly id: string;
   readonly label: string;
   readonly note?: string;
+  readonly art?: string;
   readonly enabled: boolean;
   /** A setting's value as shown ("70 %", "Bật"); ← → change it. */
   readonly value?: string;

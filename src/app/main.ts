@@ -259,7 +259,7 @@ function items(which: Screen): MenuItem[] {
     case "end": {
       const next = world.phase === "won" ? CHAPTER_1[level.index] : undefined;
       const list: MenuItem[] = [
-        ...(next !== undefined ? [{ id: "next", label: "Stage " + next.index, note: next.name, enabled: true }] : []),
+        ...(next !== undefined ? [{ id: "next", art: "stage-" + next.id, label: "Stage " + next.index, note: next.name, enabled: true }] : []),
         { id: "replay", label: level.id === "s0" ? "Retry" : "Retry stage", enabled: true },
         ...(level.id === "s0" ? [] : [{ id: "stages", label: "Stages", note: "Campaign", enabled: true }]),
         { id: "title", label: "Main menu", note: "Esc", enabled: true },
@@ -303,7 +303,7 @@ function view(which: Screen): ScreenView | null {
         kind: "intro",
         title: level.id === "s0" ? "TRIAL" : "STAGE " + level.index + " · " + level.name.toUpperCase(),
         lines: [level.id === "s0" ? "Hold the lane for " + STAGE_S0.seconds / 60 + " min" : objectiveText(level), world.header.kit.guns.map((gun) => GUN_SPECS[gun]!.name).join(" · ")],
-        ready: live,
+        ready: live, stage: level.id === "s0" ? undefined : level.id, guns: world.header.kit.guns.map((gun) => GUN_SPECS[gun]!.key),
       };
     case "end": {
       const report = skillReport(profile, settings.mode);

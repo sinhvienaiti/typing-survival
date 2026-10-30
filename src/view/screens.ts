@@ -9,6 +9,7 @@
  */
 import type { Menu, MenuItem } from "../app/menu";
 import type { GunKey } from "../content/guns";
+import { artHtml, gunRole, stageRole, bgRole } from "./ui-art";
 
 export type Stat = { value: string; label: string; note?: string };
 export type Learned = { en: string; vi: string };
@@ -20,7 +21,7 @@ export type ScreenView =
   | { kind: "armory"; menu: Menu; guns: readonly GunCard[]; learning: readonly string[] }
   | { kind: "profile"; menu: Menu; stats: readonly Stat[]; advice: string; lines: readonly string[] }
   | { kind: "pause"; menu: Menu }
-  | { kind: "intro"; title: string; lines: readonly string[]; ready: boolean }
+  | { kind: "intro"; title: string; lines: readonly string[]; ready: boolean; stage?: string; guns?: readonly GunKey[] }
   | { kind: "end"; menu: Menu; mode: string; won: boolean; stats: readonly Stat[]; words: readonly Learned[]; advice: string; note: string; stage?: string; stars?: string };
 
 /** Words listed on the end screen (two columns of five). */
@@ -44,7 +45,7 @@ function item(entry: MenuItem, index: number, on: boolean): string {
       : '<span class="sv-value">' + (entry.level !== undefined ? led(entry.level) : "") + '<span class="sv-arrow">◀</span><b>' + escapeHtml(entry.value) + '</b><span class="sv-arrow">▶</span></span>';
   return (
     '<div class="' + classes + '" data-index="' + index + '" role="menuitem" aria-disabled="' + !entry.enabled + '"' + (on ? ' aria-current="true"' : "") + ">" +
-    '<span class="sv-led" aria-hidden="true"></span>' +
+    '<span class="sv-led" aria-hidden="true"></span>' + (entry.art ? artHtml(entry.art, "menu") : "") +
     '<span class="sv-item-text"><b>' + escapeHtml(entry.label) + "</b>" + (entry.note ? "<small>" + escapeHtml(entry.note) + "</small>" : "") + "</span>" +
     value +
     "</div>"
@@ -61,7 +62,7 @@ export function renderScreen(view: ScreenView): string {
   switch (view.kind) {
     case "title":
       return (
-        '<div class="sv-title">' +
+        artHtml(bgRole("menu"), "bg") + '<div class="sv-title">' +
         '<div class="sv-card sv-panel sv-title-card">' +
         '<div class="sv-title-tag"><span class="sv-dot"></span>STATION VC-7 · EVENT HORIZON</div>' +
         '<h1 class="sv-title-name">LAST LINE</h1>' +
@@ -87,7 +88,7 @@ export function renderScreen(view: ScreenView): string {
         '<div class="sv-card sv-panel sv-sheet sv-armory">' +
         '<h1>ARMORY · LEARNING</h1><div class="sv-hazard" aria-hidden="true"></div>' +
         '<div class="sv-guns">' +
-        view.guns.map((gun) => '<section class="sv-gun-card sv-' + gun.kind + '"><header><b>' + escapeHtml(gun.name) + "</b><small>" + escapeHtml(gun.title) + "</small></header><p>" + escapeHtml(gun.text) + "</p></section>").join("") +
+        view.guns.map((gun) => '<section class="sv-gun-card sv-' + gun.kind + '">' + artHtml(gunRole(gun.kind), "armory") + '<header><b>' + escapeHtml(gun.name) + "</b><small>" + escapeHtml(gun.title) + "</small></header><p>" + escapeHtml(gun.text) + "</p></section>").join("") +
         "</div>" +
         '<ul class="sv-learning">' + view.learning.map((line) => "<li>" + escapeHtml(line) + "</li>").join("") + "</ul>" +
         menu(view.menu) +
@@ -118,14 +119,15 @@ export function renderScreen(view: ScreenView): string {
       return (
         '<div class="sv-card sv-panel sv-sheet sv-intro">' +
         "<h1>" + escapeHtml(view.title) + '</h1><div class="sv-hazard" aria-hidden="true"></div>' +
-        view.lines.map((line) => "<p>" + escapeHtml(line) + "</p>").join("") +
+        (view.stage ? artHtml(stageRole(view.stage), "intro") : "") +
+        view.lines.map((line, n) => "<p>" + (n === 1 && view.guns ? line.split(" · ").map((name, i) => (view.guns?.[i] ? artHtml(gunRole(view.guns[i]!), "introGun") : "") + escapeHtml(name)).join(" · ") : escapeHtml(line)) + "</p>").join("") +
         '<div class="sv-start' + (view.ready ? " is-on sv-go" : " is-off") + '">' + (view.ready ? "PRESS ANY KEY TO PLAY" : "LOADING…") + "</div>" +
         hints("In battle: <kbd>Esc</kbd> pause") +
         "</div>"
       );
     case "end":
       return (
-        '<div class="sv-card sv-panel sv-sheet sv-end ' + (view.won ? "is-won" : "is-lost") + '">' +
+        artHtml(bgRole(view.won ? "results-win" : "results-lose"), "bg") + '<div class="sv-card sv-panel sv-sheet sv-end ' + (view.won ? "is-won" : "is-lost") + '">' +
         "<h1>" + (view.stage ? (view.won ? "STAGE CLEAR!" : "STAGE LOST") : view.won ? "LINE HELD!" : "LINE LOST") + '</h1><div class="sv-end-mode">' + escapeHtml(((view.stage ? view.stage + " · " : "") + view.mode).toUpperCase()) + '</div><div class="sv-hazard" aria-hidden="true"></div>' +
         (view.stars ?? "") +
         '<div class="sv-stats">' + view.stats.map((stat) => "<div><b>" + escapeHtml(stat.value) + "</b><small>" + escapeHtml(stat.label) + "</small></div>").join("") + "</div>" +
