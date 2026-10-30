@@ -19,7 +19,7 @@ import { GUN_SPECS } from "../content/guns";
 import { QUALITY } from "../content/guns";
 import { MISSING } from "../content/stage-rules";
 import { EV, FLAG } from "./events";
-import { loadMagazine } from "./weapons";
+import { fullBayWord, loadMagazine } from "./weapons";
 import type { World } from "./world";
 
 const DONE_RING = 1024;
@@ -254,7 +254,8 @@ function finish(w: World, slot: number): void {
   const flags = (clean ? FLAG.clean : 0) | (fast ? FLAG.fast : 0) | (clean && fast ? FLAG.perfect : 0);
   // dx: the word's seconds, dz: seconds to its first key, x: wrong keys (for the page's skill sample by familiarity).
   w.events.push(w.tick, EV.word, slot, index, T.errors[slot]!, 0, seconds, T.recognize[slot]!, w.guns.mags[slot]!, flags);
-  if (loaded) w.events.push(w.tick, EV.load, slot, index, 0, 0, 0, 0, w.guns.mags[slot]!, flags);
+  const receiver = loaded ? slot : fullBayWord(w, slot, clean, fast);
+  if (receiver >= 0) w.events.push(w.tick, EV.load, receiver, index, 0, 0, 0, 0, w.guns.mags[receiver]!, flags);
   T.lock = -1;
   T.free = w.tick;
   dealWord(w, slot);

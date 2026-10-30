@@ -6,7 +6,7 @@
  * its blows meet (the gun's, × 0.75 for a clean word). Each gun empties its
  * magazines by itself (src/sim/guns/*), in bay order.
  */
-import { FORGE, GUN, GUN_SPECS, MAG_CAP, PHAO, QUALITY, RAY, TAN, TIA, XUNG, XUNG_CHAPTER, type GunId } from "../content/guns";
+import { FULL_BAY, FORGE, GUN, GUN_SPECS, MAG_CAP, PHAO, QUALITY, RAY, TAN, TIA, XUNG, XUNG_CHAPTER, type GunId } from "../content/guns";
 import type { RunKit } from "../content/balance";
 import { firePhao } from "./guns/phao";
 import { fireRay } from "./guns/ray";
@@ -15,7 +15,7 @@ import { fireTia } from "./guns/tia";
 import { fireXung } from "./guns/xung";
 import type { World } from "./world";
 
-export function createGuns(kit: RunKit) {
+export function createGuns(kit: RunKit, chapter = 0) {
   const n = kit.bays;
   const slots = n * MAG_CAP;
   const gun = new Int8Array(n).fill(-1);
@@ -24,7 +24,7 @@ export function createGuns(kit: RunKit) {
   for (let b = 0; b < n; b += 1) {
     if (kit.guns[b] !== undefined) gun[b] = kit.guns[b]!;
     level[b] = Math.max(1, Math.min(FORGE.max, kit.levels[b] ?? 1));
-    cap[b] = gun[b]! >= 0 ? FORGE.mags[level[b]! - 1]! : 0;
+    cap[b] = gun[b]! >= 0 ? Math.min(MAG_CAP, FORGE.mags[level[b]! - 1]! + (chapter > 0 ? Math.max(0, Math.floor(FULL_BAY.extra)) : 0)) : 0;
   }
   return {
     /** 1 when the kit has no Xung: Tia then holds the line and hunts scouts too (TIA_DUTY). */
@@ -57,6 +57,8 @@ export function createGuns(kit: RunKit) {
     charge: new Float64Array(n),
     target: new Int32Array(n).fill(-1),
     targetId: new Int32Array(n),
+    // Nested state stays outside hashWorld; adopting R3 requires an intentional hash migration.
+    fullBay: { boosted: new Uint8Array(slots) },
   };
 }
 
@@ -90,9 +92,54 @@ export function loadMagazine(w: World, bay: number, clean: boolean, fast: boolea
   G.rate[i] = fast ? QUALITY.fastRate : 1;
   G.pierce[i] = spec.armour * (clean ? QUALITY.cleanArmour : 1);
   G.perfect[i] = clean && fast ? 1 : 0;
+  G.fullBay.boosted[i] = 0;
   G.mags[bay] = k + 1;
   if (k === 0) G.left[bay] = magazineUnits(w.stage, gun as GunId);
   return true;
+}
+
+/** A full bay must have a gun; empty sockets never trigger chapter rules. */
+function full(w: World, bay: number): boolean {
+  return w.guns.gun[bay]! >= 0 && w.guns.mags[bay]! >= w.guns.cap[bay]!;
+}
+
+/** R2: least-loaded other gun, then lowest bay index; read tuning knobs at call time. */
+export function spillTarget(w: World, bay: number): number {
+  if (w.stage.chapter <= 0 || FULL_BAY.spill < 1 || !full(w, bay)) return -1;
+  const G = w.guns;
+  let target = -1;
+  for (let b = 0; b < G.gun.length; b += 1) {
+    if (b === bay || G.gun[b]! < 0 || G.mags[b]! >= G.cap[b]!) continue;
+    if (target < 0 || G.mags[b]! < G.mags[target]!) target = b;
+  }
+  return target;
+}
+
+/** R3: only the last queued magazine can receive its single boost. */
+export function canBoost(w: World, bay: number): boolean {
+  return w.stage.chapter > 0 && FULL_BAY.boost > 0 && full(w, bay) && w.guns.mags[bay]! > 0 && w.guns.fullBay.boosted[bay * MAG_CAP + w.guns.mags[bay]! - 1] === 0;
+}
+
+/** Full word: receiving bay for R2, −2 for R3, −1 for no effect. R2 takes precedence. */
+export function fullBayWord(w: World, bay: number, clean: boolean, fast: boolean): number {
+  const target = spillTarget(w, bay);
+  if (target >= 0 && loadMagazine(w, target, clean, fast)) return target;
+  if (!canBoost(w, bay)) return -1;
+  const i = bay * MAG_CAP + w.guns.mags[bay]! - 1;
+  w.guns.damage[i] = w.guns.damage[i]! * (1 + FULL_BAY.boost);
+  w.guns.fullBay.boosted[i] = 1;
+  return -2;
+}
+
+/** Value shared with the bot: normal need, the spill receiver's need, or the tail boost. */
+export function fullBayValue(w: World, bay: number, need: ArrayLike<number>): number {
+  const G = w.guns;
+  const gun = G.gun[bay]!;
+  if (gun < 0) return -1;
+  if (G.mags[bay]! < G.cap[bay]!) return need[gun]! * (G.cap[bay]! - G.mags[bay]!);
+  const target = spillTarget(w, bay);
+  if (target >= 0) return need[G.gun[target]!]! * (G.cap[target]! - G.mags[target]!);
+  return canBoost(w, bay) ? need[gun]! * FULL_BAY.boost : -1;
 }
 
 /** Bay `bay`'s firing magazine is spent: the queued ones move up; true while one is left. */
@@ -104,6 +151,7 @@ export function nextMagazine(G: Guns, bay: number): boolean {
     G.crit[i + k] = G.crit[i + k + 1]!;
     G.pierce[i + k] = G.pierce[i + k + 1]!;
     G.perfect[i + k] = G.perfect[i + k + 1]!;
+    G.fullBay.boosted[i + k] = G.fullBay.boosted[i + k + 1]!;
   }
   G.mags[bay] = G.mags[bay]! - 1;
   return G.mags[bay]! > 0;

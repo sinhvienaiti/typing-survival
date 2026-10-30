@@ -21,7 +21,7 @@ import { stageSeconds, type Stage } from "../content/stage-rules";
 import { stageFoes } from "../content/stage-s0";
 import { EV } from "./events";
 import { movePeak, moveLull, waveAt } from "./plan";
-import { xungRounds } from "./weapons";
+import { canBoost, spillTarget, xungRounds } from "./weapons";
 import type { World } from "./world";
 
 /** The kit's magazine near the line: the mean of its guns' (the unit of "words owed"); Xung's as the stage loads it. */
@@ -153,9 +153,9 @@ const snapshot: { -readonly [K in keyof FlowSnapshot]: FlowSnapshot[K] } & { kil
 /**
  * The FlowMeter's snapshot of the world (BALANCE.md §3 for this game):
  * danger: a foe or a scout shot in the near zone (losing armour counts by
- * itself); live words: the bays whose gun can still take a magazine (a full
- * gun's word does nothing, so with every gun full and no word under way
- * there is nothing to do: idle); the bays never pile words up (never capped);
+ * itself); live words: bays that can take a magazine, spill one to another
+ * bay, or boost an unboosted tail when the chapter knobs allow it. With no
+ * useful word and no word under way there is nothing to do (idle); the bays never pile words up (never capped);
  * backlog: words owed at the line, the near zone's hit points in magazines
  * of the kit (the mean of its guns' near-line damage; S0's Xung and Tia
  * both count S0's Xung magazine); busy: a word under way; the kills' path
@@ -168,7 +168,7 @@ export function flowSnapshot(w: World): FlowSnapshot {
   snapshot.danger = P.nearWeight > 0 || P.nearShots > 0;
   snapshot.hp = w.hp / w.armourMax;
   let live = 0;
-  for (let b = 0; b < G.mags.length; b += 1) if (G.gun[b]! >= 0 && G.mags[b]! < G.cap[b]!) live += 1;
+  for (let b = 0; b < G.mags.length; b += 1) if (G.gun[b]! >= 0 && (G.mags[b]! < G.cap[b]! || spillTarget(w, b) >= 0 || canBoost(w, b))) live += 1;
   snapshot.live = live;
   snapshot.capped = false;
   snapshot.backlog = Math.floor(P.nearHp / w.magazine);

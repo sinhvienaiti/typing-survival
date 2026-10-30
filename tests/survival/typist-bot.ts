@@ -13,9 +13,9 @@
  *   Tán for foes at the line, Ray for the big ones and its line, Pháo Sao
  *   for the crowd in its band, Đầu Đàn ×4, Vỏ and shields counted; times
  *   the magazines it lacks; nearest: the gun with fewer magazines; first:
- *   the word seen first, the left bay, in reading order). A full gun's word
- *   loads nothing: a typist reading left first types it anyway. With every
- *   gun full the bot waits (idle).
+ *   the word seen first, the left bay, in reading order). A full word may
+ *   spill or boost under the chapter knobs; otherwise it loads nothing.
+ *   The bot waits when every bay has no useful word (idle).
  *   recall (docs/BUILD_S1.md §11.2): on a Thiếu chữ stage each hidden letter
  *   is misremembered at `recall` (Chuẩn 0.2, Mới 0.3, Trẻ em 0.4): one wrong
  *   key, the letter shows, the bot goes on. Its own seeded draws, so a
@@ -40,7 +40,11 @@ import { FOES, KIND } from "../../src/content/foes";
 import { GUN, GUN_SPECS, PHAO, RAY, TAN, TIA, XUNG, tiaDamage } from "../../src/content/guns";
 import { FIELD, NEAR } from "../../src/content/rules";
 import { LEARN_RULES } from "../../src/content/stage-rules";
+import { fullBayValue } from "../../src/sim/weapons";
 import type { World, WorldOptions } from "../../src/sim/world";
+
+/** Pure bay value; the sim owns full-bay eligibility and precedence. */
+export const bayValue = fullBayValue;
 
 type Keydown = (event: object) => void;
 /** For the danger pick: foes within Xung's range, within Tia's reach, and pressing on the line. */
@@ -160,8 +164,7 @@ export class TypistBot {
     const out: TargetOption[] = [];
     for (let bay = 0; bay < G.gun.length; bay += 1) {
       const mags = G.mags[bay]!;
-      const gun = G.gun[bay]!;
-      const danger = gun < 0 || mags >= G.cap[bay]! ? -1 : need[gun]! * (G.cap[bay]! - mags);
+      const danger = bayValue(w, bay, need);
       out.push({ danger, distance: mags, shown: bay });
     }
     return out;
