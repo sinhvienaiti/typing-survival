@@ -19,10 +19,10 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { Reactions } from "../kit/feedback";
 import { textures } from "../kit/three";
 import { FEEL } from "./gun-rules";
-import { loadMesh } from "./models";
+import { crowdModelRequests, loadMesh } from "./models";
 import { FOES, KIND, KINDS } from "../content/foes";
 import { MARK } from "../sim/stores";
-import { FIELD, STORE } from "../content/rules";
+import { FIELD, STORE, type Tier } from "../content/rules";
 import type { World } from "../sim/world";
 
 type Layer = { mesh: THREE.InstancedMesh; state: Float32Array; attribute: THREE.InstancedBufferAttribute; size: number; lift: number; count: number };
@@ -33,13 +33,13 @@ type Layer = { mesh: THREE.InstancedMesh; state: Float32Array; attribute: THREE.
  * 1.2× larger still, against the perspective (FAR_GROW).
  */
 const LOOK = [
-  { size: 1.55, lift: 0.75, model: ["rainbow-mine-3d", "rainbow-mine-lod"] },
-  { size: 2.3, lift: 1.0, model: ["rainbow-scout-3d", "rainbow-scout-lod"] },
-  { size: 3.0, lift: 1.35, model: ["rainbow-tank-3d"] },
-  { size: 2.3, lift: 1.05, model: ["rainbow-shield-3d"] },
-  { size: 1.9, lift: 0.9, model: ["rainbow-splitter-3d"] },
-  { size: 1.0, lift: 0.55, model: ["rainbow-splitter-3d"] },
-  { size: 3.75, lift: 1.7, model: ["rainbow-tank-3d"] },
+  { size: 1.55, lift: 0.75 },
+  { size: 2.3, lift: 1.0 },
+  { size: 3.0, lift: 1.35 },
+  { size: 2.3, lift: 1.05 },
+  { size: 1.9, lift: 0.9 },
+  { size: 1.0, lift: 0.55 },
+  { size: 3.75, lift: 1.7 },
 ] as const;
 const CAPACITY = [STORE.foes, 256, 64, 128, 256, 512, 32];
 /** How far a blow pushes each kind back (a Trâu barely moves: 0.03 m against 0.12). */
@@ -174,10 +174,10 @@ export class Crowd {
   }
 
   /** Loads the family's models; a kind keeps its shape if its model cannot load. */
-  async load(): Promise<void> {
+  async load(tier: Tier): Promise<void> {
     await Promise.all(
-      LOOK.map(async (_, kind) => {
-        const found = await loadMesh("enemies", LOOK[kind]!.model);
+      crowdModelRequests(tier).map(async (request, kind) => {
+        const found = await loadMesh("enemies", request.ids, request.tier);
         if (found === null) return;
         const old = this.layers[kind]!;
         old.mesh.removeFromParent();

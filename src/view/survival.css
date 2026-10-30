@@ -58,6 +58,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 /* An input notice (Vietnamese IME on, fallback words): just above the word line (hud.ts sets its top), big enough to see while typing. */
 .sv-notice { position: absolute; top: calc(360px * var(--ui)); left: 50%; transform: translateX(-50%); padding: calc(7px * var(--ui)) calc(16px * var(--ui)); border: 2px solid var(--danger); background: var(--notice); box-shadow: 0 0 18px var(--danger-glow); font: 700 calc(20px * var(--ui)) var(--font-battle); white-space: nowrap; color: var(--text); }
 .sv-notice::before { content: "⌨ "; }
+.sv-notice.is-hint { border-color: var(--volt); background: var(--screen); box-shadow: 0 0 18px var(--volt-glow); color: var(--soft); }
+.sv-notice.is-hint::before { content: none; }
 
 /* The objective's plate (top centre, fixed: only its numbers change). */
 .sv-goal { align-self: flex-start; padding: calc(7px * var(--ui)) calc(18px * var(--ui)); font: 700 calc(16px * var(--ui)) var(--font-title); letter-spacing: 0.14em; color: var(--led); text-shadow: 0 0 10px var(--led-glow); background-color: var(--screen); }
@@ -236,6 +238,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-cards .sv-gun-card kbd { font: 700 calc(12px * var(--ui)) var(--font-title); padding: 0 5px; border: 1px solid var(--line-strong); color: var(--soft); }
 /* The bay tag rides the card's top edge: inline it wrapped under long names at 1280 ("Star Mortar · BAY 1 · FORGE 2", layout pass 29/10). */
 .sv-cards .sv-gun-card em { position: absolute; top: calc(-8px * var(--ui)); right: calc(8px * var(--ui)); white-space: nowrap; font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.1em; color: var(--ink); background: var(--gun); padding: 1px 5px; font-style: normal; }
+/* The recommendation and bay tags share the top edge with room between them. */
+.sv-cards .sv-gun-card .sv-rec { position: absolute; top: calc(-8px * var(--ui)); left: calc(8px * var(--ui)); white-space: nowrap; font: 700 calc(10px * var(--ui)) var(--font-title); color: var(--ink); background: var(--typing); padding: 2px 4px; font-style: normal; }
+.sv-loadout .sv-start-note { white-space: nowrap; }
 .sv-cards .sv-gun-card small { display: block; font: 600 calc(12px * var(--ui)) var(--font-battle); color: var(--muted); }
 .sv-cards .sv-gun-card p { margin: 5px 0 0 !important; font-size: calc(13px * var(--ui)) !important; line-height: 1.35; color: var(--soft) !important; }
 .sv-cards .sv-gun-card .sv-good { color: var(--typing) !important; }

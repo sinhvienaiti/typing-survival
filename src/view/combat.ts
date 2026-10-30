@@ -14,7 +14,7 @@ import type { ThemeAudio } from "../audio/theme-audio";
 import { Debris, HitStop, NumberField, NumberSprites, STOP_GAP_MS, STYLE, Trauma, tier, type Rect } from "../kit/feedback";
 import { ParticlePool, textures } from "../kit/three";
 import { KIND } from "../content/foes";
-import { GUN, TIA } from "../content/guns";
+import { GUN, TIA, type GunId } from "../content/guns";
 import { FIELD, type Tier } from "../content/rules";
 import { EV, FLAG } from "../sim/events";
 import { bayOf } from "../sim/weapons";
@@ -92,7 +92,7 @@ export class Combat {
   /** The typing feel (typing-feel.ts): keys and words are its; it draws into this frame's glows and strips. */
   typing: { draw(w: World, time: number): void } | null = null;
 
-  constructor(private readonly stage: Stage, private readonly crowd: Crowd, private readonly ship: Ship, pilot: Pilot, tierName: Tier, audio: ThemeAudio, private readonly hooks: CombatHooks) {
+  constructor(private readonly stage: Stage, private readonly crowd: Crowd, private readonly ship: Ship, pilot: Pilot, tierName: Tier, guns: readonly GunId[], audio: ThemeAudio, private readonly hooks: CombatHooks) {
     const spec = VIEW_TIERS[tierName];
     this.beam = pilot === "draconis" ? PILOT_COLORS.draconis.beam : C.swarm;
     this.glows = new Glows(spec.bursts);
@@ -104,7 +104,7 @@ export class Combat {
     this.audio = audio;
     // The guns' light pool is made with the fight (a fixed count: every lit material compiles once).
     this.lights = new GunLights(stage.scene, stage.deck, LIGHTS[tierName]);
-    this.bolts = new Bolts(stage.scene, tierName, pilot === "draconis");
+    this.bolts = new Bolts(stage.scene, tierName, pilot === "draconis", guns);
     this.loading = this.bolts.load();
     this.chunks = new Chunks(CHUNK_CAP[tierName]);
     this.shots = new ShotFx({ stage, glows: this.glows, smoke: this.smoke, strips: this.strips, sparks: this.sparks, trauma: this.trauma, ship, lights: this.lights, bolts: this.bolts, audio, pilot });

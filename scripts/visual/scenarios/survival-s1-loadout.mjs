@@ -26,6 +26,7 @@ export default async function (page) {
     await page.sleep(250);
   }
   await page.eval("localStorage.removeItem('survival.stages'); true");
+  await page.eval("localStorage.setItem('survival.guide', JSON.stringify({started:true,hint:true})); true");
   const screen = () => page.eval(sv("return { mode: t.mode(), screen: document.querySelector('.sv-overlay').dataset.screen, journey: t.journey(), title: document.querySelector('.sv-overlay h1')?.textContent ?? '', items: [...document.querySelectorAll('.sv-overlay .sv-item b')].map((n) => n.textContent) };"));
   const log = [];
   log.push(["title", await screen()]);

@@ -1,0 +1,341 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-30T00:00:00.000Z",
+  "models": {
+    "enemies/rainbow-mine-3d": {
+      "kind": "enemies",
+      "id": "rainbow-mine-3d",
+      "tiers": {
+        "high": {
+          "url": "/assets/typing-survival/models/enemies/rainbow-mine-3d/rainbow-mine-3d.high.glb?v=0f5a9e9038",
+          "bytes": 827972
+        },
+        "medium": {
+          "url": "/assets/typing-survival/models/enemies/rainbow-mine-3d/rainbow-mine-3d.medium.glb?v=ba00c1016a",
+          "bytes": 301076
+        }
+      },
+      "triangles": 6000,
+      "sockets": [
+        "FX_CORE",
+        "FX_MUZZLE"
+      ],
+      "clips": [
+        "Enemy_Idle"
+      ],
+      "size": [
+        1.9886,
+        1.9992,
+        1.3136
+      ]
+    },
+    "enemies/rainbow-scout-3d": {
+      "kind": "enemies",
+      "id": "rainbow-scout-3d",
+      "tiers": {
+        "high": {
+          "url": "/assets/typing-survival/models/enemies/rainbow-scout-3d/rainbow-scout-3d.high.glb?v=6b35b3de0d",
+          "bytes": 547544
+        },
+        "medium": {
+          "url": "/assets/typing-survival/models/enemies/rainbow-scout-3d/rainbow-scout-3d.medium.glb?v=c565cbfec4",
+          "bytes": 208084
+        }
+      },
+      "triangles": 5782,
+      "sockets": [
+        "FX_CORE",
+        "FX_MUZZLE"
+      ],
+      "clips": [
+        "Enemy_Idle"
+      ],
+      "size": [
+        2,
+        1.8661,
+        1.3206
+      ]
+    },
+    "enemies/rainbow-shield-3d": {
+      "kind": "enemies",
+      "id": "rainbow-shield-3d",
+      "tiers": {
+        "high": {
+          "url": "/assets/typing-survival/models/enemies/rainbow-shield-3d/rainbow-shield-3d.high.glb?v=0ac2a2a6e0",
+          "bytes": 991376
+        },
+        "medium": {
+          "url": "/assets/typing-survival/models/enemies/rainbow-shield-3d/rainbow-shield-3d.medium.glb?v=f0f3996320",
+          "bytes": 311644
+        }
+      },
+      "triangles": 5999,
+      "sockets": [
+        "FX_CORE",
+        "FX_MUZZLE"
+      ],
+      "clips": [
+        "Enemy_Idle"
+      ],
+      "size": [
+        1.6514,
+        1.9877,
+        1.4031
+      ]
+    },
+    "enemies/rainbow-splitter-3d": {
+      "kind": "enemies",
+      "id": "rainbow-splitter-3d",
+      "tiers": {
+        "high": {
+          "url": "/assets/typing-survival/models/enemies/rainbow-splitter-3d/rainbow-splitter-3d.high.glb?v=cb85975744",
+          "bytes": 615648
+        },
+        "medium": {
+          "url": "/assets/typing-survival/models/enemies/rainbow-splitter-3d/rainbow-splitter-3d.medium.glb?v=e92db8b3d0",
+          "bytes": 216852
+        }
+      },
+      "triangles": 6000,
+      "sockets": [
+        "FX_CORE",
+        "FX_MUZZLE"
+      ],
+      "clips": [
+        "Enemy_Idle"
+      ],
+      "size": [
+        2.0013,
+        1.8131,
+        1.2197
+      ]
+    },
+    "enemies/rainbow-tank-3d": {
+      "kind": "enemies",
+      "id": "rainbow-tank-3d",
+      "tiers": {
+        "high": {
+          "url": "/assets/typing-survival/models/enemies/rainbow-tank-3d/rainbow-tank-3d.high.glb?v=a0051306e6",
+          "bytes": 547544
+        },
+        "medium": {
+          "url": "/assets/typing-survival/models/enemies/rainbow-tank-3d/rainbow-tank-3d.medium.glb?v=c01a7d2471",
+          "bytes": 208084
+        }
+      },
+      "triangles": 5782,
+      "sockets": [
+        "FX_CORE",
+        "FX_MUZZLE"
+      ],
+      "clips": [
+        "Enemy_Idle"
+      ],
+      "size": [
+        2,
+        1.8661,
+        1.3206
+      ]
+    },
+    "heroes/draconis-v3": {
+      "kind": "heroes",
+      "id": "draconis-v3",
+      "tiers": {
+        "high": {
+          "url": "/assets/typing-survival/models/heroes/draconis-v3/draconis-v3.high.glb?v=3b1d7ce72b",
+          "bytes": 4362212
+        },
+        "medium": {
+          "url": "/assets/typing-survival/models/heroes/draconis-v3/draconis-v3.medium.glb?v=937aef0aff",
+          "bytes": 1565856
+        }
+      },
+      "triangles": 60000,
+      "sockets": [
+        "FX_JAW",
+        "FX_HALO",
+        "FX_MOUTH",
+        "FX_CAST_L",
+        "FX_CAST_R",
+        "FX_WING_L2",
+        "FX_WING_L",
+        "FX_WING_R2",
+        "FX_WING_R",
+        "FX_CORE",
+        "FX_TAIL",
+        "FX_FOOT_L",
+        "FX_FOOT_R"
+      ],
+      "clips": [
+        "Hero_Fly",
+        "Hero_Idle_Hover",
+        "Hero_Boost",
+        "Hero_Spit",
+        "Hero_Spit_Big",
+        "Hero_Cast",
+        "Hero_Hit",
+        "Hero_Victory",
+        "Hero_Death",
+        "Hero_Intro"
+      ],
+      "size": [
+        4.106,
+        1.9982,
+        2.7697
+      ]
+    },
+    "ships/vanguard": {
+      "kind": "ships",
+      "id": "vanguard",
+      "tiers": {
+        "high": {
+          "url": "/assets/typing-survival/models/ships/vanguard/vanguard.high.glb?v=27ec9d5c04",
+          "bytes": 2748648
+        },
+        "medium": {
+          "url": "/assets/typing-survival/models/ships/vanguard/vanguard.medium.glb?v=5a48f7985c",
+          "bytes": 881140
+        }
+      },
+      "triangles": 12000,
+      "sockets": [
+        "FX_CORE",
+        "FX_ENGINE_L",
+        "FX_ENGINE_R",
+        "FX_MUZZLE",
+        "FX_MUZZLE_L",
+        "FX_MUZZLE_R",
+        "FX_WING_L",
+        "FX_WING_R"
+      ],
+      "clips": [
+        "Ship_Idle"
+      ],
+      "size": [
+        1.7563,
+        0.6153,
+        2.0006
+      ]
+    },
+    "skills/crimson-talon-bolt": {
+      "kind": "skills",
+      "id": "crimson-talon-bolt",
+      "tiers": {
+        "high": {
+          "url": "/assets/typing-survival/models/skills/crimson-talon-bolt/crimson-talon-bolt.high.glb?v=95fa560139",
+          "bytes": 339404
+        },
+        "medium": {
+          "url": "/assets/typing-survival/models/skills/crimson-talon-bolt/crimson-talon-bolt.medium.glb?v=5ca976ce22",
+          "bytes": 149952
+        }
+      },
+      "triangles": 3000,
+      "sockets": [
+        "FX_TRAIL"
+      ],
+      "clips": [],
+      "size": [
+        0.3572,
+        0.4585,
+        2
+      ]
+    },
+    "skills/dragon-fireball": {
+      "kind": "skills",
+      "id": "dragon-fireball",
+      "tiers": {
+        "high": {
+          "url": "/assets/typing-survival/models/skills/dragon-fireball/dragon-fireball.high.glb?v=c65f85d9d7",
+          "bytes": 277224
+        },
+        "medium": {
+          "url": "/assets/typing-survival/models/skills/dragon-fireball/dragon-fireball.medium.glb?v=87ae7bddb1",
+          "bytes": 138280
+        }
+      },
+      "triangles": 4000,
+      "sockets": [
+        "FX_TRAIL"
+      ],
+      "clips": [],
+      "size": [
+        0.7214,
+        0.745,
+        1.973
+      ]
+    },
+    "skills/frost-seraph-bolt": {
+      "kind": "skills",
+      "id": "frost-seraph-bolt",
+      "tiers": {
+        "high": {
+          "url": "/assets/typing-survival/models/skills/frost-seraph-bolt/frost-seraph-bolt.high.glb?v=4d37c7ddf1",
+          "bytes": 397600
+        },
+        "medium": {
+          "url": "/assets/typing-survival/models/skills/frost-seraph-bolt/frost-seraph-bolt.medium.glb?v=af0edf77d6",
+          "bytes": 161396
+        }
+      },
+      "triangles": 3000,
+      "sockets": [
+        "FX_TRAIL"
+      ],
+      "clips": [],
+      "size": [
+        0.4863,
+        0.465,
+        1.9913
+      ]
+    },
+    "skills/solar-lance-bolt": {
+      "kind": "skills",
+      "id": "solar-lance-bolt",
+      "tiers": {
+        "high": {
+          "url": "/assets/typing-survival/models/skills/solar-lance-bolt/solar-lance-bolt.high.glb?v=d62a7a3619",
+          "bytes": 309304
+        },
+        "medium": {
+          "url": "/assets/typing-survival/models/skills/solar-lance-bolt/solar-lance-bolt.medium.glb?v=19a52189f5",
+          "bytes": 134232
+        }
+      },
+      "triangles": 2999,
+      "sockets": [
+        "FX_TRAIL"
+      ],
+      "clips": [],
+      "size": [
+        0.2643,
+        0.4631,
+        1.9958
+      ]
+    },
+    "skills/vanguard-bolt": {
+      "kind": "skills",
+      "id": "vanguard-bolt",
+      "tiers": {
+        "high": {
+          "url": "/assets/typing-survival/models/skills/vanguard-bolt/vanguard-bolt.high.glb?v=3e167f0997",
+          "bytes": 354216
+        },
+        "medium": {
+          "url": "/assets/typing-survival/models/skills/vanguard-bolt/vanguard-bolt.medium.glb?v=12bb060aec",
+          "bytes": 147288
+        }
+      },
+      "triangles": 3000,
+      "sockets": [
+        "FX_TRAIL"
+      ],
+      "clips": [],
+      "size": [
+        0.3583,
+        0.6658,
+        1.9963
+      ]
+    }
+  }
+}

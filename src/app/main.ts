@@ -31,6 +31,7 @@ import { foesOnScreen, shipProbe } from "../view/probes";
 import { TypeFeel } from "../view/typing-feel";
 import { warmPrograms } from "../view/warm";
 import { FrameCosts, bays, devHandleWanted, eventCounts, installDevHandle, numberBoxes, runState, snapshot } from "./dev";
+import { LoadHint, noticeFor } from "./guide";
 import { Journey, NEXT_KEY, introKey, objectiveText, recordStage, starsOf, takeChoice, type RunChoice } from "./journey";
 import { adviceText, countedText, profileView, runStats, runWords } from "./results";
 import { ImeNotice, installAutoPause, installKeys, type KeyAction } from "./input";
@@ -133,7 +134,7 @@ const wordOf = (index: number): Word => vocab.words.get(world.deck[index]!) ?? {
 const hud = new Hud(hudRoot, wordOf, world);
 const crowd = new Crowd(stage.scene);
 const ship = new Ship(stage.scene, pilot, motionReduced());
-const loading = Promise.all([crowd.load(), ship.load(stage.scene)]);
+const loading = Promise.all([crowd.load(tier), ship.load(stage.scene, tier)]);
 let loaded = false;
 void loading.then(() => (loaded = true));
 const audio = new ThemeAudio({ sfx: settings.sfxVolume, music: settings.musicVolume });
@@ -154,6 +155,7 @@ let live = false;
 /** The ship and quality the settings screen picked (they take a new page). */
 const chosen = { pilot, tier };
 const imeNotice = new ImeNotice();
+const loadHint = new LoadHint(safeLocalStorage);
 const spoken = new Set<string>();
 let lastSpeak = -1e9;
 let clock = 0;
@@ -161,7 +163,7 @@ let lastPeak = 0;
 /** When the end card opens (−1: no run ending). */
 let endAt = -1;
 
-const combat = new Combat(stage, crowd, ship, pilot, tier, audio, {
+const combat = new Combat(stage, crowd, ship, pilot, tier, world.header.kit.guns, audio, {
   stop: (ms) => session.stop(ms),
   wordDone(slot, index, perfect, seconds, recognize, errors) {
     const word = wordOf(index);
@@ -632,7 +634,7 @@ function update(now: number): void {
   typing.read(world, now);
   hud.update(world, combat.killsWithin(now, 3000), now);
   typing.land(now);
-  hud.setNotice(imeNotice.on(now) ? "Switch to an English keyboard" : vocab.source === "fallback" ? "Offline word list (server words unavailable)" : "");
+  const notice = noticeFor(imeNotice.on(now), vocab.source === "fallback", loadHint.text(mode, hud.loads)); hud.setNotice(notice.text, notice.kind);
   // The floor glows red as the press reaches the ship (inside the guns' reach and closing); the music rises with the horde.
   let near = 0;
   let shown = 0;
