@@ -77,11 +77,15 @@ describe("Last Line settings", () => {
 });
 
 describe("Last Line quick panels", () => {
-  it("Keyboard sound uses Off, Relay and the available Firefly catalogue", () => {
-    expect(choices.map((o) => o.value)).toEqual(["off", BUILT_IN_KEYS, "deep", "warm", "rounded", "solid", "crisp", "clear", "bright-clack"]);
+  it("Keyboard sound uses Off, Relay and the 32 Firefly sets, each with its family for the kit's headings", () => {
+    expect(choices.slice(0, 2).map((o) => o.value)).toEqual(["off", BUILT_IN_KEYS]);
+    expect(choices).toHaveLength(34);
     expect(choices.every((o) => !o.disabled && !o.note)).toBe(true);
+    expect([...new Set(choices.slice(2).map((o) => o.family))]).toEqual(["Deep", "Warm", "Rounded", "Solid", "Crisp", "Clear", "Bright Clack"]);
     const keyboard = soundRows(choices).find((row) => row.id === "keyboard");
     expect(keyboard?.kind === "choice" && keyboard.default).toBe(DEFAULT_KEYBOARD_SOUND);
+    // The row hands the kit's picker the same choices, family included.
+    expect(keyboard?.kind === "choice" && keyboard.options).toBe(choices);
   });
 
   it("Settings: typing effects with a preview, graphics (quality next run), the game's rows, Resume and Quit; Sound reads words aloud under Voice", () => {

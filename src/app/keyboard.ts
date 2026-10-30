@@ -4,9 +4,17 @@ import { BUILT_IN_KEYS, DEFAULT_KEYBOARD_SOUND, type Settings } from "./settings
 
 export const KEYS_BASE = "/assets/typing-survival/audio/keys/";
 
+/**
+ * Off and Relay first, with no family (so no heading above them), then the 32
+ * Firefly sets in catalogue order. Each set keeps its `family` (Deep, Warm,
+ * Rounded, Solid, Crisp, Clear, Bright Clack): the kit's picker draws one
+ * heading per family run and PageUp/PageDown jump between them.
+ */
 export async function loadKeyboardChoices(fetchJson?: (url: string) => Promise<unknown>): Promise<readonly KeyboardSoundChoice[]> {
   const catalog = await loadKeyboardCatalog(KEYS_BASE, { extra: [{ value: BUILT_IN_KEYS, label: "Relay" }], fallback: [], fetchJson });
-  return [catalog.options[0]!, catalog.options.find((c) => c.value === BUILT_IN_KEYS)!, ...catalog.options.filter((c) => c.value !== "off" && c.value !== BUILT_IN_KEYS)];
+  const off = catalog.options[0]!;
+  const relay = catalog.options.find((c) => c.value === BUILT_IN_KEYS)!;
+  return [off, relay, ...catalog.options.filter((c) => c !== off && c !== relay)];
 }
 
 export function defaultKeyboard(choices: readonly KeyboardSoundChoice[]): string {
@@ -36,6 +44,8 @@ export async function loadSavedKeyboard(sounds: TypingSounds, choices: readonly 
   try {
     const result = await sounds.loadKeyboardManifest(choice.manifest, id, choice.label);
     if (current() === id) sounds.use(result.state === "pending" ? "off" : id);
+    // The player chose another set while this one decoded: drop its 70–88 buffers.
+    else if (sounds.profile?.id !== id) sounds.release(id);
   } catch { /* Blocked audio leaves this pack silent; selecting it again retries through the kit. */ }
 }
 

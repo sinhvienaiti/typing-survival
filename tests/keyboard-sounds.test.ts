@@ -7,6 +7,12 @@ import { ThemeAudio } from "../src/audio/theme-audio";
 
 // Read the shipped media through fetch's interface; these tests never use the network.
 const json = async (url: string): Promise<unknown> => JSON.parse(readFileSync("public" + url, "utf8"));
+/** The shipped root catalogue (owner 30/10: 32 Firefly sets in seven families). */
+const CATALOGUE = (JSON.parse(readFileSync("public" + KEYS_BASE + "keys-manifest.json", "utf8")) as { profiles: { id: string; family: string; order: number }[] }).profiles;
+const IDS = [...CATALOGUE].sort((a, b) => a.order - b.order).map((p) => p.id);
+const FAMILIES = ["Deep", "Warm", "Rounded", "Solid", "Crisp", "Clear", "Bright Clack"];
+/** The 29/10 set ids, kept by the 30/10 catalogue as the first set of each family. */
+const FIRST_OF_FAMILY = ["deep", "warm", "rounded", "solid", "crisp", "clear", "bright-clack"];
 let choices: readonly KeyboardSoundChoice[];
 beforeAll(async () => { choices = await loadKeyboardChoices(json); });
 
@@ -58,6 +64,10 @@ let requests: string[];
 const players: TypingSounds[] = [];
 const previews: KeyboardSoundPreview[] = [];
 const flush = async (): Promise<void> => { for (let i = 0; i < 50; i++) await Promise.resolve(); };
+/** A set's 70–88 files decode in batches of 16 with a macrotask between them: run the fake clock dry. */
+const settle = async (): Promise<void> => { await vi.runAllTimersAsync(); await flush(); };
+const settled = async <T>(work: Promise<T>): Promise<T> => { await settle(); return work; };
+const packFiles = async (c: KeyboardSoundChoice) => keyboardFiles(await json(c.manifest!), c.manifest!.slice(0, c.manifest!.lastIndexOf("/") + 1));
 const player = (): TypingSounds => {
   const sounds = new TypingSounds({ context: ctx as unknown as AudioContext, random: () => 0.5 });
   players.push(sounds);
@@ -95,22 +105,35 @@ afterEach(() => {
 });
 
 describe("Last Line Firefly catalogue and save", () => {
-  it("reads one root catalogue, offers Off + Relay + seven packs, and resolves all 91 samples and seven previews", async () => {
+  it("reads one root catalogue, offers Off + Relay + 32 sets in seven families, and resolves all 2,652 samples and 32 previews", async () => {
     const result = await loadKeyboardChoices();
-    expect(result.map((c) => c.value)).toEqual(["off", "relay", "deep", "warm", "rounded", "solid", "crisp", "clear", "bright-clack"]);
+    expect(result.map((c) => c.value)).toEqual(["off", "relay", ...IDS]);
+    expect(IDS).toHaveLength(32);
     expect(requests).toEqual([KEYS_BASE + "keys-manifest.json"]);
     let count = 0;
     for (const pack of result.filter((c) => c.manifest)) {
-      const files = keyboardFiles(await json(pack.manifest!), pack.manifest!.slice(0, pack.manifest!.lastIndexOf("/") + 1));
-      expect(files.key).toHaveLength(10);
-      expect(files.space).toHaveLength(3);
+      const files = await packFiles(pack);
+      expect(files.key.length, pack.value).toBeGreaterThanOrEqual(70);
+      expect(files.key.length, pack.value).toBeLessThanOrEqual(80);
+      expect(files.space, pack.value).toHaveLength(8);
       for (const url of [...files.key, ...files.space, pack.preview!]) {
-        expect(url).toMatch(/\.ogg$/);
+        expect(url).toMatch(new RegExp("^" + KEYS_BASE + pack.value + "/(key|space)-\\d{2}\\.ogg$|/preview\\.ogg$"));
         expect(readFileSync("public" + url).subarray(0, 4).toString()).toBe("OggS");
       }
       count += files.key.length + files.space.length;
     }
-    expect(count).toBe(91);
+    expect(count).toBe(2652);
+  });
+
+  it("passes each set's family through for the kit's grouped list: Off and Relay first with none, then one contiguous run per family", () => {
+    expect(choices.slice(0, 2).map((c) => [c.value, c.family])).toEqual([["off", undefined], ["relay", undefined]]);
+    const sets = choices.slice(2);
+    expect(sets.every((c) => typeof c.family === "string" && c.manifest && c.preview)).toBe(true);
+    const runs = sets.filter((c, i) => i === 0 || sets[i - 1]!.family !== c.family);
+    expect(runs.map((c) => c.family)).toEqual(FAMILIES);
+    expect(runs.map((c) => c.value)).toEqual(FIRST_OF_FAMILY);
+    expect(sets.map((c) => c.family)).toEqual(CATALOGUE.map((p) => p.family));
+    expect(choice(DEFAULT_KEYBOARD_SOUND)).toMatchObject({ family: "Bright Clack", label: "Bright Clack Velvet" });
   });
 
   it("a missing catalogue leaves Off and Relay available, without the five pending packs", async () => {
@@ -157,7 +180,7 @@ describe("Last Line sampled keyboard", () => {
     expect(theme.played.get("music.calm")).toBe(1);
   });
 
-  it.each(["deep", "warm", "rounded", "solid", "crisp", "clear", "bright-clack"])("selects %s into the gameplay player, saves it, and restores it on reload", async (id) => {
+  it.each(IDS)("selects %s into the gameplay player, saves it, and restores it on reload", async (id) => {
     const settings = loadSettings(null);
     const sounds = player();
     const preview = new KeyboardSoundPreview({ sounds, levels: () => ({ master: 1, keyboard: 1 }) });
@@ -165,9 +188,10 @@ describe("Last Line sampled keyboard", () => {
     expect(applyQuick(settings, "keyboard", id)).toBe(true);
     applyKeyboardLevels(sounds, settings);
     preview.select(choice(id));
-    await flush();
+    await settle();
     expect(sounds.profile?.id).toBe(id);
-    expect(requests.filter((url) => /\/(key|space)-\d+\.ogg$/.test(url))).toHaveLength(13);
+    const files = await packFiles(choice(id));
+    expect(requests.filter((url) => /\/(key|space)-\d+\.ogg$/.test(url))).toHaveLength(files.key.length + files.space.length);
     expect(requests.every((url) => url.startsWith(KEYS_BASE + id + "/"))).toBe(true);
     sounds.key(0);
     expect(ctx.sources.at(-1)?.buffer?.url).toMatch(new RegExp("/" + id + "/key-\\d{2}\\.ogg$"));
@@ -175,24 +199,26 @@ describe("Last Line sampled keyboard", () => {
     expect(ctx.sources.at(-1)?.buffer?.url).toMatch(new RegExp("/" + id + "/space-\\d{2}\\.ogg$"));
     const saved = loadSettings(JSON.parse(JSON.stringify(settings)));
     const reloaded = player();
-    await loadSavedKeyboard(reloaded, choices, () => saved.typingFx.soundProfile);
+    await settled(loadSavedKeyboard(reloaded, choices, () => saved.typingFx.soundProfile));
     expect(reloaded.profile?.id).toBe(id);
   });
 
-  it("plays one key per right letter including the final one; Space takes a space sample; variants do not repeat", async () => {
+  it("plays one key per right letter including the final one; Space takes a space sample; no variant repeats within 8 strokes", async () => {
     const settings = loadSettings(null);
     const sounds = player();
-    await loadSavedKeyboard(sounds, choices, () => settings.typingFx.soundProfile);
+    await settled(loadSavedKeyboard(sounds, choices, () => settings.typingFx.soundProfile));
     const driver = new TypingFxDriver([keyboardSink(sounds)]);
     for (let typed = 1; typed <= 3; typed++) driver.progress({ kind: typed === 3 ? "done" : "advance", word: 1, text: "cat", meaning: "", typed, combo: 1 });
     expect(ctx.sources).toHaveLength(3);
     expect(ctx.sources.every((s) => s.buffer?.url?.includes("/key-"))).toBe(true);
     const seen: string[] = [];
-    for (let i = 0; i < 24; i++) {
+    // Three rounds of the default set's 80 keys: the shuffle's round boundaries too.
+    for (let i = 0; i < 240; i++) {
       sounds.key(i);
       seen.push(ctx.sources.at(-1)!.buffer!.url!);
     }
-    expect(seen.every((url, i) => i === 0 || url !== seen[i - 1])).toBe(true);
+    expect(new Set(seen).size).toBe((await packFiles(choice(DEFAULT_KEYBOARD_SOUND))).key.length);
+    expect(seen.every((url, i) => !seen.slice(Math.max(0, i - 8), i).includes(url))).toBe(true);
     sounds.space();
     expect(ctx.sources.at(-1)?.buffer?.url).toContain("/space-");
   });
@@ -201,7 +227,7 @@ describe("Last Line sampled keyboard", () => {
     const settings = loadSettings({ masterVolume: 0.5, sfxVolume: 0, typingFx: { volume: 0.4 } });
     const sounds = player();
     applyKeyboardLevels(sounds, settings);
-    await loadSavedKeyboard(sounds, choices, () => settings.typingFx.soundProfile);
+    await settled(loadSavedKeyboard(sounds, choices, () => settings.typingFx.soundProfile));
     sounds.key(0);
     expect(sounds.stats.played).toBe(1);
     expect(ctx.gains[0]!.gain.value).toBeCloseTo(0.2);
@@ -211,7 +237,7 @@ describe("Last Line sampled keyboard", () => {
   it.each(["off", "relay", "muted", "masterZero", "keyboardZero"])("silences the sampled player for %s", async (mode) => {
     const settings = loadSettings(null);
     const sounds = player();
-    await loadSavedKeyboard(sounds, choices, () => settings.typingFx.soundProfile);
+    await settled(loadSavedKeyboard(sounds, choices, () => settings.typingFx.soundProfile));
     if (mode === "off" || mode === "relay") settings.typingFx.soundProfile = mode;
     if (mode === "muted") settings.muted = true;
     if (mode === "masterZero") settings.masterVolume = 0;
@@ -223,14 +249,15 @@ describe("Last Line sampled keyboard", () => {
     expect(ctx.sources).toHaveLength(0);
   });
 
-  it.each(["warm", "off"])("a late startup load cannot replace a newly selected %s", async (id) => {
+  it.each(["warm-silk", "off"])("a late startup load cannot replace a newly selected %s, and its own set is released", async (id) => {
     const settings = loadSettings(null);
     const sounds = player();
-    let release!: () => void;
-    const gate = new Promise<void>((resolve) => { release = resolve; });
+    let open!: () => void;
+    const gate = new Promise<void>((resolve) => { open = resolve; });
     const fetch = globalThis.fetch;
+    // Hold the saved (default) set's first sample, so the player picks another set mid-load.
     vi.stubGlobal("fetch", async (url: string) => {
-      if (url.includes("/deep/key-01.ogg")) await gate;
+      if (url.includes("/" + DEFAULT_KEYBOARD_SOUND + "/key-01.ogg")) await gate;
       return fetch(url);
     });
     const loading = loadSavedKeyboard(sounds, choices, () => settings.typingFx.soundProfile);
@@ -239,10 +266,13 @@ describe("Last Line sampled keyboard", () => {
     const preview = new KeyboardSoundPreview({ sounds, levels: () => ({ master: 1, keyboard: 1 }) });
     previews.push(preview);
     preview.select(choice(id));
-    await flush();
-    release();
-    await loading;
+    await settle();
+    open();
+    await settled(loading);
     expect(sounds.profile?.id ?? "off").toBe(id);
+    expect(requests.some((url) => url.includes("/" + DEFAULT_KEYBOARD_SOUND + "/key-80.ogg"))).toBe(true);
+    // The startup set finished decoding but is not kept: its buffers are gone.
+    expect(sounds.use(DEFAULT_KEYBOARD_SOUND)).toBe(false);
   });
 
   it("hover/focus previews use the same player, dwell 150 ms, play 1 s at Master × Keyboard and fade on leave", async () => {
