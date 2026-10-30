@@ -41,9 +41,10 @@ import { reportWord } from "./learning";
 import { blendSkill, type SkillUpdate } from "../kit/balance";
 import { Menu, cycle, stepVolume, type MenuItem } from "./menu";
 import { createQuickSettings } from "./quick";
-import { applyKeyboardLevels, loadKeyboardChoices, loadSavedKeyboard, restoreKeyboardChoice } from "./keyboard";
+import { KEYBOARD_UNAVAILABLE, RELAY, applyKeyboardLevels, requestKeyboardCatalogue, savedKeyboardId, startKeyboard } from "./keyboard";
+import { pendingKeyboardChoices, type KeyboardCatalog } from "../kit/feedback/typing-fx";
 import { Session } from "./session";
-import { applyQuick, loadSettings, quickValues, soundLevels, voiceLevel, type Settings } from "./settings";
+import { applyQuick, loadSettings, quickValues, soundLevels, storedSettings, voiceLevel, type Settings } from "./settings";
 import { SEEN_KEY, WordHistory, emptyTally, headerFor, loadProfile, recordRun, runSample, saveProfile, skillReport, tallyWord } from "./skill";
 import { loadVocab, type Word } from "./vocab";
 
@@ -70,6 +71,8 @@ const SETTINGS_KEY = "survival.settings";
 const SPEAK_GAP_MS = 3000;
 /** The run's end shows on the field first (a banner over the stilled fight), then its card. */
 const END_BEAT_MS = 900;
+/** How long "Keyboard sounds unavailable" shows once the Typing Feel host failed (page clock, ms). */
+const KEYBOARD_NOTICE_MS = 6000;
 const TIERS = Object.keys(FOE_CAP) as Tier[];
 const PILOTS = ["vanguard", "draconis"] as const satisfies readonly Pilot[];
 const TIER_NAMES: Record<Tier, string> = { low: "Low", medium: "Medium", high: "High", ultra: "Ultra" };
@@ -90,11 +93,22 @@ const pilot: Pilot = pick(params.get("pilot"), PILOTS) ?? pick(safeLocalStorage.
 if (params.has("q")) safeLocalStorage.setItem(QUALITY_KEY, tier);
 if (params.has("pilot")) safeLocalStorage.setItem(PILOT_KEY, pilot);
 const seed = Number(params.get("seed") ?? "") >>> 0 || (Math.floor(Math.random() * 0x7fffffff) >>> 0) || 1;
-const settings: Settings = loadSettings(safeLocalStorage.readJson(SETTINGS_KEY));
+const savedSettings = safeLocalStorage.readJson(SETTINGS_KEY);
+const settings: Settings = loadSettings(savedSettings);
+/** The save's own keyboard sound, read before the hard default (Bright Clack) fills it in: the Typing Feel catalogue settles it (keyboard.ts). */
+const savedKeyboard = savedKeyboardId(savedSettings);
+/** Whether the save holds a keyboard sound: only then is it written (storedSettings; a repair or the player's pick makes it so). */
+let keyboardOwned = savedKeyboard !== null;
+/** The saved set Relay stands in for this session (it cannot sound); null: none. Never saved. */
+let keyboardStandIn: string | null = null;
+/** Aborts once the player picks a keyboard sound: the startup load then leaves the player alone. */
+const keyboardStartup = new AbortController();
+/** The keyboard catalogue loads beside everything else; nothing waits on it (parent TYPING_FEEL_SERVICE.md §5.1–5.2). */
+const keyboardFeed = requestKeyboardCatalogue();
 const urlMode = params.get("mode");
 if (isMode(urlMode)) settings.mode = urlMode;
 if (params.has("adapt")) settings.paceAdapt = params.get("adapt") !== "0";
-if (isMode(urlMode) || params.has("adapt")) safeLocalStorage.writeJson(SETTINGS_KEY, settings);
+if (isMode(urlMode) || params.has("adapt")) safeLocalStorage.writeJson(SETTINGS_KEY, storedSettings(settings, keyboardOwned));
 const speech = { enabled: settings.pronunciationEnabled, rate: settings.pronunciationRate, volume: voiceLevel(settings) };
 const shakeAllowed = params.get("shake") !== "0";
 
@@ -106,8 +120,7 @@ try {
   hudRoot.textContent = "This browser does not support WebGL. Last Line cannot run here.";
   throw new Error("survival: no WebGL");
 }
-const [vocab, keyboardChoices] = await Promise.all([loadVocab(), loadKeyboardChoices()]);
-if (restoreKeyboardChoice(settings, keyboardChoices)) safeLocalStorage.writeJson(SETTINGS_KEY, settings);
+const vocab = await loadVocab();
 /** The run header (content/balance.ts): from the mode and the stored skill profile; ?pace= and ?director=0 pin it (scenarios). */
 let profile = loadProfile(safeLocalStorage, settings.mode);
 const history = new WordHistory(safeLocalStorage.getItem(SEEN_KEY));
@@ -219,9 +232,8 @@ combat.trauma.reduced = hud.reduced = motionReduced();
 // The word line is the kit's focus strip; the old plate keeps only its streak LED, rift countdown and near-foe ticks.
 const typeFx = new TypeFx(hud.fxRoot, stage, ship, audio, settings.typingFx, motionReduced());
 applyKeyboardLevels(typeFx.sounds, settings);
-// The fight waits for the saved set's first decoded batch (it plays from then on), not for all 70–88 files.
+// The fight waits for the saved set's first decoded batch (it plays from then on), at most 1.5 s (startKeyboard below).
 let keyboardReady = false;
-void loadSavedKeyboard(typeFx.sounds, keyboardChoices, () => settings.typingFx.soundProfile, () => { keyboardReady = true; });
 hud.strip.attach(typeFx);
 hudRoot.classList.add("is-tfx");
 const typing = (combat.typing = new TypeFeel(hud, stage, ship, combat.glows, combat.strips, combat.sparks, audio, typeFx, (index) => wordOf(index).vi));
@@ -239,7 +251,8 @@ const quick = createQuickSettings({
   values: () => quickValues(settings, { quality: chosen.tier, reducedMotion: motionReduced() }),
   change: quickChange,
   preview: quickPreview,
-  keyboardChoices,
+  // Off, Relay and the saved set "Loading…" until the catalogue settles the list (startKeyboard below).
+  keyboardChoices: pendingKeyboardChoices(settings.typingFx.soundProfile, RELAY),
   keyboardSounds: typeFx.sounds,
   mountPreview: (host) => {
     const bay = world.typing.lock >= 0 ? world.typing.lock : 0;
@@ -259,6 +272,38 @@ const quick = createQuickSettings({
   countdown: () => (mode === "play" ? QUICK_COUNTDOWN_STEP_MS : 0),
 });
 const quickBar = quick.root.querySelector<HTMLElement>(".kit-qs__bar");
+
+/** Typing Feel's keyboard sounds as the page saw them (performance.now() times, −1: not yet), for the dev handle. */
+const keyboardProbe = { state: "loading" as KeyboardCatalog["state"] | "loading", revision: "", sets: 0, startAt: performance.now(), readyAt: -1, pageReadyAt: -1, liveAt: -1, noticeUntil: -1 };
+void keyboardFeed.catalog.then((catalog) => {
+  keyboardProbe.state = catalog.state;
+  keyboardProbe.revision = catalog.revision ?? "";
+  keyboardProbe.sets = catalog.options.filter((choice) => choice.manifest !== undefined).length;
+});
+// The catalogue settles the saved choice when it comes (a host that failed keeps it), then the set loads; the fight waits for it 1.5 s at most.
+void startKeyboard(typeFx.sounds, keyboardFeed, savedKeyboard, {
+  current: () => settings.typingFx.soundProfile,
+  choose: (id, save) => {
+    settings.typingFx = { ...settings.typingFx, soundProfile: id };
+    if (save) keyboardOwned = true;
+    applyAudio();
+    if (save) safeLocalStorage.writeJson(SETTINGS_KEY, storedSettings(settings, keyboardOwned));
+  },
+  list: (options) => {
+    quick.setChoiceOptions("keyboard", options);
+  },
+  unavailable: () => {
+    keyboardProbe.noticeUntil = clock + KEYBOARD_NOTICE_MS;
+  },
+  standIn: (id) => {
+    keyboardStandIn = id;
+    applyAudio();
+  },
+  playable: () => {
+    keyboardReady = true;
+    keyboardProbe.readyAt = performance.now();
+  },
+}, { signal: keyboardStartup.signal });
 
 const percent = (value: number): string => Math.round(value * 100) + "%";
 const onOff = (on: boolean): string => (on ? "On" : "Off");
@@ -411,7 +456,7 @@ function reload(autostart: boolean, run?: RunChoice): void {
 }
 
 function saveSettings(): void {
-  safeLocalStorage.writeJson(SETTINGS_KEY, settings);
+  safeLocalStorage.writeJson(SETTINGS_KEY, storedSettings(settings, keyboardOwned));
   safeLocalStorage.setItem(PILOT_KEY, chosen.pilot);
   safeLocalStorage.setItem(QUALITY_KEY, chosen.tier);
 }
@@ -439,7 +484,7 @@ function adjust(id: string, delta: number): void {
 }
 
 function applyAudio(): void {
-  audio.setLevels(soundLevels(settings));
+  audio.setLevels(soundLevels(settings, keyboardStandIn));
   applyKeyboardLevels(typeFx.sounds, settings);
   speech.enabled = settings.pronunciationEnabled;
   speech.volume = voiceLevel(settings);
@@ -462,6 +507,12 @@ function quickChange(id: string, value: QuickValue): void {
     setMotion(value === true ? "reduced" : "full");
     applyMotion();
   } else if (!applyQuick(settings, id, value)) return;
+  if (id === "keyboard") {
+    // The player's own keyboard sound: it goes into the save, ends Relay's stand-in and stops the startup load.
+    keyboardOwned = true;
+    keyboardStandIn = null;
+    keyboardStartup.abort();
+  }
   if (id === "fxStyle" || id === "fxIntensity" || id === "fxSize") {
     typeFx.configure(settings.typingFx);
     preview?.configure(settings.typingFx);
@@ -478,7 +529,7 @@ function quickPreview(group: string): void {
   audio.resume();
   if (group === "effects") audio.xung(0, true);
   else if (group === "keyboard") {
-    if (settings.typingFx.soundProfile === "relay") audio.key(1, 0, false);
+    if (soundLevels(settings, keyboardStandIn).keysOn) audio.key(1, 0, false);
     else typeFx.sounds.key(0);
   }
   else if (group === "voice") speakEnglish("ready", { ...speech, enabled: speech.volume > 0 });
@@ -728,9 +779,13 @@ const aim = new Float64Array(2);
 
 function update(now: number): void {
   const start = performance.now();
-  if (!live && painted && loaded && combat.ready && keyboardReady) {
-    live = true;
-    if (mode === "intro") drawScreen();
+  if (!live && painted && loaded && combat.ready) {
+    if (keyboardProbe.pageReadyAt < 0) keyboardProbe.pageReadyAt = performance.now();
+    if (keyboardReady) {
+      live = true;
+      keyboardProbe.liveAt = performance.now();
+      if (mode === "intro") drawScreen();
+    }
   }
   session.paused = mode !== "play" || !live || frozen;
   session.frame(now);
@@ -744,7 +799,7 @@ function update(now: number): void {
   hud.update(world, combat.killsWithin(now, 3000), now);
   typing.land(now);
   typeFx.update();
-  hud.setNotice(imeNotice.on(now) ? "Switch to an English keyboard" : vocab.source === "fallback" ? "Offline word list (server words unavailable)" : "");
+  hud.setNotice(imeNotice.on(now) ? "Switch to an English keyboard" : vocab.source === "fallback" ? "Offline word list (server words unavailable)" : now < keyboardProbe.noticeUntil ? KEYBOARD_UNAVAILABLE : "");
   // The floor glows red as the press reaches the ship (inside the guns' reach and closing); the music rises with the horde.
   let near = 0;
   let shown = 0;
@@ -844,6 +899,8 @@ if (devHandleWanted(import.meta.env.DEV, location.search)) installDevHandle({
   place: (kind: number, x: number, z: number) => session.send({ t: "place", kind, x, z }),
   events: () => eventCounts(session),
   costs: () => costs.read(),
+  /** Typing Feel's keyboard sounds: the keys base (null: off), the catalogue, the chosen and the saved id, whether the save owns it, Relay's stand-in, the set playing, the gate's times. */
+  keyboard: () => ({ base: keyboardFeed.base, ...keyboardProbe, id: settings.typingFx.soundProfile, saved: savedKeyboard, owned: keyboardOwned, standIn: keyboardStandIn, profile: typeFx.sounds.profile?.id ?? null, stats: { ...typeFx.sounds.stats }, ready: keyboardReady, live }),
   /** Sounds started so far by id (docs/audio/THEME_SOUND_LIST.md), and whether audio runs. */
   sounds: () => ({ ready: audio.ready, played: Object.fromEntries(audio.played) }),
   screen: () => screen,

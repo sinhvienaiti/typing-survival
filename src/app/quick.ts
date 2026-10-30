@@ -9,7 +9,6 @@
  */
 import { QuickSettings, defaultSettingsRows, defaultSoundRows, type QuickMount, type QuickRow, type QuickValue } from "../kit/ui";
 import type { KeyboardSoundChoice, TypingSounds } from "../kit/feedback/typing-fx";
-import { defaultKeyboard } from "./keyboard";
 
 /**
  * The Settings rows: the kit's (typing effects with a preview, graphics; no
@@ -25,12 +24,15 @@ export function settingsRows(mountPreview: QuickMount): QuickRow[] {
   return rows;
 }
 
-/** The Sound rows: the kit's, with "Read words aloud" under Voice (the words the game speaks). */
+/**
+ * The Sound rows: the kit's, with "Read words aloud" under Voice (the words
+ * the game speaks). The keyboard row opens with the pending list (Off, Relay,
+ * the saved set "Loading…") and takes the settled list from Typing Feel
+ * through QuickSettings.setChoiceOptions (keyboard.ts, startKeyboard); the
+ * saved id always stays in the list, so the row never repairs it on its own.
+ */
 export function soundRows(choices: readonly KeyboardSoundChoice[]): QuickRow[] {
   const rows = defaultSoundRows({ keyboardProfiles: choices });
-  const index = rows.findIndex((row) => row.id === "keyboard");
-  const keyboard = rows[index];
-  if (keyboard?.kind === "choice") rows[index] = { ...keyboard, default: defaultKeyboard(choices) };
   rows.splice(rows.findIndex((r) => r.id === "voice") + 1, 0, { kind: "toggle", id: "speak", label: "Read words aloud", default: true });
   return rows;
 }
@@ -40,6 +42,7 @@ export type QuickHooks = {
   values(): Record<string, QuickValue>;
   change(id: string, value: QuickValue): void;
   preview(group: string): void;
+  /** The keyboard row's first list: pendingKeyboardChoices until the catalogue settles it. */
   keyboardChoices: readonly KeyboardSoundChoice[];
   keyboardSounds: TypingSounds;
   mountPreview: QuickMount;

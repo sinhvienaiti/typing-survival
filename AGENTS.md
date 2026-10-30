@@ -297,9 +297,10 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   the kit's `QuickSettings` (`src/app/quick.ts`; values in
   `src/app/settings.ts`, `survival.settings`): while one is open or counting
   3-2-1, key handlers check `quick.blocking` and the fight is `frozen`.
-  Keyboard sound: Off, Relay (the game's own key sound) and five packs shown
-  as pending (paused by the owner); `TypeFx.sounds` is a silent
-  `TypingSounds` waiting for them. Captures:
+  Keyboard sound: Off, Relay (the game's own key sound) and the Typing Feel
+  sets, read at run time from `VITE_TYPING_FEEL_ORIGIN` (`src/app/keyboard.ts`,
+  parent `docs/games/TYPING_FEEL_SERVICE.md`; unset: Off and Relay only); no
+  set is copied into the game. Captures:
   `scripts/visual/scenarios/survival-typefx.mjs`.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.

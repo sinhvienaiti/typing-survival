@@ -8,7 +8,8 @@
  * typed. TypeFeel reads the sim's typing events and feeds them here through
  * the kit's TypingFxDriver.
  *
- * The kit's TypingSounds shares the page's context; Firefly samples go
+ * The kit's TypingSounds (as FeelSounds: set manifests from Typing Feel
+ * through a 3 s limit) shares the page's context; Firefly samples go
  * through Master × Keyboard volume, independently of the Effects bus.
  *
  * The strip runs on its own clock, which stands still while the fight is
@@ -21,7 +22,7 @@ import type { ThemeAudio } from "../audio/theme-audio";
 import type { Stage } from "./scene";
 import type { Ship } from "./ship";
 import type { StripHost } from "./strip";
-import { keyboardSink } from "../app/keyboard";
+import { FeelSounds, keyboardSink } from "../app/keyboard";
 
 /** Typed-letter colours by GUN id (Xung, Tia, Tán, Ray, Pháo Sao): theme.css --volt, --hot, --tan, --ray-ink, --phao. */
 export const GUN_ACCENT = ["#3db8ff", "#ff7a1f", "#ffc53d", "#8fa3ff", "#ff3f6c"] as const;
@@ -75,7 +76,7 @@ export class TypeFx implements StripHost {
         return true;
       },
     });
-    this.sounds = new TypingSounds({ context: () => {
+    this.sounds = new FeelSounds({ context: () => {
       audio.prepare();
       return started(audio.context);
     } });

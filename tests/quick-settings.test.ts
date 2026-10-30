@@ -1,13 +1,16 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { settingsRows, soundRows } from "../src/app/quick";
-import { BUILT_IN_KEYS, DEFAULT_KEYBOARD_SOUND, DEFAULTS, FX_DEFAULTS, applyQuick, loadSettings, quickValues, soundLevels, voiceLevel } from "../src/app/settings";
-import type { KeyboardSoundChoice } from "../src/kit/feedback/typing-fx";
-import { loadKeyboardChoices } from "../src/app/keyboard";
-import { readFileSync } from "node:fs";
+import { BUILT_IN_KEYS, DEFAULT_KEYBOARD_SOUND, DEFAULTS, FX_DEFAULTS, applyQuick, loadSettings, quickValues, soundLevels, storedSettings, voiceLevel } from "../src/app/settings";
+import { pendingKeyboardChoices, type KeyboardSoundChoice } from "../src/kit/feedback/typing-fx";
+import { readRowValues } from "../src/kit/ui/quick-settings/logic";
+import { RELAY, requestKeyboardCatalogue } from "../src/app/keyboard";
+import { catalogue, FEEL_BASE, SAMPLE_FAMILIES, SAMPLE_SETS, serve } from "./feel-fixture";
 
+/** The sample Typing Feel catalogue (tests/feel-fixture.ts), read without the network. */
 let choices: readonly KeyboardSoundChoice[];
 beforeAll(async () => {
-  choices = await loadKeyboardChoices((url) => Promise.resolve(JSON.parse(readFileSync("public" + url, "utf8"))));
+  const root = catalogue();
+  choices = (await requestKeyboardCatalogue(FEEL_BASE, async (url) => JSON.parse(serve(url, root).text ?? "null")).catalog).options;
 });
 
 /**
@@ -74,18 +77,49 @@ describe("Last Line settings", () => {
     }
     expect(voiceLevel({ ...s, masterVolume: 0.5, pronunciationVolume: 0.8 })).toBeCloseTo(0.4);
   });
+
+  it("Relay also plays while it stands in for the chosen set, and only for that set", () => {
+    const s = loadSettings({ typingFx: { soundProfile: "hail-stone" } });
+    expect(soundLevels(s, "hail-stone").keysOn).toBe(true);
+    expect(soundLevels(s, "deep").keysOn).toBe(false);
+    expect(soundLevels(s, null).keysOn).toBe(false);
+    s.typingFx = { ...s.typingFx, soundProfile: "off" };
+    expect(soundLevels(s, "off").keysOn).toBe(false);
+  });
+
+  it("the save holds the keyboard sound only once it owns one; the rest of the settings always", () => {
+    const s = loadSettings({ sfxVolume: 0.4, typingFx: { style: "rune" } });
+    s.typingFx = { ...s.typingFx, soundProfile: BUILT_IN_KEYS };
+    const unowned = JSON.parse(JSON.stringify(storedSettings(s, false))) as { sfxVolume: number; typingFx: Record<string, unknown> };
+    expect(unowned.sfxVolume).toBe(0.4);
+    expect(unowned.typingFx).toEqual({ style: "rune", intensity: "normal", size: "large", volume: 1 });
+    // The next page fills the hard default in and lets the catalogue settle it.
+    expect(loadSettings(unowned).typingFx.soundProfile).toBe(DEFAULT_KEYBOARD_SOUND);
+    expect(storedSettings(s, true)).toBe(s);
+    expect(s.typingFx.soundProfile).toBe(BUILT_IN_KEYS);
+  });
 });
 
 describe("Last Line quick panels", () => {
-  it("Keyboard sound uses Off, Relay and the 34 Firefly sets, each with its family for the kit's headings", () => {
+  it("Keyboard sound uses Off, Relay and the Typing Feel catalogue's sets, each with its family for the kit's headings", () => {
     expect(choices.slice(0, 2).map((o) => o.value)).toEqual(["off", BUILT_IN_KEYS]);
-    expect(choices).toHaveLength(36);
+    expect(choices).toHaveLength(2 + SAMPLE_SETS.length);
     expect(choices.every((o) => !o.disabled && !o.note)).toBe(true);
-    expect([...new Set(choices.slice(2).map((o) => o.family))]).toEqual(["Deep", "Warm", "Rounded", "Solid", "Crisp", "Clear", "Bright Clack"]);
+    expect([...new Set(choices.slice(2).map((o) => o.family))]).toEqual(SAMPLE_FAMILIES);
     const keyboard = soundRows(choices).find((row) => row.id === "keyboard");
-    expect(keyboard?.kind === "choice" && keyboard.default).toBe(DEFAULT_KEYBOARD_SOUND);
     // The row hands the kit's picker the same choices, family included.
     expect(keyboard?.kind === "choice" && keyboard.options).toBe(choices);
+  });
+
+  it("the Sound panel opens before the catalogue with Off, Relay and the saved set \"Loading…\", and keeps the saved id (no repair, no save)", () => {
+    for (const saved of ["hail-stone", DEFAULT_KEYBOARD_SOUND, BUILT_IN_KEYS, "off"]) {
+      const s = loadSettings({ typingFx: { soundProfile: saved } });
+      const pending = pendingKeyboardChoices(s.typingFx.soundProfile, RELAY);
+      const firefly = saved !== BUILT_IN_KEYS && saved !== "off";
+      expect(pending.map((o) => [o.value, o.label, o.disabled === true]), saved).toEqual([["off", "Off", false], [BUILT_IN_KEYS, "Relay", false], ...(firefly ? [[saved, "Loading…", true]] : [])]);
+      // What QuickSettings reads when it is built: the saved id itself, so onChange never fires.
+      expect(readRowValues(soundRows(pending), quickValues(s, page)).keyboard, saved).toBe(saved);
+    }
   });
 
   it("Settings: typing effects with a preview, graphics (quality next run), the game's rows, Resume and Quit; Sound reads words aloud under Voice", () => {

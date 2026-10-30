@@ -77,9 +77,30 @@ export function loadSettings(raw: unknown): Settings {
   };
 }
 
-/** ThemeAudio owns Relay; Firefly and Off silence its key synth. */
-export function soundLevels(s: Settings): SoundLevels {
-  return { master: s.masterVolume, muted: s.muted, sfx: s.sfxVolume, music: s.musicVolume, ui: s.uiVolume, keys: s.typingFx.volume, keysOn: s.typingFx.soundProfile === BUILT_IN_KEYS };
+/**
+ * ThemeAudio owns Relay; Firefly and Off silence its key synth. `standIn`:
+ * the saved set Relay plays for this session because it cannot sound
+ * (keyboard.ts, KeyboardHost.standIn), or null; it counts only while that
+ * set is still the choice.
+ */
+export function soundLevels(s: Settings, standIn: string | null = null): SoundLevels {
+  const profile = s.typingFx.soundProfile;
+  const keysOn = profile === BUILT_IN_KEYS || (standIn !== null && standIn !== "off" && profile === standIn);
+  return { master: s.masterVolume, muted: s.muted, sfx: s.sfxVolume, music: s.musicVolume, ui: s.uiVolume, keys: s.typingFx.volume, keysOn };
+}
+
+/**
+ * What goes into the save. The keyboard sound is written only once the save
+ * owns one (it had the field, the catalogue repaired it, or the player picked
+ * one: parent TYPING_FEEL_SERVICE.md §4.5); until then it is left out, so a
+ * save without it keeps following the catalogue's default instead of keeping
+ * whatever the page played then (Relay while Typing Feel was down, the hard
+ * default while the catalogue loaded).
+ */
+export function storedSettings(s: Settings, keyboardOwned: boolean): Settings | Omit<Settings, "typingFx"> & { typingFx: Omit<TypingFxSettings, "soundProfile"> } {
+  if (keyboardOwned) return s;
+  const { soundProfile: _unowned, ...typingFx } = s.typingFx;
+  return { ...s, typingFx };
 }
 
 /** The spoken word's volume: its own level under master; nothing when muted. */
