@@ -16,11 +16,11 @@
 import * as THREE from "three";
 import { Hero, damp, loadModel, pickModelTier } from "../kit/three";
 import { GUN } from "../content/guns";
-import { FIELD } from "../content/rules";
+import { FIELD, type Tier } from "../content/rules";
 import { beamEnd } from "../sim/guns/aim";
 import type { World } from "../sim/world";
 import { CELL, type Glows, type Strips } from "./fx";
-import { models } from "./models";
+import { models, shipModelRequest } from "./models";
 import { AIM, AIM_LEVELS, AIM_PRIO, DRIFT, ENGINE, HOLD, KICK, KICKS, NOSE_MAX_Z, REDUCED, driftBank, driftTarget, holdStep, hover, kickLevel, pickAim, springStep, threatSums, thrust, yawTo, type KickName } from "./ship-rules";
 import { BLOW } from "./theme";
 
@@ -104,11 +104,11 @@ export class Ship {
     this.place();
   }
 
-  async load(scene: THREE.Scene): Promise<void> {
-    const kind = this.pilot === "vanguard" ? "ships" : "heroes";
-    for (const id of this.pilot === "vanguard" ? ["vanguard"] : ["draconis-v3", "draconis-v2", "draconis"]) {
-      const entry = await models.entry(kind, id);
-      const url = entry === null ? null : pickModelTier(entry, "high");
+  async load(scene: THREE.Scene, tier: Tier): Promise<void> {
+    const request = shipModelRequest(this.pilot, tier);
+    for (const id of request.ids) {
+      const entry = await models.entry(request.kind, id);
+      const url = entry === null ? null : pickModelTier(entry, request.tier);
       if (url === null) continue;
       try {
         const gltf = await loadModel(url);

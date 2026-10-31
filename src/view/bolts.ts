@@ -1,5 +1,5 @@
 /**
- * The guns' 3D bolts from Space's library (docs/FEEL_PASS_S1.md §4.1–4.2):
+ * The guns' 3D bolts from Last Line's own library (docs/FEEL_PASS_S1.md §4.1–4.2):
  * one InstancedMesh per kind, each model ~3,000 triangles with its own
  * emissive art, glowing × 2.5 so the bloom takes it. Xung fires
  * vanguard-bolt (Draconis: dragon-fireball), Tán solar-lance-bolt, Ray holds
@@ -10,18 +10,26 @@
  * compile with the rest of the fight's once they load (warm.ts).
  */
 import * as THREE from "three";
+import { GUN, type GunId } from "../content/guns";
 import type { Tier } from "../content/rules";
-import { loadMesh } from "./models";
+import { loadMesh, modelTier } from "./models";
 
 export const BOLT = { xung: 0, tan: 1, ray: 2, phao: 3 } as const;
 /** Per kind: models (first found), instance cap, drawn length (m), emissive × this. */
 const SPEC = [
-  { ids: ["vanguard-bolt"], cap: 32, length: 1.4, glow: 2.5 },
-  { ids: ["solar-lance-bolt"], cap: 28, length: 0.6, glow: 2.5 },
-  { ids: ["frost-seraph-bolt"], cap: 2, length: 0.9, glow: 2.5 },
-  { ids: ["crimson-talon-bolt"], cap: 8, length: 1, glow: 2.5 },
+  { gun: GUN.xung, ids: ["vanguard-bolt"], cap: 32, length: 1.4, glow: 2.5 },
+  { gun: GUN.tan, ids: ["solar-lance-bolt"], cap: 28, length: 0.6, glow: 2.5 },
+  { gun: GUN.ray, ids: ["frost-seraph-bolt"], cap: 2, length: 0.9, glow: 2.5 },
+  { gun: GUN.phao, ids: ["crimson-talon-bolt"], cap: 8, length: 1, glow: 2.5 },
 ] as const;
 const FIREBALL = { ids: ["dragon-fireball"], cap: 32, length: 1.2, glow: 1.6 } as const;
+/** Only equipped guns request files; Low keeps its light streaks. */
+export function boltModelRequests(tier: Tier, draconis: boolean, guns: readonly GunId[]) {
+  if (tier === "low") return [];
+  return SPEC.flatMap((base, kind) => guns.includes(base.gun)
+    ? [{ kind, spec: kind === BOLT.xung && draconis ? FIREBALL : base, tier: modelTier(tier) }]
+    : []);
+}
 const NOSE = new THREE.Vector3(0, 0, -1);
 const AXIS = new THREE.Vector3(0, 0, 1);
 
@@ -38,14 +46,13 @@ export class Bolts {
   /** Done loading (or nothing to load): the scenarios wait for it. */
   ready = false;
 
-  constructor(private readonly scene: THREE.Scene, private readonly tier: Tier, private readonly draconis: boolean) {}
+  constructor(private readonly scene: THREE.Scene, private readonly tier: Tier, private readonly draconis: boolean, private readonly guns: readonly GunId[]) {}
 
   async load(): Promise<void> {
     if (this.tier !== "low") {
       await Promise.all(
-        SPEC.map(async (base, kind) => {
-          const spec = kind === BOLT.xung && this.draconis ? FIREBALL : base;
-          const found = await loadMesh("skills", spec.ids, this.tier === "medium" ? "medium" : "high");
+        boltModelRequests(this.tier, this.draconis, this.guns).map(async ({ kind, spec, tier }) => {
+          const found = await loadMesh("skills", spec.ids, tier);
           if (found === null) return;
           const { geometry, material } = found;
           // Nose at the origin pointing −z, the tail at +z, one unit long.

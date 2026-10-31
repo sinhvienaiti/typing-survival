@@ -8,6 +8,7 @@
  * Rèn level the stage gives), the stage's threats with a yellow mark where
  * the picked guns answer nothing, and the start button.
  */
+import { START_NOTE } from "../app/guide";
 import type { Journey } from "../app/journey";
 import { counterTag, objectiveText } from "../app/journey";
 import { FOES, KIND } from "../content/foes";
@@ -90,6 +91,7 @@ export function renderJourney(journey: Journey): string {
             (card, n) =>
               '<section class="sv-gun-card sv-' + card.key + (card.on ? " is-on" : "") + (card.picked >= 0 ? " is-picked" : "") + '" data-card="' + n + '">' +
               '<header><kbd>' + (n + 1) + "</kbd><b>" + escapeHtml(card.name) + "</b>" + (card.picked >= 0 ? '<em>BAY ' + (card.picked + 1) + (card.level > 1 ? " · FORGE " + card.level : "") + "</em>" : "") + "</header>" +
+              (card.recommended ? '<i class="sv-rec">Recommended</i>' : "") +
               "<small>" + escapeHtml(card.title) + "</small>" +
               "<p>" + escapeHtml(card.magazine) + " · range " + escapeHtml(card.range) + (card.heavy ? " · words +1 letter" : "") + "</p>" +
               '<p class="sv-good">Strong: ' + escapeHtml(card.good || "—") + "</p>" +
@@ -105,6 +107,7 @@ export function renderJourney(journey: Journey): string {
         // No "fit %" here: the threat score ranked pairs against their measured wins (G3c) the wrong way on stages 2 and 4 (test pass 27/10); the open rows carry ⚠.
         (journey.ready ? "START" + (threats.some((threat) => !threat.covered) ? " · ⚠ UNCOVERED" : "") : "PICK " + (bays - journey.picked.length) + (bays - journey.picked.length === 1 ? " GUN" : " GUNS")) +
         "</div>" +
+        (journey.showStartNote ? '<p class="sv-note sv-start-note">' + START_NOTE + "</p>" : "") +
         hints("<kbd>1</kbd>–<kbd>5</kbd> toggle · <kbd>←</kbd><kbd>→</kbd> move · <kbd>Enter</kbd> select · <kbd>Esc</kbd> briefing") +
         "</div>"
       );

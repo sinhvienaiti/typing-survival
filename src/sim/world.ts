@@ -116,7 +116,7 @@ export function createWorld(options: WorldOptions) {
     shields: new Shields(SHIELD.max),
     splits: createSplits(),
     grid: new Grid(STORE.foes, STORE.shots),
-    guns: createGuns(header.kit),
+    guns: createGuns(header.kit, stage.chapter),
     typing: createTyping(options.deck, header.expected, heavyBays(header.kit.guns, header.kit.bays)),
     measure: createMeasure(),
     deck: options.deck,

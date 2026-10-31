@@ -16,6 +16,7 @@ import type { Mode } from "../content/balance";
 import type { KeyAction } from "./input";
 import { Menu, type MenuItem } from "./menu";
 import type { TextStore } from "./skill";
+import { loadGuide, markStarted, RECOMMENDED } from "./guide";
 
 export const NEXT_KEY = "survival.next";
 export const STAGES_KEY = "survival.stages";
@@ -101,7 +102,7 @@ export type JourneyHost = {
   back(): void;
 };
 
-export type CardView = { readonly gun: GunId; readonly key: string; readonly name: string; readonly title: string; readonly magazine: string; readonly range: string; readonly heavy: boolean; readonly good: string; readonly poor: string; readonly picked: number; readonly level: number; readonly on: boolean };
+export type CardView = { readonly recommended: boolean; readonly gun: GunId; readonly key: string; readonly name: string; readonly title: string; readonly magazine: string; readonly range: string; readonly heavy: boolean; readonly good: string; readonly poor: string; readonly picked: number; readonly level: number; readonly on: boolean };
 export type ThreatView = { readonly label: string; readonly weight: number; readonly counters: string; readonly covered: boolean };
 
 /** The journey's state machine: which screen, the selected stage, the loadout's cursor and picks. */
@@ -111,6 +112,7 @@ export class Journey {
   stage: Stage = CHAPTER_1[0]!;
   cursor = 0;
   picked: GunId[] = [];
+  private preselected = false;
 
   constructor(private readonly host: JourneyHost) {}
 
@@ -150,7 +152,17 @@ export class Journey {
     this.screen = "loadout";
     this.cursor = 0;
     this.picked = this.picked.filter((gun) => GUN_IDS.includes(gun)).slice(0, this.stage.kit.bays);
+    const recommended = RECOMMENDED[this.stage.id];
+    if (!this.preselected && !loadGuide(this.host.store).started && this.picked.length === 0 && recommended !== undefined) {
+      this.picked = recommended.slice(0, this.stage.kit.bays);
+      this.cursor = GUN_IDS.length;
+      this.preselected = true;
+    }
     this.host.draw();
+  }
+
+  get showStartNote(): boolean {
+    return this.ready && !loadGuide(this.host.store).started;
   }
 
   close(): void {
@@ -162,6 +174,7 @@ export class Journey {
     return GUN_SPECS.map((spec, gun) => {
       const order = this.picked.indexOf(gun as GunId);
       return {
+        recommended: RECOMMENDED[this.stage.id]?.includes(gun as GunId) ?? false,
         gun: gun as GunId,
         key: spec.key,
         name: spec.name,
@@ -259,6 +272,7 @@ export class Journey {
   begin(): void {
     if (!this.ready) return;
     this.host.sound("select");
+    markStarted(this.host.store);
     this.host.start({ stage: this.stage.id, guns: this.picked.slice() });
   }
 

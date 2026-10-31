@@ -1,12 +1,33 @@
-/**
- * Space Typing's model library, read through the URL contract
- * /assets/space-typing/models/ (the Vite plugin in dev, an nginx alias in
- * play; parent repo docs/games/SPLIT_PLAN.md §5). Never copied here.
- */
+/** Last Line owns its model manifest and packaged High/Medium files. */
 import * as THREE from "three";
-import { ModelLibrary, SPACE_MODEL_MANIFEST_URL, loadModel, pickModelTier, type ModelKind } from "../kit/three";
+import { ModelLibrary, loadModel, pickModelTier, type ModelKind } from "../kit/three";
+import type { Tier } from "../content/rules";
 
-export const models = new ModelLibrary({ manifests: SPACE_MODEL_MANIFEST_URL });
+export const MODEL_MANIFEST_URL = "/assets/typing-survival/models/manifest.json";
+export const models = new ModelLibrary({ manifests: MODEL_MANIFEST_URL });
+
+export function modelTier(tier: Tier): "high" | "medium" {
+  return tier === "low" || tier === "medium" ? "medium" : "high";
+}
+
+const CROWD_IDS = [
+  ["rainbow-mine-3d"], ["rainbow-scout-3d"], ["rainbow-tank-3d"],
+  ["rainbow-shield-3d"], ["rainbow-splitter-3d"],
+  ["rainbow-splitter-3d"], ["rainbow-tank-3d"],
+] as const;
+
+/** One request per crowd kind; repeated ids resolve to the same URL. */
+export function crowdModelRequests(tier: Tier) {
+  return CROWD_IDS.map((ids) => ({ ids, tier: modelTier(tier) }));
+}
+
+export function shipModelRequest(pilot: "vanguard" | "draconis", tier: Tier) {
+  return {
+    kind: pilot === "vanguard" ? "ships" as const : "heroes" as const,
+    ids: pilot === "vanguard" ? ["vanguard"] : ["draconis-v3"],
+    tier: modelTier(tier),
+  };
+}
 
 /** Float copies of the attributes (a meshopt GLB stores them quantized, which a transform would clip). */
 export function floatGeometry(source: THREE.BufferGeometry): THREE.BufferGeometry {

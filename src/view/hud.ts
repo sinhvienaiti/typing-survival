@@ -116,6 +116,7 @@ export class Hud {
   private bounceAt = -1e9;
   private streakHot = false;
   private readonly at = new THREE.Vector3();
+  loads = 0;
   reduced = false;
   /** Where layout() put things (CSS px): the stripes' far edge, the red line's glow edge, Xung's reach (z 11.7 m), the word line's bottom. */
   readonly placed = { stripes: 0, glow: 0, reach: 0, line: 0 };
@@ -223,6 +224,7 @@ export class Hud {
 
   /** A word finished on `slot` (`full`: its bay took no magazine): the line shows it with its meaning, the bay flashes (or its LEDs blink when full). */
   wordDone(slot: number, index: number, perfect: boolean, full: boolean, now: number): void {
+    if (!full) this.loads += 1;
     const word = this.words(index);
     this.strip.finished(word.en, word.vi, this.slots[slot]?.gun ?? 0, full, now);
     const bay = this.slots[slot];
@@ -248,7 +250,8 @@ export class Hud {
     this.bannerUntil = now + 2200;
   }
 
-  setNotice(value: string): void {
+  setNotice(value: string, kind: "warn" | "hint" = "warn"): void {
+    this.notice.classList.toggle("is-hint", kind === "hint");
     text(this.notice, value);
     this.notice.hidden = value === "";
   }

@@ -16,6 +16,8 @@ export const gunByKey = (key: string): GunId | -1 => GUN_KEYS.indexOf(key as Gun
 /** Magazines a gun holds (the firing one included) at levels 1–2, and at level 3 (Rèn). */
 export const MAG_MAX = 2;
 export const MAG_CAP = 3;
+/** Ticket 220: chapter-only extra capacity, spill to another bay, and one boost per tail magazine; off by default. */
+export const FULL_BAY = { extra: 0, spill: 0, boost: 0 };
 export const CRIT_MULT = 2;
 
 /**
