@@ -173,9 +173,9 @@ describe("results and the profile (LL-14, LL-50 to LL-52)", () => {
   it("draws the star row as lit and dark stars that name themselves, over their rules", () => {
     const html = starRow([true, false, true], 0.9);
     expect(roles(html, "star")).toEqual(["icon-star-lit", "icon-star-unlit", "icon-star-lit"]);
-    // A 64 px box, the results card's hero (UI pass 2, 31/10: 40 px was small for the reward).
-    expect(BOX.star).toEqual({ width: 64, height: 64 });
-    expect(html).toContain('width="64" height="64"');
+    // An 80 px box, the results card's hero (UI pass 2: 40 → 64; UI pass 3: 80).
+    expect(BOX.star).toEqual({ width: 80, height: 80 });
+    expect(html).toContain('width="80" height="80"');
     expect(html).toContain('alt="Star earned"');
     expect(html).toContain('alt="Star not earned"');
     expect(html).not.toMatch(/[★☆]/);
@@ -183,9 +183,9 @@ describe("results and the profile (LL-14, LL-50 to LL-52)", () => {
   });
 
   it("puts each stat's icon beside its number and a check before each word learned", () => {
-    const stats = [{ value: "2:30", label: "Time", icon: "icon-stat-time" }, { value: "41", label: "Kills", icon: "icon-kills" }, { value: "96%", label: "Accuracy", icon: "icon-stat-accuracy" }, { value: "52", label: "Words", icon: "icon-keyboard" }];
+    const stats = [{ value: "2:30", label: "Time", icon: "icon-stat-time" }, { value: "41", label: "Kills", icon: "icon-kills" }, { value: "96%", label: "Accuracy", icon: "icon-stat-accuracy" }, { value: "52", label: "Words", icon: "icon-stat-words" }];
     const html = renderScreen({ kind: "end", menu: new Menu([]), won: true, stage: "Stage 1 · First Shift", mode: "Balanced", stats, words: [{ en: "hold", vi: "giữ" }, { en: "line", vi: "tuyến" }], advice: "", note: "" });
-    expect(roles(html, "item")).toEqual(["icon-stat-time", "icon-kills", "icon-stat-accuracy", "icon-keyboard"]);
+    expect(roles(html, "item")).toEqual(["icon-stat-time", "icon-kills", "icon-stat-accuracy", "icon-stat-words"]);
     expect(html).toMatch(/<div><b><img class="sv-art sv-art-item" [^>]*>2:30<\/b><small>Time<\/small><\/div>/);
     expect(roles(html, "small")).toEqual(["icon-check", "icon-check"]);
     // A word finished for the first time ever carries the new badge, named for screen readers (LL-52).

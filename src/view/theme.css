@@ -102,6 +102,9 @@
   /* A slider's groove past its knob (the quick Sound panel): the art dimmed, so the lit part reads as the level. */
   --groove-dark: rgba(4, 6, 9, 0.68);
   --notice: rgba(122, 18, 18, 0.95);
+  /* A warning over a painted plate (the input notice, no WebGL): the plate laid again over itself, turned red, at this alpha. */
+  --warn-tint: grayscale(1) sepia(1) saturate(10) hue-rotate(-45deg) brightness(1.1) contrast(1.3);
+  --warn-tint-alpha: 0.9;
 
   /* Fonts: Chakra Petch for titles, labels and readouts; Be Vietnam Pro for every word of the fight. */
   --font-title: "Chakra Petch", "Be Vietnam Pro", system-ui, sans-serif;

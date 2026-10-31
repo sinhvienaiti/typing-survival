@@ -282,6 +282,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 /* The typing profile ("Hồ sơ gõ") and the results' advice line. */
 .sv-stats em { display: block; margin-top: 2px; font: 500 calc(11px * var(--ui)) var(--font-battle); font-style: normal; color: var(--muted); }
 .sv-advice { margin: calc(10px * var(--ui)) 0 0 !important; padding: calc(8px * var(--ui)) calc(12px * var(--ui)); background: var(--screen); border: 1px solid var(--bevel-lo); border-left: calc(3px * var(--ui)) solid var(--typing); text-align: left; font: 600 calc(15px * var(--ui)) var(--font-battle) !important; color: var(--text) !important; }
+/* With its learning-rule icon the advice is a row (UI pass 3); over the word plate below, the icon stands in for the teal rule. */
+.sv-advice:has(> .sv-art-icon:not([hidden])) { display: flex; align-items: center; gap: calc(10px * var(--ui)); }
+.sv-advice > .sv-art-icon { flex: none; }
+:root[data-art~="frame-word"] .sv-advice { padding: calc(8px * var(--ui)) calc(18px * var(--ui)); background: none; border: 0 solid transparent; box-shadow: 0 calc(4px * var(--ui)) calc(14px * var(--ui)) var(--shadow); border-image: var(--art-frame-word) var(--art-frame-word-slice) / calc(10px * var(--ui)) calc(13px * var(--ui)) stretch; }
 .sv-profile .sv-learning li { margin: 3px 0; }
 .sv-end-mode { margin: calc(-6px * var(--ui)) 0 calc(8px * var(--ui)); font: 600 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.3em; color: var(--steel-300); }
 
@@ -351,7 +355,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-art-item { width: calc(32px * var(--ui)); height: calc(32px * var(--ui)); }
 .sv-art-lock { width: calc(40px * var(--ui)); height: calc(40px * var(--ui)); }
 .sv-art-banner { width: calc(40px * var(--ui)); height: calc(40px * var(--ui)); }
-.sv-art-star { width: calc(64px * var(--ui)); height: calc(64px * var(--ui)); }
+.sv-art-star { width: calc(80px * var(--ui)); height: calc(80px * var(--ui)); }
 .sv-art-chapter { width: calc(40px * var(--ui)); height: calc(40px * var(--ui)); }
 .sv-art-led { width: calc(12px * var(--ui)); height: calc(12px * var(--ui)); }
 .sv-art-arrow { width: calc(16px * var(--ui)); height: calc(16px * var(--ui)); }
@@ -405,8 +409,13 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-hud .kit-qs--skin-slider .kit-qs__range::-moz-range-track { background-color: transparent; }
 .sv-hud .kit-qs--skin-slider .kit-qs__range::-webkit-slider-thumb { background-color: transparent; }
 .sv-hud .kit-qs--skin-slider .kit-qs__range::-moz-range-thumb { background-color: transparent; }
-/* No WebGL (main.ts, LL-02): the message leads with the warning icon. */
-.sv-nogl { position: absolute; top: 40%; left: 50%; transform: translateX(-50%); margin: 0; display: flex; align-items: center; gap: calc(10px * var(--ui)); padding: calc(10px * var(--ui)) calc(18px * var(--ui)); font: 700 calc(18px * var(--ui)) var(--font-title); letter-spacing: 0.06em; white-space: nowrap; color: var(--text); background: var(--notice); border: 2px solid var(--danger); }
+/* No WebGL (main.ts, LL-02): over the title's painted background, the warning icon, a title and the message on the panel frame in the warning tint (UI pass 3: was a flat red box on black); above the painted hero's head. */
+.sv-nogl { position: absolute; top: 36%; left: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: calc(16px * var(--ui)); width: max-content; max-width: calc(100% - 32px); padding: calc(16px * var(--ui)) calc(24px * var(--ui)); color: var(--text); background: var(--notice); border: 2px solid var(--danger); }
+.sv-nogl > .sv-art-banner { flex: none; }
+.sv-nogl p { margin: 0; font: 600 calc(16px * var(--ui)) / 1.4 var(--font-battle); color: var(--text); }
+.sv-nogl b { display: block; margin-bottom: calc(4px * var(--ui)); font: 700 calc(24px * var(--ui)) / 1.2 var(--font-title); letter-spacing: 0.14em; color: var(--hot-hi); text-shadow: var(--title-glow); }
+:root[data-art~="frame-panel"] .sv-nogl { padding: calc(30px * var(--ui)) calc(40px * var(--ui)); background: none; border: 0 solid transparent; filter: drop-shadow(0 0 calc(16px * var(--ui)) var(--danger-glow)) drop-shadow(0 calc(10px * var(--ui)) calc(24px * var(--ui)) var(--shadow)); border-image: var(--art-frame-panel) var(--art-frame-panel-slice) / calc(30px * var(--ui)) stretch; }
+:root[data-art~="frame-panel"] .sv-nogl::before { content: ""; position: absolute; inset: 0; z-index: -1; border: 0 solid transparent; border-image: inherit; filter: var(--warn-tint); opacity: var(--warn-tint-alpha); pointer-events: none; }
 
 /*
  * Painted chrome (ticket 127 frames, UI pass 2, 31/10): nine-slice border
@@ -430,9 +439,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 :root[data-art~="frame-plate"] .sv-fresh { border-width: 0; }
 /* The bay's gun tab: a small plate on the bay's top edge. */
 :root[data-art~="frame-plate"] .sv-art-bay:not([hidden]) { background: none; border: 0 solid transparent; border-image: var(--art-frame-plate) var(--art-frame-plate-slice) / calc(6px * var(--ui)) calc(8px * var(--ui)) stretch; }
-/* Bays: the gun card frame; a sealed bay is the same plate, dimmed, smaller, its lock centred over "LOCKED". */
+/* Bays: the gun card frame; a sealed bay is the same plate, dimmed, smaller, its lock centred over "LOCKED". The plate is opaque (UI pass 3: at 0.85 the corridor's amber wall light showed through as a stray chip). */
 :root[data-art~="frame-card"] .sv-slot, :root[data-art~="frame-card"] .sv-bay-lock { background: none; border-color: transparent; border-image: var(--art-frame-card) var(--art-frame-card-slice) / calc(12px * var(--ui)) calc(21px * var(--ui)) stretch; }
-:root[data-art~="frame-card"] .sv-bay-lock { filter: saturate(0.35) brightness(0.8); }
+:root[data-art~="frame-card"] .sv-bay-lock { filter: saturate(0.35) brightness(0.8); opacity: 1; }
 /* The top stripe and its load sit just inside the frame's top edge. */
 :root[data-art~="frame-card"] .sv-slot::before, :root[data-art~="frame-card"] .sv-slot::after { top: calc(4px * var(--ui)); left: calc(14px * var(--ui)); height: calc(4px * var(--ui)); }
 :root[data-art~="frame-card"] .sv-slot::before { right: calc(14px * var(--ui)); }
@@ -446,8 +455,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 [data-motion="reduced"] .sv-slot.is-loaded { animation: none !important; }
 /* Chips: the rift's countdown by the word line, the input notice, the clean streak and the briefing's threat chips sit on the word plate. */
 :root[data-art~="frame-word"] .sv-strip-warn { color: var(--hot-hi); text-shadow: 0 0 calc(8px * var(--ui)) var(--hot-glow); background: none; box-shadow: 0 0 calc(18px * var(--ui)) var(--hot-glow); border: 0 solid transparent; border-image: var(--art-frame-word) var(--art-frame-word-slice) / calc(9px * var(--ui)) calc(11px * var(--ui)) stretch; }
-:root[data-art~="frame-word"] .sv-notice { background: none; border-color: transparent; box-shadow: 0 0 0 calc(2px * var(--ui)) var(--danger), 0 0 calc(18px * var(--ui)) var(--danger-glow); border-image: var(--art-frame-word) var(--art-frame-word-slice) / calc(10px * var(--ui)) calc(13px * var(--ui)) stretch; }
-:root[data-art~="frame-word"] .sv-notice.is-hint { box-shadow: 0 0 calc(18px * var(--ui)) var(--volt-glow); }
+:root[data-art~="frame-word"] .sv-notice { padding: calc(9px * var(--ui)) calc(18px * var(--ui)); background: none; border: 0 solid transparent; box-shadow: none; filter: drop-shadow(0 0 calc(10px * var(--ui)) var(--danger-glow)); border-image: var(--art-frame-word) var(--art-frame-word-slice) / calc(10px * var(--ui)) calc(13px * var(--ui)) stretch; }
+/* A warning lays the same painted plate over itself in the warning tint (UI pass 3: no CSS ring); the glow follows the plate's own edge. A hint keeps the plain plate. */
+:root[data-art~="frame-word"] .sv-notice:not(.is-hint)::before { content: ""; position: absolute; inset: 0; z-index: -1; border: 0 solid transparent; border-image: inherit; filter: var(--warn-tint); opacity: var(--warn-tint-alpha); pointer-events: none; }
+:root[data-art~="frame-word"] .sv-notice.is-hint { filter: drop-shadow(0 0 calc(10px * var(--ui)) var(--volt-glow)); }
 :root[data-art~="frame-word"] .sv-streak { background: none; border-color: transparent; border-image: var(--art-frame-word) var(--art-frame-word-slice) / calc(7px * var(--ui)) calc(9px * var(--ui)) stretch; }
 :root[data-art~="frame-word"] .sv-threats span { background: none; border-color: transparent; border-image: var(--art-frame-word) var(--art-frame-word-slice) / calc(7px * var(--ui)) calc(9px * var(--ui)) stretch; }
 :root[data-art~="frame-word"] .sv-threats span.is-open { box-shadow: 0 0 0 1px var(--urgent); }
@@ -466,16 +477,31 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-slot.is-overfull .sv-mags i { opacity: 1; filter: brightness(1.35) drop-shadow(0 0 calc(6px * var(--ui)) var(--urgent)); animation: sv-mag-urgent 0.24s steps(2, jump-none) infinite; }
 @keyframes sv-mag-urgent { 0% { transform: scale(1.12); } 100% { transform: scale(1); } }
 [data-motion="reduced"] .sv-slot.is-overfull .sv-mags i { animation: none; }
-/* Results: each earned star lights in turn (the row is the card's hero); a missed one stays grey and dim. */
-.sv-star-row { gap: calc(26px * var(--ui)); }
-.sv-star-row li.is-on .sv-art-star { animation: sv-star-in 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) backwards; }
-.sv-star-row li.is-on:nth-child(2) .sv-art-star { animation-delay: 0.2s; }
-.sv-star-row li.is-on:nth-child(3) .sv-art-star { animation-delay: 0.4s; }
-@keyframes sv-star-in { 0% { opacity: 0; transform: scale(0.3); } 100% { opacity: 1; transform: scale(1); } }
+/* Results: the stars are the card's hero (80 px); each earned one lights in turn, flying in white-hot and settling into its glow (UI pass 3); reduced motion shows them lit at once. A missed one stays grey and dim. */
+.sv-star-row { gap: calc(34px * var(--ui)); }
+.sv-star-row li.is-on .sv-art-star { animation: sv-star-in 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) backwards; }
+.sv-star-row li.is-on:nth-child(2) .sv-art-star { animation-delay: 0.25s; }
+.sv-star-row li.is-on:nth-child(3) .sv-art-star { animation-delay: 0.5s; }
+@keyframes sv-star-in {
+  0% { opacity: 0; transform: scale(0.35) rotate(-30deg); filter: brightness(2.6) drop-shadow(0 0 0 var(--white-hot)) drop-shadow(0 0 0 var(--led-glow)); }
+  45% { opacity: 1; transform: scale(1.2) rotate(5deg); filter: brightness(1.9) drop-shadow(0 0 calc(10px * var(--ui)) var(--white-hot)) drop-shadow(0 0 calc(30px * var(--ui)) var(--led-glow)); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); filter: brightness(1) drop-shadow(0 0 calc(3px * var(--ui)) var(--led)) drop-shadow(0 0 calc(12px * var(--ui)) var(--led-glow)); }
+}
 [data-motion="reduced"] .sv-star-row li.is-on .sv-art-star { animation: none; }
 .sv-star-row li:not(.is-on) .sv-art-star { opacity: 0.35; }
+/* The results' stat tiles a little lower, so the card holds its hero stars at 720p. */
+.sv-end .sv-stats div { padding-block: calc(7px * var(--ui)); }
 /* The results' next stage: the one wide row, its name as large as a title, beside its icon and picture. */
 .sv-end { width: min(94vw, calc(700px * var(--ui))); }
+/*
+ * Over its painted background the results card stands left of centre, so the hero painted on the right stays clear
+ * (UI pass 3: the card's right edge at most 62 % of a 16:9 width, 58.6 % here); the veil darkens the card's side and leaves
+ * the hero lit. A narrow or tall view keeps the card centred.
+ */
+@media (min-aspect-ratio: 4/3) and (min-width: 1000px) {
+  .sv-overlay[data-screen="end"]:has(> .sv-bg:not([hidden])) { place-items: center start; padding-left: max(4vw, calc(48px * var(--ui))); }
+  .sv-overlay[data-screen="end"]:has(> .sv-bg:not([hidden]))::before { background: linear-gradient(90deg, var(--veil-art-edge) 0%, var(--veil-art) 55%, transparent 80%); }
+}
 .sv-menu.sv-row .sv-item[data-id="next"] { flex-basis: 100%; max-width: none; }
 .sv-item[data-id="next"] b { font-size: calc(22px * var(--ui)); color: var(--text); }
 .sv-item[data-id="next"] small { font-size: calc(14px * var(--ui)); color: var(--soft); }
@@ -498,8 +524,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 :root[data-art~="frame-button"] .sv-hud .kit-qs__btn, :root[data-art~="frame-button"] .sv-hud .kit-qs__chip { background: none; border-color: transparent; border-radius: 0; border-image: var(--art-frame-button) var(--art-frame-button-slice) / calc(9px * var(--kit-qs-s)) calc(10px * var(--kit-qs-s)) stretch; }
 :root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn--primary, :root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn[aria-pressed="true"], :root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn[aria-checked="true"], :root[data-art~="frame-button-active"] .sv-hud .kit-qs__opt input:checked + .kit-qs__chip { background: none; color: var(--text); border-image-source: var(--art-frame-button-active); border-image-slice: var(--art-frame-button-active-slice); box-shadow: 0 0 calc(12px * var(--kit-qs-s)) var(--volt-glow); }
 :root[data-art~="frame-button"] .sv-hud .kit-qs__btn:hover, :root[data-art~="frame-button"] .sv-hud .kit-qs__opt:hover input:not(:disabled) + .kit-qs__chip { box-shadow: 0 0 0 1px var(--volt), 0 0 calc(10px * var(--kit-qs-s)) var(--volt-glow); }
-/* A wider panel than the kit's 560 px: each choice row stays on one line where it can, so Settings fits 720p without scrolling. */
-.sv-hud .kit-qs__panel { width: min(calc(640px * var(--kit-qs-s)), calc(100% - 32px)); }
+/* A wider panel than the kit's 560 px: each choice row stays on one line (UI pass 3: 720 px puts Letter style's six chips on one line, and the row it gives back goes to the preview's room for a stamp's flight), so Settings fits 720p without scrolling. */
+.sv-hud .kit-qs__panel { width: min(calc(720px * var(--kit-qs-s)), calc(100% - 32px)); }
 .sv-hud .kit-qs__chip { padding: calc(5px * var(--kit-qs-s)) calc(10px * var(--kit-qs-s)); }
 .sv-hud .kit-qs__btn { min-height: calc(34px * var(--kit-qs-s)); padding: 0 calc(16px * var(--kit-qs-s)); }
 /* The corner gear and speaker (ticket 180) sit clear of the scene behind them and glow under the pointer. */

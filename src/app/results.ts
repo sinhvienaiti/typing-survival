@@ -20,7 +20,7 @@ export function runStats(w: World): { value: string; label: string; icon: string
     { value: Math.floor(time / 60) + ":" + String(Math.floor(time % 60)).padStart(2, "0"), label: "Time", icon: "icon-stat-time" },
     { value: String(s.kills), label: "Kills", icon: "icon-kills" },
     { value: (keys === 0 ? 100 : Math.round((s.keysOk / keys) * 100)) + "%", label: "Accuracy", icon: "icon-stat-accuracy" },
-    { value: String(s.words), label: "Words", icon: "icon-keyboard" },
+    { value: String(s.words), label: "Words", icon: "icon-stat-words" },
   ];
 }
 

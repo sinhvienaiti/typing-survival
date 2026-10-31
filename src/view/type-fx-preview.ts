@@ -2,10 +2,12 @@
  * The Settings panel's preview of the letter style (quick.ts): a small focus
  * strip of its own typing a few words of the deck in a loop at ~9 keys a
  * second (a wrong key in every other word, every word finished), at the word line's
- * size when it fits. It runs on its own animation frame, so it moves while
- * the fight stands paused under the panel.
+ * size when a letter's whole flight fits the box (UI pass 3: a Stamp lands from
+ * high above its letter, and the box's top edge cut it into a white disc over the
+ * word). It runs on its own animation frame, so it moves while the fight stands
+ * paused under the panel.
  */
-import { FocusStrip, TypingFxDriver, type TypingFxProgress, type TypingFxSettings } from "../kit/feedback/typing-fx";
+import { FocusStrip, TYPING_FX_CAP, TypingFxDriver, type TypingFxProgress, type TypingFxSettings, type TypingFxSize } from "../kit/feedback/typing-fx";
 import { PALETTE } from "./type-fx";
 
 export type PreviewWord = { readonly en: string; readonly vi: string };
@@ -14,8 +16,26 @@ export type PreviewWord = { readonly en: string; readonly vi: string };
 const STEP_MS = 110;
 /** Steps between two words. */
 const REST = 5;
-/** The box's height at a 720 px view (it scales with the panel). */
-const BOX_PX = 132;
+/** The box's height at a 720 px view (it scales with the panel; UI pass 3: 132 → 170, the room Letter style's row gave back). */
+const BOX_PX = 170;
+/** How far a letter's effect reaches above the word's row, in font sizes (a Stamp at Ultra lands from 2.45 up; the kit's styles.ts). */
+const REACH = 2.5;
+/** The row and its meaning line below the row's top, in font sizes. */
+const BODY = 2;
+
+/**
+ * The preview word's font and its row's top (px) in a box `height` px tall:
+ * the flight above the row, the row and its meaning all inside the box, the
+ * word as low as that leaves it. Large takes the size that fits (never more
+ * than the line's `lineFont`), Medium its step smaller; Huge stays at Large's
+ * (no room above it).
+ */
+export function previewFit(height: number, lineFont: number, size: TypingFxSize): { font: number; top: number } {
+  const fit = (height - 8) / (REACH + BODY);
+  const step = Math.min(1, (TYPING_FX_CAP[size] ?? TYPING_FX_CAP.large).at720 / TYPING_FX_CAP.large.at720);
+  const font = Math.max(14, Math.min(lineFont, fit * step));
+  return { font, top: Math.max(0, (height - (REACH + BODY) * font) / 2) + REACH * font };
+}
 
 export class TypeFxPreview {
   private readonly box: HTMLDivElement;
@@ -80,12 +100,11 @@ export class TypeFxPreview {
 
   private make(): FocusStrip {
     const height = this.box.clientHeight || BOX_PX;
-    // The row and one meaning line take ~2.1 font sizes.
-    const font = Math.max(18, Math.min(this.font(), height / 2.1));
+    const { font, top } = previewFit(height, this.font(), this.settings.size);
     const box = this.box;
     return new FocusStrip({
       root: box,
-      anchor: { x: 0.5, y: 0.1 },
+      anchor: { x: 0.5, y: top / height },
       fontPx: (font * 1080) / height,
       settings: this.settings,
       reducedMotion: this.reduced,

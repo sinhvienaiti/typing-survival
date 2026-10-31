@@ -53,6 +53,10 @@ export function settingsRows(mountPreview: QuickMount): QuickRow[] {
 export function soundRows(choices: readonly KeyboardSoundChoice[]): QuickRow[] {
   const rows = defaultSoundRows({ keyboardProfiles: choices });
   rows.splice(rows.findIndex((r) => r.id === "voice") + 1, 0, { kind: "toggle", id: "speak", label: "Read words aloud", default: true });
+  // The kit leaves "Keyboard volume" without an icon: it takes the keyboard row's key cap (UI pass 3).
+  const volume = rows.findIndex((r) => r.id === "keyboardVolume");
+  const row = rows[volume];
+  if (row !== undefined && row.kind === "slider" && row.icon === undefined) rows[volume] = { ...row, icon: "vol-keyboard" };
   return rows;
 }
 

@@ -364,7 +364,7 @@
     "icon-bay-full": {
       "kind": "icon",
       "alt": "Bay full",
-      "rev": "7a6e44ff",
+      "rev": "a52287cb",
       "widths": [
         64,
         128,
@@ -397,7 +397,7 @@
     "icon-clock": {
       "kind": "icon",
       "alt": "Time left",
-      "rev": "d6d80a1e",
+      "rev": "2783967c",
       "widths": [
         64,
         128,
@@ -419,7 +419,7 @@
     "icon-hazard": {
       "kind": "icon",
       "alt": "Hazard",
-      "rev": "a4758ede",
+      "rev": "1d5f7fc4",
       "widths": [
         64,
         128,
@@ -430,7 +430,7 @@
     "icon-keyboard": {
       "kind": "icon",
       "alt": "Keyboard",
-      "rev": "c04f2c5f",
+      "rev": "ad723cd5",
       "widths": [
         64,
         128,
@@ -441,7 +441,7 @@
     "icon-kills": {
       "kind": "icon",
       "alt": "Kills",
-      "rev": "01f2f9ed",
+      "rev": "d406a3d1",
       "widths": [
         64,
         128,
@@ -573,7 +573,7 @@
     "icon-next-stage": {
       "kind": "icon",
       "alt": "Next stage",
-      "rev": "5b7c64e9",
+      "rev": "f819a5cd",
       "widths": [
         64,
         128,
@@ -716,7 +716,7 @@
     "icon-stat-accuracy": {
       "kind": "icon",
       "alt": "Accuracy",
-      "rev": "c018d905",
+      "rev": "3b247db7",
       "widths": [
         64,
         128,
@@ -750,6 +750,17 @@
       "kind": "icon",
       "alt": "Time",
       "rev": "9ec65d87",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-stat-words": {
+      "kind": "icon",
+      "alt": "Words",
+      "rev": "cee5ad2a",
       "widths": [
         64,
         128,

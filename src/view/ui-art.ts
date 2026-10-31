@@ -18,8 +18,8 @@ export const BOX = {
   // Icons and parts (tickets 149–153). UI pass 2 (31/10): rows and items 28–32 px at 720p, each icon's painting trimmed to 85 % of its box at prepare time (selection.json `fill`).
   small: { width: 20, height: 20 }, icon: { width: 28, height: 28 },
   item: { width: 32, height: 32 }, lock: { width: 40, height: 40 },
-  // A banner's icon beside its 34 px capitals; a results star is the card's hero (64 px).
-  banner: { width: 40, height: 40 }, star: { width: 64, height: 64 },
+  // A banner's icon beside its 34 px capitals; a results star is the card's hero (80 px, UI pass 3: 64 still read small).
+  banner: { width: 40, height: 40 }, star: { width: 80, height: 80 },
   chapter: { width: 40, height: 40 }, led: { width: 12, height: 12 },
   arrow: { width: 16, height: 16 },
 } as const;

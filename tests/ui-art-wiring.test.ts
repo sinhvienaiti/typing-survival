@@ -305,7 +305,8 @@ describe("menu icons (tickets 150–152, main.ts items())", () => {
     expect(menuIcons("title")).toEqual({ journey: "icon-menu-journey", start: "icon-clock", continue: "icon-menu-play", mode: "icon-menu-mode", profile: "icon-menu-profile", settings: "icon-menu-settings", armory: "icon-menu-armory" });
   });
   it("gives every option its icon but the ship's (LL-13: the ship's picture waits for LL-10)", () => {
-    expect(menuIcons("settings")).toEqual({ sfx: "icon-sfx", music: "icon-music", shake: "icon-shake", motion: "icon-reduced-motion", speak: "icon-read-aloud", adapt: "icon-pace-director", pilot: undefined, quality: "icon-quality", done: "icon-check" });
+    // Music takes the Sound panel's note (vol-music), so Options and the panel match (UI pass 3).
+    expect(menuIcons("settings")).toEqual({ sfx: "icon-sfx", music: "vol-music", shake: "icon-shake", motion: "icon-reduced-motion", speak: "icon-read-aloud", adapt: "icon-pace-director", pilot: undefined, quality: "icon-quality", done: "icon-check" });
   });
   it("gives the pause, armory, profile and results items theirs (LL-48, LL-53)", () => {
     expect(menuIcons("pause")).toEqual({ resume: "icon-menu-play", settings: "icon-menu-settings", title: "icon-back" });
@@ -321,10 +322,10 @@ describe("menu icons (tickets 150–152, main.ts items())", () => {
     expect(code).toMatch(/^applyArtVars\(document\.documentElement\);$/m);
     expect(code.indexOf("applyArtVars(document.documentElement)")).toBeLessThan(code.indexOf("new Combat("));
   });
-  it("leads the no-WebGL message with the warning icon (LL-02)", () => {
+  it("leads the no-WebGL message with the warning icon (LL-02), on the painted panel over the menu's background (UI pass 3)", () => {
     const code = readFileSync("src/app/main.ts", "utf8");
     const fallback = code.slice(code.indexOf("} catch {", code.indexOf("new Stage(")), code.indexOf('throw new Error("survival: no WebGL")'));
-    expect(fallback).toMatch(/watchArt\(hudRoot\)[^]*artNode\("icon-warning", "item"\)[^]*message\.append\("This browser does not support WebGL\. Last Line cannot run here\."\)[^]*hudRoot\.replaceChildren\(message\)/);
+    expect(fallback).toMatch(/watchArt\(hudRoot\);\s*applyArtVars\(document\.documentElement\);[^]*artNode\("icon-warning", "banner"\)[^]*"WEBGL UNAVAILABLE"[^]*"This browser does not support WebGL\. Last Line cannot run here\."[^]*artNode\(bgRole\("menu"\), "bg"\)[^]*hudRoot\.replaceChildren\(\.\.\.\(backdrop !== null \? \[backdrop\] : \[\]\), message\)/);
   });
   it("marks the words finished for the first time ever for the results' new badge (LL-52)", () => {
     const code = readFileSync("src/app/main.ts", "utf8");

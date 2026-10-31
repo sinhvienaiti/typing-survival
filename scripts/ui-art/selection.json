@@ -369,20 +369,20 @@
     {
       "role": "icon-clock",
       "kind": "icon",
-      "source": "ui/icons/clock",
+      "source": "ui/icons/clock.r2",
       "accepted": true,
-      "ticket": "149",
-      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
       "alt": "Time left",
       "fill": 0.85
     },
     {
       "role": "icon-kills",
       "kind": "icon",
-      "source": "ui/icons/kills",
+      "source": "ui/icons/kills.r2",
       "accepted": true,
-      "ticket": "149",
-      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
       "alt": "Kills",
       "fill": 0.85
     },
@@ -409,10 +409,10 @@
     {
       "role": "icon-keyboard",
       "kind": "icon",
-      "source": "ui/icons/keyboard",
+      "source": "ui/icons/keyboard.r2",
       "accepted": true,
-      "ticket": "237",
-      "verdict": "CODEX_QUEUE 237: Nhận 31/10 02:56 (try2)",
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
       "alt": "Keyboard",
       "fill": 0.85
     },
@@ -429,10 +429,10 @@
     {
       "role": "icon-bay-full",
       "kind": "icon",
-      "source": "ui/icons/bay-full",
+      "source": "ui/icons/bay-full.r2",
       "accepted": true,
-      "ticket": "237",
-      "verdict": "CODEX_QUEUE 237: Nhận 31/10 02:56 (try3)",
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
       "alt": "Bay full",
       "fill": 0.85
     },
@@ -469,10 +469,10 @@
     {
       "role": "icon-hazard",
       "kind": "icon",
-      "source": "ui/icons/hazard",
+      "source": "ui/icons/hazard.r2",
       "accepted": true,
-      "ticket": "150",
-      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
       "alt": "Hazard",
       "fill": 0.85
     },
@@ -649,10 +649,10 @@
     {
       "role": "icon-next-stage",
       "kind": "icon",
-      "source": "ui/icons/next-stage",
+      "source": "ui/icons/next-stage.r2",
       "accepted": true,
-      "ticket": "239",
-      "verdict": "CODEX_QUEUE 239: Nhận 31/10 05:15 (c3-try2)",
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
       "alt": "Next stage",
       "fill": 0.85
     },
@@ -669,11 +669,21 @@
     {
       "role": "icon-stat-accuracy",
       "kind": "icon",
-      "source": "ui/icons/stat-accuracy",
+      "source": "ui/icons/stat-accuracy.r2",
       "accepted": true,
-      "ticket": "151",
-      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
       "alt": "Accuracy",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-stat-words",
+      "kind": "icon",
+      "source": "ui/icons/stat-words",
+      "accepted": true,
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
+      "alt": "Words",
       "fill": 0.85
     },
     {

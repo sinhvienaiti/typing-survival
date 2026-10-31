@@ -3,22 +3,24 @@
  * the sliders of 225): each role, the art-src source Claude accepted and the
  * ticket whose pick it is. Where a retry won, the canonical file holds the
  * retry's pick (237–240 reports: backed up, then overwritten in place).
+ * Ticket 242 (accepted 31/10 17:05, graded at real size): seven icons
+ * redrawn as bold silhouettes (`.r2` sources) and the new Words stat.
  */
 export const ICONS: Readonly<Record<string, { source: string; ticket: string }>> = {
   // 149 HUD
   "icon-armour": { source: "ui/icons/armour", ticket: "149" },
-  "icon-clock": { source: "ui/icons/clock", ticket: "149" },
-  "icon-kills": { source: "ui/icons/kills", ticket: "149" },
+  "icon-clock": { source: "ui/icons/clock.r2", ticket: "242" },
+  "icon-kills": { source: "ui/icons/kills.r2", ticket: "242" },
   "icon-surge": { source: "ui/icons/surge", ticket: "149" },
   "icon-repair-pod": { source: "ui/icons/repair-pod", ticket: "149" },
-  "icon-keyboard": { source: "ui/icons/keyboard", ticket: "237" },
+  "icon-keyboard": { source: "ui/icons/keyboard.r2", ticket: "242" },
   "icon-check": { source: "ui/icons/check", ticket: "149" },
-  "icon-bay-full": { source: "ui/icons/bay-full", ticket: "237" },
+  "icon-bay-full": { source: "ui/icons/bay-full.r2", ticket: "242" },
   "icon-streak": { source: "ui/icons/streak", ticket: "237" },
   "icon-lock": { source: "ui/icons/lock", ticket: "149" },
   // 150 stage card and loadout
   "icon-objective": { source: "ui/icons/objective", ticket: "238" },
-  "icon-hazard": { source: "ui/icons/hazard", ticket: "150" },
+  "icon-hazard": { source: "ui/icons/hazard.r2", ticket: "242" },
   "icon-learning-rule": { source: "ui/icons/learning-rule", ticket: "150" },
   "icon-equipment": { source: "ui/icons/equipment", ticket: "150" },
   "icon-warning": { source: "ui/icons/warning", ticket: "150" },
@@ -37,9 +39,10 @@ export const ICONS: Readonly<Record<string, { source: string; ticket: string }>>
   "icon-star-lit": { source: "ui/icons/star-lit", ticket: "151" },
   "icon-star-unlit": { source: "ui/icons/star-unlit", ticket: "151" },
   "icon-retry": { source: "ui/icons/retry", ticket: "151" },
-  "icon-next-stage": { source: "ui/icons/next-stage", ticket: "239" },
+  "icon-next-stage": { source: "ui/icons/next-stage.r2", ticket: "242" },
   "icon-stat-time": { source: "ui/icons/stat-time", ticket: "151" },
-  "icon-stat-accuracy": { source: "ui/icons/stat-accuracy", ticket: "151" },
+  "icon-stat-accuracy": { source: "ui/icons/stat-accuracy.r2", ticket: "242" },
+  "icon-stat-words": { source: "ui/icons/stat-words", ticket: "242" },
   // 152 settings, profile, Rift
   "icon-sfx": { source: "ui/icons/sfx", ticket: "152" },
   "icon-music": { source: "ui/icons/music", ticket: "152" },

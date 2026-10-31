@@ -23,7 +23,7 @@ import { hashHex } from "../sim/hash";
 import { Combat } from "../view/combat";
 import { Crowd } from "../view/crowd";
 import { Hud } from "../view/hud";
-import { applyArtVars, artNode, watchArt } from "../view/ui-art";
+import { applyArtVars, artNode, bgRole, watchArt } from "../view/ui-art";
 import { Stage } from "../view/scene";
 import { renderScreen, type ScreenView } from "../view/screens";
 import { renderJourney, starRow } from "../view/screens-journey";
@@ -119,14 +119,21 @@ let stage: Stage;
 try {
   stage = new Stage(byId<HTMLCanvasElement>("svCanvas"), tier);
 } catch {
-  // The message leads with the warning icon (LL-02); a failed icon hides itself.
+  // The message leads with the warning icon (LL-02) on the painted panel, over the title's background art (UI pass 3); a failed image hides itself.
   watchArt(hudRoot);
-  const message = document.createElement("p");
+  applyArtVars(document.documentElement);
+  const message = document.createElement("div");
   message.className = "sv-nogl";
-  const warning = artNode("icon-warning", "item");
+  message.setAttribute("role", "alert");
+  const warning = artNode("icon-warning", "banner");
   if (warning !== null) message.append(warning);
-  message.append("This browser does not support WebGL. Last Line cannot run here.");
-  hudRoot.replaceChildren(message);
+  const text = document.createElement("p");
+  const title = document.createElement("b");
+  title.textContent = "WEBGL UNAVAILABLE";
+  text.append(title, "This browser does not support WebGL. Last Line cannot run here.");
+  message.append(text);
+  const backdrop = artNode(bgRole("menu"), "bg");
+  hudRoot.replaceChildren(...(backdrop !== null ? [backdrop] : []), message);
   throw new Error("survival: no WebGL");
 }
 const vocab = await loadVocab();
@@ -343,7 +350,8 @@ function items(which: Screen): MenuItem[] {
       const later = started ? "End your run to change this" : undefined;
       return [
         { id: "sfx", icon: "icon-sfx", label: "Effects", value: percent(settings.sfxVolume), level: settings.sfxVolume, enabled: true },
-        { id: "music", icon: "icon-music", label: "Music", value: percent(settings.musicVolume), level: settings.musicVolume, enabled: true },
+        // The Sound panel's music art (a note), so Options and the panel match (UI pass 3).
+        { id: "music", icon: "vol-music", label: "Music", value: percent(settings.musicVolume), level: settings.musicVolume, enabled: true },
         { id: "shake", icon: "icon-shake", label: "Screen shake", value: onOff(settings.screenShake), note: shakeAllowed ? undefined : "Disabled by ?shake=0", enabled: true },
         { id: "motion", icon: "icon-reduced-motion", label: "Reduce motion", value: MOTION_NAMES[motionPreference()], note: "No ship drift or lunges; no letter bounce", enabled: true },
         { id: "speak", icon: "icon-read-aloud", label: "Read words aloud", value: onOff(settings.pronunciationEnabled), enabled: true },

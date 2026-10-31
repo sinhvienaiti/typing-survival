@@ -26,8 +26,8 @@ export type ScreenView =
   | { kind: "intro"; title: string; lines: readonly string[]; ready: boolean; stage?: string; guns?: readonly GunKey[] }
   | { kind: "end"; menu: Menu; mode: string; won: boolean; stats: readonly Stat[]; words: readonly Learned[]; advice: string; note: string; stage?: string; stars?: string };
 
-/** Words listed on the end screen (two columns of five). */
-const END_WORDS = 10;
+/** Words listed on the end screen (two columns of four: UI pass 3 gave the fifth row to the 80 px stars, so the card still fits 720p). */
+const END_WORDS = 8;
 
 export const escapeHtml = (text: string): string => text.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]!);
 
@@ -73,6 +73,9 @@ export function menu(m: Menu, extra = "", place: ArtPlace = "icon"): string {
 
 /** The key hints; each key is drawn on a key cap (survival.css, part-keycap). */
 export const hints = (text: string): string => '<footer class="sv-hints">' + text + "</footer>";
+
+/** The advice line on its word plate, led by the learning-rule icon (UI pass 3: was a CSS rule on a flat block). */
+const advice = (text: string): string => '<p class="sv-advice">' + artHtml("icon-learning-rule", "icon") + "<span>" + escapeHtml(text) + "</span></p>";
 
 /** A stat tile: its icon beside the number. */
 const statTile = (stat: Stat, note = false): string =>
@@ -124,7 +127,7 @@ export function renderScreen(view: ScreenView): string {
         '<div class="sv-card sv-panel sv-sheet sv-profile">' +
         '<h1>TYPING PROFILE</h1><div class="sv-hazard" aria-hidden="true"></div>' +
         '<div class="sv-stats">' + view.stats.map((stat) => statTile(stat, true)).join("") + "</div>" +
-        '<p class="sv-advice">' + escapeHtml(view.advice) + "</p>" +
+        advice(view.advice) +
         '<ul class="sv-learning">' + view.lines.map((line) => "<li>" + escapeHtml(line) + "</li>").join("") + "</ul>" +
         menu(view.menu) +
         hints("<kbd>Enter</kbd> / <kbd>Esc</kbd> back") +
@@ -155,7 +158,7 @@ export function renderScreen(view: ScreenView): string {
         "<h1>" + (view.stage ? (view.won ? "STAGE CLEAR!" : "STAGE LOST") : view.won ? "LINE HELD!" : "LINE LOST") + '</h1><div class="sv-end-mode">' + escapeHtml(((view.stage ? view.stage + " · " : "") + view.mode).toUpperCase()) + '</div><div class="sv-hazard" aria-hidden="true"></div>' +
         (view.stars ?? "") +
         '<div class="sv-stats">' + view.stats.map((stat) => statTile(stat)).join("") + "</div>" +
-        (view.advice ? '<p class="sv-advice">' + escapeHtml(view.advice) + "</p>" : "") +
+        (view.advice ? advice(view.advice) : "") +
         (view.note ? '<p class="sv-note">' + escapeHtml(view.note) + "</p>" : "") +
         // The last words typed, as many as the card holds without scrolling (the keys cannot scroll it), and how many more.
         '<ul class="sv-words">' + view.words.slice(-END_WORDS).map((word) => "<li>" + (word.fresh ? artHtml("icon-new-badge", "small", { label: true }) : artHtml("icon-check", "small")) + "<b>" + escapeHtml(word.en) + "</b>" + escapeHtml(word.vi) + "</li>").join("") + "</ul>" +

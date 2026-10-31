@@ -19,8 +19,8 @@ const roles = selection.entries.map(e => e.role);
 const md5 = (b: Buffer) => createHash("md5").update(b).digest("hex");
 afterEach(() => { vi.restoreAllMocks(); resetArtWarnings(); });
 describe("UI art 206", () => {
-  it("selects precisely 91 accepted roles from 106 entries (206's 15, the Shard, 52 icons and parts, UI pass 2's 7 frames of 127 and 9 icons of 180, 121's six backgrounds and logo), with English names and pending replacements", () => {
-    expect(selection.version).toBe(1); expect(selection.entries).toHaveLength(106);
+  it("selects precisely 92 accepted roles from 107 entries (206's 15, the Shard, 53 icons and parts with 242's Words stat, UI pass 2's 7 frames of 127 and 9 icons of 180, 121's six backgrounds and logo), with English names and pending replacements", () => {
+    expect(selection.version).toBe(1); expect(selection.entries).toHaveLength(107);
     const wanted = [...GUN_KEYS.map(gunRole), ...Object.values(KIND).map(foeRole), ...CHAPTER_1.map(s=>stageRole(s.id)), ...WIRED, ...SCREENS.map(bgRole), "logo"].sort();
     expect(accepted.map(e=>e.role).sort()).toEqual(wanted);
     for(const role of new Set(roles)) expect(accepted.filter(e=>e.role===role).length).toBeLessThanOrEqual(1);

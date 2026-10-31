@@ -19,6 +19,10 @@
 // Pages open with debug=1, so it also runs on a production build (URL=https://survival.typing-game.local/).
 // Judge fixes (31/10): the corner gear and speaker ≥ 3 : 1 on every background screen, the stage art band
 // inside the panel frame's rails, the logo's "Last" against the ring round it.
+// UI pass 3 (31/10): the 242 icons and the Words stat; the advice on the word plate with its icon; the input notice and
+// the no-WebGL plate on painted parts in the warning tint (no CSS ring), the latter over the menu's background; opaque
+// sealed bays; the results card's right edge at most 62 % of the width; the 80 px stars lighting in; the Settings
+// preview's letter effects inside their box; Keyboard volume's icon; the hunt captured once the streak LED is on.
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { DEV_URL, out } from "./common.mjs";
@@ -233,7 +237,7 @@ export default async function (page) {
         corners:[...qs.querySelectorAll('.kit-qs__corner')].map(b=>({role:roleOf(b.querySelector('img')?.src),w:Math.round(b.getBoundingClientRect().width)})),
         rowIcons:open?[...open.querySelectorAll('.kit-qs__row')].map(r=>[r.dataset.row,roleOf(r.querySelector('img.kit-qs__icon')?.src)||roleOf(getComputedStyle(r.querySelector('.kit-qs__icon-cell')??r).backgroundImage)]).filter(([,role])=>role):[]}:null;
       const frameOf=sel=>[...document.querySelectorAll(sel)].filter(visible).map(n=>roleOf(getComputedStyle(n).borderImageSource));
-      const frames={card:frameOf('.sv-overlay.is-on .sv-card'),item:frameOf('.sv-overlay.is-on .sv-item:not(.is-on)'),itemOn:frameOf('.sv-overlay.is-on .sv-item.is-on'),guns:frameOf('.sv-overlay.is-on .sv-gun-card'),plates:frameOf('.sv-hp, .sv-clock, .sv-kills'),bays:frameOf('.sv-slot'),locks:frameOf('.sv-bay-lock'),chips:frameOf('.sv-strip-warn.is-on, .sv-notice:not([hidden])'),banner:frameOf('.sv-banner.is-on'),qsPanel:open?frameOf('.kit-qs__dialog[data-panel="'+open.dataset.panel+'"] .kit-qs__panel'):[],qsButtons:open?frameOf('.kit-qs__dialog[data-panel="'+open.dataset.panel+'"] .kit-qs__btn'):[]};
+      const frames={card:frameOf('.sv-overlay.is-on .sv-card'),item:frameOf('.sv-overlay.is-on .sv-item:not(.is-on)'),itemOn:frameOf('.sv-overlay.is-on .sv-item.is-on'),guns:frameOf('.sv-overlay.is-on .sv-gun-card'),plates:frameOf('.sv-hp, .sv-clock, .sv-kills'),bays:frameOf('.sv-slot'),locks:frameOf('.sv-bay-lock'),chips:frameOf('.sv-strip-warn.is-on, .sv-notice:not([hidden])'),banner:frameOf('.sv-banner.is-on'),advice:frameOf('.sv-overlay.is-on .sv-advice'),qsPanel:open?frameOf('.kit-qs__dialog[data-panel="'+open.dataset.panel+'"] .kit-qs__panel'):[],qsButtons:open?frameOf('.kit-qs__dialog[data-panel="'+open.dataset.panel+'"] .kit-qs__btn'):[]};
       const mark=document.querySelector('.sv-warn.is-on');
       const rift=mark?{text:mark.textContent,box:(r=>[Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)])(mark.getBoundingClientRect()),chips:[...document.querySelectorAll('.sv-strip-warn.is-on, .sv-warn.is-on')].filter(n=>n.textContent.trim()!=='').length}:null;
       const glyphs=(scope.innerText.match(/[★☆⚠◀▶⌨✓]/g)||[]);
@@ -250,7 +254,13 @@ export default async function (page) {
       const box=n=>{const r=n.getBoundingClientRect();return [r.left,r.top,r.right,r.bottom];};
       const briefCard=document.querySelector('.sv-overlay.is-on .sv-brief'),band=briefCard?.querySelector('.sv-art-briefing:not([hidden])'),rules=briefCard?.querySelector('.sv-brief-rules');
       const brief=band&&rules?{ui,card:box(briefCard),band:box(band),rules:box(rules)}:null;
-      return {ui,images,failedImages,overflow,cards,keys,mags,contrast,words,quick,frames,rift,glyphs,goalShown:!!goal&&visible(goal),goalOneLine,logo,requests,brief};
+      // UI pass 3: the input notice's ring and tint, the sealed bays' opacity, the results card's box, the earned stars' lit-in.
+      const noticeEl=document.querySelector('.sv-notice:not([hidden])');
+      const notice=noticeEl&&visible(noticeEl)?{shadow:getComputedStyle(noticeEl).boxShadow,tint:roleOf(getComputedStyle(noticeEl,'::before').borderImageSource),hint:noticeEl.classList.contains('is-hint')}:null;
+      const lockOpacity=[...document.querySelectorAll('.sv-bay-lock')].filter(visible).map(n=>Number(getComputedStyle(n).opacity));
+      const endEl=document.querySelector('.sv-overlay.is-on .sv-end'), endCard=endEl?rect(endEl):null;
+      const starAnim=[...document.querySelectorAll('.sv-overlay.is-on .sv-star-row li.is-on .sv-art-star')].map(i=>getComputedStyle(i).animationName);
+      return {ui,images,failedImages,overflow,cards,keys,mags,contrast,words,quick,frames,rift,glyphs,goalShown:!!goal&&visible(goal),goalOneLine,logo,requests,brief,notice,lockOpacity,endCard,starAnim};
     })()`);
     result.name = name; screens.push(result);
     const shot = await page.shot(out("ui-art-" + name + "-" + size + ".png"));
@@ -312,6 +322,20 @@ export default async function (page) {
   await key(page, "Escape"); await page.sleep(300); await capture("pause");
   await key(page, "Escape"); await page.sleep(400);
   await page.key("F1", { code: "F1" }); await page.sleep(500); await capture("quick-settings", ".kit-qs");
+  // The letter-style preview for 3 s: how far any lit stamp ghost (or other style's copy) goes past the box's edges (UI pass 3).
+  const preview = await page.eval(`new Promise((done) => {
+    const box = document.querySelector('.sv-tfx-preview'); if (!box) return done(null);
+    const b = box.getBoundingClientRect(), over = { top: 0, bottom: 0, left: 0, right: 0 }, t0 = performance.now(); let lit = 0;
+    const tick = () => {
+      for (const a of box.querySelectorAll('.tfx-a, .tfx-b')) {
+        if (parseFloat(a.style.opacity || '0') < 0.05) continue;
+        lit++; const q = a.getBoundingClientRect();
+        over.top = Math.max(over.top, b.top - q.top); over.bottom = Math.max(over.bottom, q.bottom - b.bottom); over.left = Math.max(over.left, b.left - q.left); over.right = Math.max(over.right, q.right - b.right);
+      }
+      if (performance.now() - t0 < 3000) requestAnimationFrame(tick); else done({ box: [b.width, b.height].map(Math.round), lit, over: Object.fromEntries(Object.entries(over).map(([k, v]) => [k, Math.round(v)])) });
+    };
+    requestAnimationFrame(tick);
+  })`);
   await key(page, "Escape"); await page.sleep(300);
   await page.key("F2", { code: "F2" }); await page.sleep(500); await capture("quick-sound", ".kit-qs");
   await key(page, "Escape"); await page.sleep(3600);
@@ -333,7 +357,9 @@ export default async function (page) {
     await page.sleep(150);
   }
   const slots = await page.eval(sv("return t.slots();"));
-  await press(page, slots[0].text[0]); await page.sleep(120);
+  await press(page, slots[0].text[0]);
+  // The streak LED lights a frame or more after the key (a fixed 120 ms missed it at 1280 × 720): wait for its class, 2 s at most.
+  for (let n = 0; n < 40; n++) { if (await page.eval("!!document.querySelector('.sv-streak.is-on')")) break; await page.sleep(50); }
   await capture("fight-hunt", ".sv-hud");
 
   // A rift (stage 3): its warning on the wall's side and the countdown beside the word line.
@@ -360,6 +386,7 @@ export default async function (page) {
   const { identifier } = await page.send("Page.addScriptToEvaluateOnNewDocument", { source: "{ const get = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (kind, ...rest) { return /webgl/.test(kind) ? null : get.call(this, kind, ...rest); }; }" }).then((m) => m.result ?? {});
   await page.goto(base + "/index.html?seed=2", { settle: 1200 });
   await capture("nogl", ".sv-nogl");
+  const nogl = await page.eval("(() => { const n = document.querySelector('.sv-nogl'), bg = document.querySelector('.sv-hud > img.sv-bg'); return { frame: (/\\/([\\w-]+)\\.\\d+\\.webp/.exec(getComputedStyle(n).borderImageSource) || [])[1] || '', tint: (/\\/([\\w-]+)\\.\\d+\\.webp/.exec(getComputedStyle(n, '::before').borderImageSource) || [])[1] || '', bg: bg ? { role: (/\\/([\\w-]+)\\.\\d+\\.webp/.exec(bg.currentSrc || bg.src) || [])[1], loaded: bg.complete && bg.naturalWidth > 0 } : null }; })()");
   if (identifier) await page.send("Page.removeScriptToEvaluateOnNewDocument", { identifier });
   const noglLogs = page.logs.slice(logsBefore), noglExceptions = page.exceptions.slice(exceptionsBefore);
   const logs = page.logs.slice(0, logsBefore), exceptions = page.exceptions.slice(0, exceptionsBefore);
@@ -381,11 +408,14 @@ export default async function (page) {
     overfullCells: by("fight-overfull").mags.filter((m) => m.bay === "1").every((m) => m.tint === "rgb(255, 176, 32)") && by("fight-overfull").mags.some((m) => m.bay === "1") && by("fight-overfull").mags.filter((m) => m.bay !== "1").every((m) => m.tint === m.gun),
     warnContrast: by("fight-rift").contrast.length >= 3 && by("fight-rift").contrast.every((c) => c.ratio >= 3),
     noticeIcon: has("fight-notice", "icon-keyboard") && by("fight-notice").images.some((i) => i.role === "icon-keyboard" && i.place === "item"),
+    // UI pass 3: the warning notice is the word plate in the warning tint, no CSS ring; the no-WebGL plate the panel frame so tinted, over the menu's background.
+    noticePlate: !!by("fight-notice").notice && !by("fight-notice").notice.hint && by("fight-notice").notice.shadow === "none" && by("fight-notice").notice.tint === "frame-word",
+    noglPlate: nogl.frame === "frame-panel" && nogl.tint === "frame-panel" && nogl.bg?.role === "bg-menu" && nogl.bg.loaded,
     wordIcons: by("results-win").words.length > 0 && by("results-win").words.every((w) => w.length === 1 && ["icon-check", "icon-new-badge"].includes(w[0])),
     noglMessage: has("nogl", "icon-warning") && noglExceptions.length > 0 && noglExceptions.every((e) => e.includes("survival: no WebGL")) && noglLogs.every((l) => /WebGL/.test(l)),
     sliderSkin: by("quick-sound").quick?.skinned === true && by("quick-sound").quick.track.includes("slider-track.1024.webp") && by("quick-sound").quick.thumb.includes("slider-thumb.128.webp"),
     titleIcons: ["icon-station-crest", "icon-menu-journey", "icon-clock", "icon-menu-mode", "icon-menu-profile", "icon-menu-settings", "icon-menu-armory", "part-led-on", "part-led-off", "part-arrow"].every((r) => has("menu", r)),
-    optionsIcons: ["icon-sfx", "icon-music", "icon-shake", "icon-reduced-motion", "icon-read-aloud", "icon-pace-director", "icon-quality", "icon-check"].every((r) => has("options", r)),
+    optionsIcons: ["icon-sfx", "vol-music", "icon-shake", "icon-reduced-motion", "icon-read-aloud", "icon-pace-director", "icon-quality", "icon-check"].every((r) => has("options", r)),
     profileIcons: ["icon-stat-wpm", "icon-stat-accuracy", "icon-stat-new-word", "icon-stat-evenness", "icon-back"].every((r) => has("profile", r)),
     journeyIcons: ["icon-chapter-crest", "icon-star-unlit", "icon-lock", "icon-back"].every((r) => has("journey", r)),
     briefingIcons: ["icon-objective", "icon-hazard", "icon-learning-rule", "icon-equipment", "icon-new-badge", "icon-load-guns", "icon-back"].every((r) => has("briefing", r)),
@@ -395,7 +425,7 @@ export default async function (page) {
     goalPlate: !by("fight").goalShown && !by("fight-surge").goalShown && by("fight-hunt").goalShown && by("fight-hunt").goalOneLine,
     surgeBanner: surge && has("fight-surge", "icon-surge"),
     pauseIcons: ["icon-menu-play", "icon-menu-settings", "icon-back"].every((r) => has("pause", r)),
-    resultsIcons: ["icon-stat-time", "icon-kills", "icon-stat-accuracy", "icon-keyboard", "icon-retry", "icon-back"].every((r) => has("results-lose", r) && has("results-win", r)) && has("results-win", "icon-star-lit") && has("results-win", "icon-next-stage"),
+    resultsIcons: ["icon-stat-time", "icon-kills", "icon-stat-accuracy", "icon-stat-words", "icon-retry", "icon-back"].every((r) => has("results-lose", r) && has("results-win", r)) && has("results-win", "icon-star-lit") && has("results-win", "icon-next-stage"),
     // UI pass 2: the ticket 127 frames where the theme's plates were.
     frames: ["menu", "options", "pause"].every((n) => by(n).frames.card.every((f) => f === "frame-panel") && by(n).frames.item.length > 0 && by(n).frames.item.every((f) => f === "frame-button") && by(n).frames.itemOn.every((f) => f === "frame-button-active"))
       && ["armory", "loadout"].every((n) => by(n).frames.guns.length === 5 && by(n).frames.guns.every((f) => f === "frame-card"))
@@ -406,7 +436,18 @@ export default async function (page) {
     // The gear and the speaker on the corner buttons (ticket 180), 36 px × the panel's scale; the Sound rows' icons and the Settings rows' quality, motion and shake.
     quickIcons: by("quick-sound").quick.corners.map((c) => c.role).join() === "hud-settings,hud-sound" && by("quick-sound").quick.corners.every((c) => c.w >= 32)
       && ["vol-master", "vol-music", "vol-effects", "vol-keyboard", "vol-voice", "vol-interface"].every((r) => by("quick-sound").quick.rowIcons.some(([, role]) => role === r))
-      && ["icon-quality", "icon-reduced-motion", "icon-shake"].every((r) => by("quick-settings").quick.rowIcons.some(([, role]) => role === r)),
+      && ["icon-quality", "icon-reduced-motion", "icon-shake"].every((r) => by("quick-settings").quick.rowIcons.some(([, role]) => role === r))
+      && by("quick-sound").quick.rowIcons.some(([row, role]) => row === "keyboardVolume" && role === "vol-keyboard"),
+    // UI pass 3: the advice on the word plate, led by the learning-rule icon (Profile and both results).
+    advicePlate: ["profile", "results-win", "results-lose"].every((n) => by(n).frames.advice.every((f) => f === "frame-word")) && by("profile").frames.advice.length === 1 && has("profile", "icon-learning-rule") && (by("results-win").frames.advice.length === 0 || has("results-win", "icon-learning-rule")),
+    // Sealed bays are opaque: the corridor's lights stay behind them.
+    locksOpaque: by("fight").lockOpacity.length === 2 && by("fight").lockOpacity.every((o) => o === 1),
+    // The results card clear of the painted hero: its right edge at most 62 % of the width (16:9).
+    resultsLeft: ["results-win", "results-lose"].every((n) => !!by(n).endCard && by(n).endCard[2] <= 0.62 * page.width),
+    // The earned stars light in (sv-star-in), at the star box (boxSizes).
+    starsLitIn: by("results-win").starAnim.length > 0 && by("results-win").starAnim.every((a) => a === "sv-star-in") && by("results-win").images.filter((i) => i.place === "star").length === 3,
+    // Every letter effect of the Settings preview stays inside its box (the Stamp's flight was cut into a white disc).
+    previewInside: !!preview && preview.lit > 0 && Object.values(preview.over).every((v) => v <= 0),
     // Every groove the same length; each lit to its value (--v), so 50 and 100 differ.
     sliderFill: by("quick-sound").quick.ranges.length >= 5 && Math.max(...by("quick-sound").quick.ranges) - Math.min(...by("quick-sound").quick.ranges) <= 1 && by("quick-sound").quick.lit.every(([value, v]) => Math.abs(value - v) < 0.6),
     // One rift chip with text (by the word line); the wall mark has none and stands inside the corridor, not at the screen's edge.
@@ -435,5 +476,6 @@ export default async function (page) {
   const requests = Object.fromEntries(screens.flatMap((s) => s.requests).sort(([a], [b]) => a.localeCompare(b)));
   const panelContrast = Object.fromEntries(Object.keys(BACKGROUNDS).map((name) => [name, by(name).textContrast]));
   const corners = Object.fromEntries(Object.keys(BACKGROUNDS).map((name) => [name, by(name).corners]));
-  return { pass, checks, drawn, contrast, magSizes, lost, won, rift: { state: rift.state }, logo: by("menu").logo, logoRing: by("menu").logoRing, rails: by("briefing").rails, corners, requests, panelContrast, screens, warnings, exceptions, noglLogs, noglExceptions, shots };
+  const endCards = Object.fromEntries(["results-win", "results-lose"].map((n) => [n, by(n).endCard]));
+  return { pass, checks, drawn, contrast, magSizes, lost, won, rift: { state: rift.state }, preview, nogl, endCards, logo: by("menu").logo, logoRing: by("menu").logoRing, rails: by("briefing").rails, corners, requests, panelContrast, screens, warnings, exceptions, noglLogs, noglExceptions, shots };
 }
