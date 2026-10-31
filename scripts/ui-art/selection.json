@@ -599,10 +599,10 @@
     {
       "role": "icon-menu-settings",
       "kind": "icon",
-      "source": "ui/icons/menu-settings",
+      "source": "ui/icons/menu-settings.r2",
       "accepted": true,
-      "ticket": "151",
-      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "ticket": "243",
+      "verdict": "CODEX_QUEUE 243: Nhận 31/10 17:40 (cỡ thật)",
       "alt": "Options",
       "fill": 0.85
     },
@@ -797,6 +797,46 @@
       "fill": 0.85
     },
     {
+      "role": "icon-ship",
+      "kind": "icon",
+      "source": "ui/icons/ship",
+      "accepted": true,
+      "ticket": "243",
+      "verdict": "CODEX_QUEUE 243: Nhận 31/10 17:40 (cỡ thật)",
+      "alt": "Ship",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-letter-style",
+      "kind": "icon",
+      "source": "ui/icons/letter-style",
+      "accepted": true,
+      "ticket": "243",
+      "verdict": "CODEX_QUEUE 243: Nhận 31/10 17:40 (cỡ thật)",
+      "alt": "Letter style",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-effect-strength",
+      "kind": "icon",
+      "source": "ui/icons/effect-strength",
+      "accepted": true,
+      "ticket": "243",
+      "verdict": "CODEX_QUEUE 243: Nhận 31/10 17:40 (cỡ thật)",
+      "alt": "Effect strength",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-word-size",
+      "kind": "icon",
+      "source": "ui/icons/word-size",
+      "accepted": true,
+      "ticket": "243",
+      "verdict": "CODEX_QUEUE 243: Nhận 31/10 17:40 (cỡ thật)",
+      "alt": "Word size",
+      "fill": 0.85
+    },
+    {
       "role": "part-keycap",
       "kind": "icon",
       "source": "ui/parts/keycap",
@@ -876,6 +916,15 @@
       "ticket": "225",
       "verdict": "CODEX_QUEUE 225: Nhận 31/10 05:30",
       "alt": "Slider groove"
+    },
+    {
+      "role": "slider-fill",
+      "kind": "track",
+      "source": "ui/quick-settings/sliders/slider-fill",
+      "accepted": true,
+      "ticket": "244",
+      "verdict": "CODEX_QUEUE 244: Nhận 31/10 18:00 (cỡ thật)",
+      "alt": "Slider fill"
     },
     {
       "role": "frame-panel",
@@ -992,10 +1041,10 @@
     {
       "role": "hud-settings",
       "kind": "icon",
-      "source": "ui/quick-settings/selected/hud-settings",
+      "source": "ui/quick-settings/selected/hud-settings.r2",
       "accepted": true,
-      "ticket": "180",
-      "verdict": "CODEX_QUEUE 180: chưa đóng phiếu (IoU cặp loa bật/tắt); gắn theo UI pass 2 31/10 (nút góc và hàng Sound)",
+      "ticket": "243",
+      "verdict": "CODEX_QUEUE 243: Nhận 31/10 17:40 (cỡ thật)",
       "alt": "Settings",
       "fill": 0.85
     },
@@ -1042,10 +1091,10 @@
     {
       "role": "vol-effects",
       "kind": "icon",
-      "source": "ui/quick-settings/selected/vol-effects",
+      "source": "ui/quick-settings/selected/vol-effects.r2",
       "accepted": true,
-      "ticket": "180",
-      "verdict": "CODEX_QUEUE 180: chưa đóng phiếu (IoU cặp loa bật/tắt); gắn theo UI pass 2 31/10 (nút góc và hàng Sound)",
+      "ticket": "243",
+      "verdict": "CODEX_QUEUE 243: Nhận 31/10 17:40 (cỡ thật)",
       "alt": "Effects volume",
       "fill": 0.85
     },
@@ -1072,10 +1121,10 @@
     {
       "role": "vol-interface",
       "kind": "icon",
-      "source": "ui/quick-settings/selected/vol-interface",
+      "source": "ui/quick-settings/selected/vol-interface.r2",
       "accepted": true,
-      "ticket": "180",
-      "verdict": "CODEX_QUEUE 180: chưa đóng phiếu (IoU cặp loa bật/tắt); gắn theo UI pass 2 31/10 (nút góc và hàng Sound)",
+      "ticket": "243",
+      "verdict": "CODEX_QUEUE 243: Nhận 31/10 17:40 (cỡ thật)",
       "alt": "Interface volume",
       "fill": 0.85
     }

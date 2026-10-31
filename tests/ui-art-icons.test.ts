@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Menu } from "../src/app/menu";
-import { paintRanges, quickOptions, quickSkin, type QuickHooks } from "../src/app/quick";
+import { quickOptions, quickSkin, ROW_EDGE, type QuickHooks } from "../src/app/quick";
 import { TypingSounds } from "../src/kit/feedback/typing-fx";
 import { renderScreen } from "../src/view/screens";
 import { renderJourney, starRow } from "../src/view/screens-journey";
-import { applyArtVars, artUrl, artVars, BOX, FRAMES, frameSlices, quickIcons, resetArtWarnings } from "../src/view/ui-art";
+import { applyArtVars, artUrl, artVars, BOX, FRAMES, framePlate, frameSlices, QUICK_ROW_ART, quickIcons, resetArtWarnings } from "../src/view/ui-art";
 import table from "../src/view/ui-art.json";
 import selection from "../scripts/ui-art/selection.json";
 import { ICONS, WIRED } from "./ui-art-roles";
@@ -31,16 +31,17 @@ describe("the selection and table (149–153, 225)", () => {
       expect(entry.accepted, role).toBe(true);
       expect(entry.source, role).toBe(want.source);
       expect(entry.ticket, role).toBe(want.ticket);
-      expect(entry.kind, role).toBe(role === "slider-track" ? "track" : "icon");
+      expect(entry.kind, role).toBe(role === "slider-track" || role === "slider-fill" ? "track" : "icon");
       expect(entry.verdict, role).toMatch(new RegExp("^CODEX_QUEUE " + want.ticket + ": Nhận 31/10"));
       expect(entry.alt, role).toMatch(/^[A-Z][A-Za-z0-9 ,-]+$/);
     }
     expect(selection.entries.find((entry) => entry.role === "foe-shard")).toMatchObject({ source: "ui/foes/shard", accepted: true, ticket: "238" });
   });
 
-  it("carries every wired role in the runtime table, the groove at 16:1", () => {
+  it("carries every wired role in the runtime table, the groove and its fill at 16:1", () => {
     for (const role of WIRED) expect(Object.keys(table.roles), role).toContain(role);
     expect(table.roles["slider-track"]).toMatchObject({ kind: "track", widths: [512, 1024], aspect: 16 });
+    expect(table.roles["slider-fill"]).toMatchObject({ kind: "track", widths: [512, 1024], aspect: 16 });
     expect(table.roles["foe-shard"]).toMatchObject({ kind: "portrait", widths: [64, 128, 256] });
   });
 
@@ -59,8 +60,13 @@ describe("the selection and table (149–153, 225)", () => {
     // The Settings rows' icons (the Options screen's art) at 28 px; every frame from its 896 px copy.
     expect(vars["--art-icon-quality"]).toContain("/icon-quality.128.webp");
     for (const role of FRAMES) expect(vars["--art-" + role]).toContain("/" + role + ".896.webp?v=");
-    expect(quickSkin()).toEqual({ sliderTrack: artUrl("slider-track", 290), sliderThumb: artUrl("slider-thumb", 22) });
+    // The kit's fill layer: the 225 groove as the empty part (and the plain fallback), the 244 fill, the 225 knob; the keyboard rows on the 127 button plates.
+    expect(quickSkin()).toEqual({
+      sliderTrack: artUrl("slider-track", 290), sliderEmpty: artUrl("slider-track", 290), sliderFill: artUrl("slider-fill", 290), sliderThumb: artUrl("slider-thumb", 22),
+      listRow: { ...framePlate("frame-button"), edge: [...ROW_EDGE] }, listRowActive: { ...framePlate("frame-button-active"), edge: [...ROW_EDGE] },
+    });
     expect(quickSkin().sliderTrack).toContain("/slider-track.1024.webp?v=");
+    expect(quickSkin().sliderFill).toContain("/slider-fill.1024.webp?v=");
     expect(quickSkin().sliderThumb).toContain("/slider-thumb.128.webp?v=");
   });
 
@@ -266,10 +272,11 @@ describe("UI pass 2: frames, quick panel icons and lit grooves (31/10)", () => {
     expect(set.has("--art-frame-card")).toBe(false);
   });
 
-  it("hands the kit the ticket 180 gear and speakers (32 px) and the Sound rows' icons (24 px), sharp at 2× on the 1080p scale", () => {
+  it("hands the kit the gear and speakers (32 px), the Sound rows' icons (24 px) and the kit rows' named in the game's art (28 px), sharp at 2× on the 1080p scale", () => {
     const icons = quickIcons();
-    expect(Object.keys(icons).sort()).toEqual(["hud-settings", "hud-sound", "hud-sound-muted", "vol-effects", "vol-interface", "vol-keyboard", "vol-master", "vol-music", "vol-voice"]);
-    for (const [name, url] of Object.entries(icons)) expect(url).toContain("/" + name + ".128.webp?v=");
+    expect(Object.keys(icons).sort()).toEqual(["fx-size", "fx-strength", "fx-style", "hud-settings", "hud-sound", "hud-sound-muted", "vol-effects", "vol-interface", "vol-keyboard", "vol-keyboard-volume", "vol-master", "vol-music", "vol-voice"]);
+    for (const [name, url] of Object.entries(icons)) expect(url).toContain("/" + (QUICK_ROW_ART[name] ?? name) + ".128.webp?v=");
+    expect(QUICK_ROW_ART).toEqual({ "fx-style": "icon-letter-style", "fx-strength": "icon-effect-strength", "fx-size": "icon-word-size", "vol-keyboard-volume": "vol-keyboard" });
     const hooks: QuickHooks = {
       host: {} as HTMLElement, values: () => ({}), change: () => {}, preview: () => {}, keyboardChoices: [], keyboardSounds: new TypingSounds(),
       keyboardFail: () => {}, mountPreview: () => {}, pause: () => {}, resume: () => {}, quit: () => {}, countdown: () => 0,
@@ -277,16 +284,13 @@ describe("UI pass 2: frames, quick panel icons and lit grooves (31/10)", () => {
     expect(quickOptions(hooks).icons).toEqual(icons);
   });
 
-  it("lights each slider's groove up to its value (--v, 0–100), so 50 and 100 read apart", () => {
-    const inputs = [{ min: "0", max: "100", value: "50" }, { min: "0", max: "100", value: "100" }, { min: "", max: "", value: "0" }, { min: "10", max: "10", value: "10" }].map((attrs) => {
-      const props = new Map<string, string>();
-      return { ...attrs, props, style: { setProperty: (name: string, value: string) => { props.set(name, value); } } };
-    });
-    paintRanges({ querySelectorAll: (selector: string) => (selector === ".kit-qs__range" ? (inputs as unknown as Element[]) : []) });
-    expect(inputs.map((input) => input.props.get("--v"))).toEqual(["50", "100", "0", "0"]);
-    // No host (the kit not mounted yet): nothing to paint, no throw.
-    expect(() => paintRanges(null)).not.toThrow();
-    expect(() => paintRanges({} as never)).not.toThrow();
+  it("cuts each ticket 127 frame as a plate for the kit in its 896 px copy's pixels (the slice percentages of the runtime table)", () => {
+    const button = framePlate("frame-button")!;
+    expect(button.url).toBe(artUrl("frame-button", 300));
+    expect(button.url).toContain("/frame-button.896.webp?v=");
+    // 896 × 232 (crop 1438 × 373): 35.39 % and 34.58 % of 232, 9.81 % of 896.
+    expect(button.slice).toEqual([82.1, 87.9, 80.23, 87.9]);
+    expect(framePlate("frame-button-active")!.url).toContain("/frame-button-active.896.webp?v=");
   });
 
   it("draws the panels, rows, cards, HUD plates, chips, banner and quick panels on the frames only while their token is set", () => {

@@ -305,9 +305,9 @@ describe("menu icons (tickets 150–152, main.ts items())", () => {
   it("gives every title item its menu icon (LL-09)", () => {
     expect(menuIcons("title")).toEqual({ journey: "icon-menu-journey", start: "icon-clock", continue: "icon-menu-play", mode: "icon-menu-mode", profile: "icon-menu-profile", settings: "icon-menu-settings", armory: "icon-menu-armory" });
   });
-  it("gives every option its icon but the ship's (LL-13: the ship's picture waits for LL-10)", () => {
+  it("gives every option its icon, the ship's too (LL-13; ticket 243's Ship icon, 31/10)", () => {
     // Music takes the Sound panel's note (vol-music), so Options and the panel match (UI pass 3).
-    expect(menuIcons("settings")).toEqual({ sfx: "icon-sfx", music: "vol-music", shake: "icon-shake", motion: "icon-reduced-motion", speak: "icon-read-aloud", adapt: "icon-pace-director", pilot: undefined, quality: "icon-quality", done: "icon-check" });
+    expect(menuIcons("settings")).toEqual({ sfx: "icon-sfx", music: "vol-music", shake: "icon-shake", motion: "icon-reduced-motion", speak: "icon-read-aloud", adapt: "icon-pace-director", pilot: "icon-ship", quality: "icon-quality", done: "icon-check" });
   });
   it("gives the pause, armory, profile and results items theirs (LL-48, LL-53)", () => {
     expect(menuIcons("pause")).toEqual({ resume: "icon-menu-play", settings: "icon-menu-settings", title: "icon-back" });

@@ -309,7 +309,7 @@
     "hud-settings": {
       "kind": "icon",
       "alt": "Settings",
-      "rev": "1f22899c",
+      "rev": "2e1d0eea",
       "widths": [
         64,
         128,
@@ -405,6 +405,17 @@
       ],
       "aspect": 1
     },
+    "icon-effect-strength": {
+      "kind": "icon",
+      "alt": "Effect strength",
+      "rev": "8812ae7b",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
     "icon-equipment": {
       "kind": "icon",
       "alt": "Gear",
@@ -453,6 +464,17 @@
       "kind": "icon",
       "alt": "Learning rule",
       "rev": "6db8f786",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-letter-style": {
+      "kind": "icon",
+      "alt": "Letter style",
+      "rev": "112bff5e",
       "widths": [
         64,
         128,
@@ -540,7 +562,7 @@
     "icon-menu-settings": {
       "kind": "icon",
       "alt": "Options",
-      "rev": "93f62fa9",
+      "rev": "0f85633a",
       "widths": [
         64,
         128,
@@ -691,6 +713,17 @@
       ],
       "aspect": 1
     },
+    "icon-ship": {
+      "kind": "icon",
+      "alt": "Ship",
+      "rev": "018fa8bf",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
     "icon-star-lit": {
       "kind": "icon",
       "alt": "Star earned",
@@ -823,6 +856,17 @@
       ],
       "aspect": 1
     },
+    "icon-word-size": {
+      "kind": "icon",
+      "alt": "Word size",
+      "rev": "0f196b12",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
     "logo": {
       "kind": "logo",
       "alt": "Last Line",
@@ -910,6 +954,16 @@
       ],
       "aspect": 1
     },
+    "slider-fill": {
+      "kind": "track",
+      "alt": "Slider fill",
+      "rev": "3bc4281c",
+      "widths": [
+        512,
+        1024
+      ],
+      "aspect": 16
+    },
     "slider-thumb": {
       "kind": "icon",
       "alt": "Slider knob",
@@ -982,7 +1036,7 @@
     "vol-effects": {
       "kind": "icon",
       "alt": "Effects volume",
-      "rev": "a108f315",
+      "rev": "66c44456",
       "widths": [
         64,
         128,
@@ -993,7 +1047,7 @@
     "vol-interface": {
       "kind": "icon",
       "alt": "Interface volume",
-      "rev": "9efab5a1",
+      "rev": "f6ffa5b0",
       "widths": [
         64,
         128,

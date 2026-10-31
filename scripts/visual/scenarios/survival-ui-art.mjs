@@ -32,6 +32,9 @@
 // its plate at 58 % of the box; the rift chip in the amber tint with a glow never under 0.5 alpha; the armory's gun art at 96 px and
 // its learning tile; the stage card's art as a band inside the rails; the title's status on the word plate; locked rows readable
 // (only their pictures dimmed); lamp bullets on the notes; the bay-full icon at 28 px; the threats' and kills' wording.
+// Panels art (31/10, kit 18722b41/b8a224d0, tickets 243/244): the sliders on the kit's fill layer (the 225 groove empty,
+// the 244 fill lit to the knob: --kit-qs-v), the typing-effect rows' icons, the Options Ship row's icon. The quick panels
+// in depth (fill width in pixels, list plates, keyboard, a key's sound): survival-quick-panels.mjs.
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { DEV_URL, out } from "./common.mjs";
@@ -242,8 +245,8 @@ export default async function (page) {
       const qs=document.querySelector('.kit-qs');
       const roleOf=t=>(/\\/([\\w-]+)\\.\\d+\\.webp/.exec(t||'')||[])[1]||'';
       const open=qs&&[...qs.querySelectorAll('.kit-qs__dialog')].find(d=>d.getAttribute('aria-hidden')!=='true'&&visible(d));
-      const quick=qs?{skinned:qs.classList.contains('kit-qs--skin-slider'),track:qs.style.getPropertyValue('--kit-qs-skin-track'),thumb:qs.style.getPropertyValue('--kit-qs-skin-thumb'),ranges:[...qs.querySelectorAll('.kit-qs__range')].filter(visible).map(r=>Math.round(r.getBoundingClientRect().width)),
-        lit:[...qs.querySelectorAll('.kit-qs__range')].filter(visible).map(r=>[Number(r.value),Number(r.style.getPropertyValue('--v'))]),
+      const quick=qs?{skinned:qs.classList.contains('kit-qs--skin-slider'),fillLayer:qs.classList.contains('kit-qs--slider-fill')&&qs.classList.contains('kit-qs--fill-art'),track:qs.style.getPropertyValue('--kit-qs-skin-track'),thumb:qs.style.getPropertyValue('--kit-qs-skin-thumb'),fill:qs.style.getPropertyValue('--kit-qs-skin-fill'),empty:qs.style.getPropertyValue('--kit-qs-skin-empty'),ranges:[...qs.querySelectorAll('.kit-qs__range')].filter(visible).map(r=>Math.round(r.getBoundingClientRect().width)),
+        lit:[...qs.querySelectorAll('.kit-qs__range')].filter(visible).map(r=>[Number(r.value),Number(r.closest('.kit-qs__slider')?.style.getPropertyValue('--kit-qs-v'))*100]),
         corners:[...qs.querySelectorAll('.kit-qs__corner')].map(b=>({role:roleOf(b.querySelector('img')?.src),w:Math.round(b.getBoundingClientRect().width)})),
         rowIcons:open?[...open.querySelectorAll('.kit-qs__row')].map(r=>[r.dataset.row,roleOf(r.querySelector('img.kit-qs__icon')?.src)||roleOf(getComputedStyle(r.querySelector('.kit-qs__icon-cell')??r).backgroundImage)]).filter(([,role])=>role):[]}:null;
       const frameOf=sel=>[...document.querySelectorAll(sel)].filter(visible).map(n=>roleOf(getComputedStyle(n).borderImageSource));
@@ -463,9 +466,10 @@ export default async function (page) {
     noglPlate: nogl.frame === "frame-panel" && nogl.tint === "frame-panel" && nogl.bg?.role === "bg-menu" && nogl.bg.loaded,
     wordIcons: by("results-win").words.length > 0 && by("results-win").words.every((w) => w.length === 1 && ["icon-check", "icon-new-badge"].includes(w[0])),
     noglMessage: has("nogl", "icon-warning") && noglExceptions.length > 0 && noglExceptions.every((e) => e.includes("survival: no WebGL")) && noglLogs.every((l) => /WebGL/.test(l)),
-    sliderSkin: by("quick-sound").quick?.skinned === true && by("quick-sound").quick.track.includes("slider-track.1024.webp") && by("quick-sound").quick.thumb.includes("slider-thumb.128.webp"),
+    sliderSkin: by("quick-sound").quick?.skinned === true && by("quick-sound").quick.track.includes("slider-track.1024.webp") && by("quick-sound").quick.thumb.includes("slider-thumb.128.webp")
+      && by("quick-sound").quick.fillLayer && by("quick-sound").quick.fill.includes("slider-fill.1024.webp") && by("quick-sound").quick.empty.includes("slider-track.1024.webp"),
     titleIcons: ["icon-station-crest", "icon-menu-journey", "icon-clock", "icon-menu-mode", "icon-menu-profile", "icon-menu-settings", "icon-menu-armory", "part-led-on", "part-led-off", "part-arrow"].every((r) => has("menu", r)),
-    optionsIcons: ["icon-sfx", "vol-music", "icon-shake", "icon-reduced-motion", "icon-read-aloud", "icon-pace-director", "icon-quality", "icon-check"].every((r) => has("options", r)),
+    optionsIcons: ["icon-sfx", "vol-music", "icon-shake", "icon-reduced-motion", "icon-read-aloud", "icon-pace-director", "icon-ship", "icon-quality", "icon-check"].every((r) => has("options", r)),
     profileIcons: ["icon-stat-wpm", "icon-stat-accuracy", "icon-stat-new-word", "icon-stat-evenness", "icon-back"].every((r) => has("profile", r)),
     journeyIcons: ["icon-chapter-crest", "icon-star-unlit", "icon-lock", "icon-back"].every((r) => has("journey", r)),
     briefingIcons: ["icon-objective", "icon-hazard", "icon-learning-rule", "icon-equipment", "icon-new-badge", "icon-load-guns", "icon-back"].every((r) => has("briefing", r)),
@@ -485,10 +489,10 @@ export default async function (page) {
       && by("fight-rift").frames.chips.every((f) => f === "frame-word") && by("fight-notice").frames.chips.length >= 1 && by("fight-notice").frames.chips.every((f) => f === "frame-word")
       && by("fight-surge").frames.banner.every((f) => f === "frame-banner")
       && ["quick-settings", "quick-sound"].every((n) => by(n).frames.qsPanel.length === 1 && by(n).frames.qsPanel[0] === "frame-panel" && by(n).frames.qsButtons.length > 0 && by(n).frames.qsButtons.every((f) => f === "frame-button" || f === "frame-button-active")),
-    // The gear and the speaker on the corner buttons (ticket 180), 36 px × the panel's scale; the Sound rows' icons and the Settings rows' quality, motion and shake.
+    // The gear (243) and the speaker (180) on the corner buttons, 36 px × the panel's scale; the Sound rows' icons and the Settings rows' typing effects (243), quality, motion and shake.
     quickIcons: by("quick-sound").quick.corners.map((c) => c.role).join() === "hud-settings,hud-sound" && by("quick-sound").quick.corners.every((c) => c.w >= 32)
       && ["vol-master", "vol-music", "vol-effects", "vol-keyboard", "vol-voice", "vol-interface"].every((r) => by("quick-sound").quick.rowIcons.some(([, role]) => role === r))
-      && ["icon-quality", "icon-reduced-motion", "icon-shake"].every((r) => by("quick-settings").quick.rowIcons.some(([, role]) => role === r))
+      && ["icon-letter-style", "icon-effect-strength", "icon-word-size", "icon-quality", "icon-reduced-motion", "icon-shake"].every((r) => by("quick-settings").quick.rowIcons.some(([, role]) => role === r))
       && by("quick-sound").quick.rowIcons.some(([row, role]) => row === "keyboardVolume" && role === "vol-keyboard"),
     // UI pass 3: the advice on the word plate, led by the learning-rule icon (Profile and both results).
     advicePlate: ["profile", "results-win", "results-lose"].every((n) => by(n).frames.advice.every((f) => f === "frame-word")) && by("profile").frames.advice.length === 1 && has("profile", "icon-learning-rule") && (by("results-win").frames.advice.length === 0 || has("results-win", "icon-learning-rule")),
@@ -500,7 +504,7 @@ export default async function (page) {
     starsLitIn: by("results-win").starAnim.length > 0 && by("results-win").starAnim.every((a) => a === "sv-star-in") && by("results-win").images.filter((i) => i.place === "star").length === 3,
     // Every letter effect of the Settings preview stays inside its box (the Stamp's flight was cut into a white disc).
     previewInside: !!preview && preview.lit > 0 && Object.values(preview.over).every((v) => v <= 0),
-    // Every groove the same length; each lit to its value (--v), so 50 and 100 differ.
+    // Every groove the same length; each lit to its value (the kit's --kit-qs-v, 0–1), so 50 and 100 differ.
     sliderFill: by("quick-sound").quick.ranges.length >= 5 && Math.max(...by("quick-sound").quick.ranges) - Math.min(...by("quick-sound").quick.ranges) <= 1 && by("quick-sound").quick.lit.every(([value, v]) => Math.abs(value - v) < 0.6),
     // UI pass 3: one rift chip (no wall mark of its own) with the arrow, the Rift icon and the countdown; inside the corridor (the limits
     // hud.ts measured, well clear of the screen's edges), its bottom over the bays' top and within a tenth of the height of it, off the gun tabs.

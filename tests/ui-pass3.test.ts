@@ -5,6 +5,7 @@ import { soundRows } from "../src/app/quick";
 import { runStats } from "../src/app/results";
 import type { World } from "../src/sim/world";
 import { renderScreen } from "../src/view/screens";
+import { quickIcons } from "../src/view/ui-art";
 import { previewFit } from "../src/view/type-fx-preview";
 import table from "../src/view/ui-art.json";
 import selection from "../scripts/ui-art/selection.json";
@@ -51,7 +52,9 @@ describe("the Sound panel and Options", () => {
     const rows = soundRows([{ value: "off", label: "Off" }]);
     const icon = (id: string) => { const row = rows.find((r) => r.id === id); return row !== undefined && "icon" in row ? row.icon : undefined; };
     expect(icon("keyboard")).toBe("vol-keyboard");
-    expect(icon("keyboardVolume")).toBe("vol-keyboard");
+    // The kit names it (31/10 kit pass); the game draws that name with the keyboard row's art (no Last Line art of its own).
+    expect(icon("keyboardVolume")).toBe("vol-keyboard-volume");
+    expect(quickIcons()["vol-keyboard-volume"]).toBe(quickIcons()["vol-keyboard"]);
     expect(icon("music")).toBe("vol-music");
   });
 

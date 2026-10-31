@@ -297,6 +297,8 @@ const quick = createQuickSettings({
   },
   quit: quitToTitle,
   countdown: () => (mode === "play" ? QUICK_COUNTDOWN_STEP_MS : 0),
+  // The title and its sheets have no run to resume or quit: the kit hides Resume and Quit to title there.
+  context: () => (mode === "start" ? "title" : "play"),
 });
 const quickBar = quick.root.querySelector<HTMLElement>(".kit-qs__bar");
 
@@ -356,7 +358,7 @@ function items(which: Screen): MenuItem[] {
         { id: "motion", icon: "icon-reduced-motion", label: "Reduce motion", value: MOTION_NAMES[motionPreference()], note: "No ship drift or lunges; no letter bounce", enabled: true },
         { id: "speak", icon: "icon-read-aloud", label: "Read words aloud", value: onOff(settings.pronunciationEnabled), enabled: true },
         { id: "adapt", icon: "icon-pace-director", label: "Adapt pace to your typing", value: onOff(settings.paceAdapt), note: nextRun() ?? (settings.paceAdapt ? "Swarm density follows your profile" : "Fixed pace throughout the run"), enabled: true },
-        { id: "pilot", label: "Ship", value: PILOT_NAMES[chosen.pilot], note: later, enabled: !started },
+        { id: "pilot", icon: "icon-ship", label: "Ship", value: PILOT_NAMES[chosen.pilot], note: later, enabled: !started },
         { id: "quality", icon: "icon-quality", label: "Graphics", value: TIER_NAMES[chosen.tier], note: later, enabled: !started },
         { id: "done", icon: "icon-check", label: "Done", enabled: true },
       ];

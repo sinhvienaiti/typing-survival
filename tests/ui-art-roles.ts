@@ -5,6 +5,9 @@
  * retry's pick (237–240 reports: backed up, then overwritten in place).
  * Ticket 242 (accepted 31/10 17:05, graded at real size): seven icons
  * redrawn as bold silhouettes (`.r2` sources) and the new Words stat.
+ * Ticket 243 (accepted 31/10 17:40, at real size): the menu's Options gear
+ * redrawn, the Options Ship row's icon and the three typing-effect rows' of
+ * the quick Settings panel; 244 (18:00): the slider's lit fill.
  */
 export const ICONS: Readonly<Record<string, { source: string; ticket: string }>> = {
   // 149 HUD
@@ -34,7 +37,7 @@ export const ICONS: Readonly<Record<string, { source: string; ticket: string }>>
   "icon-menu-journey": { source: "ui/icons/menu-journey", ticket: "239" },
   "icon-menu-mode": { source: "ui/icons/menu-mode", ticket: "151" },
   "icon-menu-armory": { source: "ui/icons/menu-armory", ticket: "239" },
-  "icon-menu-settings": { source: "ui/icons/menu-settings", ticket: "151" },
+  "icon-menu-settings": { source: "ui/icons/menu-settings.r2", ticket: "243" },
   "icon-menu-profile": { source: "ui/icons/menu-profile", ticket: "151" },
   "icon-star-lit": { source: "ui/icons/star-lit", ticket: "151" },
   "icon-star-unlit": { source: "ui/icons/star-unlit", ticket: "151" },
@@ -55,6 +58,11 @@ export const ICONS: Readonly<Record<string, { source: string; ticket: string }>>
   "icon-stat-new-word": { source: "ui/icons/stat-new-word", ticket: "152" },
   "icon-stat-evenness": { source: "ui/icons/stat-evenness", ticket: "240" },
   "icon-rift": { source: "ui/icons/rift", ticket: "152" },
+  // 243 Options and the quick Settings rows
+  "icon-ship": { source: "ui/icons/ship", ticket: "243" },
+  "icon-letter-style": { source: "ui/icons/letter-style", ticket: "243" },
+  "icon-effect-strength": { source: "ui/icons/effect-strength", ticket: "243" },
+  "icon-word-size": { source: "ui/icons/word-size", ticket: "243" },
   // 153 small parts
   "part-keycap": { source: "ui/parts/keycap", ticket: "153" },
   "part-keycap-active": { source: "ui/parts/keycap-active", ticket: "153" },
@@ -66,12 +74,15 @@ export const ICONS: Readonly<Record<string, { source: string; ticket: string }>>
   // 225 the quick panels' sliders
   "slider-thumb": { source: "ui/quick-settings/sliders/slider-thumb", ticket: "225" },
   "slider-track": { source: "ui/quick-settings/sliders/slider-track", ticket: "225" },
+  // 244 the groove's lit fill (the kit's fill layer)
+  "slider-fill": { source: "ui/quick-settings/sliders/slider-fill", ticket: "244" },
 };
 /**
  * UI pass 2 (31/10): the ticket 127 frames, drawn as nine-slice borders, and
  * the ticket 180 gear, speakers and Sound row icons. Both were wired before
  * their tickets closed (each verdict says so); the frames are cropped to
- * their painted part with slice lines in source pixels.
+ * their painted part with slice lines in source pixels. Ticket 243 redrew the
+ * corner gear (it read as a flower) and the Effects and Interface rows' icons.
  */
 export const FRAMES: Readonly<Record<string, { source: string; ticket: string }>> = {
   "frame-panel": { source: "ui/frames-epic/panel-large.alpha", ticket: "127" },
@@ -82,7 +93,9 @@ export const FRAMES: Readonly<Record<string, { source: string; ticket: string }>
   "frame-button-active": { source: "ui/frames-epic/button-active.alpha", ticket: "127" },
   "frame-banner": { source: "ui/frames-epic/banner.alpha", ticket: "127" },
 };
+const REDRAWN_243 = ["hud-settings", "vol-effects", "vol-interface"];
 export const QUICK: Readonly<Record<string, { source: string; ticket: string }>> = Object.fromEntries(
-  ["hud-settings", "hud-sound", "hud-sound-muted", "vol-master", "vol-music", "vol-effects", "vol-keyboard", "vol-voice", "vol-interface"].map((role) => [role, { source: "ui/quick-settings/selected/" + role, ticket: "180" }]),
+  ["hud-settings", "hud-sound", "hud-sound-muted", "vol-master", "vol-music", "vol-effects", "vol-keyboard", "vol-voice", "vol-interface"].map((role) =>
+    [role, REDRAWN_243.includes(role) ? { source: "ui/quick-settings/selected/" + role + ".r2", ticket: "243" } : { source: "ui/quick-settings/selected/" + role, ticket: "180" }]),
 );
 export const WIRED: readonly string[] = [...Object.keys(ICONS), ...Object.keys(FRAMES), ...Object.keys(QUICK)];

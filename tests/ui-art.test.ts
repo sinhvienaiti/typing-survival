@@ -19,8 +19,8 @@ const roles = selection.entries.map(e => e.role);
 const md5 = (b: Buffer) => createHash("md5").update(b).digest("hex");
 afterEach(() => { vi.restoreAllMocks(); resetArtWarnings(); });
 describe("UI art 206", () => {
-  it("selects precisely 92 accepted roles from 107 entries (206's 15, the Shard, 53 icons and parts with 242's Words stat, UI pass 2's 7 frames of 127 and 9 icons of 180, 121's six backgrounds and logo), with English names and pending replacements", () => {
-    expect(selection.version).toBe(1); expect(selection.entries).toHaveLength(107);
+  it("selects precisely 97 accepted roles from 112 entries (206's 15, the Shard, 58 icons and parts with 242's Words stat, 243's four new icons and 244's fill, UI pass 2's 7 frames of 127 and 9 icons of 180, 121's six backgrounds and logo), with English names and pending replacements", () => {
+    expect(selection.version).toBe(1); expect(selection.entries).toHaveLength(112);
     const wanted = [...GUN_KEYS.map(gunRole), ...Object.values(KIND).map(foeRole), ...CHAPTER_1.map(s=>stageRole(s.id)), ...WIRED, ...SCREENS.map(bgRole), "logo"].sort();
     expect(accepted.map(e=>e.role).sort()).toEqual(wanted);
     for(const role of new Set(roles)) expect(accepted.filter(e=>e.role===role).length).toBeLessThanOrEqual(1);
@@ -43,11 +43,11 @@ describe("UI art 206", () => {
     expect(Object.keys(table.roles).sort()).toEqual(accepted.filter(e=>e.source).map(e=>e.role).sort());
     for(const [role, data] of Object.entries(table.roles)) {
       expect(data.rev).toMatch(/^[a-f0-9]{8}$/);
-      expect(data.widths).toEqual(role.startsWith("stage-")?[192,384,768,1536]:role.startsWith("bg-")?[1280,1536]:role==="logo"?[640,1280]:role==="slider-track"?[512,1024]:role.startsWith("frame-")?[448,896]:[64,128,256]);
+      expect(data.widths).toEqual(role.startsWith("stage-")?[192,384,768,1536]:role.startsWith("bg-")?[1280,1536]:role==="logo"?[640,1280]:role.startsWith("slider-")&&role!=="slider-thumb"?[512,1024]:role.startsWith("frame-")?[448,896]:[64,128,256]);
       // A frame keeps its crop's shape (the painted part of its canvas), as its 448 px copy has it.
       const crop = /^(\d+)x(\d+)/.exec(accepted.find(e=>e.role===role)?.crop ?? "");
       const frameAspect = crop ? Math.round(448/Math.round(448*Number(crop[2])/Number(crop[1]))*1e6)/1e6 : 0;
-      expect(data.aspect).toBe(role.startsWith("stage-")||role.startsWith("bg-")?1.777778:role==="logo"?Math.round(640/213*1e6)/1e6:role==="slider-track"?16:role.startsWith("frame-")?frameAspect:1);
+      expect(data.aspect).toBe(role.startsWith("stage-")||role.startsWith("bg-")?1.777778:role==="logo"?Math.round(640/213*1e6)/1e6:role.startsWith("slider-")&&role!=="slider-thumb"?16:role.startsWith("frame-")?frameAspect:1);
     }
     expect(JSON.stringify(table)).not.toMatch(/art-src|\.png/);
   });
@@ -91,9 +91,9 @@ describe("UI art 206", () => {
   });
   it("leaves pending art empty and warns once per role", () => {
     const warn=vi.spyOn(console,"warn").mockImplementation(()=>{});
-    // No role is pending since 121 (31/10): a role the table lacks (the Ship row's icon) draws nothing, no stand-in.
-    expect(artHtml("icon-ship","icon")).toBe(""); expect(artHtml("icon-ship","icon")).toBe("");
-    expect(warn.mock.calls.filter(c=>c[0]==="[ui-art] no accepted image: icon-ship")).toHaveLength(1);
+    // No role is pending since 121 (31/10; 243 gave the Ship row its icon): a role the table lacks draws nothing, no stand-in.
+    expect(artHtml("icon-unmade","icon")).toBe(""); expect(artHtml("icon-unmade","icon")).toBe("");
+    expect(warn.mock.calls.filter(c=>c[0]==="[ui-art] no accepted image: icon-unmade")).toHaveLength(1);
     const s=screens206();
     expect(s.title).toMatch(/^<img class="sv-art sv-art-bg sv-bg" src="[^"]*\/bg-menu\.1536\.webp/); expect(s.title).not.toMatch(/<svg/);
     expect(warn).toHaveBeenCalledTimes(1);

@@ -155,11 +155,43 @@ export function applyArtVars(root: ArtRoot): void {
     probe.src = url;
   }
 }
-/** The quick panels' icons (ticket 180): the corner gear and speakers at 32 px, the Sound rows' at 24 (× 1.5 at 1080p, sharp at 2×). */
+/**
+ * A ticket 127 frame as a nine-slice plate for the kit (QuickSkin.listRow):
+ * the copy artVars draws (896 px) and its slice lines in that copy's pixels
+ * (top, right, bottom, left). Null: the frame has no accepted art.
+ */
+export function framePlate(role: (typeof FRAMES)[number]): { url: string; slice: number[] } | null {
+  const data = roles[role];
+  const url = data?.slice ? artUrl(role, 300) : null;
+  if (url === null || data?.slice === undefined) return null;
+  const width = Number(/\.(\d+)\.webp/.exec(url)?.[1]);
+  const height = Math.round(width / data.aspect);
+  const [top, right, bottom, left] = data.slice as [number, number, number, number];
+  return { url, slice: [top * height, right * width, bottom * height, left * width].map((n) => Math.round(n) / 100) };
+}
+/**
+ * Kit row icon names drawn with the game's own art: the typing-effect rows
+ * (ticket 243) and Keyboard volume, which shares the keyboard row's key cap
+ * (no Last Line art of its own).
+ */
+export const QUICK_ROW_ART: Readonly<Record<string, string>> = {
+  "fx-style": "icon-letter-style",
+  "fx-strength": "icon-effect-strength",
+  "fx-size": "icon-word-size",
+  "vol-keyboard-volume": "vol-keyboard",
+};
+/**
+ * The quick panels' icons: the corner gear and speakers at 32 px (ticket 180, the gear redrawn in 243), the rows' at
+ * 24–28 (× 1.5 at 1080p, sharp at 2×).
+ */
 export function quickIcons(): Record<string, string> {
   const out: Record<string, string> = {};
   for (const name of ["hud-settings", "hud-sound", "hud-sound-muted", "vol-master", "vol-music", "vol-effects", "vol-keyboard", "vol-voice", "vol-interface"]) {
     const url = artUrl(name, name.startsWith("hud-") ? 32 : 24);
+    if (url) out[name] = url;
+  }
+  for (const [name, role] of Object.entries(QUICK_ROW_ART)) {
+    const url = artUrl(role, 28);
     if (url) out[name] = url;
   }
   return out;

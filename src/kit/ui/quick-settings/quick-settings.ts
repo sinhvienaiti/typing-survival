@@ -33,9 +33,11 @@ import {
   type QuickButtonRow,
   type QuickChoiceOption,
   type QuickChoiceRow,
-  type QuickIconName,
+  type QuickContext,
+  type QuickIconKey,
   type QuickIcons,
   type QuickMount,
+  type QuickNineSlice,
   type QuickPanel,
   type QuickRow,
   type QuickSkin,
@@ -90,8 +92,9 @@ export type QuickSettingsOptions = QuickDefaultsOptions & {
   readonly onResume?: () => void;
   /** "Quit to title" pressed (no countdown, no onResume). */
   readonly onQuit?: () => void;
-  /** Icon art URLs; a missing icon leaves a plain text button. */
+  /** Icon art URLs by name (corner buttons and any row's `icon`); a missing icon leaves a plain text button or an empty icon cell. */
   readonly icons?: QuickIcons;
+  /** Frame, button, slider, list and Close art; each part left out keeps the kit's plain look. */
   readonly skin?: QuickSkin;
   /** Replace the kit's rows (e.g. a filtered or reordered defaultSettingsRows()). */
   readonly settingsRows?: readonly QuickRow[];
@@ -100,6 +103,12 @@ export type QuickSettingsOptions = QuickDefaultsOptions & {
   readonly countdownMs?: number | (() => number);
   /** z-index of the layer; default 100. */
   readonly zIndex?: number;
+  /**
+   * Where the panels open (default "play"). On "title" the Resume and Quit to
+   * title buttons are hidden. A function is read on each open() and refresh();
+   * setContext() changes it at once.
+   */
+  readonly context?: QuickContext | (() => QuickContext);
 };
 
 const TEXT = {
@@ -127,9 +136,33 @@ type Panel = {
   readonly syncers: (() => void)[];
   readonly slots: { readonly host: HTMLElement; readonly mount: QuickMount }[];
   readonly cleanups: (() => void)[];
+  /** Some slider row has a toggle: every slider row keeps the column after the number, so grooves match. */
+  readonly aside: boolean;
+  readonly close: HTMLButtonElement;
+  /** Resume and quit buttons (hidden on the title) and the action rows that hold them. */
+  readonly playOnly: HTMLButtonElement[];
+  readonly actions: HTMLElement[];
 };
 
-type RowHead = { readonly id: string; readonly label: string; readonly icon?: QuickIconName };
+type RowHead = { readonly id: string; readonly label: string; readonly icon?: QuickIconKey };
+
+/** A border-image list in CSS: finite numbers ≥ 0, one to four; anything else is `fallback`. */
+function cssNumbers(value: number | readonly number[] | undefined, unit: string, fallback: string): string {
+  const list = (typeof value === "number" ? [value] : Array.isArray(value) ? value : []).slice(0, 4);
+  if (list.length === 0 || !list.every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0)) return fallback;
+  return list.map((n) => `${n}${unit}`).join(" ");
+}
+
+const plateSlice = (plate: QuickNineSlice): string => cssNumbers(plate.slice, "", "0");
+const plateEdge = (plate: QuickNineSlice): string => cssNumbers(plate.edge, "px", "12px");
+/** The label's side padding on a plate: the wider of its left and right edges, plus 4 px. */
+function plateText(plate: QuickNineSlice): string {
+  const edges = plateEdge(plate).split(" ").map((n) => parseFloat(n));
+  const right = edges[1] ?? edges[0]!;
+  const left = edges[3] ?? right;
+  return `${Math.max(left, right) + 4}px`;
+}
+const artUrl = (value: string | undefined): string | null => (typeof value === "string" && value !== "" ? value : null);
 
 let instances = 0;
 
@@ -147,7 +180,9 @@ export class QuickSettings {
   private readonly corners: Readonly<Record<QuickPanel, HTMLButtonElement>>;
   private readonly panels: Readonly<Record<QuickPanel, Panel>>;
   private readonly count: HTMLElement;
-  private readonly rowIcons: { readonly name: QuickIconName; readonly holder: HTMLElement }[] = [];
+  private readonly rowIcons: { readonly name: QuickIconKey; readonly holder: HTMLElement }[] = [];
+  /** QuickSkin.close: Close is drawn as this icon while it loads. */
+  private closeArt: string | null = null;
   private readonly failedIcons = new Set<string>();
   private readonly previews: KeyedThrottle;
   private readonly keyboardPreview: KeyboardSoundPreview;
@@ -162,11 +197,14 @@ export class QuickSettings {
   /** Where the mouse pointer last was in this document (pointermove/pointerdown/pointerover), for a rebuilt keyboard list. */
   private pointer: KeyboardPointer | null = null;
   private current: QuickPanel | null = null;
+  private contextSource: QuickContext | (() => QuickContext);
+  private shownContext: QuickContext = "play";
   private stopCountdown: (() => void) | null = null;
   private destroyed = false;
 
   constructor(options: QuickSettingsOptions) {
     this.options = options;
+    this.contextSource = options.context ?? "play";
     this.doc = options.host?.ownerDocument ?? document;
     this.view = this.doc.defaultView ?? window;
     const host = options.host ?? this.doc.body;
@@ -213,8 +251,10 @@ export class QuickSettings {
       this.view.addEventListener("resize", this.onResize);
     }
     this.onResize();
+    this.paintContext();
     this.readValues();
     this.paintRowIcons();
+    this.paintClose();
   }
 
   /** A panel is open. */
@@ -225,6 +265,11 @@ export class QuickSettings {
   /** The open panel, or null. */
   get panel(): QuickPanel | null {
     return this.current;
+  }
+
+  /** Where the panels open now ("title" hides Resume and Quit to title). */
+  get context(): QuickContext {
+    return this.shownContext;
   }
 
   /** A panel is open or the resume countdown runs: the game must ignore typing and stay paused. */
@@ -239,6 +284,7 @@ export class QuickSettings {
     this.cancelCountdown();
     if (this.current !== null) this.hidePanel(this.current);
     this.current = panel;
+    this.paintContext();
     this.readValues();
     this.showPanel(panel);
     if (!wasBlocking) this.options.onPause?.();
@@ -257,9 +303,18 @@ export class QuickSettings {
     else this.open(panel);
   }
 
-  /** Reads getValues() again (e.g. after the game changed a value elsewhere). */
+  /** Reads getValues() again (e.g. after the game changed a value elsewhere), and the context when it is a function. */
   refresh(): void {
-    if (!this.destroyed) this.readValues();
+    if (this.destroyed) return;
+    this.paintContext();
+    this.readValues();
+  }
+
+  /** The title screen or play: the game calls it when the title shows and when a run starts (or passes a function). */
+  setContext(context: QuickContext | (() => QuickContext)): void {
+    if (this.destroyed) return;
+    this.contextSource = context;
+    this.paintContext();
   }
 
   /**
@@ -360,6 +415,7 @@ export class QuickSettings {
     this.root.style.setProperty("--kit-qs-s", quickScale(this.root.clientHeight).toFixed(3));
     // A new size centres the panels again.
     for (const kind of QUICK_PANELS) this.releaseTop(kind);
+    for (const picker of this.keyboardChoices) picker.edges();
   };
 
   /**
@@ -471,7 +527,28 @@ export class QuickSettings {
     this.paintCorners();
   }
 
-  private iconUrl(name: QuickIconName): string | null {
+  /**
+   * Hides Resume and Quit to title on the title (and an action row left
+   * empty). Focus on a button that hides moves to the panel's Close.
+   */
+  private paintContext(): void {
+    const source = this.contextSource;
+    const read = typeof source === "function" ? source() : source;
+    const context: QuickContext = read === "title" ? "title" : "play";
+    this.shownContext = context;
+    this.root.dataset.context = context;
+    for (const kind of QUICK_PANELS) {
+      const panel = this.panels[kind];
+      for (const button of panel.playOnly) {
+        const hide = context === "title";
+        if (hide && this.doc.activeElement === button) panel.close.focus({ preventScroll: true });
+        button.hidden = hide;
+      }
+      for (const row of panel.actions) row.hidden = [...row.children].every((child) => (child as HTMLElement).hidden);
+    }
+  }
+
+  private iconUrl(name: QuickIconKey): string | null {
     const url = this.icons[name];
     return typeof url === "string" && url !== "" && !this.failedIcons.has(url) ? url : null;
   }
@@ -482,7 +559,7 @@ export class QuickSettings {
     this.paintCorner(this.corners.sound, muted ? TEXT.soundOff : TEXT.sound, muted ? "hud-sound-muted" : "hud-sound", QUICK_KEYS.sound);
   }
 
-  private paintCorner(button: HTMLButtonElement, text: string, icon: QuickIconName, key: string): void {
+  private paintCorner(button: HTMLButtonElement, text: string, icon: QuickIconKey, key: string): void {
     const url = this.iconUrl(icon);
     button.title = `${text} (${key})`;
     button.classList.toggle("has-icon", url !== null);
@@ -503,6 +580,23 @@ export class QuickSettings {
     }
   }
 
+  /** Close as the skin's icon (accessible name "Close"), or the text button when there is none or it failed. */
+  private paintClose(): void {
+    const url = this.closeArt !== null && !this.failedIcons.has(this.closeArt) ? this.closeArt : null;
+    for (const kind of QUICK_PANELS) {
+      const button = this.panels[kind].close;
+      button.classList.toggle("kit-qs__btn", url === null);
+      button.classList.toggle("kit-qs__close--icon", url !== null);
+      if (url === null) {
+        button.removeAttribute("aria-label");
+        if (button.firstElementChild !== null || button.textContent !== TEXT.close) button.textContent = TEXT.close;
+      } else {
+        button.setAttribute("aria-label", TEXT.close);
+        if (button.firstElementChild?.getAttribute("src") !== url) button.replaceChildren(this.image(url, "kit-qs__close-img"));
+      }
+    }
+  }
+
   /** An art image; if it fails to load, its button or row falls back to text / no icon. */
   private image(url: string, className: string): HTMLImageElement {
     const img = this.el("img", className);
@@ -514,6 +608,7 @@ export class QuickSettings {
         this.failedIcons.add(url);
         this.paintCorners();
         this.paintRowIcons();
+        this.paintClose();
       },
       { once: true },
     );
@@ -522,15 +617,48 @@ export class QuickSettings {
   }
 
   private applySkin(skin: QuickSkin): void {
+    const { classList, style } = this.root;
+    const image = (url: string | null): string => (url === null ? "none" : cssUrl(url));
     const set = (url: string | undefined, className: string, variable: string): void => {
-      if (typeof url !== "string" || url === "") return;
-      this.root.classList.add(className);
-      this.root.style.setProperty(variable, cssUrl(url));
+      const art = artUrl(url);
+      if (art === null) return;
+      classList.add(className);
+      style.setProperty(variable, cssUrl(art));
     };
     set(skin.panel, "kit-qs--skin-panel", "--kit-qs-skin-panel");
     set(skin.button, "kit-qs--skin-button", "--kit-qs-skin-button");
+    set(skin.buttonActive, "kit-qs--skin-button-active", "--kit-qs-skin-button-active");
     set(skin.sliderThumb, "kit-qs--skin-slider", "--kit-qs-skin-thumb");
     set(skin.sliderTrack, "kit-qs--skin-slider", "--kit-qs-skin-track");
+    // Fill layer: empty groove under the range, fill over it clipped at the knob; each falls back to the track art.
+    const fill = artUrl(skin.sliderFill);
+    const empty = artUrl(skin.sliderEmpty);
+    if (fill !== null || empty !== null) {
+      const track = artUrl(skin.sliderTrack);
+      classList.add("kit-qs--skin-slider", "kit-qs--slider-fill");
+      classList.toggle("kit-qs--fill-art", fill !== null);
+      classList.toggle("kit-qs--empty-art", empty !== null);
+      style.setProperty("--kit-qs-skin-fill", image(fill ?? track));
+      style.setProperty("--kit-qs-skin-empty", image(empty ?? track));
+    }
+    // List plates: a missing url is the button art; a missing active plate is button-active, else the row plate lit.
+    if (skin.listRow !== undefined || skin.listRowActive !== undefined) {
+      const row = skin.listRow ?? skin.listRowActive!;
+      const rowUrl = artUrl(skin.listRow?.url) ?? artUrl(skin.button);
+      const activeUrl = artUrl(skin.listRowActive?.url) ?? artUrl(skin.buttonActive);
+      const active = activeUrl !== null ? (skin.listRowActive ?? row) : row;
+      classList.add("kit-qs--skin-list");
+      classList.toggle("kit-qs--list-tint", activeUrl === null);
+      style.setProperty("--kit-qs-list-row", image(rowUrl));
+      style.setProperty("--kit-qs-list-slice", plateSlice(row));
+      style.setProperty("--kit-qs-list-edge", plateEdge(row));
+      style.setProperty("--kit-qs-list-text-x", plateText(row));
+      style.setProperty("--kit-qs-list-row-active", image(activeUrl ?? rowUrl));
+      style.setProperty("--kit-qs-list-active-slice", plateSlice(active));
+      style.setProperty("--kit-qs-list-active-edge", plateEdge(active));
+    }
+    this.closeArt = artUrl(skin.close);
+    classList.toggle("kit-qs--skin-close", this.closeArt !== null);
   }
 
   private corner(kind: QuickPanel): HTMLButtonElement {
@@ -565,15 +693,19 @@ export class QuickSettings {
     const body = this.el("div", "kit-qs__body");
     box.append(head, body);
     element.append(backdrop, box);
-    const panel: Panel = { element, box, dialog: new A11yDialog(element), syncers: [], slots: [], cleanups: [] };
+    const aside = this.rows[kind].some((row) => row.kind === "slider" && row.toggle !== undefined);
+    const panel: Panel = { element, box, dialog: new A11yDialog(element), syncers: [], slots: [], cleanups: [], aside, close, playOnly: [], actions: [] };
     let actions: HTMLElement | null = null;
     for (const row of this.rows[kind]) {
       if (row.kind === "button") {
         if (actions === null) {
           actions = this.el("div", "kit-qs__actions");
           body.append(actions);
+          panel.actions.push(actions);
         }
-        actions.append(this.renderButton(row));
+        const button = this.renderButton(row);
+        if (row.action === "resume" || row.action === "quit") panel.playOnly.push(button);
+        actions.append(button);
       } else {
         actions = null;
         body.append(this.renderRow(row, panel));
@@ -607,9 +739,13 @@ export class QuickSettings {
   private shell(row: RowHead, labelTag: "label" | "span"): { line: HTMLElement; label: HTMLElement; control: HTMLElement } {
     const line = this.el("div", "kit-qs__row");
     line.dataset.row = row.id;
+    // The cell keeps its width when empty, so labels line up.
     const icon = this.el("span", "kit-qs__icon-cell");
     icon.setAttribute("aria-hidden", "true");
-    if (row.icon !== undefined) this.rowIcons.push({ name: row.icon, holder: icon });
+    if (row.icon !== undefined) {
+      icon.dataset.icon = row.icon;
+      this.rowIcons.push({ name: row.icon, holder: icon });
+    }
     const label = this.el(labelTag, "kit-qs__label", row.label);
     label.id = `${this.uid}-${row.id}-label`;
     const control = this.el("div", "kit-qs__control");
@@ -617,9 +753,21 @@ export class QuickSettings {
     return { line, label, control };
   }
 
+  /**
+   * The native range (input and a11y) inside `.kit-qs__slider`, over two art
+   * layers that show only with the fill skin: the empty groove and the fill,
+   * clipped at the knob through --kit-qs-v (0..1) on the wrapper. The toggle
+   * goes to the row's `.kit-qs__aside` column after the number.
+   */
   private renderSlider(row: QuickSliderRow, panel: Panel): HTMLElement {
     const { line, label, control } = this.shell(row, "label");
+    control.classList.add("kit-qs__control--slider");
     const { min, max, step } = sliderBounds(row);
+    const slider = this.el("div", "kit-qs__slider");
+    const groove = this.el("span", "kit-qs__groove");
+    const fill = this.el("span", "kit-qs__fill");
+    groove.setAttribute("aria-hidden", "true");
+    fill.setAttribute("aria-hidden", "true");
     const input = this.el("input", "kit-qs__range");
     input.type = "range";
     input.id = `${this.uid}-${row.id}`;
@@ -633,18 +781,23 @@ export class QuickSettings {
       this.change(row.id, readSlider(row, Number(input.value)));
       if (row.preview !== undefined) this.previews.call(row.preview);
     });
-    control.append(input, number);
+    slider.append(groove, fill, input);
+    control.append(slider, number);
     panel.syncers.push(() => {
       const value = String(this.values[row.id]);
       if (input.value !== value) input.value = value;
       number.textContent = value;
+      const at = max > min ? (Number(this.values[row.id]) - min) / (max - min) : 0;
+      slider.style.setProperty("--kit-qs-v", (Number.isFinite(at) ? Math.min(1, Math.max(0, at)) : 0).toFixed(4));
     });
+    const aside = panel.aside ? this.el("span", "kit-qs__aside") : null;
+    if (aside !== null) control.append(aside);
     if (row.toggle !== undefined) {
       const { id, label: text } = row.toggle;
       const button = this.button("kit-qs__btn", text);
       button.dataset.toggle = id;
       button.addEventListener("click", () => this.change(id, this.values[id] !== true));
-      control.append(button);
+      (aside ?? control).append(button);
       panel.syncers.push(() => button.setAttribute("aria-pressed", String(this.values[id] === true)));
     }
     return line;

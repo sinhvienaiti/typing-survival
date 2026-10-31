@@ -4,30 +4,63 @@
  * top-right corner on every screen. Opened from a fight they pause it and
  * freeze typing; closing counts 3-2-1 back in (no count off the fight).
  * Every change applies at once and goes into the save (main.ts owns the
- * values: settings.ts maps them). The corner buttons are the gear and the
- * speakers of ticket 180 (quickIcons), with the Sound rows' icons; the
- * sliders are skinned with the groove and knob of ticket 225 (quickSkin).
- * The panels' frames, buttons and choices are survival.css's nine-slice
- * rules on the ticket 127 frames, not the kit's stretched skin.panel and
- * skin.button; the groove is lit up to the knob from --v (paintRanges).
+ * values: settings.ts maps them). The corner buttons are the gear (ticket
+ * 243) and the speakers of ticket 180 (quickIcons), with every row's icon;
+ * the sliders are the kit's fill layer on the 225 groove and knob with the
+ * 244 fill (quickSkin); the keyboard sound rows are the ticket 127 button
+ * plates. The panels' frames, buttons and choices are survival.css's
+ * nine-slice rules on the ticket 127 frames, not the kit's stretched
+ * skin.panel and skin.button.
  */
-import { QuickSettings, defaultSettingsRows, defaultSoundRows, type QuickChoiceOption, type QuickMount, type QuickRow, type QuickSettingsOptions, type QuickSkin, type QuickValue } from "../kit/ui";
+import { QuickSettings, defaultSettingsRows, defaultSoundRows, type QuickChoiceOption, type QuickContext, type QuickMount, type QuickNineSlice, type QuickRow, type QuickSettingsOptions, type QuickSkin, type QuickValue } from "../kit/ui";
 import type { KeyboardSoundChoice, TypingSounds } from "../kit/feedback/typing-fx";
-import { artUrl, quickIcons } from "../view/ui-art";
+import { artUrl, framePlate, quickIcons } from "../view/ui-art";
 import { manifestJson, sampleBytes } from "./keyboard";
 
 /**
- * The sliders' art (ticket 225), through the UI art table: the kit draws the
- * groove 10 px tall and up to 290 px wide, the knob 22 px (× its scale, 1.5
- * at 1080p), so the 1024 × 64 groove and the 128 px knob stay sharp at 2×.
- * survival.css clears the kit's flat colours under both, so only the art
- * shows. A part without art stays the kit's plain slider.
+ * The keyboard sound rows' plate edges (CSS px at scale 1: top, right, bottom,
+ * left), as survival.css draws the ticket 127 button: 9 px bands, 10 px sides.
+ */
+export const ROW_EDGE = [9, 10, 9, 10] as const;
+
+/**
+ * The sliders' and list rows' art, through the UI art table. The kit's fill
+ * layer draws the 225 groove (1024 × 64) as the empty part and the 244 fill
+ * left of the knob, clipped at its centre (survival.css cuts both so their
+ * ends meet); the 128 px knob of 225. Keyboard sound rows are the ticket 127
+ * button plate, the chosen row the lit button-active plate. A part without
+ * art stays the kit's plain look; a missing fill leaves the groove lit by the
+ * kit's filter.
  */
 export function quickSkin(): QuickSkin {
   const track = artUrl("slider-track", 290);
+  const fill = artUrl("slider-fill", 290);
   const thumb = artUrl("slider-thumb", 22);
-  return { ...(track !== null ? { sliderTrack: track } : {}), ...(thumb !== null ? { sliderThumb: thumb } : {}) };
+  const plate = (role: "frame-button" | "frame-button-active"): QuickNineSlice | null => {
+    const art = framePlate(role);
+    return art === null ? null : { ...art, edge: [...ROW_EDGE] };
+  };
+  const row = plate("frame-button"), active = plate("frame-button-active");
+  return {
+    ...(track !== null ? { sliderTrack: track, sliderEmpty: track } : {}),
+    ...(fill !== null ? { sliderFill: fill } : {}),
+    ...(thumb !== null ? { sliderThumb: thumb } : {}),
+    ...(row !== null ? { listRow: row } : {}),
+    ...(active !== null ? { listRowActive: active } : {}),
+  };
 }
+
+/**
+ * The keyboard rows' plate at the panel's scale: survival.css scales the
+ * kit's 34 px rows by --kit-qs-s, so their edges and the label's inset scale
+ * too (the kit's own values are these at scale 1).
+ */
+const scaled = (n: number): string => `calc(${n}px * var(--kit-qs-s))`;
+export const LIST_ROW_VARS: Readonly<Record<string, string>> = {
+  "--kit-qs-list-edge": ROW_EDGE.map(scaled).join(" "),
+  "--kit-qs-list-active-edge": ROW_EDGE.map(scaled).join(" "),
+  "--kit-qs-list-text-x": scaled(Math.max(...ROW_EDGE) + 6),
+};
 
 /**
  * The Settings rows: the kit's (typing effects with a preview, graphics; no
@@ -53,25 +86,7 @@ export function settingsRows(mountPreview: QuickMount): QuickRow[] {
 export function soundRows(choices: readonly KeyboardSoundChoice[]): QuickRow[] {
   const rows = defaultSoundRows({ keyboardProfiles: choices });
   rows.splice(rows.findIndex((r) => r.id === "voice") + 1, 0, { kind: "toggle", id: "speak", label: "Read words aloud", default: true });
-  // The kit leaves "Keyboard volume" without an icon: it takes the keyboard row's key cap (UI pass 3).
-  const volume = rows.findIndex((r) => r.id === "keyboardVolume");
-  const row = rows[volume];
-  if (row !== undefined && row.kind === "slider" && row.icon === undefined) rows[volume] = { ...row, icon: "vol-keyboard" };
   return rows;
-}
-
-/**
- * Each slider's value as --v (0–100) on its input: survival.css darkens the
- * groove past the knob, so 50 and 100 read apart (UI pass 2; the kit draws
- * the groove whole and has no fill layer yet).
- */
-export function paintRanges(host: { querySelectorAll?: (selector: string) => ArrayLike<Element> } | null | undefined): void {
-  if (typeof host?.querySelectorAll !== "function") return;
-  for (const input of Array.from(host.querySelectorAll(".kit-qs__range")) as HTMLInputElement[]) {
-    const min = Number(input.min || 0), max = Number(input.max || 100), value = Number(input.value);
-    const v = max > min ? Math.round(((value - min) / (max - min)) * 1000) / 10 : 0;
-    input.style.setProperty("--v", String(v));
-  }
 }
 
 export type QuickHooks = {
@@ -90,6 +105,8 @@ export type QuickHooks = {
   quit(): void;
   /** ms per countdown step (0: back at once). */
   countdown(): number;
+  /** "title" off a run's screens (no Resume, no Quit to title); unset: always "play". */
+  context?(): QuickContext;
 };
 
 /**
@@ -98,18 +115,10 @@ export type QuickHooks = {
  * within 3 s, each file within 8 s), and reports a pick that cannot sound.
  */
 export function quickOptions(hooks: QuickHooks): QuickSettingsOptions {
-  // The kit sets each slider's value right after it reads the values or takes a change: light the grooves then.
-  const relight = (): void => queueMicrotask(() => paintRanges(hooks.host));
   return {
     host: hooks.host,
-    getValues: () => {
-      relight();
-      return hooks.values();
-    },
-    onChange: (id, value) => {
-      hooks.change(id, value);
-      relight();
-    },
+    getValues: hooks.values,
+    onChange: hooks.change,
     onPreview: hooks.preview,
     keyboardSounds: hooks.keyboardSounds,
     keyboardFetch: { fetchJson: manifestJson, fetchBytes: sampleBytes },
@@ -118,6 +127,7 @@ export function quickOptions(hooks: QuickHooks): QuickSettingsOptions {
     onResume: hooks.resume,
     onQuit: hooks.quit,
     countdownMs: hooks.countdown,
+    context: () => hooks.context?.() ?? "play",
     settingsRows: settingsRows(hooks.mountPreview),
     soundRows: soundRows(hooks.keyboardChoices),
     icons: quickIcons(),
@@ -126,5 +136,8 @@ export function quickOptions(hooks: QuickHooks): QuickSettingsOptions {
 }
 
 export function createQuickSettings(hooks: QuickHooks): QuickSettings {
-  return new QuickSettings(quickOptions(hooks));
+  const quick = new QuickSettings(quickOptions(hooks));
+  // After the kit's skin (it sets the plates' unscaled edges on the layer).
+  for (const [name, value] of Object.entries(LIST_ROW_VARS)) quick.root.style.setProperty(name, value);
+  return quick;
 }

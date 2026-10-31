@@ -588,45 +588,68 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
  * The quick panels (the kit's ui/quick-settings) in Last Line's chrome: the
  * panel, its buttons and choices on the ticket 127 frames (nine-slice here:
  * the kit's own skin.panel / skin.button stretch one image over the box),
- * the Settings rows' icons from the Options screen's art (the kit's icon
- * names cover only the Sound rows), the knob that lights under a pointer
- * and a groove lit up to the knob (quick.ts sets --v on each slider).
+ * the keyboard sound rows on the button and button-active plates (quick.ts
+ * QuickSkin.listRow / listRowActive), the sliders on the kit's fill layer
+ * (the 225 groove empty, the 244 fill lit up to the knob), every row's icon,
+ * focus as a cyan glow on the art and the titles in Chakra Petch.
  */
 .sv-hud .kit-qs { --kit-qs-bg: var(--steel-900); --kit-qs-control: var(--steel-800); --kit-qs-text: var(--text); --kit-qs-muted: var(--soft); --kit-qs-accent: var(--volt-hi); --kit-qs-accent-text: var(--ink); --kit-qs-focus: var(--urgent); --kit-qs-line: var(--line-strong); font-family: var(--font-battle); }
-.sv-hud .kit-qs__title { font-family: var(--font-title); letter-spacing: 0.12em; text-transform: uppercase; text-shadow: var(--title-glow); }
-.sv-hud .kit-qs__heading { font-family: var(--font-title); color: var(--hot-hi); }
+/* The kit's layer settings (QUICK_SETTINGS_VARS): the glow in the game's cyan, Chakra Petch for the title, labels, headings, buttons, chips and keyboard rows (as the menus); small notes stay Be Vietnam Pro. Row icons 28 px; Mute in a 70 px column after the number on every slider row, so all grooves are one length; the 225 knob's box 30 px (its art fills 70 %: 21 px drawn, twice the groove's height). */
+.sv-hud .kit-qs { --kit-qs-glow: var(--volt); --kit-qs-active-text: var(--volt-hi); --kit-qs-title-font: var(--font-title); --kit-qs-label-font: var(--font-title); --kit-qs-button-font: var(--font-title); --kit-qs-note-font: var(--font-battle); --kit-qs-icon-size: calc(28px * var(--kit-qs-s)); --kit-qs-aside-w: calc(70px * var(--kit-qs-s)); --kit-qs-list-pad: calc(4px * var(--kit-qs-s)) 0px; --kit-qs-knob: calc(30px * var(--kit-qs-s)); }
+/*
+ * The groove (225, 1024 × 64) and the fill (244) as three-slice images: each end's 64 px cap (the gold bracket and the
+ * channel's chamfer) drawn at the groove's own scale (10 px tall: 64 px → 10 px), only the channel between stretches.
+ * The fill is painted 12 px in from each end of its canvas (alpha box 1000 × 64 at x 12, measured), so it is cut 76 px
+ * (12 + 64) with caps 76 / 64 of the groove's and pushed 12 / 64 of the groove's height out past both ends
+ * (border-image-outset): its bracket lies on the groove's at every size, and its channel starts where the groove's does.
+ */
+.sv-hud .kit-qs { --kit-qs-groove-h: calc(10px * var(--kit-qs-s)); --kit-qs-groove-slice: 0 64; --kit-qs-groove-cap: var(--kit-qs-groove-h); }
+.sv-hud .kit-qs.kit-qs--fill-art { --kit-qs-fill-slice: 0 76; --kit-qs-fill-cap: calc(var(--kit-qs-groove-h) * 1.1875); }
+.sv-hud .kit-qs--fill-art .kit-qs__fill { border-image-outset: 0 calc(var(--kit-qs-groove-h) * 0.1875); }
+.sv-hud .kit-qs__title { letter-spacing: 0.12em; text-transform: uppercase; text-shadow: var(--title-glow); }
+.sv-hud .kit-qs__heading { color: var(--hot-hi); }
 :root[data-art~="frame-panel"] .sv-hud .kit-qs__panel { background: none; border-color: transparent; border-radius: 0; padding: calc(22px * var(--kit-qs-s)) calc(28px * var(--kit-qs-s)) calc(24px * var(--kit-qs-s)); border-image: var(--art-frame-panel) var(--art-frame-panel-slice) / calc(30px * var(--kit-qs-s)) stretch; box-shadow: 0 calc(10px * var(--kit-qs-s)) calc(30px * var(--kit-qs-s)) var(--shadow); }
 :root[data-art~="frame-button"] .sv-hud .kit-qs__btn, :root[data-art~="frame-button"] .sv-hud .kit-qs__chip { background: none; border-color: transparent; border-radius: 0; border-image: var(--art-frame-button) var(--art-frame-button-slice) / calc(9px * var(--kit-qs-s)) calc(10px * var(--kit-qs-s)) stretch; }
 :root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn--primary, :root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn[aria-pressed="true"], :root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn[aria-checked="true"], :root[data-art~="frame-button-active"] .sv-hud .kit-qs__opt input:checked + .kit-qs__chip { background: none; color: var(--text); border-image-source: var(--art-frame-button-active); border-image-slice: var(--art-frame-button-active-slice); box-shadow: 0 0 calc(12px * var(--kit-qs-s)) var(--volt-glow); }
-:root[data-art~="frame-button"] .sv-hud .kit-qs__btn:hover, :root[data-art~="frame-button"] .sv-hud .kit-qs__opt:hover input:not(:disabled) + .kit-qs__chip { box-shadow: 0 0 0 1px var(--volt), 0 0 calc(10px * var(--kit-qs-s)) var(--volt-glow); }
+/* Hover and keyboard focus light the plate itself (a glow hugging the art, the kit's --kit-qs-glow-filter for focus), not a flat ring round its box. */
+.sv-hud .kit-qs__btn, .sv-hud .kit-qs__chip { transition: filter 0.1s; }
+:root[data-art~="frame-button"] .sv-hud .kit-qs__btn:hover, :root[data-art~="frame-button"] .sv-hud .kit-qs__opt:hover input:not(:disabled) + .kit-qs__chip { filter: brightness(1.2) drop-shadow(0 0 calc(5px * var(--kit-qs-s)) var(--volt)); }
+:root[data-art~="frame-button"] .sv-hud .kit-qs__btn:focus-visible, :root[data-art~="frame-button"] .sv-hud .kit-qs__opt input:focus-visible + .kit-qs__chip { outline: none; filter: var(--kit-qs-glow-filter); }
 /* A wider panel than the kit's 560 px: each choice row stays on one line (UI pass 3: 720 px puts Letter style's six chips on one line, and the row it gives back goes to the preview's room for a stamp's flight), so Settings fits 720p without scrolling. */
 .sv-hud .kit-qs__panel { width: min(calc(720px * var(--kit-qs-s)), calc(100% - 32px)); }
 .sv-hud .kit-qs__chip { padding: calc(5px * var(--kit-qs-s)) calc(10px * var(--kit-qs-s)); }
 .sv-hud .kit-qs__btn { min-height: calc(34px * var(--kit-qs-s)); padding: 0 calc(16px * var(--kit-qs-s)); }
-/* The corner gear and speaker (ticket 180) sit clear of the scene behind them and glow under the pointer. */
+/* The corner gear and speaker (tickets 243 and 180) sit clear of the scene behind them and glow under the pointer. */
 .sv-hud .kit-qs__corner.has-icon { width: calc(36px * var(--kit-qs-s)); height: calc(36px * var(--kit-qs-s)); }
 .sv-hud .kit-qs__corner.has-icon img { filter: drop-shadow(0 calc(1px * var(--kit-qs-s)) calc(2px * var(--kit-qs-s)) var(--shadow)); transition: filter 0.1s; }
-/* A glow, not a scale (a scaled icon spills past its button), and no square ring under the pointer: keyboard focus keeps the kit's outline. */
+/* A glow, not a scale (a scaled icon spills past its button), and no square ring under the pointer: keyboard focus is the kit's glow. */
 .sv-hud .kit-qs__corner.has-icon:hover:not(:focus-visible) { outline: none; }
 .sv-hud .kit-qs__corner.has-icon:hover img, .sv-hud .kit-qs__corner.has-icon[aria-expanded="true"] img { filter: drop-shadow(0 0 calc(6px * var(--kit-qs-s)) var(--volt)) brightness(1.2); }
-/* Row icons: 28 px (× the panel's scale); the Settings rows draw the Options screen's quality, motion and shake art, the Sound panel's "Read words aloud" its read-aloud art. */
-.sv-hud .kit-qs__row:not(.kit-qs__row--slot) { grid-template-columns: calc(28px * var(--kit-qs-s)) 9.4em minmax(0, 1fr); }
-.sv-hud .kit-qs__icon, .sv-hud .kit-qs__icon-cell { width: calc(28px * var(--kit-qs-s)); height: calc(28px * var(--kit-qs-s)); }
+/* Row icons in the kit's cell (--kit-qs-icon-size): the kit draws the named ones (quick.ts quickIcons: the Sound rows, Keyboard volume, the typing-effect rows of 243); the Options screen's quality, motion and shake art and the Sound panel's read-aloud art are the cell's background here. */
+.sv-hud .kit-qs__row:not(.kit-qs__row--slot) { grid-template-columns: var(--kit-qs-icon-size) 9.4em minmax(0, 1fr); }
 .sv-hud .kit-qs__row[data-row="quality"] > .kit-qs__icon-cell { background: var(--art-icon-quality, none) center / contain no-repeat; }
 .sv-hud .kit-qs__row[data-row="reducedMotion"] > .kit-qs__icon-cell { background: var(--art-icon-reduced-motion, none) center / contain no-repeat; }
 .sv-hud .kit-qs__row[data-row="shake"] > .kit-qs__icon-cell { background: var(--art-icon-shake, none) center / contain no-repeat; }
 .sv-hud .kit-qs__row[data-row="speak"] > .kit-qs__icon-cell { background: var(--art-icon-read-aloud, none) center / contain no-repeat; }
-/* Every slider's groove the same length: the control is groove, number, then a fixed column for Master's Mute (empty on the others). */
-.sv-hud .kit-qs__row:has(> .kit-qs__control > .kit-qs__range) > .kit-qs__control { display: grid; grid-template-columns: minmax(0, 1fr) 2.6em calc(70px * var(--kit-qs-s)); }
-/* The groove lit up to the knob, dark past it (--v from quick.ts); a muted Master dims its whole groove. */
+/* The knob lights under a pointer and lifts while dragged; a muted Master dims its whole slider (both groove layers and the knob). */
 .sv-hud .kit-qs--skin-slider .kit-qs__range { cursor: pointer; }
-.sv-hud .kit-qs--skin-slider .kit-qs__range::-webkit-slider-runnable-track { background-image: linear-gradient(90deg, transparent calc(var(--v, 100) * 1%), var(--groove-dark) calc(var(--v, 100) * 1%)), var(--kit-qs-skin-track, none); background-size: 100% 100%; background-repeat: no-repeat; }
-.sv-hud .kit-qs--skin-slider .kit-qs__range::-moz-range-track { background-image: linear-gradient(90deg, transparent calc(var(--v, 100) * 1%), var(--groove-dark) calc(var(--v, 100) * 1%)), var(--kit-qs-skin-track, none); background-size: 100% 100%; background-repeat: no-repeat; }
-.sv-hud .kit-qs__row:has([data-toggle="muted"][aria-pressed="true"]) .kit-qs__range { opacity: 0.45; filter: saturate(0.3); }
+.sv-hud .kit-qs__row:has([data-toggle="muted"][aria-pressed="true"]) .kit-qs__slider { opacity: 0.45; filter: saturate(0.3); }
 .sv-hud .kit-qs--skin-slider .kit-qs__range:hover::-webkit-slider-thumb { filter: brightness(1.18) drop-shadow(0 0 calc(5px * var(--kit-qs-s)) var(--volt)); }
 .sv-hud .kit-qs--skin-slider .kit-qs__range:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.1); }
 .sv-hud .kit-qs--skin-slider .kit-qs__range:hover::-moz-range-thumb { filter: brightness(1.18) drop-shadow(0 0 calc(5px * var(--kit-qs-s)) var(--volt)); }
-/* The keyboard-sound list as a game list: dark glass rows, the picked one lit in the game's blue with a bar. */
-.sv-hud .kit-keyboards { border-color: var(--line-strong); background: var(--steel-900); }
-.sv-hud .kit-keyboards button[aria-selected="true"], .sv-hud .kit-keyboards button[aria-selected="true"]:hover:not(:disabled) { background: var(--steel-700); color: var(--volt-hi); box-shadow: inset calc(4px * var(--kit-qs-s)) 0 0 var(--volt); }
-.sv-hud .kit-keyboards button:hover:not(:disabled) { background: var(--steel-800); }
+/*
+ * The keyboard sound list: the kit draws each row on the button plate and the chosen one on the lit plate (no listbox
+ * box or flat fills). It grows with the panel (the kit draws it 34 px a row at every size, so at 1080p the label filled
+ * its plate): rows, family headings and the listen icons scale by --kit-qs-s, and quick.ts scales the plates' edges the
+ * same way (LIST_ROW_VARS). Touch keeps at least the kit's 44 px rows.
+ */
+.sv-hud .kit-qs__row--keyboards .kit-keyboards { max-height: calc(272px * var(--kit-qs-s)); }
+/* The chosen row's lit plate glows like a chosen chip (the kit's hover and focus filters still win on it). */
+.sv-hud .kit-qs.kit-qs--skin-list .kit-keyboards button.kit-keyboards__option[aria-selected="true"]::before { filter: drop-shadow(0 0 calc(5px * var(--kit-qs-s)) var(--volt-glow)); }
+.sv-hud .kit-qs__row--keyboards .kit-keyboards button, .sv-hud .kit-qs__row--keyboards .kit-keyboards__spacer { flex-basis: calc(34px * var(--kit-qs-s)); height: calc(34px * var(--kit-qs-s)); min-height: calc(34px * var(--kit-qs-s)); }
+.sv-hud .kit-qs__row--keyboards .kit-keyboards__family { flex-basis: calc(28px * var(--kit-qs-s)); height: calc(28px * var(--kit-qs-s)); min-height: calc(28px * var(--kit-qs-s)); padding: calc(4px * var(--kit-qs-s)) calc(10px * var(--kit-qs-s)); color: var(--hot-hi); }
+.sv-hud .kit-qs__row--keyboards .kit-keyboards__listen { min-width: calc(44px * var(--kit-qs-s)); }
+.sv-hud .kit-qs__row--keyboards .kit-keyboards__listen img { width: calc(24px * var(--kit-qs-s)); height: calc(24px * var(--kit-qs-s)); }
+@media (any-pointer: coarse) {
+  .sv-hud .kit-qs__row--keyboards .kit-keyboards button, .sv-hud .kit-qs__row--keyboards .kit-keyboards__spacer { flex-basis: max(44px, calc(34px * var(--kit-qs-s))); height: max(44px, calc(34px * var(--kit-qs-s))); min-height: max(44px, calc(34px * var(--kit-qs-s))); }
+}

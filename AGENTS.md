@@ -310,6 +310,11 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   sets, read at run time from `VITE_TYPING_FEEL_ORIGIN` (`src/app/keyboard.ts`,
   parent `docs/games/TYPING_FEEL_SERVICE.md`; unset: Off and Relay only); no
   set is copied into the game. Captures:
-  `scripts/visual/scenarios/survival-typefx.mjs`.
+  `scripts/visual/scenarios/survival-typefx.mjs`. Panels skin (31/10,
+  `docs/changelog/2026-10-31-panels-art.md`): the kit's fill layer (225
+  groove, 244 fill cut so its ends sit on the groove's), keyboard rows on the
+  127 button plates, cyan focus glow, Chakra Petch; checked by
+  `scripts/visual/scenarios/survival-quick-panels.mjs` (both panels, title
+  and fight, fill width in pixels, Tab/Esc, one key one sound).
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.
