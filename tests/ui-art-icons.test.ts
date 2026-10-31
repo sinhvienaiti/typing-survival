@@ -64,6 +64,7 @@ describe("the selection and table (149–153, 225)", () => {
     expect(quickSkin()).toEqual({
       sliderTrack: artUrl("slider-track", 290), sliderEmpty: artUrl("slider-track", 290), sliderFill: artUrl("slider-fill", 290), sliderThumb: artUrl("slider-thumb", 22),
       listRow: { ...framePlate("frame-button"), edge: [...ROW_EDGE] }, listRowActive: { ...framePlate("frame-button-active"), edge: [...ROW_EDGE] },
+      close: artUrl("quick-close", 32),
     });
     expect(quickSkin().sliderTrack).toContain("/slider-track.1024.webp?v=");
     expect(quickSkin().sliderFill).toContain("/slider-fill.1024.webp?v=");

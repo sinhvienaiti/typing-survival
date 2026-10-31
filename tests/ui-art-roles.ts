@@ -98,4 +98,13 @@ export const QUICK: Readonly<Record<string, { source: string; ticket: string }>>
   ["hud-settings", "hud-sound", "hud-sound-muted", "vol-master", "vol-music", "vol-effects", "vol-keyboard", "vol-voice", "vol-interface"].map((role) =>
     [role, REDRAWN_243.includes(role) ? { source: "ui/quick-settings/selected/" + role + ".r2", ticket: "243" } : { source: "ui/quick-settings/selected/" + role, ticket: "180" }]),
 );
-export const WIRED: readonly string[] = [...Object.keys(ICONS), ...Object.keys(FRAMES), ...Object.keys(QUICK)];
+/**
+ * Ticket 245 (accepted 31/10 23:55, at real size): the quick panels' round
+ * Close and the six foes' silhouettes for 40 px or less (`<foe>.small`).
+ */
+export const SILHOUETTES = ["swarm", "scout", "brute", "pack-leader", "shield-guard", "splitter"] as const;
+export const WIRED_245: Readonly<Record<string, { source: string; ticket: string }>> = {
+  "quick-close": { source: "ui/frames-epic/close", ticket: "245" },
+  ...Object.fromEntries(SILHOUETTES.map((foe) => ["foe-" + foe + "-small", { source: "ui/foes/" + foe + ".small", ticket: "245" }])),
+};
+export const WIRED: readonly string[] = [...Object.keys(ICONS), ...Object.keys(FRAMES), ...Object.keys(QUICK), ...Object.keys(WIRED_245)];

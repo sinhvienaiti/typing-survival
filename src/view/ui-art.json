@@ -73,6 +73,17 @@
       ],
       "aspect": 1
     },
+    "foe-brute-small": {
+      "kind": "portrait",
+      "alt": "Brute",
+      "rev": "adcc0c55",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
     "foe-pack-leader": {
       "kind": "portrait",
       "alt": "Pack Leader",
@@ -84,10 +95,32 @@
       ],
       "aspect": 1
     },
+    "foe-pack-leader-small": {
+      "kind": "portrait",
+      "alt": "Pack Leader",
+      "rev": "ef426b16",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
     "foe-scout": {
       "kind": "portrait",
       "alt": "Scout",
       "rev": "1b172082",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-scout-small": {
+      "kind": "portrait",
+      "alt": "Scout",
+      "rev": "e821aa23",
       "widths": [
         64,
         128,
@@ -117,6 +150,17 @@
       ],
       "aspect": 1
     },
+    "foe-shield-guard-small": {
+      "kind": "portrait",
+      "alt": "Shield Guard",
+      "rev": "6b09309e",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
     "foe-splitter": {
       "kind": "portrait",
       "alt": "Splitter",
@@ -128,10 +172,32 @@
       ],
       "aspect": 1
     },
+    "foe-splitter-small": {
+      "kind": "portrait",
+      "alt": "Splitter",
+      "rev": "f831e55d",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
     "foe-swarm": {
       "kind": "portrait",
       "alt": "Swarm",
       "rev": "729f72af",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-swarm-small": {
+      "kind": "portrait",
+      "alt": "Swarm",
+      "rev": "6f1affe3",
       "widths": [
         64,
         128,
@@ -947,6 +1013,17 @@
       "kind": "icon",
       "alt": "Full magazine",
       "rev": "2cd5c041",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "quick-close": {
+      "kind": "icon",
+      "alt": "Close",
+      "rev": "3bb7f39c",
       "widths": [
         64,
         128,

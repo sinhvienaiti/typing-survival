@@ -56,8 +56,8 @@ function chipName(row: CounterRow, role: string): string {
 
 /**
  * Strong or Weak as a row of foe chips (UI pass 3): each foe of the counter
- * rows, in their order, as its portrait on the word plate (tinted green or
- * red by survival.css), its short name under it, the row's label as its
+ * rows, in their order, as its silhouette (ticket 245, ui-art.ts foeArt) on
+ * the word plate (tinted green or red by survival.css), its short name under it, the row's label as its
  * tooltip. Both Swarm rows in one list are one Swarm chip (the whole lane).
  */
 function counterChips(kind: "good" | "poor", rows: readonly CounterRow[], fallback: string): string {

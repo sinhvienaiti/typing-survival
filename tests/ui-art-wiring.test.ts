@@ -163,8 +163,8 @@ describe("HUD icon hookups (tickets 149–153, hud.ts and strip.ts)", () => {
     expect(art(panel("sv-hp").nodes[0]).className).toBe("sv-art sv-art-icon");
     expect(roles(panel("sv-clock"))).toEqual(["icon-clock"]);
     expect(roles(panel("sv-kills"))).toEqual(["icon-kills"]);
-    // The hunt's plate: the objective icon, then the Pack Leader's portrait (LL-32).
-    expect(roles(panel("sv-goal"))).toEqual(["icon-objective", "foe-pack-leader"]);
+    // The hunt's plate: the objective icon, then the Pack Leader (LL-32), its 245 silhouette at 28 px.
+    expect(roles(panel("sv-goal"))).toEqual(["icon-objective", "foe-pack-leader-small"]);
     expect(art(panel("sv-goal").nodes[1]).className).toBe("sv-art sv-art-icon");
     for (const name of ["sv-hp", "sv-clock", "sv-kills", "sv-goal"]) expect(art(panel(name).nodes[0]).attributes.get("aria-hidden")).toBe("true");
   });
@@ -176,7 +176,7 @@ describe("HUD icon hookups (tickets 149–153, hud.ts and strip.ts)", () => {
     (hud as unknown as { updateGoal(w: World): void }).updateGoal(world);
     const goal = root.find("sv-goal")[0]!;
     expect(goal.hidden).toBe(false);
-    expect(roles(goal)).toEqual(["icon-objective", "foe-pack-leader"]);
+    expect(roles(goal)).toEqual(["icon-objective", "foe-pack-leader-small"]);
     expect(goal.textContent).toMatch(/^PACK LEADER 0\/3/);
   });
 

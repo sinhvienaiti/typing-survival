@@ -10,7 +10,8 @@
  * 244 fill (quickSkin); the keyboard sound rows are the ticket 127 button
  * plates. The panels' frames, buttons and choices are survival.css's
  * nine-slice rules on the ticket 127 frames, not the kit's stretched
- * skin.panel and skin.button.
+ * skin.panel and skin.button. Close is the ticket 245 round button
+ * (quick-close: a white-gold X on a graphite disc), the kit's icon Close.
  */
 import { QuickSettings, defaultSettingsRows, defaultSoundRows, type QuickChoiceOption, type QuickContext, type QuickMount, type QuickNineSlice, type QuickRow, type QuickSettingsOptions, type QuickSkin, type QuickValue } from "../kit/ui";
 import type { KeyboardSoundChoice, TypingSounds } from "../kit/feedback/typing-fx";
@@ -28,14 +29,16 @@ export const ROW_EDGE = [9, 10, 9, 10] as const;
  * layer draws the 225 groove (1024 × 64) as the empty part and the 244 fill
  * left of the knob, clipped at its centre (survival.css cuts both so their
  * ends meet); the 128 px knob of 225. Keyboard sound rows are the ticket 127
- * button plate, the chosen row the lit button-active plate. A part without
- * art stays the kit's plain look; a missing fill leaves the groove lit by the
- * kit's filter.
+ * button plate, the chosen row the lit button-active plate. Close is the
+ * 245 button (32 px at 720p, the kit's --kit-qs-close-size; accessible name
+ * "Close"). A part without art stays the kit's plain look (Close the text
+ * button); a missing fill leaves the groove lit by the kit's filter.
  */
 export function quickSkin(): QuickSkin {
   const track = artUrl("slider-track", 290);
   const fill = artUrl("slider-fill", 290);
   const thumb = artUrl("slider-thumb", 22);
+  const close = artUrl("quick-close", 32);
   const plate = (role: "frame-button" | "frame-button-active"): QuickNineSlice | null => {
     const art = framePlate(role);
     return art === null ? null : { ...art, edge: [...ROW_EDGE] };
@@ -47,6 +50,7 @@ export function quickSkin(): QuickSkin {
     ...(thumb !== null ? { sliderThumb: thumb } : {}),
     ...(row !== null ? { listRow: row } : {}),
     ...(active !== null ? { listRowActive: active } : {}),
+    ...(close !== null ? { close } : {}),
   };
 }
 

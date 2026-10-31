@@ -1127,6 +1127,76 @@
       "verdict": "CODEX_QUEUE 243: Nhận 31/10 17:40 (cỡ thật)",
       "alt": "Interface volume",
       "fill": 0.85
+    },
+    {
+      "role": "quick-close",
+      "kind": "icon",
+      "source": "ui/frames-epic/close",
+      "accepted": true,
+      "ticket": "245",
+      "verdict": "CODEX_QUEUE 245: Nhận 31/10 23:55 (cỡ thật)",
+      "alt": "Close",
+      "fill": 0.85
+    },
+    {
+      "role": "foe-swarm-small",
+      "kind": "portrait",
+      "source": "ui/foes/swarm.small",
+      "accepted": true,
+      "ticket": "245",
+      "verdict": "CODEX_QUEUE 245: Nhận 31/10 23:55 (cỡ thật)",
+      "alt": "Swarm",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-scout-small",
+      "kind": "portrait",
+      "source": "ui/foes/scout.small",
+      "accepted": true,
+      "ticket": "245",
+      "verdict": "CODEX_QUEUE 245: Nhận 31/10 23:55 (cỡ thật)",
+      "alt": "Scout",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-brute-small",
+      "kind": "portrait",
+      "source": "ui/foes/brute.small",
+      "accepted": true,
+      "ticket": "245",
+      "verdict": "CODEX_QUEUE 245: Nhận 31/10 23:55 (cỡ thật)",
+      "alt": "Brute",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-pack-leader-small",
+      "kind": "portrait",
+      "source": "ui/foes/pack-leader.small",
+      "accepted": true,
+      "ticket": "245",
+      "verdict": "CODEX_QUEUE 245: Nhận 31/10 23:55 (cỡ thật)",
+      "alt": "Pack Leader",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-shield-guard-small",
+      "kind": "portrait",
+      "source": "ui/foes/shield-guard.small",
+      "accepted": true,
+      "ticket": "245",
+      "verdict": "CODEX_QUEUE 245: Nhận 31/10 23:55 (cỡ thật)",
+      "alt": "Shield Guard",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-splitter-small",
+      "kind": "portrait",
+      "source": "ui/foes/splitter.small",
+      "accepted": true,
+      "ticket": "245",
+      "verdict": "CODEX_QUEUE 245: Nhận 31/10 23:55 (cỡ thật)",
+      "alt": "Splitter",
+      "fill": 0.9
     }
   ]
 }

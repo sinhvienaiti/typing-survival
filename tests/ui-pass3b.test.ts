@@ -38,7 +38,7 @@ describe("loadout cards", () => {
     });
   });
 
-  it("draws Strong and Weak as foe chips that keep every counter row: a 36 px portrait on the plate, a short name, the row's label as the tooltip", () => {
+  it("draws Strong and Weak as foe chips that keep every counter row: a 36 px foe (the 245 silhouette) on the plate, a short name, the row's label as the tooltip", () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(BOX.chip).toEqual({ width: 36, height: 36 });
     const j = journey206("c1-s4");
@@ -59,7 +59,7 @@ describe("loadout cards", () => {
     });
     // The Rail Gun's two Swarm rows are one Swarm chip; the Star Mortar's Swarm says which part of the lane.
     expect(cards[3]).toContain('<li title="Swarm mid-lane, Swarm at the line">');
-    expect((cards[3]!.match(/class="sv-art sv-art-chip" src="[^"]*\/foe-swarm\./g) ?? []).length).toBe(1);
+    expect((cards[3]!.match(/class="sv-art sv-art-chip" src="[^"]*\/foe-swarm-small\./g) ?? []).length).toBe(1);
     expect(cards[4]).toMatch(/sv-good[^]*<small>Mid Swarm<\/small>[^]*sv-poor[^]*<small>Near Swarm<\/small>/);
     expect(cards[4]!.match(/sv-art-chip/g)).toHaveLength(8);
   });

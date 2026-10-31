@@ -7,7 +7,7 @@ export const BOX = {
   // UI pass 3 fixes: the armory's gun art at the loadout's 96 px (64 drew the gun about 48 px); the stage card's art a band inside the rails, as the briefing's.
   armory: { width: 96, height: 96 }, menu: { width: 96, height: 54 },
   briefing: { width: 760, height: 120 }, foe: { width: 40, height: 40 },
-  // UI pass 3: the loadout card's gun art at 96 px, its Strong / Weak foes as 36 px portraits on chips; the threat strip's foes 24 px (UI pass 2: 16 px read as smudges).
+  // UI pass 3: the loadout card's gun art at 96 px, its Strong / Weak foes 36 px on chips; the threat strip's foes 24 px (UI pass 2: 16 px read as smudges). Foes at 40 px or less are the 245 silhouettes (foeArt).
   teach: { width: 32, height: 32 }, loadout: { width: 96, height: 96 },
   chip: { width: 36, height: 36 }, threat: { width: 24, height: 24 },
   intro: { width: 760, height: 200 }, introGun: { width: 48, height: 48 },
@@ -55,9 +55,21 @@ export function pick(role: string, box: number): { src: string; srcset?: string;
   const imageUrl = (width: number): string => table.base + role + "." + width + ".webp?v=" + data.rev;
   return { src: imageUrl(one), width: one, ...(two !== one ? { srcset: imageUrl(one) + " 1x, " + imageUrl(two) + " 2x" } : {}) };
 }
+/**
+ * Ticket 245: at 40 px or less a foe is its bold silhouette (`<role>-small`):
+ * the portraits thinned to look-alike smudges there (the chips, the threat
+ * strip, the objective plate, the briefing rows). Larger places, and a foe
+ * with no silhouette (the Shard), keep the portrait.
+ */
+export const SILHOUETTE_MAX = 40;
+export function foeArt(role: string, place: ArtPlace): string {
+  const small = role + "-small";
+  return role.startsWith("foe-") && BOX[place].width <= SILHOUETTE_MAX && roles[small] !== undefined ? small : role;
+}
 /** `label`: the image names itself (alt); `alt`: a name of its own where the role's alt does not fit the sentence; `cls`: extra classes (a mirrored arrow). */
 export type ArtOpts = { label?: boolean; alt?: string; cls?: string };
-export function artAttrs(role: string, place: ArtPlace, opts: ArtOpts = {}): Record<string, string | number> | null {
+export function artAttrs(art: string, place: ArtPlace, opts: ArtOpts = {}): Record<string, string | number> | null {
+  const role = foeArt(art, place);
   const image = pick(role, BOX[place].width);
   if (!image) return null;
   const box = BOX[place];

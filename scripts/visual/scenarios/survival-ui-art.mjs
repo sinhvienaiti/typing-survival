@@ -35,6 +35,8 @@
 // Panels art (31/10, kit 18722b41/b8a224d0, tickets 243/244): the sliders on the kit's fill layer (the 225 groove empty,
 // the 244 fill lit to the knob: --kit-qs-v), the typing-effect rows' icons, the Options Ship row's icon. The quick panels
 // in depth (fill width in pixels, list plates, keyboard, a key's sound): survival-quick-panels.mjs.
+// Ticket 245 (31/10, night): every foe drawn at 40 px or less (the briefing rows and taught foe, the loadout's chips, the
+// threat strip, the hunt's objective plate) is its silhouette (<role>-small; the Shard has none and keeps its portrait).
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { DEV_URL, out } from "./common.mjs";
@@ -474,11 +476,13 @@ export default async function (page) {
     journeyIcons: ["icon-chapter-crest", "icon-star-unlit", "icon-lock", "icon-back"].every((r) => has("journey", r)),
     briefingIcons: ["icon-objective", "icon-hazard", "icon-learning-rule", "icon-equipment", "icon-new-badge", "icon-load-guns", "icon-back"].every((r) => has("briefing", r)),
     loadoutIcons: has("loadout", "icon-warning"),
-    hudIcons: ["icon-armour", "icon-clock", "icon-kills", "icon-lock"].every((r) => has("fight", r)) && has("fight-hunt", "icon-objective") && has("fight-hunt", "foe-pack-leader") && has("fight-hunt", "icon-streak") && has("fight-rift", "icon-rift") && has("fight-rift", "part-arrow"),
+    hudIcons: ["icon-armour", "icon-clock", "icon-kills", "icon-lock"].every((r) => has("fight", r)) && has("fight-hunt", "icon-objective") && has("fight-hunt", "foe-pack-leader-small") && has("fight-hunt", "icon-streak") && has("fight-rift", "icon-rift") && has("fight-rift", "part-arrow"),
     // Stage 1 holds: no objective plate (its [hidden] must win over the plate's own display).
     goalPlate: !by("fight").goalShown && !by("fight-surge").goalShown && by("fight-hunt").goalShown && by("fight-hunt").goalOneLine,
     surgeBanner: surge && has("fight-surge", "icon-surge"),
     pauseIcons: ["icon-menu-play", "icon-menu-settings", "icon-back"].every((r) => has("pause", r)),
+    foeSilhouettes: screens.every((s) => s.images.filter((i) => /^foe-/.test(i.role) && boxes[i.place]?.width <= 40).every((i) => i.role.endsWith("-small") || i.role === "foe-shard"))
+      && ["briefing", "loadout", "fight-hunt"].every((n) => by(n).images.some((i) => /^foe-[\w-]+-small$/.test(i.role))),
     resultsIcons: ["icon-stat-time", "icon-kills", "icon-stat-accuracy", "icon-stat-words", "icon-retry", "icon-back"].every((r) => has("results-lose", r) && has("results-win", r)) && has("results-win", "icon-star-lit") && has("results-win", "icon-next-stage"),
     // UI pass 2: the ticket 127 frames where the theme's plates were.
     frames: ["menu", "options", "pause"].every((n) => by(n).frames.card.every((f) => f === "frame-panel") && by(n).frames.item.length > 0 && by(n).frames.item.every((f) => f === "frame-button") && by(n).frames.itemOn.every((f) => f === "frame-button-active"))

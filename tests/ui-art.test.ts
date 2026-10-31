@@ -19,8 +19,8 @@ const roles = selection.entries.map(e => e.role);
 const md5 = (b: Buffer) => createHash("md5").update(b).digest("hex");
 afterEach(() => { vi.restoreAllMocks(); resetArtWarnings(); });
 describe("UI art 206", () => {
-  it("selects precisely 97 accepted roles from 112 entries (206's 15, the Shard, 58 icons and parts with 242's Words stat, 243's four new icons and 244's fill, UI pass 2's 7 frames of 127 and 9 icons of 180, 121's six backgrounds and logo), with English names and pending replacements", () => {
-    expect(selection.version).toBe(1); expect(selection.entries).toHaveLength(112);
+  it("selects precisely 104 accepted roles from 119 entries (206's 15, the Shard, 58 icons and parts with 242's Words stat, 243's four new icons and 244's fill, UI pass 2's 7 frames of 127 and 9 icons of 180, 121's six backgrounds and logo, 245's Close and six foe silhouettes), with English names and pending replacements", () => {
+    expect(selection.version).toBe(1); expect(selection.entries).toHaveLength(119);
     const wanted = [...GUN_KEYS.map(gunRole), ...Object.values(KIND).map(foeRole), ...CHAPTER_1.map(s=>stageRole(s.id)), ...WIRED, ...SCREENS.map(bgRole), "logo"].sort();
     expect(accepted.map(e=>e.role).sort()).toEqual(wanted);
     for(const role of new Set(roles)) expect(accepted.filter(e=>e.role===role).length).toBeLessThanOrEqual(1);
@@ -71,11 +71,12 @@ describe("UI art 206", () => {
     expect((s.armory!.match(/sv-art-armory/g)??[])).toHaveLength(5);
     expect((s.stages!.match(/sv-art-menu/g)??[])).toHaveLength(4);
     expect(s.briefing).toContain("sv-art-briefing");
-    for(const r of ["foe-swarm","foe-scout","foe-brute"]) expect(s.briefing).toContain(r+".");
-    expect(s.briefing).toMatch(/sv-art-teach[^>]+foe-brute/);
+    // The briefing's foe rows (40 px) and the taught foe (32 px) are the 245 silhouettes.
+    for(const r of ["foe-swarm","foe-scout","foe-brute"]) expect(s.briefing).toContain(r+"-small.");
+    expect(s.briefing).toMatch(/sv-art-teach[^>]+foe-brute-small\./);
     for(const name of ["loadout1","loadout4"]) {
       expect((s[name]!.match(/sv-art-loadout/g)??[])).toHaveLength(5);
-      expect(s[name]).toMatch(/sv-good[^]*sv-chip[^]*sv-art-chip[^]*foe-swarm/);
+      expect(s[name]).toMatch(/sv-good[^]*sv-chip[^]*sv-art-chip[^]*foe-swarm-small\./);
       expect(s[name]).toMatch(/sv-threats[^]*sv-art-threat/);
     }
     expect((s.intro!.match(/<img /g)??[])).toHaveLength(3);
@@ -97,8 +98,8 @@ describe("UI art 206", () => {
     const s=screens206();
     expect(s.title).toMatch(/^<img class="sv-art sv-art-bg sv-bg" src="[^"]*\/bg-menu\.1536\.webp/); expect(s.title).not.toMatch(/<svg/);
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(rowRoles("splitter").map(r=>artHtml(r,"threat")).join("")).toContain("foe-splitter.");
-    // The Shard has its portrait since 238 (31/10); a background is still pending.
+    // The threat strip's 24 px: the Splitter's 245 silhouette; the Shard has no silhouette, so its portrait (238, 31/10).
+    expect(rowRoles("splitter").map(r=>artHtml(r,"threat")).join("")).toContain("foe-splitter-small.");
     expect(rowRoles("splitter").map(r=>artHtml(r,"threat")).join("")).toContain("foe-shard.");
     for(const screen of SCREENS) expect(artHtml(bgRole(screen),"bg")).toContain("/"+bgRole(screen)+".");
     expect(artHtml("gun-xung","bay",{label:true})).toContain('alt="Pulse Gun"');

@@ -36,11 +36,11 @@ describe("tickets 243 and 244 in the selection", () => {
     expect(table.roles["slider-fill"]).toMatchObject({ kind: "track", widths: [512, 1024], aspect: 16 });
   });
 
-  it("keeps 243's two failed redraws out (pace-director.r2, shake.r2: ticket 247) and nothing of tickets 245–249", () => {
+  it("keeps 243's two failed redraws out (pace-director.r2, shake.r2: ticket 247) and nothing of tickets 246–249", () => {
     expect(entries("icon-pace-director")).toEqual([expect.objectContaining({ source: "ui/icons/pace-director.v2", ticket: "152" })]);
     expect(entries("icon-shake")).toEqual([expect.objectContaining({ source: "ui/icons/shake", ticket: "240" })]);
     expect(selection.entries.filter((entry) => /\.r2$/.test(entry.source ?? "") && /pace-director|shake/.test(entry.source ?? ""))).toEqual([]);
-    expect(selection.entries.filter((entry) => ["245", "246", "247", "248", "249"].includes(entry.ticket))).toEqual([]);
+    expect(selection.entries.filter((entry) => ["246", "247", "248", "249", "250"].includes(entry.ticket))).toEqual([]);
   });
 });
 

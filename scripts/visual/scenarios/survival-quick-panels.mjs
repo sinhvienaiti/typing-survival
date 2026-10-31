@@ -10,6 +10,8 @@
 // number; the Listen speakers scale, glow under the pointer, shrink while pressed and are lit while their sample sounds;
 // the list's scrollbar is thin and cyan; a chosen chip reads cyan; the backdrop blurs; Shift+Tab from the dialog reaches
 // the last control; the Settings preview is never empty for long and its impact ring lands inside the frame.
+// Ticket 245 (31/10, night): Close is the round art button (quick-close, the kit's QuickSkin.close): loaded, named
+// "Close", 32 px × the panel's scale, in the panel's top-right corner, glowing on focus; a click on it closes the panel.
 import { spawnSync } from "node:child_process";
 import { DEV_URL, out } from "./common.mjs";
 import { press, sv } from "./survival-s0-lib.mjs";
@@ -63,8 +65,10 @@ const PROBE = `(() => {
   const plain = options.find((b) => b.getAttribute('aria-selected') !== 'true' && !b.disabled);
   const buttons = [...dialog.querySelectorAll('button')].filter(visible).filter((b) => !b.closest('.kit-keyboards')).map((b) => b.getAttribute('aria-label') || b.textContent.trim());
   const active = document.activeElement;
+  const closeBtn = dialog.querySelector('.kit-qs__close'), closeImg = closeBtn?.querySelector('img');
+  const close = closeBtn ? { label: closeBtn.getAttribute('aria-label'), text: closeBtn.textContent.trim(), icon: closeBtn.classList.contains('kit-qs__close--icon'), plate: closeBtn.classList.contains('kit-qs__btn'), art: closeImg ? role(closeImg.currentSrc || closeImg.src) : null, loaded: !!closeImg && closeImg.complete && closeImg.naturalWidth > 0, box: r(closeBtn), title: closeBtn.title } : null;
   return {
-    open: dialog.dataset.panel, context: qs.dataset.context, images, art, rows, sliders, buttons,
+    open: dialog.dataset.panel, context: qs.dataset.context, images, art, rows, sliders, buttons, close,
     knob: px('var(--kit-qs-knob)'), grooveH: px('var(--kit-qs-groove-h)'), scale: Number(qs.style.getPropertyValue('--kit-qs-s')),
     fonts: { title: getComputedStyle(dialog.querySelector('.kit-qs__title')).fontFamily, label: getComputedStyle(dialog.querySelector('.kit-qs__label')).fontFamily },
     panel: { box: r(panel), noScroll: panel.scrollHeight <= panel.clientHeight + 1, inside: (() => { const b = panel.getBoundingClientRect(); return b.left >= -1 && b.top >= -1 && b.right <= innerWidth + 1 && b.bottom <= innerHeight + 1; })() },
@@ -249,7 +253,10 @@ export default async function (page) {
   for (let n = 0; n < 40; n++) { if ((await page.eval(sv("return t.state().phase;"))) === "play") break; await page.sleep(250); }
   await page.sleep(1500);
   report.playSettings = await panel("F1", "play-settings");
-  await key(page, "Escape"); await page.sleep(3600);
+  // Ticket 245: the art Close closes the panel (a click, where the title's panels close by Esc).
+  await page.click('.kit-qs__dialog[data-panel="settings"] .kit-qs__close'); await page.sleep(400);
+  report.afterClose = await probe();
+  await page.sleep(3200);
   report.playSound = await panel("F2", "play-sound");
   const catalogue = await page.eval(sv("return t.keyboard();"));
   const pick = await page.eval("(() => { const b = [...document.querySelectorAll('.kit-qs__dialog[data-panel=\"sound\"] button.kit-keyboards__option')].find((b) => !b.disabled && !['off', 'relay'].includes(b.dataset.value) && b.getAttribute('aria-selected') !== 'true'); if (!b) return null; b.scrollIntoView({ block: 'center' }); b.click(); return b.dataset.value; })()");
@@ -285,11 +292,17 @@ export default async function (page) {
     fillAtValue: report.fillAt.every((f) => f.measuredRight !== null && Math.abs(f.measuredRight - f.expectedRight) <= 1 && Math.abs(f.v * 100 - f.value) < 0.01),
     fillOnGroove: !!report.ends.groove && !!report.ends.fill && Math.abs(report.ends.groove[0] - report.ends.fill[0]) <= 1 && Math.abs(report.ends.groove[1] - report.ends.fill[1]) <= 1,
     listPlates: [report.titleSound, report.playSound, report.playSoundPicked].every((s) => !!s.list && s.list.plain?.src === "frame-button" && s.list.chosen?.src === "frame-button-active"),
+    // Ticket 245: the round Close art on every panel, named "Close", 32 px × scale, its right edge inside the panel's and in its top band.
+    closeArt: all.every((s) => !!s.close && s.close.icon && !s.close.plate && s.close.art === "quick-close" && s.close.loaded && s.close.label === "Close" && s.close.text === ""
+      && Math.abs(s.close.box[2] - 32 * s.scale) <= 0.5 && Math.abs(s.close.box[3] - 32 * s.scale) <= 0.5
+      && s.close.box[0] + s.close.box[2] <= s.panel.box[0] + s.panel.box[2] && s.close.box[1] >= s.panel.box[1] && s.close.box[1] + s.close.box[3] <= s.panel.box[1] + 80 * s.scale),
+    closeClick: report.afterClose.open === null,
+    closeInTab: report.tabs.some((f) => /kit-qs__close--icon/.test(f.cls) && f.filter.includes("rgb(61, 184, 255)") && f.outline === "none"),
     panelsFit: all.every((s) => s.panel.noScroll && s.panel.inside),
     tabStaysIn: report.tabs.every((f) => f.inside),
     // A cyan glow (--volt, rgb(61, 184, 255)) hugging the art, no flat outline: on the focused button, and on every focused button, chip or list row the Tab walk met.
     focusGlow: report.focusGlow.filter.includes("rgb(61, 184, 255)") && report.focusGlow.outline === "none"
-      && report.tabs.filter((f) => /kit-qs__btn|kit-keyboards__option|kit-keyboards__listen/.test(f.cls)).every((f) => f.filter.includes("rgb(61, 184, 255)") && f.outline === "none"),
+      && report.tabs.filter((f) => /kit-qs__btn|kit-qs__close|kit-keyboards__option|kit-keyboards__listen/.test(f.cls)).every((f) => f.filter.includes("rgb(61, 184, 255)") && f.outline === "none"),
     arrowMoves: report.arrow.after === report.arrow.before - 1,
     escCloses: report.afterEsc.open === null,
     keyOnce: !!pick && report.keySound.profile === pick && report.keySound.standIn === null && report.keySound.played[1] - report.keySound.played[0] === 1,
