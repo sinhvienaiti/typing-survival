@@ -75,7 +75,7 @@ describe("UI art 206", () => {
     expect(s.briefing).toMatch(/sv-art-teach[^>]+foe-brute/);
     for(const name of ["loadout1","loadout4"]) {
       expect((s[name]!.match(/sv-art-loadout/g)??[])).toHaveLength(5);
-      expect(s[name]).toMatch(/sv-good[^]*sv-art-counter[^]*foe-swarm/);
+      expect(s[name]).toMatch(/sv-good[^]*sv-chip[^]*sv-art-chip[^]*foe-swarm/);
       expect(s[name]).toMatch(/sv-threats[^]*sv-art-threat/);
     }
     expect((s.intro!.match(/<img /g)??[])).toHaveLength(3);

@@ -16,10 +16,10 @@
  * word's meaning stays with the word on the line (strip.ts), never under the
  * bay's next word. A bay without a gun
  * is a dark plate with a lock (bays 3–4 in R1).
- * Top: armour, clock, kills, the objective's plate (Săn: "PACK LEADER 1/3"), a
- * rift's warning on its wall's side (and its countdown beside the word line),
+ * Top: armour, clock, kills, the objective's plate (Săn: "PACK LEADER 1/3"),
  * a 2 s card when something new first appears; an input notice just above
- * the word line. It publishes the rectangles damage numbers must not cover.
+ * the word line; a rift's warning (one chip, strip.ts) on its wall's side
+ * between the word line and the bays. It publishes the rectangles damage numbers must not cover.
  * The word itself is drawn by the kit's focus strip (type-fx.ts) in `fxRoot`,
  * which sits where the old plate stood in the HUD's order (under the menus).
  */
@@ -28,7 +28,6 @@ import type { Rect } from "../kit/feedback";
 import { FOES, KIND } from "../content/foes";
 import { GUN_SPECS, type GunId } from "../content/guns";
 import { FIELD } from "../content/rules";
-import { RIFT } from "../content/stage-rules";
 import { STAGE_S0 } from "../content/stage-s0";
 import { peakAt } from "../sim/plan";
 import { magazineUnits } from "../sim/weapons";
@@ -68,6 +67,8 @@ const COLUMNS = [208, 230, 324, 230, 208] as const;
 const BAY_COLUMN = [2, 4, 1, 5] as const;
 /** Long words shrink down to this share of 32 px (26 px). */
 const MIN_FIT = 26 / 32;
+/** A rift's chip (survival.css): its height and how far it keeps inside the walls and off a bay's gun tab (CSS px × --ui). */
+const RIFT_CHIP = { h: 36, wall: 12, tab: 10 } as const;
 /** The "new" card per kind a stage teaches. */
 const NEW_CARD: Readonly<Record<number, string>> = {
   [KIND.brute]: "NEW · BRUTE · HEAVY FOE · ARMOR " + FOES[KIND.brute]!.armour,
@@ -118,7 +119,6 @@ export class Hud {
   private readonly goal: HTMLElement;
   private readonly goalText: HTMLElement;
   private readonly fresh: HTMLElement;
-  private readonly warn: HTMLElement;
   private readonly bottom: HTMLElement;
   readonly strip: WordStrip;
   /** The focus strip's layer (type-fx.ts): after the bays' row, before the old line's parts and the menus. */
@@ -140,9 +140,9 @@ export class Hud {
   private freshUntil = 0;
   private readonly met = new Set<number>();
   private readonly teach: Set<number>;
-  /** The still camera's view (layout()), for marks placed on the corridor (the rift's wall mark). */
+  /** The still camera's view (layout()), for the rift's chip inside the corridor. */
   private stage: Stage | null = null;
-  private warnSide = 0;
+  private ui = 1;
 
   constructor(root: HTMLElement, private readonly words: (index: number) => Word, w: World) {
     this.root = root;
@@ -177,7 +177,6 @@ export class Hud {
     this.total = el("em", "", kills);
     this.banner = el("div", "sv-banner", root);
     this.fresh = el("div", "sv-fresh", root);
-    this.warn = el("div", "sv-warn", root);
     this.notice = el("div", "sv-notice", root);
     this.bottom = el("div", "sv-bottom", root);
     this.fxRoot = el("div", "sv-tfx", root);
@@ -224,6 +223,7 @@ export class Hud {
    */
   layout(stage: Stage, ui: number): void {
     this.stage = stage;
+    this.ui = ui;
     this.last.warn = "";
     this.placed.stripes = stage.project(0, FIELD.bottomZ + 1.05, 0, this.at, true).y;
     const line = (this.placed.line = stage.project(0, FIELD.bottomZ + LINE_LIFT, 0, this.at, true).y - 4 * ui);
@@ -421,11 +421,11 @@ export class Hud {
   }
 
   /**
-   * A rift's warning: one countdown chip beside the word line, pointing at
-   * the wall (strip.ts: the eyes are there while typing), and a mark on the
-   * corridor wall where the rift opens (the Rift icon and an arrow at the
-   * wall, no text; UI pass 2: two identical chips showed, one at the
-   * screen's edge over empty space).
+   * A rift's warning: one chip on the word plate (strip.ts) with an arrow to
+   * the wall where the rift opens, the Rift icon and the countdown (UI pass 3:
+   * the wall's mark and the countdown were two, the countdown out past the
+   * corridor at the screen's edge). It sits on the wall's side between the
+   * word line and the bays, inside the corridor and off the bays' gun tabs.
    */
   private updateWarn(w: World): void {
     const H = w.hazards;
@@ -440,30 +440,41 @@ export class Hud {
     }
     const key = text + side;
     if (key === this.last.warn) return;
-    const placed = this.last.warn !== "" && text !== "" && this.warnSide === side && this.warn.childElementCount > 0;
+    // Measured as a warning starts (and after a resize, which clears last.warn): the bays' tabs are laid out by then.
+    const fresh = text !== "" && !this.last.warn.startsWith("Rift");
     this.last.warn = key;
-    this.warnSide = side;
+    if (fresh) this.placeRift();
     this.strip.warn(text, side);
-    this.warn.classList.toggle("is-on", text !== "");
-    this.warn.classList.toggle("is-left", side < 0);
-    this.warn.classList.toggle("is-right", side > 0);
-    this.warn.style.setProperty("--warn", String(RIFT.warn));
-    if (text === "") {
-      this.warn.replaceChildren();
-      return;
+  }
+
+  /** The rift chip's row (between the word line and the bays) and its outer edges: the corridor's inner walls at the chip's top on the still camera, and clear of the gun tabs over the bays. */
+  private placeRift(): void {
+    const stage = this.stage;
+    if (stage === null) return;
+    const ui = this.ui;
+    const y = (this.placed.line + this.placed.glow) / 2;
+    const top = y - (RIFT_CHIP.h / 2) * ui;
+    const bottom = y + (RIFT_CHIP.h / 2) * ui;
+    // The depth whose floor is at the chip's top: the narrowest part of the corridor it covers.
+    let near = FIELD.bottomZ - 2;
+    let far = FIELD.bottomZ + LINE_LIFT + 2;
+    for (let i = 0; i < 14; i += 1) {
+      const z = (near + far) / 2;
+      if (stage.project(0, z, 0, this.at, true).y > top) near = z;
+      else far = z;
     }
-    if (placed) return;
-    this.warn.replaceChildren();
-    const arrow = artAttrs("part-arrow", "small", side < 0 ? { cls: "is-left" } : {});
-    if (side < 0) appendArt(this.warn, arrow);
-    appendArt(this.warn, artAttrs("icon-rift", "item"));
-    if (side > 0) appendArt(this.warn, arrow);
-    // On the wall's inner face, 1 m up, at the depth the rift opens; the mark stands just inside it.
-    const at = this.stage?.project(side * (FIELD.halfW - FIELD.wall), H.z[H.next] ?? RIFT.zMin, 1, this.at, true);
-    if (at !== undefined) {
-      this.warn.style.left = at.x.toFixed(1) + "px";
-      this.warn.style.top = at.y.toFixed(1) + "px";
+    const z = (near + far) / 2;
+    const inner = FIELD.halfW - FIELD.wall;
+    let left = stage.project(-inner, z, 0, this.at, true).x + RIFT_CHIP.wall * ui;
+    let right = stage.project(inner, z, 0, this.at, true).x - RIFT_CHIP.wall * ui;
+    const mid = stage.width / 2;
+    for (const slot of this.slots) {
+      const tab = slot?.root.querySelector?.(".sv-art-bay:not([hidden])")?.getBoundingClientRect();
+      if (tab === undefined || tab.width === 0 || tab.bottom < top || tab.top > bottom) continue;
+      if (tab.left > mid) right = Math.min(right, tab.left - RIFT_CHIP.tab * ui);
+      else left = Math.max(left, tab.right + RIFT_CHIP.tab * ui);
     }
+    this.strip.hazardSpot(y, left, right);
   }
 
   /** A taught foe's first appearance: a small card for 2 s. */

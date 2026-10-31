@@ -217,34 +217,35 @@ describe("HUD icon hookups (tickets 149–153, hud.ts and strip.ts)", () => {
     expect(notice.classList.contains("is-hint")).toBe(true);
   });
 
-  it("shows a rift's countdown once, by the word line, and a mark at its wall with the Rift icon and an arrow (LL-36, LL-44, UI pass 2)", () => {
+  it("shows a rift's warning as one chip: the arrow to its wall, the Rift icon and the countdown (LL-36, LL-44, UI pass 3)", () => {
     const { hud, root, world } = hudOn("c1-s3");
     const H = world.hazards;
     H.state = 1; H.next = 0; H.count = Math.max(H.count, 1); H.side[0] = -1; H.at[0] = world.time + 3;
     (hud as unknown as { updateWarn(w: World): void }).updateWarn(world);
-    // The wall's mark: an arrow pointing at the wall and the Rift icon, no text (one countdown only).
-    const warn = root.find("sv-warn")[0]!;
-    expect(roles(warn)).toEqual(["part-arrow", "icon-rift"]);
-    expect(art(warn.nodes[0]).classList.contains("is-left")).toBe(true);
-    expect(warn.textContent).toBe("");
-    expect(warn.classList.contains("is-on") && warn.classList.contains("is-left")).toBe(true);
-    const line = root.find("sv-strip-warn")[0]!;
+    // No second mark on the corridor wall (UI pass 3): the one chip carries the wall's arrow.
+    expect(root.find("sv-warn")).toEqual([]);
+    const chips = root.find("sv-strip-warn");
+    expect(chips).toHaveLength(1);
+    const line = chips[0]!;
     expect(roles(line)).toEqual(["part-arrow", "icon-rift"]);
-    // The arrow at 16 px, mirrored for the left wall (survival.css puts both on dark chips).
+    // The arrow at 20 px, mirrored for the left wall; the icon at 32 px; the countdown after them.
     expect(art(line.nodes[0]).className).toBe("sv-art sv-art-small is-left");
     expect(art(line.nodes[1]).className).toBe("sv-art sv-art-item");
     expect(line.textContent).toBe("Rift · 3.0 s");
+    expect(line.classList.contains("is-on") && line.classList.contains("is-left")).toBe(true);
     H.side[0] = 1;
     (hud as unknown as { updateWarn(w: World): void }).updateWarn(world);
     expect(roles(line)).toEqual(["icon-rift", "part-arrow"]);
     expect(art(line.nodes[2]).classList.contains("is-left")).toBe(false);
-    expect(roles(warn)).toEqual(["icon-rift", "part-arrow"]);
-    expect(warn.classList.contains("is-right")).toBe(true);
-    // The rift opens: both go.
+    expect(line.classList.contains("is-left")).toBe(false);
+    // The rift opens ("Rift"), then closes: the chip goes.
+    H.state = 2;
+    (hud as unknown as { updateWarn(w: World): void }).updateWarn(world);
+    expect(line.textContent).toBe("Rift");
     H.state = 0;
     (hud as unknown as { updateWarn(w: World): void }).updateWarn(world);
-    expect(warn.nodes).toEqual([]);
-    expect(warn.classList.contains("is-on")).toBe(false);
+    expect(line.nodes).toEqual([]);
+    expect(line.classList.contains("is-on")).toBe(false);
   });
 
   it("leads the clean streak's LED with the streak icon and keeps its text (LL-44)", () => {

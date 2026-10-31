@@ -6,9 +6,9 @@ import { KIND } from "../content/foes";
 export const BOX = {
   armory: { width: 64, height: 64 }, menu: { width: 96, height: 54 },
   briefing: { width: 760, height: 120 }, foe: { width: 40, height: 40 },
-  teach: { width: 32, height: 32 }, loadout: { width: 72, height: 72 },
-  // Foe icons inside the loadout's Strong / Weak lines and the threat strip: 24 px at least (UI pass 2, 31/10: 16 px read as smudges).
-  counter: { width: 24, height: 24 }, threat: { width: 24, height: 24 },
+  // UI pass 3: the loadout card's gun art at 96 px, its Strong / Weak foes as 36 px portraits on chips; the threat strip's foes 24 px (UI pass 2: 16 px read as smudges).
+  teach: { width: 32, height: 32 }, loadout: { width: 96, height: 96 },
+  chip: { width: 36, height: 36 }, threat: { width: 24, height: 24 },
   intro: { width: 384, height: 216 }, introGun: { width: 48, height: 48 },
   // A bay's gun sits on a small tab plate on the bay's top edge (padding inside the box).
   fresh: { width: 48, height: 48 }, bay: { width: 44, height: 44 },

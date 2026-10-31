@@ -210,8 +210,10 @@ describe("CSS for the parts (survival.css)", () => {
     // A word into a full bay turns the cells themselves urgent, as they blink.
     expect(css).toContain(".sv-slot.is-overfull .sv-mags i { --tint: var(--urgent); filter: brightness(1.35); }");
   });
-  it("puts the Rift icon and arrow on dark chips on the orange plates, lights the selected lamp and dims missed stars", () => {
-    expect(css).toContain(".sv-strip-warn > .sv-art, .sv-warn > .sv-art { background: var(--ink);");
+  it("stands the Rift icon and arrow bare on the painted chip (dark squares only on the plain orange fallback), lights the selected lamp and dims missed stars", () => {
+    expect(css).toContain(".sv-strip-warn > .sv-art { background: var(--ink);");
+    expect(css).toContain(':root[data-art~="frame-word"] .sv-strip-warn > .sv-art { background: none; box-shadow: none; }');
+    expect(css).not.toMatch(/\.sv-warn\b/);
     expect(css).toContain(".sv-item.is-on > .sv-art-led { filter: drop-shadow(");
     expect(css).toContain(".sv-star-row li:not(.is-on) .sv-art-star { opacity: 0.45; filter: grayscale(1) brightness(0.6); }");
     expect(css).toContain(".sv-art.is-left { transform: scaleX(-1); }");

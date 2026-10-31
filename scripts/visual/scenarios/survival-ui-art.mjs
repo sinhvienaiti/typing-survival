@@ -23,6 +23,10 @@
 // the no-WebGL plate on painted parts in the warning tint (no CSS ring), the latter over the menu's background; opaque
 // sealed bays; the results card's right edge at most 62 % of the width; the 80 px stars lighting in; the Settings
 // preview's letter effects inside their box; Keyboard volume's icon; the hunt captured once the streak LED is on.
+// UI pass 3, part B (31/10): the loadout cards (gun art at 96 px, the stats on one line, Strong and Weak as foe chips on
+// the tinted word plate with their names on the focused card only, the picked card on the lit button frame, the tags on
+// the word plate, no CSS ring, no large empty area) and the rift's warning as one painted chip with the arrow, the Rift
+// icon and the countdown, inside the corridor between the word line and the bays, clear of the bays' gun tabs.
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { DEV_URL, out } from "./common.mjs";
@@ -237,9 +241,19 @@ export default async function (page) {
         corners:[...qs.querySelectorAll('.kit-qs__corner')].map(b=>({role:roleOf(b.querySelector('img')?.src),w:Math.round(b.getBoundingClientRect().width)})),
         rowIcons:open?[...open.querySelectorAll('.kit-qs__row')].map(r=>[r.dataset.row,roleOf(r.querySelector('img.kit-qs__icon')?.src)||roleOf(getComputedStyle(r.querySelector('.kit-qs__icon-cell')??r).backgroundImage)]).filter(([,role])=>role):[]}:null;
       const frameOf=sel=>[...document.querySelectorAll(sel)].filter(visible).map(n=>roleOf(getComputedStyle(n).borderImageSource));
-      const frames={card:frameOf('.sv-overlay.is-on .sv-card'),item:frameOf('.sv-overlay.is-on .sv-item:not(.is-on)'),itemOn:frameOf('.sv-overlay.is-on .sv-item.is-on'),guns:frameOf('.sv-overlay.is-on .sv-gun-card'),plates:frameOf('.sv-hp, .sv-clock, .sv-kills'),bays:frameOf('.sv-slot'),locks:frameOf('.sv-bay-lock'),chips:frameOf('.sv-strip-warn.is-on, .sv-notice:not([hidden])'),banner:frameOf('.sv-banner.is-on'),advice:frameOf('.sv-overlay.is-on .sv-advice'),qsPanel:open?frameOf('.kit-qs__dialog[data-panel="'+open.dataset.panel+'"] .kit-qs__panel'):[],qsButtons:open?frameOf('.kit-qs__dialog[data-panel="'+open.dataset.panel+'"] .kit-qs__btn'):[]};
-      const mark=document.querySelector('.sv-warn.is-on');
-      const rift=mark?{text:mark.textContent,box:(r=>[Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)])(mark.getBoundingClientRect()),chips:[...document.querySelectorAll('.sv-strip-warn.is-on, .sv-warn.is-on')].filter(n=>n.textContent.trim()!=='').length}:null;
+      const frames={card:frameOf('.sv-overlay.is-on .sv-card'),item:frameOf('.sv-overlay.is-on .sv-item:not(.is-on)'),itemOn:frameOf('.sv-overlay.is-on .sv-item.is-on'),guns:frameOf('.sv-overlay.is-on .sv-gun-card:not(.is-picked)'),gunsPicked:frameOf('.sv-overlay.is-on .sv-gun-card.is-picked'),tags:frameOf('.sv-overlay.is-on .sv-rec, .sv-overlay.is-on .sv-bay-tag'),chips:frameOf('.sv-strip-warn.is-on, .sv-notice:not([hidden])'),plates:frameOf('.sv-hp, .sv-clock, .sv-kills'),bays:frameOf('.sv-slot'),locks:frameOf('.sv-bay-lock'),banner:frameOf('.sv-banner.is-on'),advice:frameOf('.sv-overlay.is-on .sv-advice'),qsPanel:open?frameOf('.kit-qs__dialog[data-panel="'+open.dataset.panel+'"] .kit-qs__panel'):[],qsButtons:open?frameOf('.kit-qs__dialog[data-panel="'+open.dataset.panel+'"] .kit-qs__btn'):[]};
+      // UI pass 3: the rift's one chip, its limits (hud.ts: the corridor's walls and the bays' gun tabs), the tabs and the bays.
+      const boxOf=n=>{const r=n.getBoundingClientRect();return [Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)];};
+      const chipEl=document.querySelector('.sv-strip-warn.is-on');
+      const rift=chipEl?{text:chipEl.textContent,box:boxOf(chipEl),left:chipEl.classList.contains('is-left'),spot:(chipEl.dataset.spot||'').split(' ').map(Number),roles:[...chipEl.querySelectorAll('img.sv-art')].map(role),chips:document.querySelectorAll('.sv-strip-warn.is-on, .sv-warn').length,tabs:[...document.querySelectorAll('.sv-slot > .sv-art-bay')].filter(visible).map(boxOf),bays:[...document.querySelectorAll('.sv-slot, .sv-bay-lock')].filter(visible).map(boxOf)}:null;
+      // UI pass 3: the loadout's cards: art, chips, tags, rings, the names on the focused card only, the empty share under each card's content.
+      const gunCards=[...document.querySelectorAll('.sv-overlay.is-on .sv-cards .sv-gun-card')].filter(visible);
+      const loadout=gunCards.length?gunCards.map(c=>{const r=c.getBoundingClientRect(),last=[...c.children].filter(k=>getComputedStyle(k).position!=='absolute'&&visible(k)).pop(),pb=parseFloat(getComputedStyle(c).paddingBottom);
+        return {on:c.classList.contains('is-on'),picked:c.classList.contains('is-picked'),shadow:getComputedStyle(c).boxShadow,art:(i=>i?Math.round(i.getBoundingClientRect().width):0)(c.querySelector('.sv-art-loadout')),
+          chips:[...c.querySelectorAll('.sv-chip')].map(ch=>({frame:roleOf(getComputedStyle(ch).borderImageSource),tint:getComputedStyle(ch,'::before').filter,good:!!ch.closest('.sv-good')})),
+          names:[...c.querySelectorAll('.sv-vs li small')].map(n=>Number(getComputedStyle(n).opacity)),titles:[...c.querySelectorAll('.sv-vs li')].map(li=>li.title),
+          statsOneLine:(p=>!!p&&p.getBoundingClientRect().height<1.8*parseFloat(getComputedStyle(p).lineHeight||getComputedStyle(p).fontSize))(c.querySelector('.sv-gun-stats')),
+          empty:Math.round((r.bottom-pb-last.getBoundingClientRect().bottom)/r.height*1000)/1000};}):null;
       const glyphs=(scope.innerText.match(/[★☆⚠◀▶⌨✓]/g)||[]);
       const goal=document.querySelector('.sv-goal');
       const goalText=goal?.querySelector('span'), goalOneLine=!goalText||goalText.getBoundingClientRect().height<1.8*parseFloat(getComputedStyle(goalText).fontSize);
@@ -260,7 +274,7 @@ export default async function (page) {
       const lockOpacity=[...document.querySelectorAll('.sv-bay-lock')].filter(visible).map(n=>Number(getComputedStyle(n).opacity));
       const endEl=document.querySelector('.sv-overlay.is-on .sv-end'), endCard=endEl?rect(endEl):null;
       const starAnim=[...document.querySelectorAll('.sv-overlay.is-on .sv-star-row li.is-on .sv-art-star')].map(i=>getComputedStyle(i).animationName);
-      return {ui,images,failedImages,overflow,cards,keys,mags,contrast,words,quick,frames,rift,glyphs,goalShown:!!goal&&visible(goal),goalOneLine,logo,requests,brief,notice,lockOpacity,endCard,starAnim};
+      return {ui,images,failedImages,overflow,cards,keys,mags,contrast,words,quick,frames,rift,loadout,glyphs,goalShown:!!goal&&visible(goal),goalOneLine,logo,requests,brief,notice,lockOpacity,endCard,starAnim};
     })()`);
     result.name = name; screens.push(result);
     const shot = await page.shot(out("ui-art-" + name + "-" + size + ".png"));
@@ -311,7 +325,8 @@ export default async function (page) {
   await clickItem(0); await capture("journey");
   await key(page, "Enter"); await page.sleep(300); await capture("briefing");
   await key(page, "Enter"); await page.sleep(300);
-  await page.key("1", { code: "Digit1" }); await page.key("2", { code: "Digit2" }); await page.sleep(250); await capture("loadout");
+  // The pointer off the cards (a hovered card shows its chip names too): only the focused one does.
+  await page.key("1", { code: "Digit1" }); await page.key("2", { code: "Digit2" }); await page.mouse(2, 2); await page.sleep(250); await capture("loadout");
   for (let n = 0; n < 4; n++) await key(page, "ArrowRight");
   await key(page, "Enter"); await page.sleep(500); await ready(); await capture("intro");
   await page.key("q", { code: "KeyQ", text: "q" }); await page.sleep(1500); await capture("fight", ".sv-hud");
@@ -406,7 +421,7 @@ export default async function (page) {
     // Cells 10 × 28 px × --ui (a 40 px canvas, UI pass 2); each bay's glass in its gun's colour, two guns two colours; urgent in a full bay.
     magCells: by("fight").mags.length > 0 && by("fight").mags.every((m) => m.art && m.w >= 10 * by("fight").ui - 0.5 && m.h >= 28 * by("fight").ui - 0.5 && m.tint === m.gun) && new Set(by("fight").mags.map((m) => m.tint)).size === 2,
     overfullCells: by("fight-overfull").mags.filter((m) => m.bay === "1").every((m) => m.tint === "rgb(255, 176, 32)") && by("fight-overfull").mags.some((m) => m.bay === "1") && by("fight-overfull").mags.filter((m) => m.bay !== "1").every((m) => m.tint === m.gun),
-    warnContrast: by("fight-rift").contrast.length >= 3 && by("fight-rift").contrast.every((c) => c.ratio >= 3),
+    warnContrast: by("fight-rift").contrast.length >= 2 && by("fight-rift").contrast.every((c) => c.ratio >= 3),
     noticeIcon: has("fight-notice", "icon-keyboard") && by("fight-notice").images.some((i) => i.role === "icon-keyboard" && i.place === "item"),
     // UI pass 3: the warning notice is the word plate in the warning tint, no CSS ring; the no-WebGL plate the panel frame so tinted, over the menu's background.
     noticePlate: !!by("fight-notice").notice && !by("fight-notice").notice.hint && by("fight-notice").notice.shadow === "none" && by("fight-notice").notice.tint === "frame-word",
@@ -428,7 +443,9 @@ export default async function (page) {
     resultsIcons: ["icon-stat-time", "icon-kills", "icon-stat-accuracy", "icon-stat-words", "icon-retry", "icon-back"].every((r) => has("results-lose", r) && has("results-win", r)) && has("results-win", "icon-star-lit") && has("results-win", "icon-next-stage"),
     // UI pass 2: the ticket 127 frames where the theme's plates were.
     frames: ["menu", "options", "pause"].every((n) => by(n).frames.card.every((f) => f === "frame-panel") && by(n).frames.item.length > 0 && by(n).frames.item.every((f) => f === "frame-button") && by(n).frames.itemOn.every((f) => f === "frame-button-active"))
-      && ["armory", "loadout"].every((n) => by(n).frames.guns.length === 5 && by(n).frames.guns.every((f) => f === "frame-card"))
+      && by("armory").frames.guns.length === 5 && by("armory").frames.guns.every((f) => f === "frame-card")
+      && by("loadout").frames.guns.length === 3 && by("loadout").frames.guns.every((f) => f === "frame-card") && by("loadout").frames.gunsPicked.length === 2 && by("loadout").frames.gunsPicked.every((f) => f === "frame-button-active")
+      && by("loadout").frames.tags.length === 4 && by("loadout").frames.tags.every((f) => f === "frame-word")
       && by("fight").frames.plates.length === 3 && by("fight").frames.plates.every((f) => f === "frame-plate") && by("fight").frames.bays.every((f) => f === "frame-card") && by("fight").frames.locks.length === 2 && by("fight").frames.locks.every((f) => f === "frame-card")
       && by("fight-rift").frames.chips.every((f) => f === "frame-word") && by("fight-notice").frames.chips.length >= 1 && by("fight-notice").frames.chips.every((f) => f === "frame-word")
       && by("fight-surge").frames.banner.every((f) => f === "frame-banner")
@@ -450,8 +467,16 @@ export default async function (page) {
     previewInside: !!preview && preview.lit > 0 && Object.values(preview.over).every((v) => v <= 0),
     // Every groove the same length; each lit to its value (--v), so 50 and 100 differ.
     sliderFill: by("quick-sound").quick.ranges.length >= 5 && Math.max(...by("quick-sound").quick.ranges) - Math.min(...by("quick-sound").quick.ranges) <= 1 && by("quick-sound").quick.lit.every(([value, v]) => Math.abs(value - v) < 0.6),
-    // One rift chip with text (by the word line); the wall mark has none and stands inside the corridor, not at the screen's edge.
-    oneRiftChip: by("fight-rift").rift !== null && by("fight-rift").rift.text.trim() === "" && by("fight-rift").rift.chips === 1 && by("fight-rift").rift.box[0] > 0.06 * page.width && by("fight-rift").rift.box[2] < 0.94 * page.width,
+    // UI pass 3: one rift chip (no wall mark of its own) with the arrow, the Rift icon and the countdown; inside the corridor (the limits
+    // hud.ts measured, well clear of the screen's edges), its bottom over the bays' top and within a tenth of the height of it, off the gun tabs.
+    oneRiftChip: (({ rift }) => !!rift && /^Rift · \d+\.\d s$/.test(rift.text) && rift.chips === 1 && rift.roles.includes("icon-rift") && rift.roles.includes("part-arrow")
+      && rift.spot.length === 2 && rift.spot[0] > 0.15 * page.width && rift.spot[1] < 0.85 * page.width && rift.box[0] >= rift.spot[0] - 1 && rift.box[2] <= rift.spot[1] + 1
+      && rift.bays.length > 0 && rift.box[3] <= Math.min(...rift.bays.map((b) => b[1])) + 1 && rift.box[1] >= Math.min(...rift.bays.map((b) => b[1])) - 0.1 * page.height
+      && rift.tabs.every((t) => t[2] <= rift.box[0] || t[0] >= rift.box[2] || t[3] <= rift.box[1] || t[1] >= rift.box[3]))(by("fight-rift")),
+    // UI pass 3: the loadout cards. Gun art 96 px × --ui; every chip on the word plate, tinted (green Strong, red Weak), with its row's label as tooltip;
+    // the names shown on the focused card only; the stats on one line; no CSS ring on any card; under every card's content at most a fifth empty.
+    loadoutCards: (({ loadout, ui }) => !!loadout && loadout.length === 5 && loadout.every((c) => Math.abs(c.art - 96 * ui) <= 1 && c.shadow === "none" && c.statsOneLine && c.chips.length >= 4 && c.chips.every((ch) => ch.frame === "frame-word" && ch.tint.includes(ch.good ? "hue-rotate(95deg)" : "hue-rotate(-45deg)")) && c.titles.every((t) => t !== "") && c.names.every((o) => o === (c.on ? 1 : 0)) && c.empty <= 0.2)
+      && loadout.filter((c) => c.on).length === 1 && loadout.filter((c) => c.picked).length === 2)(by("loadout")),
     // Ticket 121: each screen on its own painted background, full window; the title's logo as its heading.
     backgrounds: Object.entries(BACKGROUNDS).every(([name, role]) => by(name).images.some((i) => i.role === role && i.place === "bg" && i.loaded && i.sizeOK)),
     logo: (({ logo }) => !!logo && logo.alt === "Last Line" && logo.heading && !logo.textName && logo.clearOfCard && logo.clearOfMenu && logo.clearOfCorners && Math.abs(logo.width - boxes.logo.width * by("menu").ui) <= 1)(by("menu")),

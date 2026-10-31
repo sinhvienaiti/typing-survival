@@ -3,10 +3,11 @@
  * like the other screens (survival.css, theme.css variables): the stage
  * select with stars, a stage's briefing (objective with its numbers, the
  * hazard and how it warns, the learning rule, the foes with their counter
- * tags, what is new), and the loadout: five gun cards (magazine, reach,
- * what it counters and where it is poor, "dài tới +1 chữ" for the heavy guns, the
- * Rèn level the stage gives), the stage's threats with a yellow mark where
- * the picked guns answer nothing, and the start button.
+ * tags, what is new), and the loadout: five gun cards (the gun's art, its
+ * magazine, a stat line with its reach and "+1 letter" for the heavy guns,
+ * the foes it counters and those it is poor against as rows of foe chips, the
+ * bay and Forge level the stage gives), the stage's threats with a warning
+ * where the picked guns answer nothing, and the start button.
  */
 import { START_NOTE } from "../app/guide";
 import type { Journey } from "../app/journey";
@@ -46,9 +47,28 @@ function ruleDetail(stage: Stage): string {
   return "Bays show each word and its meaning. Your current word shows large above the ship. Its bay adds the pronunciation. Finished words get a ✓.";
 }
 
-/** Preserve labels and their comma order while adding row portraits. */
-function counterRows(rows: readonly CounterRow[], fallback: string): string {
-  return rows.length ? rows.map(row => rowRoles(row).map(role => artHtml(role, "counter")).join("") + escapeHtml(ROW_LABELS[row])).join(", ") : escapeHtml(fallback || "—");
+/** A chip's short name under its portrait (shown on the focused card); the Swarm's says which part of the lane. */
+const CHIP_NAME: Readonly<Record<string, string>> = { "foe-scout": "Scout", "foe-brute": "Brute", "foe-pack-leader": "Leader", "foe-shield-guard": "Shield", "foe-splitter": "Splitter", "foe-shard": "Shard" };
+function chipName(row: CounterRow, role: string): string {
+  if (role === "foe-swarm") return row === "swarmFar" ? "Mid Swarm" : "Near Swarm";
+  return CHIP_NAME[role] ?? role;
+}
+
+/**
+ * Strong or Weak as a row of foe chips (UI pass 3): each foe of the counter
+ * rows, in their order, as its portrait on the word plate (tinted green or
+ * red by survival.css), its short name under it, the row's label as its
+ * tooltip. Both Swarm rows in one list are one Swarm chip (the whole lane).
+ */
+function counterChips(kind: "good" | "poor", rows: readonly CounterRow[], fallback: string): string {
+  const both = rows.includes("swarmFar") && rows.includes("swarmNear");
+  const chip = (role: string, name: string, title: string): string => '<li title="' + escapeHtml(title) + '"><span class="sv-chip">' + artHtml(role, "chip") + "</span><small>" + escapeHtml(name) + "</small></li>";
+  const chips = rows.flatMap((row) => {
+    if (both && row === "swarmNear") return [];
+    if (both && row === "swarmFar") return [chip("foe-swarm", "Swarm", ROW_LABELS.swarmFar + ", " + ROW_LABELS.swarmNear)];
+    return rowRoles(row).map((role) => chip(role, chipName(row, role), ROW_LABELS[row]));
+  });
+  return '<div class="sv-vs sv-' + kind + '"><b>' + (kind === "good" ? "Strong" : "Weak") + "</b>" + (chips.length > 0 ? "<ul>" + chips.join("") + "</ul>" : "<p>" + escapeHtml(fallback || "—") + "</p>") + "</div>";
 }
 
 export function renderJourney(journey: Journey): string {
@@ -97,13 +117,15 @@ export function renderJourney(journey: Journey): string {
         cards
           .map(
             (card, n) =>
+              // UI pass 3: the gun's art large beside its name, the tags on the word plate over the card's top edge, the stats on one line, Strong and Weak as foe chips.
               '<section class="sv-gun-card sv-' + card.key + (card.on ? " is-on" : "") + (card.picked >= 0 ? " is-picked" : "") + '" data-card="' + n + '">' +
-              artHtml(gunRole(card.key), "loadout") + '<header><kbd>' + (n + 1) + "</kbd><b>" + escapeHtml(card.name) + "</b>" + (card.picked >= 0 ? '<em>BAY ' + (card.picked + 1) + (card.level > 1 ? " · FORGE " + card.level : "") + "</em>" : "") + "</header>" +
               (card.recommended ? '<i class="sv-rec">Recommended</i>' : "") +
-              "<small>" + escapeHtml(card.title) + "</small>" +
-              "<p>" + escapeHtml(card.magazine) + " · range " + escapeHtml(card.range) + (card.heavy ? " · words +1 letter" : "") + "</p>" +
-              '<p class="sv-good">Strong: ' + counterRows(card.goodRows, card.good) + "</p>" +
-              '<p class="sv-poor">Weak: ' + counterRows(card.poorRows, card.poor) + "</p>" +
+              (card.picked >= 0 ? '<em class="sv-bay-tag">BAY ' + (card.picked + 1) + (card.level > 1 ? " · FORGE " + card.level : "") + "</em>" : "") +
+              artHtml(gunRole(card.key), "loadout") + "<header><kbd>" + (n + 1) + "</kbd><b>" + escapeHtml(card.name) + "</b><small>" + escapeHtml(card.title) + "</small></header>" +
+              '<p class="sv-does">' + escapeHtml(card.magazine) + "</p>" +
+              '<p class="sv-gun-stats">Range <b>' + escapeHtml(card.range) + "</b>" + (card.heavy ? " · Words <b>+1 letter</b>" : "") + "</p>" +
+              counterChips("good", card.goodRows, card.good) +
+              counterChips("poor", card.poorRows, card.poor) +
               "</section>",
           )
           .join("") +
@@ -111,11 +133,14 @@ export function renderJourney(journey: Journey): string {
         '<div class="sv-threats"><b>Threats here · share</b>' +
         threats.map((threat) => '<span class="' + (threat.covered ? "" : "is-open") + '" title="' + escapeHtml(threat.counters) + '">' + rowRoles(threat.row).map(role => artHtml(role, "threat")).join("") + (threat.covered ? "" : artHtml("icon-warning", "small")) + escapeHtml(threat.label) + " " + Math.round(threat.weight * 100) + "%</span>").join("") +
         "</div>" +
+        // The first run's note beside the button, on its row (UI pass 3: on a line of its own it pushed the sheet past 720p).
+        '<div class="sv-start-row">' +
         '<div class="sv-start' + (journey.cursor === cards.length ? " is-on" : "") + (journey.ready ? "" : " is-off") + '" data-start="1">' +
         // No "fit %" here: the threat score ranked pairs against their measured wins (G3c) the wrong way on stages 2 and 4 (test pass 27/10); the open rows carry the warning icon.
         (journey.ready ? "START" + (threats.some((threat) => !threat.covered) ? " · " + artHtml("icon-warning", "icon") + "UNCOVERED" : "") : "PICK " + (bays - journey.picked.length) + (bays - journey.picked.length === 1 ? " GUN" : " GUNS")) +
         "</div>" +
         (journey.showStartNote ? '<p class="sv-note sv-start-note">' + START_NOTE + "</p>" : "") +
+        "</div>" +
         hints("<kbd>1</kbd>–<kbd>5</kbd> toggle · <kbd>←</kbd><kbd>→</kbd> move · <kbd>Enter</kbd> select · <kbd>Esc</kbd> briefing") +
         "</div>"
       );

@@ -12,8 +12,9 @@
  * and the letter stands still after 100 ms; a wrong key underlines the
  * letter due in red; a stray key ghosts in red at the line's centre. Beside
  * it the clean streak's LED ("SẠCH ×N", shown with the plate); a rift's
- * countdown on its wall's side; under it a red tick at each near foe the
- * plate hides. Every effect runs on the
+ * warning (the arrow to its wall, the Rift icon and the countdown on one
+ * painted chip) on its wall's side under the line, inside the corridor; under
+ * it a red tick at each near foe the plate hides. Every effect runs on the
  * page's frame clock (`now`), never CSS keyframes, so the held clock of the
  * scenarios captures it frame by frame. DOM outside the canvas: never shaken.
  *
@@ -91,6 +92,8 @@ export class WordStrip {
   private strayAt = -1e9;
   private keyAt = -1e9;
   private hazardKey = "";
+  /** Where a rift's chip sits (hud.ts): its centre's y, and its outer edge's x on the left and on the right side (CSS px). */
+  private readonly spot = { y: 0, left: 0, right: 0 };
   private last: Done | null = null;
   private streakN = 0;
   private streakAt = -1e9;
@@ -146,7 +149,6 @@ export class WordStrip {
     this.plate.style.top = top + "px";
     this.ghost.style.top = top + "px";
     this.led.style.top = top + (PLATE.height - 22) * 0.5 * ui + "px";
-    this.hazard.style.top = top + (PLATE.height - 30) * 0.5 * ui + "px";
     (this.ticks[0]!.parentElement as HTMLElement).style.top = bottom - 3 * ui + "px";
     this.wide = this.plate.offsetWidth;
     this.placeLed();
@@ -179,10 +181,10 @@ export class WordStrip {
   }
 
   /**
-   * A rift's countdown beside the line, on its wall's side (`side` < 0 left;
-   * "" hides it): an arrow at the wall, the Rift icon, the text. The arrow
-   * (16 px) and the icon sit on dark chips (survival.css), so they keep their
-   * contrast on the orange plate.
+   * A rift's warning (`side` < 0 left; "" hides it): one chip on the word
+   * plate art (survival.css) with an arrow at the wall, the Rift icon and the
+   * countdown (UI pass 3: the wall's own mark and this chip were two, the
+   * mark's icon and arrow on bare dark squares).
    */
   warn(text: string, side: number): void {
     const key = text + side;
@@ -190,19 +192,30 @@ export class WordStrip {
     this.hazardKey = key;
     this.hazard.replaceChildren();
     if (text !== "") {
-      const parts = [side < 0 ? artNode("part-arrow", "small", { cls: "is-left" }) : null, artNode("icon-rift", "item"), text, side < 0 ? null : artNode("part-arrow", "small")];
-      this.hazard.append(...parts.filter((part): part is HTMLImageElement | string => part !== null));
+      const label = document.createElement("span");
+      label.textContent = text;
+      const parts = [side < 0 ? artNode("part-arrow", "small", { cls: "is-left" }) : null, artNode("icon-rift", "item"), label, side < 0 ? null : artNode("part-arrow", "small")];
+      this.hazard.append(...parts.filter((part): part is HTMLElement => part !== null));
     }
     this.hazard.classList.toggle("is-on", text !== "");
     this.hazard.classList.toggle("is-left", side < 0);
     this.placeHazard();
   }
 
+  /** The chip's place (hud.ts measures it from the still camera and the bays): centred on `y`, its outer edge at `left` or `right`. */
+  hazardSpot(y: number, left: number, right: number): void {
+    this.spot.y = y;
+    this.spot.left = left;
+    this.spot.right = right;
+    // The limits, for the browser scenario's check (survival-ui-art.mjs).
+    this.hazard.dataset.spot = left.toFixed(0) + " " + right.toFixed(0);
+    this.placeHazard();
+  }
+
+  /** The chip on its wall's side between the word line and the bays, its outer edge just inside the corridor. */
   private placeHazard(): void {
-    // Clear of the widest plate (420 px) and of the streak LED on the right.
-    const gap = (this.hazard.classList.contains("is-left") ? 12 : 120) * this.ui;
-    const off = this.host !== null ? this.host.widest().w / 2 + gap : PLATE.width * this.ui / 2 + gap;
-    this.put(this.hazard, "transform", this.hazard.classList.contains("is-left") ? "translateX(calc(" + (this.center - off).toFixed(1) + "px - 100%))" : "translateX(" + (this.center + off).toFixed(1) + "px)");
+    const left = this.hazard.classList.contains("is-left");
+    this.put(this.hazard, "transform", "translate(" + (left ? this.spot.left.toFixed(1) + "px" : "calc(" + this.spot.right.toFixed(1) + "px - 100%)") + ", calc(" + this.spot.y.toFixed(1) + "px - 50%))");
   }
 
   /** A wrong key in the locked word: the letter due (`index`) underlined red, the plate's edge flashes. */
@@ -267,14 +280,12 @@ export class WordStrip {
 
   private placeLed(): void {
     if (this.host !== null) {
-      // Beside the host's plate, on its word row; the rift's countdown on the same row.
+      // Beside the host's plate, on its word row.
       const plate = this.host.rect();
       const row = this.host.rowY();
       this.put(this.led, "left", (plate.x + plate.w + 8 * this.ui).toFixed(1) + "px");
       this.put(this.led, "top", (row - 11 * this.ui).toFixed(1) + "px");
-      this.put(this.hazard, "top", (row - 15 * this.ui).toFixed(1) + "px");
     } else this.led.style.left = this.center + this.wide / 2 + 8 * this.ui + "px";
-    this.placeHazard();
   }
 
   /** Near foes the plate hides (§2.4): a red tick under it at each one's x, blinking at 4 Hz (at most 6). */
