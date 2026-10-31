@@ -24,3 +24,7 @@ pnpm models:prepare --root games/.wt-ts-codex \
 ```
 
 Low và Medium dùng model Medium; High và Ultra dùng High. Low giữ tàu và quái 3D, đạn chỉ có vệt sáng. Bậc khác chỉ nạp đạn của súng đã chọn; Heat Beam không có GLB đạn. Manifest vào Git, GLB không vào Git. Sau khi gộp, Claude nhập lại cho cây chính với `--root games/typing-survival` (bỏ `--out` và `--url-base`), rồi chạy `media:push`.
+
+## UI art
+
+Ảnh UI: chạy `pnpm ui-art:prepare --art-src ../typing-survival/art-src` trong worktree để xuất WebP và manifest vào thư mục thật `public/assets/typing-survival/ui/`, đồng thời sinh `src/view/ui-art.json`. Kiểm bằng cùng lệnh thêm `--check`; xem ảnh chờ bằng `--pending` (chỉ ghi `tmp/ui-art/pending/`). Khi nhận ảnh, Claude đổi cờ trong `scripts/ui-art/selection.json` (tắt bản cũ, bật bản mới cùng vai), chạy lại script; mã và URL giữ nguyên. Sau khi gộp, chạy lại tại checkout chính với `--art-src art-src`, rồi `media:push` theo quy trình media của repo cha. Không sửa tay bảng chạy và không đưa media vào Git.

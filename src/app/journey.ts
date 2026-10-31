@@ -9,7 +9,7 @@
  * No DOM here: the host draws (view/screens-journey.ts) and reloads.
  */
 import { CHAPTER_1, isStageId, stageById } from "../content/chapter-1";
-import { COUNTERS, COUNTER_ROWS, GUN_IDS, GUN_SPECS, gunByKey, type GunId } from "../content/guns";
+import { COUNTERS, COUNTER_ROWS, GUN_IDS, GUN_SPECS, gunByKey, type GunId, type CounterRow } from "../content/guns";
 import { LEARN_RULES, type Stage } from "../content/stage-rules";
 import { stageThreat, uncovered } from "../content/threat";
 import type { Mode } from "../content/balance";
@@ -102,8 +102,8 @@ export type JourneyHost = {
   back(): void;
 };
 
-export type CardView = { readonly recommended: boolean; readonly gun: GunId; readonly key: string; readonly name: string; readonly title: string; readonly magazine: string; readonly range: string; readonly heavy: boolean; readonly good: string; readonly poor: string; readonly picked: number; readonly level: number; readonly on: boolean };
-export type ThreatView = { readonly label: string; readonly weight: number; readonly counters: string; readonly covered: boolean };
+export type CardView = { readonly recommended: boolean; readonly gun: GunId; readonly key: string; readonly name: string; readonly title: string; readonly magazine: string; readonly range: string; readonly heavy: boolean; readonly good: string; readonly poor: string; readonly goodRows: readonly CounterRow[]; readonly poorRows: readonly CounterRow[]; readonly picked: number; readonly level: number; readonly on: boolean };
+export type ThreatView = { readonly row: CounterRow; readonly label: string; readonly weight: number; readonly counters: string; readonly covered: boolean };
 
 /** The journey's state machine: which screen, the selected stage, the loadout's cursor and picks. */
 export class Journey {
@@ -126,6 +126,7 @@ export class Journey {
     const best = progress.best[this.host.mode()] ?? {};
     const items: MenuItem[] = CHAPTER_1.map((stage) => ({
       id: stage.id,
+      art: "stage-" + stage.id,
       label: "Stage " + stage.index + " · " + stage.name + (isOpen(progress, stage.index) ? "  " + "★".repeat(best[stage.id] ?? 0) + "☆".repeat(3 - (best[stage.id] ?? 0)) : ""),
       note: isOpen(progress, stage.index) ? stageNote(stage) : "Clear Stage " + (stage.index - 1) + " to unlock",
       enabled: isOpen(progress, stage.index),
@@ -184,6 +185,8 @@ export class Journey {
         heavy: spec.heavy,
         good: rowsWhere(gun, 2),
         poor: rowsWhere(gun, 0),
+        goodRows: COUNTER_ROWS.filter((row) => COUNTERS[row][gun] === 2),
+        poorRows: COUNTER_ROWS.filter((row) => COUNTERS[row][gun] === 0),
         picked: order,
         level: order >= 0 ? (this.stage.kit.levels[order] ?? 1) : 0,
         on: this.cursor === gun,
@@ -197,7 +200,7 @@ export class Journey {
     const open = new Set(uncovered(this.picked, weights));
     return COUNTER_ROWS.filter((row) => weights[row] > 0.02)
       .sort((a, b) => weights[b] - weights[a])
-      .map((row) => ({ label: ROW_LABELS[row], weight: weights[row], counters: counterTag(row), covered: this.picked.length === 0 || !open.has(row) }));
+      .map((row) => ({ row, label: ROW_LABELS[row], weight: weights[row], counters: counterTag(row), covered: this.picked.length === 0 || !open.has(row) }));
   }
 
   get ready(): boolean {
