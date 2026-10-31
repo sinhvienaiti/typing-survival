@@ -23,6 +23,7 @@ import { hashHex } from "../sim/hash";
 import { Combat } from "../view/combat";
 import { Crowd } from "../view/crowd";
 import { Hud } from "../view/hud";
+import { applyArtVars, artNode, watchArt } from "../view/ui-art";
 import { Stage } from "../view/scene";
 import { renderScreen, type ScreenView } from "../view/screens";
 import { renderJourney, starRow } from "../view/screens-journey";
@@ -118,7 +119,14 @@ let stage: Stage;
 try {
   stage = new Stage(byId<HTMLCanvasElement>("svCanvas"), tier);
 } catch {
-  hudRoot.textContent = "This browser does not support WebGL. Last Line cannot run here.";
+  // The message leads with the warning icon (LL-02); a failed icon hides itself.
+  watchArt(hudRoot);
+  const message = document.createElement("p");
+  message.className = "sv-nogl";
+  const warning = artNode("icon-warning", "item");
+  if (warning !== null) message.append(warning);
+  message.append("This browser does not support WebGL. Last Line cannot run here.");
+  hudRoot.replaceChildren(message);
   throw new Error("survival: no WebGL");
 }
 const vocab = await loadVocab();
@@ -141,9 +149,13 @@ const SESSION_KEY = "survival.session";
 const firstOfSession = safeSessionStorage.getItem(SESSION_KEY) === null;
 safeSessionStorage.setItem(SESSION_KEY, "1");
 const tally = emptyTally();
+/** Deck words finished for the first time ever in this run: the results mark them with the new badge (LL-52). */
+const firstTime = new Set<number>();
 let settled: SkillUpdate | null = null;
 const wordOf = (index: number): Word => vocab.words.get(world.deck[index]!) ?? { en: world.deck[index] ?? "", vi: "", ipa: "" };
 const hud = new Hud(hudRoot, wordOf, world);
+// Art survival.css draws as backgrounds (key caps, magazine cells); one that fails warns and falls back.
+applyArtVars(document.documentElement);
 const crowd = new Crowd(stage.scene);
 const ship = new Ship(stage.scene, pilot, motionReduced());
 const loading = Promise.all([crowd.load(tier), ship.load(stage.scene, tier)]);
@@ -183,7 +195,9 @@ const combat = new Combat(stage, crowd, ship, pilot, tier, world.header.kit.guns
   wordDone(slot, index, perfect, seconds, recognize, errors) {
     const word = wordOf(index);
     const text = world.deck[index] ?? "";
-    tallyWord(tally, history.finished(text), text.length, seconds, recognize, errors === 0);
+    const before = history.finished(text);
+    if (before === "new") firstTime.add(index);
+    tallyWord(tally, before, text.length, seconds, recognize, errors === 0);
     if (vocab.source === "vocabulary") reportWord(word, perfect);
     // Said the first time it is typed in this run, at most once every 3 s.
     if (settings.pronunciationEnabled && speech.volume > 0 && !spoken.has(word.en) && clock - lastSpeak >= SPEAK_GAP_MS) {
@@ -193,7 +207,7 @@ const combat = new Combat(stage, crowd, ship, pilot, tier, world.header.kit.guns
     }
   },
   hurt: () => hud.hurt(),
-  repaired: (hp) => hud.showBanner("REPAIR +" + Math.round(hp) + " HULL", clock),
+  repaired: (hp) => hud.showBanner("REPAIR +" + Math.round(hp) + " HULL", clock, "icon-repair-pod"),
   ended: () => {
     settle(world.phase === "won" ? "won" : "lost");
     if (level.id !== "s0") {
@@ -317,44 +331,44 @@ function items(which: Screen): MenuItem[] {
   switch (which) {
     case "title":
       return [
-        { id: "journey", label: "Campaign", note: "Chapter 1 · stages 1–" + CHAPTER_1.length + " · pick stage and guns", enabled: true },
-        { id: "start", label: started ? "New trial" : "Trial", note: started ? "Abandon " + (level.id === "s0" ? "this run" : "Stage " + level.index) + " for a new trial" : "Pulse Gun and Heat Beam · hold for " + STAGE_S0.seconds / 60 + " min", enabled: true },
-        { id: "continue", label: "Resume", note: started ? "Back to your paused run" : "No run to resume", enabled: started },
-        { id: "mode", label: "Mode", value: MODE_SPECS[settings.mode].label, note: nextRun() ?? MODE_SPECS[settings.mode].note, enabled: true },
-        { id: "profile", label: "Profile", note: "Speed, accuracy, advice", enabled: true },
-        { id: "settings", label: "Options", note: "Audio, shake, pace, ship, graphics", enabled: true },
-        { id: "armory", label: "Armory · Learning", note: "5 guns: ammo, range; how learning works", enabled: true },
+        { id: "journey", icon: "icon-menu-journey", label: "Campaign", note: "Chapter 1 · stages 1–" + CHAPTER_1.length + " · pick stage and guns", enabled: true },
+        { id: "start", icon: "icon-clock", label: started ? "New trial" : "Trial", note: started ? "Abandon " + (level.id === "s0" ? "this run" : "Stage " + level.index) + " for a new trial" : "Pulse Gun and Heat Beam · hold for " + STAGE_S0.seconds / 60 + " min", enabled: true },
+        { id: "continue", icon: "icon-menu-play", label: "Resume", note: started ? "Back to your paused run" : "No run to resume", enabled: started },
+        { id: "mode", icon: "icon-menu-mode", label: "Mode", value: MODE_SPECS[settings.mode].label, note: nextRun() ?? MODE_SPECS[settings.mode].note, enabled: true },
+        { id: "profile", icon: "icon-menu-profile", label: "Profile", note: "Speed, accuracy, advice", enabled: true },
+        { id: "settings", icon: "icon-menu-settings", label: "Options", note: "Audio, shake, pace, ship, graphics", enabled: true },
+        { id: "armory", icon: "icon-menu-armory", label: "Armory · Learning", note: "5 guns: ammo, range; how learning works", enabled: true },
       ];
     case "settings": {
       const later = started ? "End your run to change this" : undefined;
       return [
-        { id: "sfx", label: "Effects", value: percent(settings.sfxVolume), level: settings.sfxVolume, enabled: true },
-        { id: "music", label: "Music", value: percent(settings.musicVolume), level: settings.musicVolume, enabled: true },
-        { id: "shake", label: "Screen shake", value: onOff(settings.screenShake), note: shakeAllowed ? undefined : "Disabled by ?shake=0", enabled: true },
-        { id: "motion", label: "Reduce motion", value: MOTION_NAMES[motionPreference()], note: "No ship drift or lunges; no letter bounce", enabled: true },
-        { id: "speak", label: "Read words aloud", value: onOff(settings.pronunciationEnabled), enabled: true },
-        { id: "adapt", label: "Adapt pace to your typing", value: onOff(settings.paceAdapt), note: nextRun() ?? (settings.paceAdapt ? "Swarm density follows your profile" : "Fixed pace throughout the run"), enabled: true },
+        { id: "sfx", icon: "icon-sfx", label: "Effects", value: percent(settings.sfxVolume), level: settings.sfxVolume, enabled: true },
+        { id: "music", icon: "icon-music", label: "Music", value: percent(settings.musicVolume), level: settings.musicVolume, enabled: true },
+        { id: "shake", icon: "icon-shake", label: "Screen shake", value: onOff(settings.screenShake), note: shakeAllowed ? undefined : "Disabled by ?shake=0", enabled: true },
+        { id: "motion", icon: "icon-reduced-motion", label: "Reduce motion", value: MOTION_NAMES[motionPreference()], note: "No ship drift or lunges; no letter bounce", enabled: true },
+        { id: "speak", icon: "icon-read-aloud", label: "Read words aloud", value: onOff(settings.pronunciationEnabled), enabled: true },
+        { id: "adapt", icon: "icon-pace-director", label: "Adapt pace to your typing", value: onOff(settings.paceAdapt), note: nextRun() ?? (settings.paceAdapt ? "Swarm density follows your profile" : "Fixed pace throughout the run"), enabled: true },
         { id: "pilot", label: "Ship", value: PILOT_NAMES[chosen.pilot], note: later, enabled: !started },
-        { id: "quality", label: "Graphics", value: TIER_NAMES[chosen.tier], note: later, enabled: !started },
-        { id: "done", label: "Done", enabled: true },
+        { id: "quality", icon: "icon-quality", label: "Graphics", value: TIER_NAMES[chosen.tier], note: later, enabled: !started },
+        { id: "done", icon: "icon-check", label: "Done", enabled: true },
       ];
     }
     case "armory":
     case "profile":
-      return [{ id: "back", label: "Back", enabled: true }];
+      return [{ id: "back", icon: "icon-back", label: "Back", enabled: true }];
     case "pause":
       return [
-        { id: "resume", label: "Resume", note: "Esc", enabled: true },
-        { id: "settings", label: "Options", note: "Audio, shake, speech", enabled: true },
-        { id: "title", label: "Main menu", note: "Your run stays paused", enabled: true },
+        { id: "resume", icon: "icon-menu-play", label: "Resume", note: "Esc", enabled: true },
+        { id: "settings", icon: "icon-menu-settings", label: "Options", note: "Audio, shake, speech", enabled: true },
+        { id: "title", icon: "icon-back", label: "Main menu", note: "Your run stays paused", enabled: true },
       ];
     case "end": {
       const next = world.phase === "won" ? CHAPTER_1[level.index] : undefined;
       const list: MenuItem[] = [
-        ...(next !== undefined ? [{ id: "next", art: "stage-" + next.id, label: "Stage " + next.index, note: next.name, enabled: true }] : []),
-        { id: "replay", label: level.id === "s0" ? "Retry" : "Retry stage", enabled: true },
-        ...(level.id === "s0" ? [] : [{ id: "stages", label: "Stages", note: "Campaign", enabled: true }]),
-        { id: "title", label: "Main menu", note: "Esc", enabled: true },
+        ...(next !== undefined ? [{ id: "next", icon: "icon-next-stage", art: "stage-" + next.id, label: "Stage " + next.index, note: next.name, enabled: true }] : []),
+        { id: "replay", icon: "icon-retry", label: level.id === "s0" ? "Retry" : "Retry stage", enabled: true },
+        ...(level.id === "s0" ? [] : [{ id: "stages", icon: "icon-menu-journey", label: "Stages", note: "Campaign", enabled: true }]),
+        { id: "title", icon: "icon-back", label: "Main menu", note: "Esc", enabled: true },
       ];
       // Enter takes the first item (the one selected): the key is named there.
       list[0] = { ...list[0]!, note: (list[0]!.note ? list[0]!.note + " · " : "") + "Enter" };
@@ -409,7 +423,7 @@ function view(which: Screen): ScreenView | null {
         note: [countedText(settled, report), report.suggestionText].filter(Boolean).join(" "),
         won: world.phase === "won",
         stats: runStats(world),
-        words: runWords(world, wordOf),
+        words: runWords(world, wordOf, (index) => firstTime.has(index)),
       };
     }
     default:

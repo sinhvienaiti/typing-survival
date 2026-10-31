@@ -9,15 +9,16 @@ import table from "../src/view/ui-art.json";
 import { BOX, pick, artHtml, artAttrs, gunRole, foeRole, stageRole, rowRoles, bgRole, resetArtWarnings, handleArtError, watchArt } from "../src/view/ui-art";
 import { screens206, plain206 } from "./ui-art-fixtures";
 import golden from "./golden/ui-text-206.json";
+import { WIRED } from "./ui-art-roles";
 
 const accepted = selection.entries.filter(e => e.accepted);
 const roles = selection.entries.map(e => e.role);
 const md5 = (b: Buffer) => createHash("md5").update(b).digest("hex");
 afterEach(() => { vi.restoreAllMocks(); resetArtWarnings(); });
 describe("UI art 206", () => {
-  it("selects precisely 15 accepted roles from 37 entries, with English names and pending replacements", () => {
-    expect(selection.version).toBe(1); expect(selection.entries).toHaveLength(37);
-    const wanted = [...GUN_KEYS.map(gunRole), ...Object.values(KIND).filter(k=>k!==KIND.shard).map(foeRole), ...CHAPTER_1.map(s=>stageRole(s.id))].sort();
+  it("selects precisely 68 accepted roles from 89 entries (206's 15, the Shard, 52 icons and parts), with English names and pending replacements", () => {
+    expect(selection.version).toBe(1); expect(selection.entries).toHaveLength(89);
+    const wanted = [...GUN_KEYS.map(gunRole), ...Object.values(KIND).map(foeRole), ...CHAPTER_1.map(s=>stageRole(s.id)), ...WIRED].sort();
     expect(accepted.map(e=>e.role).sort()).toEqual(wanted);
     for(const role of new Set(roles)) expect(accepted.filter(e=>e.role===role).length).toBeLessThanOrEqual(1);
     for(const e of selection.entries) {
@@ -34,7 +35,8 @@ describe("UI art 206", () => {
     expect(Object.keys(table.roles).sort()).toEqual(accepted.filter(e=>e.source).map(e=>e.role).sort());
     for(const [role, data] of Object.entries(table.roles)) {
       expect(data.rev).toMatch(/^[a-f0-9]{8}$/);
-      expect(data.widths).toEqual(role.startsWith("stage-")?[192,384,768,1536]:[64,128,256]);
+      expect(data.widths).toEqual(role.startsWith("stage-")?[192,384,768,1536]:role==="slider-track"?[512,1024]:[64,128,256]);
+      expect(data.aspect).toBe(role.startsWith("stage-")?1.777778:role==="slider-track"?16:1);
     }
     expect(JSON.stringify(table)).not.toMatch(/art-src|\.png/);
   });
@@ -55,8 +57,8 @@ describe("UI art 206", () => {
   it("places art in all screen contexts with dimensions and decoding", () => {
     vi.spyOn(console,"warn").mockImplementation(()=>{});
     const s = screens206();
-    expect((s.armory!.match(/<img /g)??[])).toHaveLength(5);
-    expect((s.stages!.match(/<img /g)??[])).toHaveLength(4);
+    expect((s.armory!.match(/sv-art-armory/g)??[])).toHaveLength(5);
+    expect((s.stages!.match(/sv-art-menu/g)??[])).toHaveLength(4);
     expect(s.briefing).toContain("sv-art-briefing");
     for(const r of ["foe-swarm","foe-scout","foe-brute"]) expect(s.briefing).toContain(r+".");
     expect(s.briefing).toMatch(/sv-art-teach[^>]+foe-brute/);
@@ -69,17 +71,23 @@ describe("UI art 206", () => {
     expect((s.trial!.match(/<img /g)??[])).toHaveLength(2);
     expect(s.trial).not.toContain("stage-s0"); expect(s.end).toContain("stage-c1-s2.");
     for(const html of Object.values(s)) for(const img of html.match(/<img\b[^>]*>/g)??[]) {
-      for(const attr of ["width=", "height=", 'alt=""', 'decoding="async"', 'aria-hidden="true"']) expect(img).toContain(attr);
+      // Decorative, except the learning rule's check, which stands for a word of its sentence.
+      const named = img.includes("/icon-check.") && img.includes('alt="check"');
+      for(const attr of ["width=", "height=", 'decoding="async"', ...(named ? [] : ['alt=""', 'aria-hidden="true"'])]) expect(img).toContain(attr);
+      if(named) expect(img).not.toContain("aria-hidden");
       expect(img).not.toContain("sizes=");
     }
   });
   it("leaves pending art empty and warns once per role", () => {
     const warn=vi.spyOn(console,"warn").mockImplementation(()=>{});
     const s=screens206(); const s2=screens206();
-    expect(s.title).not.toMatch(/<img|<svg/); expect(s2.title).toBe(s.title);
+    // The title's background (bg-menu) is still pending: no background image, no drawn stand-in.
+    expect(s.title).not.toMatch(/sv-bg|<svg/); expect(s2.title).toBe(s.title);
     expect(warn.mock.calls.filter(c=>c[0]==="[ui-art] no accepted image: bg-menu")).toHaveLength(1);
     expect(rowRoles("splitter").map(r=>artHtml(r,"threat")).join("")).toContain("foe-splitter.");
-    expect(artHtml("foe-shard","threat")).toBe("");
+    // The Shard has its portrait since 238 (31/10); a background is still pending.
+    expect(rowRoles("splitter").map(r=>artHtml(r,"threat")).join("")).toContain("foe-shard.");
+    expect(artHtml("bg-menu","bg")).toBe("");
     expect(artHtml("gun-xung","bay",{label:true})).toContain('alt="Pulse Gun"');
     expect(artHtml("gun-xung","bay",{label:true})).not.toContain("aria-hidden");
   });

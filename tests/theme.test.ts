@@ -26,8 +26,8 @@ describe("Tuyến Cuối theme", () => {
     expect(literals).toEqual([]);
   });
 
-  it("every variable the HUD reads is defined in theme.css (or set at run time: --ui, --fill, --fit, --mfit, --load and the typed letter's --k, --g, --sw, --swo, --sp)", () => {
-    const runtime = new Set(["--ui", "--fill", "--fit", "--mfit", "--load", "--k", "--g", "--sw", "--swo", "--sp"]);
+  it("every variable the HUD reads is defined in theme.css (or set at run time: --ui, --fill, --fit, --mfit, --load, the typed letter's --k, --g, --sw, --swo, --sp, and the art ui-art.ts artVars sets; or a magazine cell's own canvas and tint, --cell and --tint)", () => {
+    const runtime = new Set(["--ui", "--fill", "--fit", "--mfit", "--load", "--k", "--g", "--sw", "--swo", "--sp", "--art-keycap", "--art-keycap-on", "--art-mag-empty", "--art-mag-full", "--cell", "--tint"]);
     const used = [...new Set([...hud.matchAll(/var\((--[\w-]+)/g)].map((match) => match[1]!))];
     expect(used.filter((name) => !defined.has(name) && !runtime.has(name))).toEqual([]);
     for (const token of ["--steel-900", "--hot", "--volt", "--danger", "--typing", "--hazard", "--rivet", "--led", "--panel"]) expect(defined.has(token)).toBe(true);

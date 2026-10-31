@@ -5,11 +5,26 @@
  * freeze typing; closing counts 3-2-1 back in (no count off the fight).
  * Every change applies at once and goes into the save (main.ts owns the
  * values: settings.ts maps them). No icon art yet (Codex ticket 180): the
- * kit shows plain text buttons.
+ * kit shows plain text buttons. The sliders are skinned with the groove and
+ * knob of ticket 225 (QUICK_SKIN).
  */
-import { QuickSettings, defaultSettingsRows, defaultSoundRows, type QuickChoiceOption, type QuickMount, type QuickRow, type QuickSettingsOptions, type QuickValue } from "../kit/ui";
+import { QuickSettings, defaultSettingsRows, defaultSoundRows, type QuickChoiceOption, type QuickMount, type QuickRow, type QuickSettingsOptions, type QuickSkin, type QuickValue } from "../kit/ui";
 import type { KeyboardSoundChoice, TypingSounds } from "../kit/feedback/typing-fx";
+import { artUrl } from "../view/ui-art";
 import { manifestJson, sampleBytes } from "./keyboard";
+
+/**
+ * The sliders' art (ticket 225), through the UI art table: the kit draws the
+ * groove 10 px tall and up to 290 px wide, the knob 22 px (× its scale, 1.5
+ * at 1080p), so the 1024 × 64 groove and the 128 px knob stay sharp at 2×.
+ * survival.css clears the kit's flat colours under both, so only the art
+ * shows. A part without art stays the kit's plain slider.
+ */
+export function quickSkin(): QuickSkin {
+  const track = artUrl("slider-track", 290);
+  const thumb = artUrl("slider-thumb", 22);
+  return { ...(track !== null ? { sliderTrack: track } : {}), ...(thumb !== null ? { sliderThumb: thumb } : {}) };
+}
 
 /**
  * The Settings rows: the kit's (typing effects with a preview, graphics; no
@@ -77,6 +92,7 @@ export function quickOptions(hooks: QuickHooks): QuickSettingsOptions {
     settingsRows: settingsRows(hooks.mountPreview),
     soundRows: soundRows(hooks.keyboardChoices),
     icons: {},
+    skin: quickSkin(),
   };
 }
 

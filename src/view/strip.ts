@@ -30,6 +30,7 @@ import { NEAR } from "../content/rules";
 import type { World } from "../sim/world";
 import type { Stage } from "./scene";
 import { bounce, popColour, popDrop, popGlow, popScale, sparkLevel, sweepAlpha, sweepLength, swell, STREAK, POP } from "./type-rules";
+import { artNode } from "./ui-art";
 
 const LETTERS = 16;
 const MARKS = 6;
@@ -74,6 +75,7 @@ export class WordStrip {
   private readonly sweep: HTMLElement;
   private readonly ghost: HTMLElement;
   private readonly led: HTMLElement;
+  private readonly ledText: HTMLElement;
   private readonly hazard: HTMLElement;
   private readonly ticks: HTMLElement[] = [];
   private readonly letters: HTMLElement[] = [];
@@ -115,6 +117,10 @@ export class WordStrip {
     for (let i = 0; i < LETTERS; i += 1) this.letters.push(el("i", "", this.word));
     this.ghost = el("div", "sv-strip-ghost", root);
     this.led = el("div", "sv-streak", root);
+    // The streak icon (ticket 149) before "CLEAN ×n".
+    const streak = artNode("icon-streak", "small");
+    if (streak !== null) this.led.append(streak);
+    this.ledText = el("span", "", this.led);
     this.hazard = el("div", "sv-strip-warn", root);
     const marks = el("div", "sv-marks", root);
     for (let i = 0; i < MARKS; i += 1) this.ticks.push(el("i", "", marks));
@@ -172,12 +178,21 @@ export class WordStrip {
     this.lastKey.turn = 10 + Math.random() * 25;
   }
 
-  /** A rift's countdown beside the line, on its wall's side (`side` < 0 left; "" hides it). */
+  /**
+   * A rift's countdown beside the line, on its wall's side (`side` < 0 left;
+   * "" hides it): an arrow at the wall, the Rift icon, the text. The arrow
+   * (16 px) and the icon sit on dark chips (survival.css), so they keep their
+   * contrast on the orange plate.
+   */
   warn(text: string, side: number): void {
     const key = text + side;
     if (key === this.hazardKey) return;
     this.hazardKey = key;
-    this.hazard.textContent = text;
+    this.hazard.replaceChildren();
+    if (text !== "") {
+      const parts = [side < 0 ? artNode("part-arrow", "small", { cls: "is-left" }) : null, artNode("icon-rift", "item"), text, side < 0 ? null : artNode("part-arrow", "small")];
+      this.hazard.append(...parts.filter((part): part is HTMLImageElement | string => part !== null));
+    }
     this.hazard.classList.toggle("is-on", text !== "");
     this.hazard.classList.toggle("is-left", side < 0);
     this.placeHazard();
@@ -245,7 +260,7 @@ export class WordStrip {
   streak(n: number, broke: number, now: number): void {
     if (n > this.streakN && n >= STREAK.show) this.streakAt = now;
     if (broke >= STREAK.show) this.brokeAt = now;
-    if (n >= STREAK.show) this.led.textContent = "CLEAN ×" + n;
+    if (n >= STREAK.show) this.ledText.textContent = "CLEAN ×" + n;
     this.streakN = n;
     this.placeLed();
   }

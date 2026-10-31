@@ -10,6 +10,11 @@ export type MenuItem = {
   readonly label: string;
   readonly note?: string;
   readonly art?: string;
+  /** An icon role (ui-art.ts) before the label; the menu sets its size. */
+  readonly icon?: string;
+  /** A stage's stars (0–3) after its label; `locked` shows the lock there instead. */
+  readonly stars?: number;
+  readonly locked?: boolean;
   readonly enabled: boolean;
   /** A setting's value as shown ("70 %", "Bật"); ← → change it. */
   readonly value?: string;

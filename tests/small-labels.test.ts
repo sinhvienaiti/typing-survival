@@ -18,7 +18,8 @@ describe("small player labels (ticket 104)", () => {
     const screen = journey();
     screen.brief(stageById(id));
     const html = renderJourney(screen);
-    const detail = /<dt>Learning<\/dt><dd><b>[^<]+<\/b> · ([\s\S]*?)<\/dd>/.exec(html)![1]!;
+    // The term may lead with its icon (ticket 150, learning-rule).
+    const detail = /<dt>(?:<img[^>]*>)?Learning<\/dt><dd><b>[^<]+<\/b> · ([\s\S]*?)<\/dd>/.exec(html)![1]!.replace(/<img[^>]*>/g, "✓");
     const sentences = detail.split(/[.!?]/).map((sentence) => sentence.trim()).filter(Boolean);
     expect(sentences.length).toBeGreaterThan(0);
     for (const sentence of sentences) expect(sentence.split(/\s+/).length, sentence).toBeLessThanOrEqual(14);

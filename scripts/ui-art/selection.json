@@ -202,10 +202,10 @@
     {
       "role": "foe-shard",
       "kind": "portrait",
-      "source": null,
-      "accepted": false,
-      "ticket": "150",
-      "verdict": "CODEX_QUEUE 150: Chờ chấm",
+      "source": "ui/foes/shard",
+      "accepted": true,
+      "ticket": "238",
+      "verdict": "CODEX_QUEUE 238: Nhận 31/10 03:15 (try2)",
       "alt": "Shard"
     },
     {
@@ -339,6 +339,474 @@
       "verdict": "CODEX_QUEUE 121: Chờ chấm",
       "alt": "",
       "crop": "1536x864+0+80"
+    },
+    {
+      "role": "icon-armour",
+      "kind": "icon",
+      "source": "ui/icons/armour",
+      "accepted": true,
+      "ticket": "149",
+      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "alt": "Hull armour"
+    },
+    {
+      "role": "icon-clock",
+      "kind": "icon",
+      "source": "ui/icons/clock",
+      "accepted": true,
+      "ticket": "149",
+      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "alt": "Time left"
+    },
+    {
+      "role": "icon-kills",
+      "kind": "icon",
+      "source": "ui/icons/kills",
+      "accepted": true,
+      "ticket": "149",
+      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "alt": "Kills"
+    },
+    {
+      "role": "icon-surge",
+      "kind": "icon",
+      "source": "ui/icons/surge",
+      "accepted": true,
+      "ticket": "149",
+      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "alt": "Surge"
+    },
+    {
+      "role": "icon-repair-pod",
+      "kind": "icon",
+      "source": "ui/icons/repair-pod",
+      "accepted": true,
+      "ticket": "149",
+      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "alt": "Repair pod"
+    },
+    {
+      "role": "icon-keyboard",
+      "kind": "icon",
+      "source": "ui/icons/keyboard",
+      "accepted": true,
+      "ticket": "237",
+      "verdict": "CODEX_QUEUE 237: Nhận 31/10 02:56 (try2)",
+      "alt": "Keyboard"
+    },
+    {
+      "role": "icon-check",
+      "kind": "icon",
+      "source": "ui/icons/check",
+      "accepted": true,
+      "ticket": "149",
+      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "alt": "Done"
+    },
+    {
+      "role": "icon-bay-full",
+      "kind": "icon",
+      "source": "ui/icons/bay-full",
+      "accepted": true,
+      "ticket": "237",
+      "verdict": "CODEX_QUEUE 237: Nhận 31/10 02:56 (try3)",
+      "alt": "Bay full"
+    },
+    {
+      "role": "icon-streak",
+      "kind": "icon",
+      "source": "ui/icons/streak",
+      "accepted": true,
+      "ticket": "237",
+      "verdict": "CODEX_QUEUE 237: Nhận 31/10 02:56 (try2)",
+      "alt": "Clean streak"
+    },
+    {
+      "role": "icon-lock",
+      "kind": "icon",
+      "source": "ui/icons/lock",
+      "accepted": true,
+      "ticket": "149",
+      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "alt": "Locked"
+    },
+    {
+      "role": "icon-objective",
+      "kind": "icon",
+      "source": "ui/icons/objective",
+      "accepted": true,
+      "ticket": "238",
+      "verdict": "CODEX_QUEUE 238: Nhận 31/10 03:15 (try2)",
+      "alt": "Goal"
+    },
+    {
+      "role": "icon-hazard",
+      "kind": "icon",
+      "source": "ui/icons/hazard",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "Hazard"
+    },
+    {
+      "role": "icon-learning-rule",
+      "kind": "icon",
+      "source": "ui/icons/learning-rule",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "Learning rule"
+    },
+    {
+      "role": "icon-equipment",
+      "kind": "icon",
+      "source": "ui/icons/equipment",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "Gear"
+    },
+    {
+      "role": "icon-warning",
+      "kind": "icon",
+      "source": "ui/icons/warning",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "Warning"
+    },
+    {
+      "role": "icon-new-badge",
+      "kind": "icon",
+      "source": "ui/icons/new-badge",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "New"
+    },
+    {
+      "role": "icon-station-crest",
+      "kind": "icon",
+      "source": "ui/icons/station-crest",
+      "accepted": true,
+      "ticket": "240",
+      "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (c2-try3)",
+      "alt": "Station VC-7"
+    },
+    {
+      "role": "icon-chapter-crest",
+      "kind": "icon",
+      "source": "ui/icons/chapter-crest",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "Chapter 1"
+    },
+    {
+      "role": "icon-load-guns",
+      "kind": "icon",
+      "source": "ui/icons/load-guns",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "Load guns"
+    },
+    {
+      "role": "icon-back",
+      "kind": "icon",
+      "source": "ui/icons/back",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "Back"
+    },
+    {
+      "role": "icon-menu-play",
+      "kind": "icon",
+      "source": "ui/icons/menu-play",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Play"
+    },
+    {
+      "role": "icon-menu-journey",
+      "kind": "icon",
+      "source": "ui/icons/menu-journey",
+      "accepted": true,
+      "ticket": "239",
+      "verdict": "CODEX_QUEUE 239: Nhận 31/10 05:15 (c2-try3)",
+      "alt": "Campaign"
+    },
+    {
+      "role": "icon-menu-mode",
+      "kind": "icon",
+      "source": "ui/icons/menu-mode",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Mode"
+    },
+    {
+      "role": "icon-menu-armory",
+      "kind": "icon",
+      "source": "ui/icons/menu-armory",
+      "accepted": true,
+      "ticket": "239",
+      "verdict": "CODEX_QUEUE 239: Nhận 31/10 05:15 (c2-try1)",
+      "alt": "Armory"
+    },
+    {
+      "role": "icon-menu-settings",
+      "kind": "icon",
+      "source": "ui/icons/menu-settings",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Options"
+    },
+    {
+      "role": "icon-menu-profile",
+      "kind": "icon",
+      "source": "ui/icons/menu-profile",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Profile"
+    },
+    {
+      "role": "icon-star-lit",
+      "kind": "icon",
+      "source": "ui/icons/star-lit",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Star earned"
+    },
+    {
+      "role": "icon-star-unlit",
+      "kind": "icon",
+      "source": "ui/icons/star-unlit",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Star not earned"
+    },
+    {
+      "role": "icon-retry",
+      "kind": "icon",
+      "source": "ui/icons/retry",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Retry"
+    },
+    {
+      "role": "icon-next-stage",
+      "kind": "icon",
+      "source": "ui/icons/next-stage",
+      "accepted": true,
+      "ticket": "239",
+      "verdict": "CODEX_QUEUE 239: Nhận 31/10 05:15 (c3-try2)",
+      "alt": "Next stage"
+    },
+    {
+      "role": "icon-stat-time",
+      "kind": "icon",
+      "source": "ui/icons/stat-time",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Time"
+    },
+    {
+      "role": "icon-stat-accuracy",
+      "kind": "icon",
+      "source": "ui/icons/stat-accuracy",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Accuracy"
+    },
+    {
+      "role": "icon-sfx",
+      "kind": "icon",
+      "source": "ui/icons/sfx",
+      "accepted": true,
+      "ticket": "152",
+      "verdict": "CODEX_QUEUE 152: Nhận 31/10",
+      "alt": "Effects"
+    },
+    {
+      "role": "icon-music",
+      "kind": "icon",
+      "source": "ui/icons/music",
+      "accepted": true,
+      "ticket": "152",
+      "verdict": "CODEX_QUEUE 152: Nhận 31/10",
+      "alt": "Music"
+    },
+    {
+      "role": "icon-shake",
+      "kind": "icon",
+      "source": "ui/icons/shake",
+      "accepted": true,
+      "ticket": "240",
+      "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (c2-try1)",
+      "alt": "Screen shake"
+    },
+    {
+      "role": "icon-reduced-motion",
+      "kind": "icon",
+      "source": "ui/icons/reduced-motion",
+      "accepted": true,
+      "ticket": "240",
+      "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (c2-try2)",
+      "alt": "Reduce motion"
+    },
+    {
+      "role": "icon-read-aloud",
+      "kind": "icon",
+      "source": "ui/icons/read-aloud",
+      "accepted": true,
+      "ticket": "152",
+      "verdict": "CODEX_QUEUE 152: Nhận 31/10",
+      "alt": "Read words aloud"
+    },
+    {
+      "role": "icon-pace-director",
+      "kind": "icon",
+      "source": "ui/icons/pace-director.v2",
+      "accepted": true,
+      "ticket": "152",
+      "verdict": "CODEX_QUEUE 152: Nhận 31/10 (v2)",
+      "alt": "Adapt pace"
+    },
+    {
+      "role": "icon-quality",
+      "kind": "icon",
+      "source": "ui/icons/quality",
+      "accepted": true,
+      "ticket": "152",
+      "verdict": "CODEX_QUEUE 152: Nhận 31/10",
+      "alt": "Graphics"
+    },
+    {
+      "role": "icon-stat-wpm",
+      "kind": "icon",
+      "source": "ui/icons/stat-wpm.v2",
+      "accepted": true,
+      "ticket": "152",
+      "verdict": "CODEX_QUEUE 152: Nhận 31/10 (v2)",
+      "alt": "Speed"
+    },
+    {
+      "role": "icon-stat-new-word",
+      "kind": "icon",
+      "source": "ui/icons/stat-new-word",
+      "accepted": true,
+      "ticket": "152",
+      "verdict": "CODEX_QUEUE 152: Nhận 31/10",
+      "alt": "New-word read"
+    },
+    {
+      "role": "icon-stat-evenness",
+      "kind": "icon",
+      "source": "ui/icons/stat-evenness",
+      "accepted": true,
+      "ticket": "240",
+      "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (try2)",
+      "alt": "Steadiness"
+    },
+    {
+      "role": "icon-rift",
+      "kind": "icon",
+      "source": "ui/icons/rift",
+      "accepted": true,
+      "ticket": "152",
+      "verdict": "CODEX_QUEUE 152: Nhận 31/10",
+      "alt": "Rift"
+    },
+    {
+      "role": "part-keycap",
+      "kind": "icon",
+      "source": "ui/parts/keycap",
+      "accepted": true,
+      "ticket": "153",
+      "verdict": "CODEX_QUEUE 153: Nhận 31/10",
+      "alt": "Key"
+    },
+    {
+      "role": "part-keycap-active",
+      "kind": "icon",
+      "source": "ui/parts/keycap-active",
+      "accepted": true,
+      "ticket": "153",
+      "verdict": "CODEX_QUEUE 153: Nhận 31/10",
+      "alt": "Key, lit"
+    },
+    {
+      "role": "part-led-on",
+      "kind": "icon",
+      "source": "ui/parts/led-on",
+      "accepted": true,
+      "ticket": "153",
+      "verdict": "CODEX_QUEUE 153: Nhận 31/10",
+      "alt": "Lamp on"
+    },
+    {
+      "role": "part-led-off",
+      "kind": "icon",
+      "source": "ui/parts/led-off",
+      "accepted": true,
+      "ticket": "153",
+      "verdict": "CODEX_QUEUE 153: Nhận 31/10",
+      "alt": "Lamp off"
+    },
+    {
+      "role": "part-mag-empty",
+      "kind": "icon",
+      "source": "ui/parts/mag-empty",
+      "accepted": true,
+      "ticket": "240",
+      "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (try3)",
+      "alt": "Empty magazine"
+    },
+    {
+      "role": "part-mag-full",
+      "kind": "icon",
+      "source": "ui/parts/mag-full",
+      "accepted": true,
+      "ticket": "153",
+      "verdict": "CODEX_QUEUE 153: Nhận 31/10",
+      "alt": "Full magazine"
+    },
+    {
+      "role": "part-arrow",
+      "kind": "icon",
+      "source": "ui/parts/arrow",
+      "accepted": true,
+      "ticket": "153",
+      "verdict": "CODEX_QUEUE 153: Nhận 31/10",
+      "alt": "Arrow"
+    },
+    {
+      "role": "slider-thumb",
+      "kind": "icon",
+      "source": "ui/quick-settings/sliders/slider-thumb",
+      "accepted": true,
+      "ticket": "225",
+      "verdict": "CODEX_QUEUE 225: Nhận 31/10 05:30",
+      "alt": "Slider knob"
+    },
+    {
+      "role": "slider-track",
+      "kind": "track",
+      "source": "ui/quick-settings/sliders/slider-track",
+      "accepted": true,
+      "ticket": "225",
+      "verdict": "CODEX_QUEUE 225: Nhận 31/10 05:30",
+      "alt": "Slider groove"
     }
   ]
 }

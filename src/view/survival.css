@@ -57,9 +57,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 @keyframes sv-banner { 0% { opacity: 0; transform: translate(-50%, 0) scale(1.4); } 10% { opacity: 1; transform: translate(-50%, 0) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
 /* An input notice (Vietnamese IME on, fallback words): just above the word line (hud.ts sets its top), big enough to see while typing. */
 .sv-notice { position: absolute; top: calc(360px * var(--ui)); left: 50%; transform: translateX(-50%); padding: calc(7px * var(--ui)) calc(16px * var(--ui)); border: 2px solid var(--danger); background: var(--notice); box-shadow: 0 0 18px var(--danger-glow); font: 700 calc(20px * var(--ui)) var(--font-battle); white-space: nowrap; color: var(--text); }
-.sv-notice::before { content: "⌨ "; }
 .sv-notice.is-hint { border-color: var(--volt); background: var(--screen); box-shadow: 0 0 18px var(--volt-glow); color: var(--soft); }
-.sv-notice.is-hint::before { content: none; }
 
 /* The objective's plate (top centre, fixed: only its numbers change). */
 .sv-goal { align-self: flex-start; padding: calc(7px * var(--ui)) calc(18px * var(--ui)); font: 700 calc(16px * var(--ui)) var(--font-title); letter-spacing: 0.14em; color: var(--led); text-shadow: 0 0 10px var(--led-glow); background-color: var(--screen); }
@@ -92,12 +90,18 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-gun { font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.12em; white-space: nowrap; color: var(--gun); }
 .sv-slot .sv-typed { color: var(--gun-ink); text-decoration: underline calc(2px * var(--ui)) var(--gun-ink); text-underline-offset: calc(4px * var(--ui)); }
 .sv-head { display: inline-block; transform-origin: 50% 85%; }
-.sv-mags { margin-left: auto; display: flex; gap: calc(3px * var(--ui)); color: var(--gun); }
-.sv-mags i { --fill: 0; position: relative; width: calc(22px * var(--ui)); height: calc(9px * var(--ui)); background: var(--track); border: 1px solid var(--bevel-lo); overflow: hidden; }
-.sv-mags i::after { content: ""; position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--fill)); background: currentColor; -webkit-mask: var(--segments); mask: var(--segments); }
-/* A word into a full bay: the magazine LEDs blink urgent (hud.ts times it on the frame clock). */
-.sv-slot.is-overfull .sv-mags { color: var(--urgent); filter: drop-shadow(0 0 6px var(--urgent)); }
-.sv-slot.is-overfull .sv-mags i { border-color: var(--urgent); }
+.sv-mags { margin: calc(-3px * var(--ui)) 0 calc(-3px * var(--ui)) auto; display: flex; gap: calc(4px * var(--ui)); color: var(--gun); }
+/*
+ * Magazine cells (part-mag-empty / part-mag-full, tickets 153, 240): the empty cell, and the full one over it cut down from the top as the magazine empties.
+ * Each cell fills 25 % × 72 % of its square canvas: a 24 px canvas gives a cell 6 × 17 px (ui-art.ts artVars; the header keeps its height through the negative margins above).
+ * The full cell's glass takes the gun's colour (--tint): a flat layer over the glass only (62 % × 76 % of the cell), blended `color`, so the art keeps its light and the frame stays steel.
+ * Without the art (variables unset, ui-art.ts applyArtVars) the cells are flat: track, then the tint.
+ */
+.sv-mags i { --fill: 0; --cell: calc(24px * var(--ui)); --tint: var(--gun); position: relative; width: calc(var(--cell) * 0.25); height: calc(var(--cell) * 0.71875); background: var(--art-mag-empty, linear-gradient(var(--track), var(--track))) center / var(--cell) var(--cell) no-repeat; }
+.sv-mags i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(var(--tint), var(--tint)) center / 62% 76% no-repeat, var(--art-mag-full, linear-gradient(var(--tint), var(--tint))) center / var(--cell) var(--cell) no-repeat; background-blend-mode: color, normal; clip-path: inset(calc((1 - var(--fill)) * 100%) 0 0 0); }
+/* A word into a full bay: the magazine cells blink urgent, glass and glow (hud.ts times it on the frame clock). */
+.sv-slot.is-overfull .sv-mags { color: var(--urgent); filter: drop-shadow(0 0 calc(6px * var(--ui)) var(--urgent)); }
+.sv-slot.is-overfull .sv-mags i { --tint: var(--urgent); filter: brightness(1.35); }
 .sv-word { --fit: 1; font: 800 calc(32px * var(--ui) * var(--fit)) var(--font-battle); letter-spacing: 0.02em; line-height: 1.15; white-space: nowrap; color: var(--text); }
 .sv-mean { --mfit: 1; font: 600 calc(15px * var(--ui) * var(--mfit)) var(--font-battle); color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sv-ipa { font: 600 calc(14px * var(--ui)) var(--font-ipa); letter-spacing: 0; color: var(--soft); }
@@ -108,8 +112,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-slot.is-active { border-color: var(--gun); box-shadow: inset 0 1px 0 var(--bevel-hi), 0 0 0 2px var(--gun), 0 0 26px var(--gun-glow); }
 /* A bay without a gun: a dark steel plate (bay 3 opens at the Mốc, bay 4 later). */
 .sv-bay-lock { height: calc(100px * var(--ui)); display: grid; place-items: center; background-color: var(--bay-glass); font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.16em; color: var(--steel-400); opacity: 0.8; }
-.sv-lock { width: calc(16px * var(--ui)); height: calc(12px * var(--ui)); border: 2px solid var(--steel-500); border-radius: 2px; position: relative; }
-.sv-lock::before { content: ""; position: absolute; left: 50%; bottom: 100%; width: calc(10px * var(--ui)); height: calc(8px * var(--ui)); transform: translateX(-50%); border: 2px solid var(--steel-500); border-bottom: 0; border-radius: 6px 6px 0 0; }
 .sv-slot.is-active .sv-word { color: var(--text); }
 /* The other bay steps back: its words dim, the plate stays solid. */
 .sv-slot.is-dim > * { opacity: 0.72; }
@@ -185,13 +187,13 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-card h1 { margin: 0 0 calc(10px * var(--ui)); font: 700 calc(36px * var(--ui)) var(--font-title); line-height: 1.25; letter-spacing: 0.1em; color: var(--text); text-shadow: var(--title-glow); }
 .sv-card p { margin: 6px 0; font: 500 calc(15px * var(--ui)) var(--font-battle); color: var(--soft); }
 .sv-hints { margin-top: calc(12px * var(--ui)); font: 600 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.06em; color: var(--muted); }
-.sv-hints kbd { display: inline-block; min-width: 1.7em; margin: 0 2px; padding: 1px 5px; border: 1px solid var(--line-strong); border-bottom-width: 2px; background: var(--steel-800); font: 700 1em var(--font-title); color: var(--soft); }
+/* A key is drawn on its key cap (part-keycap, ticket 153): 16 px tall, a nine-slice of the cap's square canvas, where the cap is 716 × 326 at (154, 349) of 1024. Slices cut the bevels (100 px a side, 60 on top, 80 under); widths and outsets are those parts at the cap's scale (16 / 326), so the cap fills the key's box exactly and only its middle stretches with the text. */
+.sv-hints kbd, .sv-cards .sv-gun-card kbd { display: inline-block; height: calc(16px * var(--ui)); min-width: calc(22px * var(--ui)); margin: 0 calc(3px * var(--ui)); padding: 0 calc(7px * var(--ui)); vertical-align: middle; font: 700 calc(11px * var(--ui)) / calc(16px * var(--ui)) var(--font-title); letter-spacing: 0.04em; text-align: center; color: var(--text); border: 0 solid transparent; border-image: var(--art-keycap, linear-gradient(var(--steel-800), var(--steel-800))) 39.94% 24.8% 41.89% 24.8% fill / calc(20.07px * var(--ui)) calc(12.47px * var(--ui)) calc(21.05px * var(--ui)) calc(12.47px * var(--ui)) / calc(17.13px * var(--ui)) calc(7.56px * var(--ui)); }
 
 /* The title: a console plate on the left, the black hole showing on the right. */
 .sv-title { width: 100%; height: 100%; display: grid; align-items: center; padding-left: max(4vw, calc(48px * var(--ui))); }
 .sv-title-card { width: min(46vw, calc(520px * var(--ui))); text-align: left; padding: calc(22px * var(--ui)) calc(28px * var(--ui)) calc(18px * var(--ui)); }
 .sv-title-tag { display: flex; align-items: center; gap: 8px; font: 600 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.22em; color: var(--hot-hi); }
-.sv-dot { width: calc(8px * var(--ui)); height: calc(8px * var(--ui)); border-radius: 50%; background: var(--hot); box-shadow: 0 0 10px var(--hot); animation: sv-blink 1.4s steps(2, jump-none) infinite; }
 .sv-title-name { margin: calc(4px * var(--ui)) 0 0; font: 700 calc(72px * var(--ui)) var(--font-title); line-height: 1.12; letter-spacing: 0.04em; color: var(--text); text-shadow: var(--title-glow); white-space: nowrap; }
 .sv-title-en { margin: 0 0 calc(10px * var(--ui)); font: 600 calc(15px * var(--ui)) var(--font-title); letter-spacing: 0.62em; color: var(--steel-300); }
 .sv-lead { margin: calc(12px * var(--ui)) 0 !important; font-size: calc(14px * var(--ui)) !important; line-height: 1.45; }
@@ -206,16 +208,15 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-item b { display: block; font: 700 calc(18px * var(--ui)) var(--font-title); letter-spacing: 0.04em; line-height: 1.25; color: var(--soft); }
 .sv-item small { display: block; font: 500 calc(12px * var(--ui)) var(--font-battle); color: var(--muted); }
 .sv-item-text { flex: 1; min-width: 0; }
-.sv-led { flex: none; width: calc(9px * var(--ui)); height: calc(9px * var(--ui)); border-radius: 50%; background: var(--steel-700); box-shadow: inset 0 1px 1px var(--bevel-lo); }
 .sv-item.is-on { border-color: var(--line-strong); border-left-color: var(--hot); background-color: var(--steel-700); box-shadow: 0 0 0 1px var(--hot-glow), 0 0 18px var(--hot-glow); }
 .sv-item.is-on b { color: var(--text); }
-.sv-item.is-on .sv-led { background: var(--hot); box-shadow: 0 0 10px var(--hot); }
 .sv-item.is-off { opacity: 0.45; cursor: default; }
 .sv-menu.sv-row .sv-item { flex: 1 1 calc(240px * var(--ui)); min-width: 0; max-width: calc(280px * var(--ui)); }
 .sv-value { display: flex; align-items: center; gap: calc(8px * var(--ui)); font: 700 calc(16px * var(--ui)) var(--font-title); color: var(--text); }
 .sv-value b { min-width: 5.2em; text-align: center; font: inherit; color: var(--led); text-shadow: 0 0 8px var(--led-glow); }
-.sv-arrow { color: var(--steel-400); font-size: 0.8em; }
-.sv-item.is-on .sv-arrow { color: var(--hot); }
+/* The value's arrows (part-arrow, ticket 153): the left one mirrored; dim until the item is selected. */
+.sv-art.is-left { transform: scaleX(-1); }
+.sv-item:not(.is-on) .sv-art-arrow { opacity: 0.45; }
 .sv-ledbar { display: flex; gap: 2px; }
 .sv-ledbar i { width: calc(6px * var(--ui)); height: calc(14px * var(--ui)); background: var(--steel-700); }
 .sv-ledbar i.is-lit { background: var(--led); box-shadow: 0 0 6px var(--led-glow); }
@@ -240,14 +241,16 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-foes li { padding: calc(6px * var(--ui)) calc(10px * var(--ui)); background: var(--screen); border: 1px solid var(--bevel-lo); font: 500 calc(13px * var(--ui)) var(--font-battle); color: var(--soft); }
 .sv-foes li.is-new { border-color: var(--urgent); }
 .sv-foes b { color: var(--text); margin-right: 6px; }
-.sv-foes em { font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.14em; color: var(--ink); background: var(--urgent); padding: 0 5px; font-style: normal; margin-right: 6px; }
+.sv-foes em { font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.14em; color: var(--urgent); font-style: normal; margin-right: 6px; white-space: nowrap; }
 .sv-foes small { display: block; font-size: calc(12px * var(--ui)); color: var(--muted); }
 .sv-foes span { display: block; color: var(--typing); font-size: 0.95em; }
 .sv-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: calc(8px * var(--ui)); margin-top: calc(10px * var(--ui)); text-align: left; }
 .sv-cards .sv-gun-card { position: relative; cursor: pointer; transition: box-shadow 0.1s, transform 0.1s; }
 .sv-cards .sv-gun-card header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .sv-cards .sv-gun-card header b { font-size: calc(15px * var(--ui)); letter-spacing: 0.1em; margin-right: 0; white-space: nowrap; }
-.sv-cards .sv-gun-card kbd { font: 700 calc(12px * var(--ui)) var(--font-title); padding: 0 5px; border: 1px solid var(--line-strong); color: var(--soft); }
+/* A picked card's number lights its cap's rim (part-keycap-active). */
+.sv-cards .sv-gun-card kbd { margin: 0; }
+.sv-cards .sv-gun-card.is-picked kbd { border-image-source: var(--art-keycap-on, linear-gradient(var(--steel-600), var(--steel-600))); }
 /* The bay tag rides the card's top edge: inline it wrapped under long names at 1280 ("Star Mortar · BAY 1 · FORGE 2", layout pass 29/10). */
 .sv-cards .sv-gun-card em { position: absolute; top: calc(-8px * var(--ui)); right: calc(8px * var(--ui)); white-space: nowrap; font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.1em; color: var(--ink); background: var(--gun); padding: 1px 5px; font-style: normal; }
 /* The recommendation and bay tags share the top edge with room between them. */
@@ -271,9 +274,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 [data-motion="reduced"] .sv-start.sv-go { animation: none; }
 .sv-more { margin: calc(4px * var(--ui)) 0 0 !important; }
 .sv-star-row { list-style: none; display: flex; justify-content: center; gap: calc(14px * var(--ui)); margin: calc(4px * var(--ui)) 0 calc(6px * var(--ui)); padding: 0; font: 600 calc(13px * var(--ui)) var(--font-battle); color: var(--muted); }
-.sv-star-row b { display: block; font: 700 calc(30px * var(--ui)) var(--font-title); color: var(--steel-600); }
 .sv-star-row li.is-on { color: var(--soft); }
-.sv-star-row li.is-on b { color: var(--led); text-shadow: 0 0 14px var(--led-glow); }
 
 /* The typing profile ("Hồ sơ gõ") and the results' advice line. */
 .sv-stats em { display: block; margin-top: 2px; font: 500 calc(11px * var(--ui)) var(--font-battle); font-style: normal; color: var(--muted); }
@@ -292,7 +293,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-words b { color: var(--text); margin-right: 6px; }
 
 /* Reduced motion (the game's motion setting, src/app/motion.ts): no scaling bumps or blinking; the banner only fades. */
-[data-motion="reduced"] .sv-kills b.is-bump, [data-motion="reduced"] .sv-dot, [data-motion="reduced"] .sv-hp.is-low .sv-hp-bar i, [data-motion="reduced"] .sv-warn.is-on { animation: none; }
+[data-motion="reduced"] .sv-kills b.is-bump, [data-motion="reduced"] .sv-hp.is-low .sv-hp-bar i, [data-motion="reduced"] .sv-warn.is-on { animation: none; }
 [data-motion="reduced"] .sv-banner.is-on { animation: sv-banner-fade 2.2s ease-out forwards; }
 @keyframes sv-banner-fade { 0% { opacity: 0; transform: translate(-50%, 0); } 10% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 0); } }
 /* UI art (Codex 206). Dimensions match BOX in ui-art.ts. */
@@ -333,3 +334,66 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-overlay:has(> .sv-bg:not([hidden])) { isolation: isolate; background: none; }
 .sv-overlay:has(> .sv-bg:not([hidden]))::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse at 50% 45%, var(--veil) 30%, var(--veil-edge) 100%); pointer-events: none; }
 .sv-overlay[data-screen="title"]:has(> .sv-bg:not([hidden]))::before { background: linear-gradient(90deg, var(--veil-edge) 0%, var(--veil) 42%, transparent 75%); }
+/* Icons and parts (tickets 149–153, 225; sizes as UI_IMAGERY §4 measured them at 720p). Each sits beside the words it marks; a failed one is hidden and takes no space. */
+.sv-art-small { width: calc(16px * var(--ui)); height: calc(16px * var(--ui)); }
+.sv-art-icon { width: calc(20px * var(--ui)); height: calc(20px * var(--ui)); }
+.sv-art-item { width: calc(24px * var(--ui)); height: calc(24px * var(--ui)); }
+.sv-art-lock { width: calc(24px * var(--ui)); height: calc(24px * var(--ui)); }
+.sv-art-banner { width: calc(28px * var(--ui)); height: calc(28px * var(--ui)); }
+.sv-art-star { width: calc(40px * var(--ui)); height: calc(40px * var(--ui)); }
+.sv-art-chapter { width: calc(32px * var(--ui)); height: calc(32px * var(--ui)); }
+.sv-art-led { width: calc(10px * var(--ui)); height: calc(10px * var(--ui)); }
+.sv-art-arrow { width: calc(12px * var(--ui)); height: calc(12px * var(--ui)); }
+/* An item without an icon in a menu that has them keeps the icon column. */
+.sv-icon-gap { flex: none; }
+.sv-gap-icon { width: calc(20px * var(--ui)); height: calc(20px * var(--ui)); }
+.sv-gap-item { width: calc(24px * var(--ui)); height: calc(24px * var(--ui)); }
+/* HUD: the top panels lead with their icons; the kills panel gives its icon a column. */
+.sv-hp > .sv-art-icon { margin-right: calc(-4px * var(--ui)); }
+.sv-clock > .sv-art-icon { align-self: center; }
+.sv-kills:has(> .sv-art-icon:not([hidden])) { grid-template-columns: auto auto auto; }
+.sv-kills > .sv-art-icon { align-self: center; }
+/* The objective plate is shown and hidden with [hidden] (hud.ts): its own display keeps that guard. */
+/* With its two icons (the objective, the Pack Leader: LL-32) the plate's text still fits on one line between the clock and the kills at 1280 × 720 (needs 319 px): narrower padding and gaps, the portrait tucked against the icon, a little less tracking. */
+.sv-goal:not([hidden]):has(> .sv-art-icon:not([hidden])) { display: flex; align-items: center; gap: calc(6px * var(--ui)); padding-inline: calc(10px * var(--ui)); letter-spacing: 0.12em; }
+.sv-goal > .sv-art-icon:not([hidden]) + .sv-art-icon { margin-left: calc(-3px * var(--ui)); }
+.sv-banner > .sv-art-banner { margin: 0 calc(12px * var(--ui)) calc(4px * var(--ui)) 0; }
+.sv-notice > .sv-art-item { margin: calc(-4px * var(--ui)) calc(8px * var(--ui)) calc(-3px * var(--ui)) 0; vertical-align: middle; }
+.sv-warn > .sv-art-item { margin: calc(-4px * var(--ui)) calc(6px * var(--ui)) calc(-3px * var(--ui)) 0; }
+.sv-fresh > .sv-art-small { margin-right: calc(6px * var(--ui)); }
+.sv-streak > .sv-art-small { margin-right: calc(5px * var(--ui)); }
+.sv-strip-warn > .sv-art-item { margin-right: calc(8px * var(--ui)); }
+.sv-strip-warn > .sv-art-small { margin: 0 0 0 calc(8px * var(--ui)); }
+.sv-strip-warn > .sv-art-small.is-left { margin: 0 calc(8px * var(--ui)) 0 0; }
+/* On the orange Rift plates (LL-36, LL-44) the Rift icon and the arrow sit on dark chips of the plate's ink: on orange the purple and steel art is under 3:1 (review 31/10). */
+.sv-strip-warn > .sv-art, .sv-warn > .sv-art { background: var(--ink); border-radius: calc(3px * var(--ui)); box-shadow: 0 0 0 calc(2px * var(--ui)) var(--ink); }
+/* A bay's full mark shows only while the bay is full (it keeps its place, so nothing moves). */
+.sv-slot > header > .sv-art-small { margin-left: auto; }
+.sv-slot:not(.is-full) > header > .sv-art-small { visibility: hidden; }
+.sv-slot > header > .sv-art-small:not([hidden]) + .sv-mags { margin-left: calc(4px * var(--ui)); }
+/* Screens. */
+.sv-title-tag > .sv-art-icon { margin-right: calc(2px * var(--ui)); }
+.sv-chapter > .sv-art-chapter { margin: calc(-6px * var(--ui)) calc(10px * var(--ui)) calc(-4px * var(--ui)) 0; }
+.sv-stars { display: flex; flex: none; gap: calc(2px * var(--ui)); }
+.sv-brief-rules dt { white-space: nowrap; }
+.sv-brief-rules dt > .sv-art-icon { margin: calc(-5px * var(--ui)) calc(6px * var(--ui)) calc(-4px * var(--ui)) 0; }
+.sv-foes em > .sv-art-small { margin: calc(-3px * var(--ui)) calc(3px * var(--ui)) 0 0; }
+.sv-threats .sv-art-small { margin: calc(-3px * var(--ui)) calc(4px * var(--ui)) 0 0; }
+.sv-start .sv-art-icon { margin: calc(-4px * var(--ui)) calc(6px * var(--ui)) calc(-3px * var(--ui)) 0; vertical-align: middle; }
+.sv-star-row .sv-art-star:not([hidden]) { display: block; margin: 0 auto calc(3px * var(--ui)); }
+/* A star earned glows; one missed steps back (the two stars differ only in their core). On the results row the earned star burns (a tight and a wide glow) and a missed one goes grey and dark (review 31/10). */
+.sv-art.is-lit { filter: drop-shadow(0 0 calc(6px * var(--ui)) var(--led-glow)); }
+.sv-stars > .sv-art-icon:not(.is-lit) { opacity: 0.6; }
+.sv-star-row .sv-art-star.is-lit { filter: drop-shadow(0 0 calc(3px * var(--ui)) var(--led)) drop-shadow(0 0 calc(12px * var(--ui)) var(--led-glow)); }
+.sv-star-row li:not(.is-on) .sv-art-star { opacity: 0.45; filter: grayscale(1) brightness(0.6); }
+/* The selected item's lamp glows in the selection's orange (the lit and dark lamps differ in hue at 7 px, review 31/10). */
+.sv-item.is-on > .sv-art-led { filter: drop-shadow(0 0 calc(4px * var(--ui)) var(--hot)); }
+.sv-stats b > .sv-art-item { margin: calc(-4px * var(--ui)) calc(6px * var(--ui)) 0 0; }
+.sv-words .sv-art-small { margin: calc(-3px * var(--ui)) calc(6px * var(--ui)) 0 0; }
+/* The quick panels' sliders (ticket 225, quick.ts quickSkin): only the groove and knob art, without the kit's flat colours under them. */
+.sv-hud .kit-qs--skin-slider .kit-qs__range::-webkit-slider-runnable-track { background-color: transparent; }
+.sv-hud .kit-qs--skin-slider .kit-qs__range::-moz-range-track { background-color: transparent; }
+.sv-hud .kit-qs--skin-slider .kit-qs__range::-webkit-slider-thumb { background-color: transparent; }
+.sv-hud .kit-qs--skin-slider .kit-qs__range::-moz-range-thumb { background-color: transparent; }
+/* No WebGL (main.ts, LL-02): the message leads with the warning icon. */
+.sv-nogl { position: absolute; top: 40%; left: 50%; transform: translateX(-50%); margin: 0; display: flex; align-items: center; gap: calc(10px * var(--ui)); padding: calc(10px * var(--ui)) calc(18px * var(--ui)); font: 700 calc(18px * var(--ui)) var(--font-title); letter-spacing: 0.06em; white-space: nowrap; color: var(--text); background: var(--notice); border: 2px solid var(--danger); }

@@ -35,6 +35,17 @@
       ],
       "aspect": 1
     },
+    "foe-shard": {
+      "kind": "portrait",
+      "alt": "Shard",
+      "rev": "bb15773f",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
     "foe-shield-guard": {
       "kind": "portrait",
       "alt": "Shield Guard",
@@ -122,6 +133,577 @@
         256
       ],
       "aspect": 1
+    },
+    "icon-armour": {
+      "kind": "icon",
+      "alt": "Hull armour",
+      "rev": "f872b66b",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-back": {
+      "kind": "icon",
+      "alt": "Back",
+      "rev": "2c26221a",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-bay-full": {
+      "kind": "icon",
+      "alt": "Bay full",
+      "rev": "8edad211",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-chapter-crest": {
+      "kind": "icon",
+      "alt": "Chapter 1",
+      "rev": "9e6378cd",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-check": {
+      "kind": "icon",
+      "alt": "Done",
+      "rev": "baf8ed56",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-clock": {
+      "kind": "icon",
+      "alt": "Time left",
+      "rev": "f36b2e27",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-equipment": {
+      "kind": "icon",
+      "alt": "Gear",
+      "rev": "7ef131f4",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-hazard": {
+      "kind": "icon",
+      "alt": "Hazard",
+      "rev": "5f42e7b9",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-keyboard": {
+      "kind": "icon",
+      "alt": "Keyboard",
+      "rev": "a67bd034",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-kills": {
+      "kind": "icon",
+      "alt": "Kills",
+      "rev": "30b61a1f",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-learning-rule": {
+      "kind": "icon",
+      "alt": "Learning rule",
+      "rev": "5021348a",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-load-guns": {
+      "kind": "icon",
+      "alt": "Load guns",
+      "rev": "10589976",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-lock": {
+      "kind": "icon",
+      "alt": "Locked",
+      "rev": "4b2b4afc",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-menu-armory": {
+      "kind": "icon",
+      "alt": "Armory",
+      "rev": "be26a9ca",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-menu-journey": {
+      "kind": "icon",
+      "alt": "Campaign",
+      "rev": "dcff48c0",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-menu-mode": {
+      "kind": "icon",
+      "alt": "Mode",
+      "rev": "58dc5a0b",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-menu-play": {
+      "kind": "icon",
+      "alt": "Play",
+      "rev": "c82f419e",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-menu-profile": {
+      "kind": "icon",
+      "alt": "Profile",
+      "rev": "b88b361d",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-menu-settings": {
+      "kind": "icon",
+      "alt": "Options",
+      "rev": "f833e2e2",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-music": {
+      "kind": "icon",
+      "alt": "Music",
+      "rev": "e230b6a4",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-new-badge": {
+      "kind": "icon",
+      "alt": "New",
+      "rev": "57a668e5",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-next-stage": {
+      "kind": "icon",
+      "alt": "Next stage",
+      "rev": "aaef0f4f",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-objective": {
+      "kind": "icon",
+      "alt": "Goal",
+      "rev": "cb4b3ef3",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-pace-director": {
+      "kind": "icon",
+      "alt": "Adapt pace",
+      "rev": "768af8cf",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-quality": {
+      "kind": "icon",
+      "alt": "Graphics",
+      "rev": "fb5965b1",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-read-aloud": {
+      "kind": "icon",
+      "alt": "Read words aloud",
+      "rev": "043b34a5",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-reduced-motion": {
+      "kind": "icon",
+      "alt": "Reduce motion",
+      "rev": "2457919f",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-repair-pod": {
+      "kind": "icon",
+      "alt": "Repair pod",
+      "rev": "37ce994c",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-retry": {
+      "kind": "icon",
+      "alt": "Retry",
+      "rev": "dfc96c3e",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-rift": {
+      "kind": "icon",
+      "alt": "Rift",
+      "rev": "2d8ad40e",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-sfx": {
+      "kind": "icon",
+      "alt": "Effects",
+      "rev": "7c228ccb",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-shake": {
+      "kind": "icon",
+      "alt": "Screen shake",
+      "rev": "c60da0dc",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-star-lit": {
+      "kind": "icon",
+      "alt": "Star earned",
+      "rev": "23d77819",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-star-unlit": {
+      "kind": "icon",
+      "alt": "Star not earned",
+      "rev": "5618ffa2",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-stat-accuracy": {
+      "kind": "icon",
+      "alt": "Accuracy",
+      "rev": "e4aa0e9c",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-stat-evenness": {
+      "kind": "icon",
+      "alt": "Steadiness",
+      "rev": "fc649c05",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-stat-new-word": {
+      "kind": "icon",
+      "alt": "New-word read",
+      "rev": "17be877c",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-stat-time": {
+      "kind": "icon",
+      "alt": "Time",
+      "rev": "3fe48e77",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-stat-wpm": {
+      "kind": "icon",
+      "alt": "Speed",
+      "rev": "bd92b6ff",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-station-crest": {
+      "kind": "icon",
+      "alt": "Station VC-7",
+      "rev": "ac86bf14",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-streak": {
+      "kind": "icon",
+      "alt": "Clean streak",
+      "rev": "3ed3514a",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-surge": {
+      "kind": "icon",
+      "alt": "Surge",
+      "rev": "6e05f11a",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-warning": {
+      "kind": "icon",
+      "alt": "Warning",
+      "rev": "ff9233ae",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "part-arrow": {
+      "kind": "icon",
+      "alt": "Arrow",
+      "rev": "dca5c305",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "part-keycap": {
+      "kind": "icon",
+      "alt": "Key",
+      "rev": "00fa568b",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "part-keycap-active": {
+      "kind": "icon",
+      "alt": "Key, lit",
+      "rev": "8080f2db",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "part-led-off": {
+      "kind": "icon",
+      "alt": "Lamp off",
+      "rev": "23e859b6",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "part-led-on": {
+      "kind": "icon",
+      "alt": "Lamp on",
+      "rev": "5aa483f0",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "part-mag-empty": {
+      "kind": "icon",
+      "alt": "Empty magazine",
+      "rev": "25b072e6",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "part-mag-full": {
+      "kind": "icon",
+      "alt": "Full magazine",
+      "rev": "2cd5c041",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "slider-thumb": {
+      "kind": "icon",
+      "alt": "Slider knob",
+      "rev": "9e574c1e",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "slider-track": {
+      "kind": "track",
+      "alt": "Slider groove",
+      "rev": "8a9dcffc",
+      "widths": [
+        512,
+        1024
+      ],
+      "aspect": 16
     },
     "stage-c1-s1": {
       "kind": "stage",

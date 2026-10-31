@@ -127,11 +127,13 @@ export class Journey {
     const items: MenuItem[] = CHAPTER_1.map((stage) => ({
       id: stage.id,
       art: "stage-" + stage.id,
-      label: "Stage " + stage.index + " · " + stage.name + (isOpen(progress, stage.index) ? "  " + "★".repeat(best[stage.id] ?? 0) + "☆".repeat(3 - (best[stage.id] ?? 0)) : ""),
+      label: "Stage " + stage.index + " · " + stage.name,
+      // Its best stars beside the name (star art); a stage not open yet shows the lock there.
+      ...(isOpen(progress, stage.index) ? { stars: best[stage.id] ?? 0 } : { locked: true }),
       note: isOpen(progress, stage.index) ? stageNote(stage) : "Clear Stage " + (stage.index - 1) + " to unlock",
       enabled: isOpen(progress, stage.index),
     }));
-    items.push({ id: "back", label: "Back", note: "Main menu", enabled: true });
+    items.push({ id: "back", icon: "icon-back", label: "Back", note: "Main menu", enabled: true });
     this.menu = new Menu(items);
     if (focus !== undefined) this.menu.select(focus);
     this.screen = "stages";
@@ -142,8 +144,8 @@ export class Journey {
   brief(stage: Stage): void {
     this.stage = stage;
     this.menu = new Menu([
-      { id: "loadout", label: "Loadout", note: "Pick " + stage.kit.bays + " of 5 guns", enabled: true },
-      { id: "back", label: "Back", note: "Stages", enabled: true },
+      { id: "loadout", icon: "icon-load-guns", label: "Loadout", note: "Pick " + stage.kit.bays + " of 5 guns", enabled: true },
+      { id: "back", icon: "icon-back", label: "Back", note: "Stages", enabled: true },
     ]);
     this.screen = "briefing";
     this.host.draw();

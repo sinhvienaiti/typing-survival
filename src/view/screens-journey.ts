@@ -58,7 +58,7 @@ export function renderJourney(journey: Journey): string {
       return (
         artHtml(bgRole("journey"), "bg") + '<div class="sv-card sv-panel sv-sheet sv-stages">' +
         "<h1>CAMPAIGN</h1>" +
-        '<div class="sv-title-en">CHAPTER 1 · VC-7 CORRIDOR</div><div class="sv-hazard" aria-hidden="true"></div>' +
+        '<div class="sv-title-en sv-chapter">' + artHtml("icon-chapter-crest", "chapter") + 'CHAPTER 1 · VC-7 CORRIDOR</div><div class="sv-hazard" aria-hidden="true"></div>' +
         menu(journey.menu, " sv-stage-list") +
         '<p class="sv-note">Each stage sets bays, Forge levels, and hull. Clear a stage to unlock the next.</p>' +
         hints("<kbd>↑</kbd><kbd>↓</kbd> select · <kbd>Enter</kbd> briefing · <kbd>Esc</kbd> back") +
@@ -70,13 +70,14 @@ export function renderJourney(journey: Journey): string {
         "<h1>STAGE " + stage.index + " · " + escapeHtml(stage.name.toUpperCase()) + "</h1>" + artHtml(stageRole(stage.id), "briefing") +
         '<div class="sv-hazard" aria-hidden="true"></div>' +
         '<dl class="sv-brief-rules">' +
-        "<dt>Goal</dt><dd><b>" + escapeHtml(objectiveText(stage)) + "</b> · " + escapeHtml(objectiveDetail(stage)) + "</dd>" +
-        "<dt>Hazard</dt><dd>" + escapeHtml(hazardDetail(stage)) + "</dd>" +
-        "<dt>Learning</dt><dd><b>" + escapeHtml(LEARN_RULES[stage.learn].label) + "</b> · " + escapeHtml(ruleDetail(stage)) + "</dd>" +
-        "<dt>Gear</dt><dd>" + stage.kit.bays + " bays · Forge " + stage.kit.levels.join("/") + " · hull " + stage.kit.armour + "</dd>" +
+        "<dt>" + artHtml("icon-objective", "icon") + "Goal</dt><dd><b>" + escapeHtml(objectiveText(stage)) + "</b> · " + escapeHtml(objectiveDetail(stage)) + "</dd>" +
+        "<dt>" + artHtml("icon-hazard", "icon") + "Hazard</dt><dd>" + escapeHtml(hazardDetail(stage)) + "</dd>" +
+        // The rule's check mark is the check icon (ticket 149), not a glyph; it keeps the word for screen readers ("…get a check.").
+        "<dt>" + artHtml("icon-learning-rule", "icon") + "Learning</dt><dd><b>" + escapeHtml(LEARN_RULES[stage.learn].label) + "</b> · " + escapeHtml(ruleDetail(stage)).replace("✓", artHtml("icon-check", "small", { alt: "check" })) + "</dd>" +
+        "<dt>" + artHtml("icon-equipment", "icon") + "Gear</dt><dd>" + stage.kit.bays + " bays · Forge " + stage.kit.levels.join("/") + " · hull " + stage.kit.armour + "</dd>" +
         "</dl>" +
         '<ul class="sv-foes">' +
-        foes(stage).map((foe) => "<li" + (foe.fresh ? ' class="is-new"' : "") + ">" + artHtml(foe.role, "foe") + "<b>" + escapeHtml(foe.name) + "</b>" + (foe.fresh ? "<em>NEW</em>" : "") + "<small>" + escapeHtml(foe.note) + "</small><span>" + escapeHtml(foe.tag) + "</span></li>").join("") +
+        foes(stage).map((foe) => "<li" + (foe.fresh ? ' class="is-new"' : "") + ">" + artHtml(foe.role, "foe") + "<b>" + escapeHtml(foe.name) + "</b>" + (foe.fresh ? "<em>" + artHtml("icon-new-badge", "small") + "NEW</em>" : "") + "<small>" + escapeHtml(foe.note) + "</small><span>" + escapeHtml(foe.tag) + "</span></li>").join("") +
         "</ul>" +
         (stage.teach.length > 0 ? '<p class="sv-note">' + stage.teach.filter(thing => ["brute", "leader", "shield", "splitter"].includes(thing)).map(thing => artHtml(foeRole(thing), "teach")).join("") + 'This stage teaches: ' + escapeHtml(stage.teach.map((thing) => NEW[thing] ?? thing).join(", ")) + ".</p>" : "") +
         menu(journey.menu, " sv-row") +
@@ -108,11 +109,11 @@ export function renderJourney(journey: Journey): string {
           .join("") +
         "</div>" +
         '<div class="sv-threats"><b>Threats here · share</b>' +
-        threats.map((threat) => '<span class="' + (threat.covered ? "" : "is-open") + '" title="' + escapeHtml(threat.counters) + '">' + rowRoles(threat.row).map(role => artHtml(role, "threat")).join("") + (threat.covered ? "" : "⚠ ") + escapeHtml(threat.label) + " " + Math.round(threat.weight * 100) + "%</span>").join("") +
+        threats.map((threat) => '<span class="' + (threat.covered ? "" : "is-open") + '" title="' + escapeHtml(threat.counters) + '">' + rowRoles(threat.row).map(role => artHtml(role, "threat")).join("") + (threat.covered ? "" : artHtml("icon-warning", "small")) + escapeHtml(threat.label) + " " + Math.round(threat.weight * 100) + "%</span>").join("") +
         "</div>" +
         '<div class="sv-start' + (journey.cursor === cards.length ? " is-on" : "") + (journey.ready ? "" : " is-off") + '" data-start="1">' +
-        // No "fit %" here: the threat score ranked pairs against their measured wins (G3c) the wrong way on stages 2 and 4 (test pass 27/10); the open rows carry ⚠.
-        (journey.ready ? "START" + (threats.some((threat) => !threat.covered) ? " · ⚠ UNCOVERED" : "") : "PICK " + (bays - journey.picked.length) + (bays - journey.picked.length === 1 ? " GUN" : " GUNS")) +
+        // No "fit %" here: the threat score ranked pairs against their measured wins (G3c) the wrong way on stages 2 and 4 (test pass 27/10); the open rows carry the warning icon.
+        (journey.ready ? "START" + (threats.some((threat) => !threat.covered) ? " · " + artHtml("icon-warning", "icon") + "UNCOVERED" : "") : "PICK " + (bays - journey.picked.length) + (bays - journey.picked.length === 1 ? " GUN" : " GUNS")) +
         "</div>" +
         (journey.showStartNote ? '<p class="sv-note sv-start-note">' + START_NOTE + "</p>" : "") +
         hints("<kbd>1</kbd>–<kbd>5</kbd> toggle · <kbd>←</kbd><kbd>→</kbd> move · <kbd>Enter</kbd> select · <kbd>Esc</kbd> briefing") +
@@ -124,8 +125,8 @@ export function renderJourney(journey: Journey): string {
   }
 }
 
-/** The result's star row (the end screen of a stage run). */
+/** The result's star row (the end screen of a stage run): a star each, lit or dark, over its rule. */
 export function starRow(got: readonly boolean[], accuracyBar: number): string {
   const labels = ["Stage cleared", "Hull ≥ 50%", "Accuracy ≥ " + Math.round(accuracyBar * 100) + "%"];
-  return '<ul class="sv-star-row">' + got.map((on, k) => '<li class="' + (on ? "is-on" : "") + '"><b>' + (on ? "★" : "☆") + "</b>" + escapeHtml(labels[k]!) + "</li>").join("") + "</ul>";
+  return '<ul class="sv-star-row">' + got.map((on, k) => '<li class="' + (on ? "is-on" : "") + '">' + artHtml(on ? "icon-star-lit" : "icon-star-unlit", "star", { label: true, ...(on ? { cls: "is-lit" } : {}) }) + escapeHtml(labels[k]!) + "</li>").join("") + "</ul>";
 }

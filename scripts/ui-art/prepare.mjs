@@ -4,7 +4,11 @@ import { resolve, dirname, basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
-export const WIDTHS = { icon: [64, 128, 256], portrait: [64, 128, 256], stage: [192, 384, 768, 1536], bg: [1280, 1536] };
+export const WIDTHS = { icon: [64, 128, 256], portrait: [64, 128, 256], stage: [192, 384, 768, 1536], bg: [1280, 1536], track: [512, 1024] };
+/** Width over height per kind; a track is a slider's groove (ticket 225: 1024 × 64, drawn stretched by the kit). */
+export const ASPECT = { icon: 1, portrait: 1, stage: 16 / 9, bg: 16 / 9, track: 16 };
+/** Kinds drawn over the UI with real alpha, made from sized sources (`<source>.<width>.png`) when there are any. */
+const SIZED = new Set(['icon', 'portrait', 'track']);
 /** Where the game fetches UI art (the runtime table's base). */
 export const BASE = '/assets/typing-survival/ui/';
 /** The folder this tool writes: Vite copies public/ into dist as is, so it serves at BASE. */
@@ -51,13 +55,13 @@ export function plan(selection, files) {
     }
     if (entry.kind === 'stage' && (!exactBase || exactBase.width * 9 !== exactBase.height * 16)) throw new Error(`Stage requires a 16:9 source: ${entry.role}`);
     return WIDTHS[entry.kind].map(width => {
-      const height = entry.kind === 'icon' || entry.kind === 'portrait' ? width : width * 9 / 16;
+      const height = Math.round(width / ASPECT[entry.kind]);
       let source = exactBase;
-      if (entry.kind === 'icon' || entry.kind === 'portrait') {
+      if (SIZED.has(entry.kind)) {
         const candidates = files.filter(f => f.file === `${entry.source}.png` || (f.file.startsWith(`${entry.source}.`) && /^\d+\.png$/.test(f.file.slice(entry.source.length + 1))));
         source = candidates.find(f => f.file === `${entry.source}.${width}.png`);
         if (!source) source = candidates.filter(f => f.width >= width && f.height >= height).sort((a,b) => a.width - b.width || a.file.localeCompare(b.file, 'en'))[0];
-        if (source && source.width !== source.height) throw new Error(`Square source required: ${source.file}`);
+        if (source && source.width !== source.height * ASPECT[entry.kind]) throw new Error(entry.kind === 'track' ? `Track requires a 16:1 source: ${source.file}` : `Square source required: ${source.file}`);
       }
       if (!source || (crop?.width ?? source.width) < width || (crop?.height ?? source.height) < height) throw new Error(`No larger source; cannot upscale ${entry.role}.${width}`);
       return { entry, source: source.file, width, height, ...(crop ? {crop} : {}) };
@@ -174,7 +178,7 @@ export async function prepare(options = {}) {
         if (crop) args.push('-crop',entry.crop,'+repage');
         args.push('-colorspace','sRGB','-filter','Lanczos','-resize',`${width}x${height}!`,'-strip',png);
         run(process.env.ART_MAGICK || 'magick',args);
-        const alpha=entry.kind==='icon'||entry.kind==='portrait';
+        const alpha=SIZED.has(entry.kind);
         let quality=alpha?90:84, lossless=false;
         const encode=()=>run(encoder,['-quiet','-metadata','none','-m','6',...(lossless?['-lossless']:['-q',String(quality),...(alpha?['-alpha_q','100']:[])]),png,'-o',webp]);
         encode(); let metric=psnr(png,webp);

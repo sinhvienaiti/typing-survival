@@ -18,6 +18,14 @@ describe("UI art planner",()=>{
     expect(plan({version:1,entries:[entry("gun-test","icon","icon")]},files).map((j:{source:string})=>j.source)).toEqual(files.map(f=>f.file));
     expect(plan({version:1,entries:[entry("gun-test","icon","icon")]},files.filter(f=>f.width!==128))[1].source).toBe("icon.256.png");
   });
+  it("plans a slider groove (track) at 512 and 1024 wide, 16:1, from its sized source first (ticket 225)",()=>{
+    const files=[{file:"track.png",width:1024,height:64},{file:"track.512.png",width:512,height:32}];
+    const jobs=plan({version:1,entries:[entry("slider-test","track","track")]},files);
+    expect(jobs.map((j:{source:string;width:number;height:number})=>[j.source,j.width,j.height])).toEqual([["track.512.png",512,32],["track.png",1024,64]]);
+    expect(plan({version:1,entries:[entry("slider-test","track","track")]},files.slice(0,1)).map((j:{source:string})=>j.source)).toEqual(["track.png","track.png"]);
+    expect(()=>plan({version:1,entries:[entry("slider-test","track","track")]},[{file:"track.png",width:1024,height:1024}])).toThrow(/16:1/);
+    expect(()=>plan({version:1,entries:[entry("slider-test","track","track")]},[{file:"track.png",width:512,height:32}])).toThrow(/upscale/);
+  });
   it("rejects upscaling and non-16:9 stages before writing",()=>{
     expect(()=>plan({version:1,entries:[entry("gun-test","icon","icon")]},[{file:"icon.png",width:32,height:32}])).toThrow(/larger|upscale/);
     expect(()=>plan({version:1,entries:[entry("stage-test","stage","stage")]},[{file:"stage.png",width:1536,height:1000}])).toThrow(/16:9/);

@@ -11,28 +11,30 @@ import { headerFor, skillReport, type SkillReport } from "./skill";
 import type { Word } from "./vocab";
 import { ADVICE_EN } from "./english";
 
-export function runStats(w: World): { value: string; label: string }[] {
+/** The run's numbers, each with its icon role (ui-art.ts). */
+export function runStats(w: World): { value: string; label: string; icon: string }[] {
   const s = w.stats;
   const keys = s.keysOk + s.keysBad;
   const time = Math.min(w.seconds, w.time);
   return [
-    { value: Math.floor(time / 60) + ":" + String(Math.floor(time % 60)).padStart(2, "0"), label: "Time" },
-    { value: String(s.kills), label: "Kills" },
-    { value: (keys === 0 ? 100 : Math.round((s.keysOk / keys) * 100)) + "%", label: "Accuracy" },
-    { value: String(s.words), label: "Words" },
+    { value: Math.floor(time / 60) + ":" + String(Math.floor(time % 60)).padStart(2, "0"), label: "Time", icon: "icon-stat-time" },
+    { value: String(s.kills), label: "Kills", icon: "icon-kills" },
+    { value: (keys === 0 ? 100 : Math.round((s.keysOk / keys) * 100)) + "%", label: "Accuracy", icon: "icon-stat-accuracy" },
+    { value: String(s.words), label: "Words", icon: "icon-keyboard" },
   ];
 }
 
-export function runWords(w: World, wordOf: (index: number) => Word): { en: string; vi: string }[] {
+/** The words finished in the run, each once, in order; `fresh` marks a deck word finished for the first time ever (the new badge). */
+export function runWords(w: World, wordOf: (index: number) => Word, fresh: (index: number) => boolean = () => false): { en: string; vi: string; fresh?: true }[] {
   const T = w.typing;
   const seen = new Set<number>();
-  const words: { en: string; vi: string }[] = [];
+  const words: { en: string; vi: string; fresh?: true }[] = [];
   for (let k = Math.max(0, T.doneCount - T.done.length); k < T.doneCount; k += 1) {
     const index = T.done[k % T.done.length]!;
     if (seen.has(index)) continue;
     seen.add(index);
     const word = wordOf(index);
-    words.push({ en: word.en, vi: word.vi });
+    words.push({ en: word.en, vi: word.vi, ...(fresh(index) ? { fresh: true as const } : {}) });
   }
   return words;
 }
@@ -70,10 +72,10 @@ export function profileView(profile: SkillProfile, mode: Mode, adapt: boolean) {
   const sure = (confidence: number): string => (confidence >= 1 ? "measured" : confidence > 0 ? "measuring " + Math.round(confidence * 100) + "%" : "default");
   return {
     stats: [
-      { value: String(Math.round(v.e)), label: "Speed (WPM)", note: sure(v.confidence.e) },
-      { value: Math.round(v.a * 100) + "%", label: "Accuracy", note: sure(v.confidence.a) },
-      { value: fixed(v.recognize.new, 1) + " s", label: "New-word read", note: sure(v.confidence.recognize.new) },
-      { value: Math.round(Math.max(0, 1 - v.cv) * 100) + "%", label: "Steadiness", note: "±" + Math.round(v.cv * 100) + "% per word" },
+      { value: String(Math.round(v.e)), label: "Speed (WPM)", note: sure(v.confidence.e), icon: "icon-stat-wpm" },
+      { value: Math.round(v.a * 100) + "%", label: "Accuracy", note: sure(v.confidence.a), icon: "icon-stat-accuracy" },
+      { value: fixed(v.recognize.new, 1) + " s", label: "New-word read", note: sure(v.confidence.recognize.new), icon: "icon-stat-new-word" },
+      { value: Math.round(Math.max(0, 1 - v.cv) * 100) + "%", label: "Steadiness", note: "±" + Math.round(v.cv * 100) + "% per word", icon: "icon-stat-evenness" },
     ],
     advice: adviceText(report, null, null),
     lines: [

@@ -33,7 +33,9 @@ class FakeElement {
   className = "";
   hidden = false;
   readonly dataset: Record<string, string> = {};
-  readonly style: Record<string, string> = {};
+  readonly style: Record<string, unknown> & { setProperty(name: string, value: string): void } = {
+    setProperty(this: Record<string, unknown>, name: string, value: string): void { this[name] = value; },
+  };
   readonly attributes = new Map<string, string>();
   readonly listeners: Listener[] = [];
   nodes: (FakeElement | string)[] = [];
@@ -41,6 +43,12 @@ class FakeElement {
     contains: (name: string): boolean => this.className.split(/\s+/).includes(name),
     add: (...names: string[]): void => { this.className = [...new Set([...this.className.split(/\s+/).filter(Boolean), ...names])].join(" "); },
     remove: (...names: string[]): void => { this.className = this.className.split(/\s+/).filter((name) => name && !names.includes(name)).join(" "); },
+    toggle: (name: string, on?: boolean): boolean => {
+      const set = on ?? !this.classList.contains(name);
+      if (set) this.classList.add(name);
+      else this.classList.remove(name);
+      return set;
+    },
   };
   constructor(tag: string) { this.tagName = tag.toUpperCase(); }
   get textContent(): string { return this.nodes.map((node) => (typeof node === "string" ? node : node.textContent)).join(""); }
@@ -81,7 +89,7 @@ function art(node: FakeElement | string | undefined): FakeElement {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); resetArtWarnings(); });
 
 describe("HUD art hookups (230-F1, hud.ts)", () => {
-  it("puts each live gun's icon first in its bay (LL-39) and none on a locked plate", () => {
+  it("puts each live gun's icon first in its bay (LL-39) and only the lock icon on a locked plate (LL-41)", () => {
     const { root, world } = hudOn("c1-s1");
     const slots = root.find("sv-slot");
     const live = [0, 1, 2, 3].filter((bay) => bay < world.header.kit.bays && (world.guns.gun[bay] ?? -1) >= 0);
@@ -96,7 +104,14 @@ describe("HUD art hookups (230-F1, hud.ts)", () => {
       expect(img.attributes.get("aria-hidden")).toBe("true");
       expect(slot.children().filter((child) => child.tagName === "IMG")).toHaveLength(1);
     }
-    for (const plate of root.find("sv-bay-lock")) expect(plate.children().some((child) => child.tagName === "IMG")).toBe(false);
+    const plates = root.find("sv-bay-lock");
+    expect(plates.length).toBeGreaterThan(0);
+    for (const plate of plates) {
+      expect(plate.nodes).toHaveLength(1);
+      const img = art(plate.nodes[0]);
+      expect(img.className).toBe("sv-art sv-art-lock");
+      expect(img.src).toContain("/icon-lock.");
+    }
   });
 
   it("watches the HUD root, so a bay icon that fails to load is hidden", () => {
@@ -122,11 +137,108 @@ describe("HUD art hookups (230-F1, hud.ts)", () => {
     (hud as unknown as { updateFresh(w: World, now: number): void }).updateFresh(world, 1000);
     const card = root.find("sv-fresh")[0]!;
     expect(card.classList.contains("is-on")).toBe(true);
-    expect(card.nodes).toHaveLength(2);
+    expect(card.nodes).toHaveLength(3);
     const img = art(card.nodes[0]);
     expect(img.className).toBe("sv-art sv-art-fresh");
     expect(img.src).toContain("/" + foeRole(KIND.brute) + ".");
-    expect(card.nodes[1]).toMatch(/^NEW · BRUTE · /);
+    // Then the new badge (UIC-LL-2) before the text.
+    expect(art(card.nodes[1]).src).toContain("/icon-new-badge.");
+    expect(art(card.nodes[1]).className).toBe("sv-art sv-art-small");
+    expect(card.nodes[2]).toMatch(/^NEW · BRUTE · /);
+  });
+});
+
+/** The images among `node`'s children, as their roles (file name before the width). */
+const roles = (node: FakeElement): string[] => node.children().filter((child) => child.tagName === "IMG").map((img) => /\/([\w-]+)\.\d+\.webp/.exec(img.src)?.[1] ?? "?");
+
+describe("HUD icon hookups (tickets 149–153, hud.ts and strip.ts)", () => {
+  it("leads the hull, clock, kills and objective panels with their icons (LL-30, LL-31, LL-33, LL-32)", () => {
+    const { root } = hudOn("c1-s2");
+    const panel = (name: string): FakeElement => root.find(name)[0]!;
+    expect(roles(panel("sv-hp"))).toEqual(["icon-armour"]);
+    expect(art(panel("sv-hp").nodes[0]).className).toBe("sv-art sv-art-icon");
+    expect(roles(panel("sv-clock"))).toEqual(["icon-clock"]);
+    expect(roles(panel("sv-kills"))).toEqual(["icon-kills"]);
+    // The hunt's plate: the objective icon, then the Pack Leader's portrait (LL-32).
+    expect(roles(panel("sv-goal"))).toEqual(["icon-objective", "foe-pack-leader"]);
+    expect(art(panel("sv-goal").nodes[1]).className).toBe("sv-art sv-art-icon");
+    for (const name of ["sv-hp", "sv-clock", "sv-kills", "sv-goal"]) expect(art(panel(name).nodes[0]).attributes.get("aria-hidden")).toBe("true");
+  });
+
+  it("keeps the objective icon when the plate's text changes (the text is its own span)", () => {
+    const { hud, root, world } = hudOn("c1-s2");
+    world.objective.need = 3;
+    world.objective.retreat = -1;
+    (hud as unknown as { updateGoal(w: World): void }).updateGoal(world);
+    const goal = root.find("sv-goal")[0]!;
+    expect(goal.hidden).toBe(false);
+    expect(roles(goal)).toEqual(["icon-objective", "foe-pack-leader"]);
+    expect(goal.textContent).toMatch(/^PACK LEADER 0\/3/);
+  });
+
+  it("marks a full bay with the bay-full icon in its header, before the magazine cells (LL-43)", () => {
+    const { root } = hudOn("c1-s1");
+    for (const slot of root.find("sv-slot")) {
+      const head = slot.children().find((child) => child.tagName === "HEADER")!;
+      expect(roles(head)).toEqual(["icon-bay-full"]);
+      const kinds = head.children().map((child) => child.tagName === "IMG" ? "img" : child.className);
+      expect(kinds).toEqual(["sv-gun", "img", "sv-mags"]);
+      expect(art(head.nodes[1]).className).toBe("sv-art sv-art-small");
+    }
+  });
+
+  it("gives the surge and repair banners their icons, other banners none (LL-34)", () => {
+    const { hud, root } = hudOn("c1-s1");
+    const banner = root.find("sv-banner")[0]!;
+    hud.showBanner("SURGE 1", 0, "icon-surge");
+    expect(roles(banner)).toEqual(["icon-surge"]);
+    expect(art(banner.nodes[0]).className).toBe("sv-art sv-art-banner");
+    expect(banner.textContent).toBe("SURGE 1");
+    hud.showBanner("STAGE CLEAR!", 1);
+    expect(roles(banner)).toEqual([]);
+    expect(banner.textContent).toBe("STAGE CLEAR!");
+  });
+
+  it("leads an input warning with the keyboard icon, a hint with none (LL-37)", () => {
+    const { hud, root } = hudOn("c1-s1");
+    const notice = root.find("sv-notice")[0]!;
+    hud.setNotice("Turn off Vietnamese input");
+    expect(roles(notice)).toEqual(["icon-keyboard"]);
+    // 24 px beside the notice's 20 px text (review 31/10).
+    expect(art(notice.nodes[0]).className).toBe("sv-art sv-art-item");
+    expect(notice.textContent).toBe("Turn off Vietnamese input");
+    hud.setNotice("Loading", "hint");
+    expect(roles(notice)).toEqual([]);
+    expect(notice.textContent).toBe("Loading");
+    expect(notice.classList.contains("is-hint")).toBe(true);
+  });
+
+  it("shows a rift's warning and countdown with the Rift icon and an arrow at its wall (LL-36, LL-44)", () => {
+    const { hud, root, world } = hudOn("c1-s3");
+    const H = world.hazards;
+    H.state = 1; H.next = 0; H.count = Math.max(H.count, 1); H.side[0] = -1; H.at[0] = world.time + 3;
+    (hud as unknown as { updateWarn(w: World): void }).updateWarn(world);
+    const warn = root.find("sv-warn")[0]!;
+    expect(roles(warn)).toEqual(["icon-rift"]);
+    expect(warn.textContent).toBe("Rift · 3.0 s");
+    const line = root.find("sv-strip-warn")[0]!;
+    expect(roles(line)).toEqual(["part-arrow", "icon-rift"]);
+    // The arrow at 16 px, mirrored for the left wall (survival.css puts both on dark chips).
+    expect(art(line.nodes[0]).className).toBe("sv-art sv-art-small is-left");
+    expect(art(line.nodes[1]).className).toBe("sv-art sv-art-item");
+    expect(line.textContent).toBe("Rift · 3.0 s");
+    H.side[0] = 1;
+    (hud as unknown as { updateWarn(w: World): void }).updateWarn(world);
+    expect(roles(line)).toEqual(["icon-rift", "part-arrow"]);
+    expect(art(line.nodes[2]).classList.contains("is-left")).toBe(false);
+  });
+
+  it("leads the clean streak's LED with the streak icon and keeps its text (LL-44)", () => {
+    const { hud, root } = hudOn("c1-s1");
+    hud.streak(5, 0, 1, 0);
+    const led = root.find("sv-streak")[0]!;
+    expect(roles(led)).toEqual(["icon-streak"]);
+    expect(led.textContent).toBe("CLEAN ×5");
   });
 });
 
@@ -160,6 +272,52 @@ function evaluate(expression: ts.Expression | undefined, scope: Record<string, u
   const js = ts.transpileModule("__value = (" + expression.getText(main) + ");", { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
   return new Function(...Object.keys(scope), "let __value;\n" + js + "\nreturn __value;")(...Object.values(scope));
 }
+
+/** Each menu item of `items()`'s case `label` in main.ts: its id and icon role (undefined: none). */
+function menuIcons(label: string): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (const node of all(caseOf("items", label))) {
+    if (!ts.isObjectLiteralExpression(node)) continue;
+    const id = prop(node, "id");
+    if (id === undefined || !ts.isStringLiteral(id)) continue;
+    const icon = prop(node, "icon");
+    out[id.text] = icon !== undefined && ts.isStringLiteral(icon) ? icon.text : undefined;
+  }
+  return out;
+}
+
+describe("menu icons (tickets 150–152, main.ts items())", () => {
+  it("gives every title item its menu icon (LL-09)", () => {
+    expect(menuIcons("title")).toEqual({ journey: "icon-menu-journey", start: "icon-clock", continue: "icon-menu-play", mode: "icon-menu-mode", profile: "icon-menu-profile", settings: "icon-menu-settings", armory: "icon-menu-armory" });
+  });
+  it("gives every option its icon but the ship's (LL-13: the ship's picture waits for LL-10)", () => {
+    expect(menuIcons("settings")).toEqual({ sfx: "icon-sfx", music: "icon-music", shake: "icon-shake", motion: "icon-reduced-motion", speak: "icon-read-aloud", adapt: "icon-pace-director", pilot: undefined, quality: "icon-quality", done: "icon-check" });
+  });
+  it("gives the pause, armory, profile and results items theirs (LL-48, LL-53)", () => {
+    expect(menuIcons("pause")).toEqual({ resume: "icon-menu-play", settings: "icon-menu-settings", title: "icon-back" });
+    // "armory" falls through to "profile": one Back item for both sheets.
+    expect(menuIcons("profile")).toEqual({ back: "icon-back" });
+    expect(menuIcons("end")).toEqual({ next: "icon-next-stage", replay: "icon-retry", stages: "icon-menu-journey", title: "icon-back" });
+  });
+  it("hands the repair banner its icon (LL-34)", () => {
+    expect(readFileSync("src/app/main.ts", "utf8")).toMatch(/hud\.showBanner\("REPAIR \+"[^\n]*"icon-repair-pod"\)/);
+  });
+  it("sets the CSS art (key caps, magazine cells) on the page's root at boot, before the HUD draws", () => {
+    const code = readFileSync("src/app/main.ts", "utf8");
+    expect(code).toMatch(/^applyArtVars\(document\.documentElement\);$/m);
+    expect(code.indexOf("applyArtVars(document.documentElement)")).toBeLessThan(code.indexOf("new Combat("));
+  });
+  it("leads the no-WebGL message with the warning icon (LL-02)", () => {
+    const code = readFileSync("src/app/main.ts", "utf8");
+    const fallback = code.slice(code.indexOf("} catch {", code.indexOf("new Stage(")), code.indexOf('throw new Error("survival: no WebGL")'));
+    expect(fallback).toMatch(/watchArt\(hudRoot\)[^]*artNode\("icon-warning", "item"\)[^]*message\.append\("This browser does not support WebGL\. Last Line cannot run here\."\)[^]*hudRoot\.replaceChildren\(message\)/);
+  });
+  it("marks the words finished for the first time ever for the results' new badge (LL-52)", () => {
+    const code = readFileSync("src/app/main.ts", "utf8");
+    expect(code).toMatch(/const before = history\.finished\(text\);\s*if \(before === "new"\) firstTime\.add\(index\);\s*tallyWord\(tally, before,/);
+    expect(code).toContain("words: runWords(world, wordOf, (index) => firstTime.has(index)),");
+  });
+});
 
 describe("screen art hookups (230-F1, main.ts)", () => {
   it("gives the results screen's next-stage item that stage's art (LL-53)", () => {

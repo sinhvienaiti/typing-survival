@@ -27,4 +27,5 @@ export function screens206(): Record<string, string> {
     end: renderScreen({ kind:"end",menu:new Menu([{id:"next",label:"Stage 2",note:"Leader Hunt",enabled:true,art:"stage-c1-s2"} as never]),won:true,stage:"Stage 1 · First Shift",mode:"Balanced",stats:[],words:[],advice:"",note:"" }),
   };
 }
-export const plain206 = (html: string): string => html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+/** The text a reader gets: tags dropped, an image that names itself read as its alt. */
+export const plain206 = (html: string): string => html.replace(/<img\b[^>]*\balt="([^"]*)"[^>]*>/g, "$1").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();

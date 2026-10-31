@@ -37,13 +37,19 @@ import type { Word } from "../app/vocab";
 import type { Stage } from "./scene";
 import { firstBounce, WordStrip } from "./strip";
 import { fullBlink } from "./type-rules";
-import { artAttrs, gunRole, foeRole, watchArt } from "./ui-art";
+import { artAttrs, gunRole, foeRole, watchArt, type ArtPlace } from "./ui-art";
 
 function appendArt(parent: HTMLElement, attrs: ReturnType<typeof artAttrs>): void {
   if (!attrs) return;
   const img = document.createElement("img");
   for (const [key, value] of Object.entries(attrs)) img.setAttribute(key, String(value));
   parent.append(img);
+}
+/** `parent`'s content becomes an icon (if it has art) and `text`. */
+function iconText(parent: HTMLElement, role: string, place: ArtPlace, text: string): void {
+  parent.replaceChildren();
+  appendArt(parent, artAttrs(role, place));
+  parent.append(text);
 }
 
 const NEW_MS = 2000;
@@ -110,6 +116,7 @@ export class Hud {
   private readonly banner: HTMLElement;
   private readonly notice: HTMLElement;
   private readonly goal: HTMLElement;
+  private readonly goalText: HTMLElement;
   private readonly fresh: HTMLElement;
   private readonly warn: HTMLElement;
   private readonly bottom: HTMLElement;
@@ -142,18 +149,26 @@ export class Hud {
     const top = el("div", "sv-top", root);
     const left = el("div", "sv-left", top);
     this.hp = el("div", "sv-hp sv-panel", left);
+    // Each top panel leads with its icon (ticket 149: armour, clock, kills; 150: the objective).
+    appendArt(this.hp, artAttrs("icon-armour", "icon"));
     el("span", "sv-label", this.hp, "HULL");
     const bar = el("div", "sv-hp-bar", this.hp);
     this.hpFill = el("i", "", bar);
     this.hpText = el("b", "", this.hp);
     const clock = el("div", "sv-clock sv-panel", left);
+    appendArt(clock, artAttrs("icon-clock", "icon"));
     this.time = el("b", "", clock);
     // Unlit LED segments behind the digits (CSS draws them from the attribute; the text stays the time).
     this.time.dataset.ghost = "8:88";
     el("small", "", clock, "left");
     this.goal = el("div", "sv-goal sv-panel", top);
     this.goal.hidden = true;
+    appendArt(this.goal, artAttrs("icon-objective", "icon"));
+    // The hunt's quarry beside it (LL-32): the plate only ever counts Pack Leaders.
+    appendArt(this.goal, artAttrs(foeRole("leader"), "icon"));
+    this.goalText = el("span", "", this.goal);
     const kills = el("div", "sv-kills sv-panel", top);
+    appendArt(kills, artAttrs("icon-kills", "icon"));
     this.kills = el("b", "", kills);
     el("small", "", kills, "kills / 3 s");
     this.total = el("em", "", kills);
@@ -173,7 +188,7 @@ export class Hud {
         const plate = el("section", "sv-bay-lock sv-panel", this.bottom);
         plate.dataset.bay = String(bay + 1);
         plate.style.gridArea = "1 / " + BAY_COLUMN[bay];
-        el("i", "sv-lock", plate);
+        appendArt(plate, artAttrs("icon-lock", "lock"));
         continue;
       }
       const spec = GUN_SPECS[gun]!;
@@ -183,6 +198,8 @@ export class Hud {
       appendArt(root, artAttrs(gunRole(spec.key), "bay"));
       const head = el("header", "", root);
       el("span", "sv-gun", head, spec.name);
+      // Shown while the bay is full (survival.css), beside its magazine cells.
+      appendArt(head, artAttrs("icon-bay-full", "small"));
       const mags = el("div", "sv-mags", head);
       const line = el("div", "sv-word", root);
       const slot: Slot = { root, line, typed: el("span", "sv-typed", line), head: el("span", "sv-head", line), rest: el("span", "", line), ipa: el("span", "sv-ipa", line), mean: el("div", "sv-mean", root), mags: [], gun, key: "", fullAt: -1e9, loadAt: -1e9, bounced: false, blink: false };
@@ -254,15 +271,22 @@ export class Hud {
     this.streakHot = tier >= 3;
   }
 
-  showBanner(text: string, now: number): void {
-    this.banner.textContent = text;
+  /** `icon`: a role drawn before the text (a surge, a repair pod). */
+  showBanner(text: string, now: number, icon?: string): void {
+    if (icon === undefined) this.banner.textContent = text;
+    else iconText(this.banner, icon, "banner", text);
     replay(this.banner, "is-on");
     this.bannerUntil = now + 2200;
   }
 
   setNotice(value: string, kind: "warn" | "hint" = "warn"): void {
-    this.notice.classList.toggle("is-hint", kind === "hint");
-    text(this.notice, value);
+    const hint = kind === "hint";
+    if (this.notice.textContent !== value || this.notice.classList.contains("is-hint") !== hint) {
+      // A warning leads with the keyboard icon (ticket 149), at the 24 px box beside the notice's 20 px text (review 31/10); a hint is text only.
+      if (hint) this.notice.textContent = value;
+      else iconText(this.notice, "icon-keyboard", "item", value);
+    }
+    this.notice.classList.toggle("is-hint", hint);
     this.notice.hidden = value === "";
   }
 
@@ -285,7 +309,7 @@ export class Hud {
     if (peak !== this.last.peak) {
       this.last.peak = peak;
       // A storm surge says so: the horde is far thicker this time.
-      if (peak > 0) this.showBanner("SURGE " + peak + (w.plan.storm[peak - 1] === 1 || w.plan.strength[peak - 1]! >= STAGE_S0.storm.spread[0] ? " · FIERCE" : ""), now);
+      if (peak > 0) this.showBanner("SURGE " + peak + (w.plan.storm[peak - 1] === 1 || w.plan.strength[peak - 1]! >= STAGE_S0.storm.spread[0] ? " · FIERCE" : ""), now, "icon-surge");
     }
     if (now > this.bannerUntil) this.banner.classList.remove("is-on");
     if (killsRecent !== this.last.kills) {
@@ -381,7 +405,7 @@ export class Hud {
     // The hunt won: said in the middle of the view too, not only on the plate up top.
     if (O.retreat >= 0 && this.last.goal !== "") this.showBanner("SWARM RETREATS!", this.lastNow);
     this.last.goal = text;
-    this.goal.textContent = text;
+    this.goalText.textContent = text;
     this.goal.hidden = text === "";
     this.goal.classList.toggle("is-done", O.retreat >= 0);
   }
@@ -393,17 +417,18 @@ export class Hud {
     let side = 0;
     if (H.state === 1 && H.next < H.count) {
       side = H.side[H.next]!;
-      text = "⚠ Rift · " + Math.max(0, H.at[H.next]! - w.time).toFixed(1) + " s";
+      text = "Rift · " + Math.max(0, H.at[H.next]! - w.time).toFixed(1) + " s";
     } else if (H.state === 2) {
       side = H.side[H.next]!;
-      text = "⚠ Rift";
+      text = "Rift";
     }
     const key = text + side;
     if (key === this.last.warn) return;
     this.last.warn = key;
-    // Its countdown also beside the word line, pointing at the wall (the eyes are there while typing).
-    this.strip.warn(text === "" ? "" : side < 0 ? "◀ " + text.replace("⚠ ", "") : text.replace("⚠ ", "") + " ▶", side);
-    this.warn.textContent = text;
+    // Its countdown also beside the word line, pointing at the wall (the eyes are there while typing); both lead with the Rift icon.
+    this.strip.warn(text, side);
+    if (text === "") this.warn.textContent = "";
+    else iconText(this.warn, "icon-rift", "item", text);
     this.warn.classList.toggle("is-on", text !== "");
     this.warn.classList.toggle("is-left", side < 0);
     this.warn.classList.toggle("is-right", side > 0);
@@ -418,8 +443,9 @@ export class Hud {
         const kind = F.kind[s]!;
         if (F.alive[s] === 1 && this.teach.has(kind) && !this.met.has(kind) && F.z[s]! < 42) {
           this.met.add(kind);
-          this.fresh.textContent = "";
+          this.fresh.replaceChildren();
           appendArt(this.fresh, artAttrs(foeRole(kind), "fresh"));
+          appendArt(this.fresh, artAttrs("icon-new-badge", "small"));
           this.fresh.append(NEW_CARD[kind] ?? "");
           this.fresh.classList.add("is-on");
           this.freshUntil = now + NEW_MS;
