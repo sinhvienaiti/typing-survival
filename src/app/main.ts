@@ -407,7 +407,7 @@ function view(which: Screen): ScreenView | null {
         guns: GUN_SPECS.map((gun) => ({ kind: gun.key, name: gun.name, title: gun.title, text: gun.magazine + (gun.trial ? " (" + gun.trial + ")" : "") + ", range " + gun.range + (gun.heavy ? ", words up to 1 letter longer" : "") + "." })),
         learning: [
           "Flawless words pierce armor (it blocks only 75%) and crit more often; in the Trial they hit 6% harder.",
-          "Every word you finish goes into the portal's shared learning log (typing-survival).",
+          "Every word you finish goes into your learning log, shared across the portal's games.",
         ],
       };
     case "pause":
@@ -792,6 +792,9 @@ function resize(): void {
   // The corner scrim over painted backgrounds centres on the same buttons (survival.css); without them theme.css keeps the scale-1 spot.
   if (bar !== undefined && bar.width > 0) hudRoot.style.setProperty("--qs-at", Math.round(bar.left + bar.width / 2) + "px " + Math.round(bar.top + bar.height / 2) + "px");
   else hudRoot.style.removeProperty("--qs-at");
+  // Their bottom edge: the loadout sheet, as wide as the view, starts below it (survival.css).
+  if (bar !== undefined && bar.height > 0) hudRoot.style.setProperty("--qs-low", Math.ceil(bar.bottom) + "px");
+  else hudRoot.style.removeProperty("--qs-low");
   const keep = bar !== undefined && bar.width > 0 ? [{ x: bar.left - 6, y: bar.top - 6, w: bar.width + 12, h: bar.height + 12 }] : [];
   combat.resize(height, [...hud.protectedRects(), ...keep]);
 }

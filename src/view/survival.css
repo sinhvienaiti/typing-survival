@@ -123,6 +123,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-hud.is-tfx .sv-strip, .sv-hud.is-tfx .sv-strip-ghost { display: none; }
 /* The strip's word layer sits in a zero-width box: sized to its content, the meaning wraps at its own 24 em, not at the word's width. */
 .sv-tfx .tfx-layer, .sv-tfx-preview .tfx-layer { width: max-content; }
+/* The Settings preview's box: the word plate's painted glass and frame (its border image drawn over the box, so the letters keep the whole box); without the art, a dark steel screen. */
+.sv-tfx-preview { background: var(--steel-950); border-radius: calc(6px * var(--kit-qs-s, 1)); }
+:root[data-art~="frame-word"] .sv-tfx-preview { background: none; border-radius: 0; border: 0 solid transparent; border-image: var(--art-frame-word) var(--art-frame-word-slice) / calc(12px * var(--kit-qs-s, 1)) calc(15px * var(--kit-qs-s, 1)) stretch; }
 
 /* The 3-2-1 back into the fight stands over the field, above the word line, not over the word. */
 .sv-hud .kit-qs__count { bottom: 56%; }
@@ -191,6 +194,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-title-en { margin: 0 0 calc(10px * var(--ui)); font: 600 calc(15px * var(--ui)) var(--font-title); letter-spacing: 0.62em; color: var(--steel-300); }
 .sv-lead { margin: calc(12px * var(--ui)) 0 !important; font-size: calc(14px * var(--ui)) !important; line-height: 1.45; }
 .sv-status { margin-top: calc(12px * var(--ui)); padding: calc(5px * var(--ui)) calc(10px * var(--ui)); background: var(--screen); border: 1px solid var(--bevel-lo); font: 600 calc(11px * var(--ui)) var(--font-title); letter-spacing: 0.14em; color: var(--led); text-shadow: 0 0 8px var(--led-glow); }
+/* On the word plate as the advice and the tags are (judges, UI pass 3: a flat CSS bar under the painted rows), hugging its text. */
+:root[data-art~="frame-word"] .sv-status { width: max-content; max-width: 100%; padding: calc(7px * var(--ui)) calc(18px * var(--ui)); background: none; border: 0 solid transparent; box-shadow: 0 calc(3px * var(--ui)) calc(10px * var(--ui)) var(--shadow); border-image: var(--art-frame-word) var(--art-frame-word-slice) / calc(8px * var(--ui)) calc(10px * var(--ui)) stretch; }
 .sv-title-card .sv-hints { margin-top: calc(10px * var(--ui)); }
 /* The painted logo (ticket 121) is the title's heading: right of the card, over the black hole's sky, clear of the menu and the quick panels' corner buttons. */
 .sv-title-logo { position: absolute; top: calc(72px * var(--ui)); right: calc(36px * var(--ui)); margin: 0; line-height: 0; pointer-events: none; }
@@ -208,7 +213,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-item-text { flex: 1; min-width: 0; }
 .sv-item.is-on { border-color: var(--line-strong); border-left-color: var(--hot); background-color: var(--steel-700); box-shadow: 0 0 0 1px var(--hot-glow), 0 0 18px var(--hot-glow); }
 .sv-item.is-on b { color: var(--text); }
-.sv-item.is-off { opacity: 0.45; cursor: default; }
+/* A locked or unavailable row: its pictures and lock step back, its words stay readable (judges, UI pass 3 fixes: the whole row at 0.45 put "Clear Stage 1 to unlock" at 2.4 : 1). */
+.sv-item.is-off { cursor: default; }
+.sv-item.is-off > .sv-art:not(.sv-art-led), .sv-item.is-off > .sv-icon-gap, .sv-item.is-off > .sv-stars { opacity: 0.5; filter: grayscale(0.7); }
+.sv-item.is-off b { color: var(--steel-300); }
+.sv-item.is-off small { color: var(--soft); }
 .sv-menu.sv-row .sv-item { flex: 1 1 calc(240px * var(--ui)); min-width: 0; max-width: calc(280px * var(--ui)); }
 .sv-value { display: flex; align-items: center; gap: calc(8px * var(--ui)); font: 700 calc(16px * var(--ui)) var(--font-title); color: var(--text); }
 .sv-value b { min-width: 5.2em; text-align: center; font: inherit; color: var(--led); text-shadow: 0 0 8px var(--led-glow); }
@@ -226,11 +235,23 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-gun-card header b { font: 700 calc(18px * var(--ui)) var(--font-title); letter-spacing: 0.16em; margin-right: 8px; white-space: nowrap; }
 .sv-gun-card header small { font: 600 calc(13px * var(--ui)) var(--font-battle); color: var(--muted); white-space: nowrap; }
 .sv-gun-card p { margin: 6px 0 0 !important; font-size: calc(13px * var(--ui)) !important; color: var(--soft) !important; }
-.sv-learning { margin: calc(12px * var(--ui)) 0 0; padding-left: 1.2em; text-align: left; font: 500 calc(13px * var(--ui)) var(--font-battle); color: var(--soft); }
+.sv-learning { margin: calc(12px * var(--ui)) 0 0; padding-left: 0; list-style: none; text-align: left; font: 500 calc(13px * var(--ui)) var(--font-battle); color: var(--soft); }
+/* Each note's bullet is the panel lamp (part-led-off), 12 px, on the first line (judges, UI pass 3 fixes: the browser's disc); no art, no bullet. */
+.sv-learning li { position: relative; padding-left: calc(20px * var(--ui)); }
+.sv-learning li::before { content: ""; position: absolute; left: 0; top: calc(0.7em - 6px * var(--ui)); width: calc(12px * var(--ui)); height: calc(12px * var(--ui)); background: var(--art-led-off, none) center / contain no-repeat; filter: drop-shadow(0 0 calc(2px * var(--ui)) var(--volt-glow)); }
+/* The armory's sixth cell: how learning works, its notes under the learning-rule icon and a heading in the learning colour. */
+.sv-learn-tile { color: var(--typing); }
+.sv-learn-tile > header { display: flex; align-items: center; gap: calc(8px * var(--ui)); }
+.sv-learn-tile > header > b { font-size: calc(15px * var(--ui)); letter-spacing: 0.12em; }
+.sv-learn-tile > .sv-learning { margin-top: calc(6px * var(--ui)); font-size: calc(12.5px * var(--ui)); line-height: 1.35; }
+.sv-learn-tile > .sv-learning li + li { margin-top: calc(4px * var(--ui)); }
 
 /* The journey: stage list, briefing, loadout (BUILD_S1 §4.2). */
 .sv-stages, .sv-brief, .sv-loadout { width: min(94vw, calc(760px * var(--ui))); }
 .sv-loadout { width: min(96vw, calc(1200px * var(--ui))); }
+/* The loadout spans the view's width, so it starts below the corner gear and speaker (judges, UI pass 3: its top-right frame corner sat under them). */
+.sv-overlay[data-screen="journey-loadout"] { padding-top: calc(var(--qs-low) + 6px * var(--ui)); }
+.sv-overlay[data-screen="journey-loadout"] .sv-loadout { max-height: calc(100vh - var(--qs-low) - 8px * var(--ui)); }
 /* The loadout is the densest sheet: its title block is tighter than the others' so five cards, the threats and the button fit 720p. */
 .sv-loadout h1 { margin-bottom: calc(2px * var(--ui)); }
 .sv-loadout > .sv-title-en { margin-bottom: calc(6px * var(--ui)); }
@@ -268,19 +289,20 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-cards .sv-gun-card .sv-does { margin-top: calc(6px * var(--ui)) !important; min-height: 2.6em; }
 .sv-cards .sv-gun-card .sv-gun-stats { margin-top: calc(3px * var(--ui)) !important; white-space: nowrap; color: var(--muted) !important; }
 .sv-cards .sv-gun-card .sv-gun-stats b { font-weight: 700; color: var(--text); }
-/* Strong and Weak: a heading over a row of chips, each a foe's 36 px portrait on the word plate with its short name under it; the names show on the focused (or hovered) card and keep their line on the others, so focus moves nothing. */
+/* Strong and Weak: a heading over a row of chips, each a foe's 36 px portrait on the word plate with its short name under it, on every card; the focused (or hovered) card's names are brighter. */
 .sv-vs { margin-top: calc(7px * var(--ui)); }
 .sv-vs > b { display: block; font: 700 calc(11px * var(--ui)) var(--font-title); letter-spacing: 0.14em; text-transform: uppercase; }
 .sv-good > b { color: var(--typing); }
 .sv-poor > b { color: var(--weak); }
-.sv-vs ul { list-style: none; margin: calc(3px * var(--ui)) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: calc(3px * var(--ui)) calc(5px * var(--ui)); }
-/* A chip's column is the chip's width, or its name's where that is longer ("Near Swarm"), so no two names touch. */
-.sv-vs li { display: flex; flex-direction: column; align-items: center; min-width: calc(44px * var(--ui)); }
+/* Fixed columns, one chip wide, spread evenly over the card: the same gap between every two chips on every card (UI pass 3 fixes: a column took its name's width, so "Near Swarm" pushed its neighbour away). */
+.sv-vs ul { list-style: none; margin: calc(3px * var(--ui)) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, calc(44px * var(--ui))); justify-content: space-between; gap: calc(3px * var(--ui)) calc(6px * var(--ui)); }
+/* A name longer than its chip runs evenly into the gaps beside it (centred), never into the next name (the UI art scenario checks). */
+.sv-vs li { display: flex; flex-direction: column; align-items: center; width: calc(44px * var(--ui)); }
 .sv-chip { position: relative; isolation: isolate; display: grid; place-items: center; width: calc(44px * var(--ui)); height: calc(44px * var(--ui)); background: var(--screen); border: 1px solid var(--line); }
 .sv-good .sv-chip { border-color: var(--typing); }
 .sv-poor .sv-chip { border-color: var(--weak); }
-.sv-vs li small { margin-top: 1px; font: 600 calc(10px * var(--ui)) / 1.2 var(--font-battle); letter-spacing: -0.01em; white-space: nowrap; color: var(--soft); opacity: 0; transition: opacity 0.12s; }
-.sv-cards .sv-gun-card.is-on .sv-vs li small, .sv-cards .sv-gun-card:hover .sv-vs li small { opacity: 1; }
+.sv-vs li small { margin-top: 1px; font: 600 calc(10px * var(--ui)) / 1.2 var(--font-battle); letter-spacing: -0.01em; white-space: nowrap; color: var(--soft); transition: color 0.12s; }
+.sv-cards .sv-gun-card.is-on .sv-vs li small, .sv-cards .sv-gun-card:hover .sv-vs li small { color: var(--text); }
 .sv-vs > p { margin-top: calc(3px * var(--ui)) !important; }
 .sv-cards .sv-gun-card.is-on { box-shadow: 0 0 0 2px var(--hot), 0 0 18px var(--hot-glow); }
 .sv-cards .sv-gun-card.is-picked { background-color: var(--steel-800); box-shadow: inset 0 0 0 2px var(--gun), 0 0 18px var(--gun-glow); }
@@ -328,7 +350,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 @keyframes sv-banner-fade { 0% { opacity: 0; transform: translate(-50%, 0); } 10% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, 0); } }
 /* UI art (Codex 206). Dimensions match BOX in ui-art.ts. */
 .sv-art { flex: none; object-fit: contain; vertical-align: middle; }
-.sv-art-armory { width: calc(64px * var(--ui)); height: calc(64px * var(--ui)); }
+.sv-art-armory { width: calc(96px * var(--ui)); height: calc(96px * var(--ui)); }
 .sv-art-menu { width: calc(96px * var(--ui)); height: calc(54px * var(--ui)); }
 .sv-art-briefing { width: calc(760px * var(--ui)); height: calc(120px * var(--ui)); }
 .sv-art-foe { width: calc(40px * var(--ui)); height: calc(40px * var(--ui)); }
@@ -336,7 +358,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-art-loadout { width: calc(96px * var(--ui)); height: calc(96px * var(--ui)); }
 .sv-art-chip { width: calc(36px * var(--ui)); height: calc(36px * var(--ui)); }
 .sv-art-threat { width: calc(24px * var(--ui)); height: calc(24px * var(--ui)); }
-.sv-art-intro { width: calc(384px * var(--ui)); height: calc(216px * var(--ui)); }
+.sv-art-intro { width: calc(760px * var(--ui)); height: calc(200px * var(--ui)); }
 .sv-art-introGun { width: calc(48px * var(--ui)); height: calc(48px * var(--ui)); }
 .sv-art-fresh { width: calc(48px * var(--ui)); height: calc(48px * var(--ui)); }
 .sv-art-bay { width: calc(44px * var(--ui)); height: calc(44px * var(--ui)); }
@@ -344,7 +366,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 /* The armory: each gun's icon takes its own column beside the name and the text, so it adds no row, and the sheet takes the journey sheets' width so the text keeps its measure (206 browser check: icons in the header row pushed the card past 94vh). */
 .sv-armory { width: min(94vw, calc(760px * var(--ui))); }
 .sv-art-armory:not([hidden]) { grid-row: 1 / 3; }
-.sv-guns > .sv-gun-card:has(> .sv-art-armory:not([hidden])) { display: grid; grid-template-columns: auto 1fr; align-content: start; align-items: start; column-gap: calc(10px * var(--ui)); }
+/* The art spans the name's row and the text's; the text's row takes what the art leaves, so a short text sits right under its name (UI pass 3 fixes: at 96 px the spare height went between them). */
+.sv-guns > .sv-gun-card:has(> .sv-art-armory:not([hidden])) { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto 1fr; align-content: start; align-items: start; column-gap: calc(10px * var(--ui)); }
 .sv-guns > .sv-gun-card:has(> .sv-art-armory:not([hidden])) > header > b, .sv-guns > .sv-gun-card:has(> .sv-art-armory:not([hidden])) > header > small { display: block; }
 .sv-art-menu:not([hidden]) { object-fit: cover; }
 /*
@@ -360,7 +383,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-art-teach:not([hidden]) { margin-right: calc(4px * var(--ui)); }
 .sv-art-loadout:not([hidden]) { display: block; margin-bottom: calc(6px * var(--ui)); }
 .sv-art-threat:not([hidden]) { margin-right: calc(3px * var(--ui)); }
-.sv-art-intro:not([hidden]) { display: block; object-fit: cover; margin: calc(6px * var(--ui)) auto; max-width: 100%; }
+/* The stage card before a fight: its stage art a band inside the frame's rails as on the briefing (judges, UI pass 3 fixes: a 384 × 216 picture between empty margins read as a web modal); the trial's card, with no art, keeps the narrow sheet. */
+.sv-intro:has(> .sv-art-intro:not([hidden])) { width: min(94vw, calc(778px * var(--ui))); }
+.sv-art-intro:not([hidden]) { display: block; object-fit: cover; margin: calc(8px * var(--ui)) calc(-17px * var(--ui) - 1px) calc(10px * var(--ui)); width: calc(100% + 34px * var(--ui) + 2px); outline: 1px solid var(--bevel-lo); outline-offset: -1px; }
 .sv-art-introGun:not([hidden]) { margin-right: calc(4px * var(--ui)); }
 .sv-art-fresh:not([hidden]) { margin-right: calc(8px * var(--ui)); }
 .sv-fresh:has(> .sv-art-fresh:not([hidden])) { display: flex; align-items: center; }
@@ -401,10 +426,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-streak > .sv-art-small { margin-right: calc(5px * var(--ui)); }
 /* Without its plate art the chip is plain orange: there the Rift icon and the arrow sit on dark squares of the plate's ink (on orange the purple and steel art is under 3:1, review 31/10). On the painted plate they stand bare. */
 .sv-strip-warn > .sv-art { background: var(--ink); border-radius: calc(3px * var(--ui)); box-shadow: 0 0 0 calc(2px * var(--ui)) var(--ink); }
-/* A bay's full mark shows only while the bay is full (it keeps its place, so nothing moves). */
-.sv-slot > header > .sv-art-small { margin-left: auto; }
-.sv-slot:not(.is-full) > header > .sv-art-small { visibility: hidden; }
-.sv-slot > header > .sv-art-small:not([hidden]) + .sv-mags { margin-left: calc(4px * var(--ui)); }
+/* A bay's full mark shows only while the bay is full (it keeps its place, so nothing moves); 28 px beside the cells, the header kept low by its negative margins as the cells' are. */
+.sv-slot > header > .sv-art-icon { margin: calc(-8px * var(--ui)) 0 calc(-8px * var(--ui)) auto; }
+.sv-slot:not(.is-full) > header > .sv-art-icon { visibility: hidden; }
+.sv-slot > header > .sv-art-icon:not([hidden]) + .sv-mags { margin-left: calc(3px * var(--ui)); }
 /* Screens. */
 .sv-title-tag > .sv-art-icon { margin-right: calc(2px * var(--ui)); }
 .sv-chapter > .sv-art-chapter { margin: calc(-6px * var(--ui)) calc(10px * var(--ui)) calc(-4px * var(--ui)) 0; }
@@ -497,8 +522,12 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 /* On the plate the chip stays lit and its orange glow pulses, instead of the whole chip blinking. */
 :root[data-art~="frame-word"] .sv-strip-warn.is-on { animation: sv-rift-glow 0.9s ease-in-out infinite alternate; }
 :root[data-art~="frame-word"] .sv-strip-warn > .sv-art { background: none; box-shadow: none; }
-@keyframes sv-rift-glow { 0% { filter: drop-shadow(0 0 calc(3px * var(--ui)) var(--hot)) drop-shadow(0 0 calc(6px * var(--ui)) var(--hot-glow)); } 100% { filter: drop-shadow(0 0 calc(7px * var(--ui)) var(--hot)) drop-shadow(0 0 calc(18px * var(--ui)) var(--hot-glow)); } }
-:root[data-motion="reduced"][data-art~="frame-word"] .sv-strip-warn.is-on { animation: none; }
+/* A hazard, not a note (judges, UI pass 3 fixes): the plate laid again over itself in amber, as the input notice is in red; the glow never fainter than --rift-glow-lo, so every frame shows it. */
+:root[data-art~="frame-word"] .sv-strip-warn { isolation: isolate; }
+:root[data-art~="frame-word"] .sv-strip-warn::before { content: ""; position: absolute; inset: 0; z-index: -1; border: 0 solid transparent; border-image: inherit; filter: var(--hazard-tint); opacity: var(--warn-tint-alpha); pointer-events: none; }
+@keyframes sv-rift-glow { 0% { filter: drop-shadow(0 0 calc(4px * var(--ui)) var(--hot)) drop-shadow(0 0 calc(10px * var(--ui)) var(--rift-glow-lo)); } 100% { filter: drop-shadow(0 0 calc(7px * var(--ui)) var(--hot)) drop-shadow(0 0 calc(20px * var(--ui)) var(--rift-glow-hi)); } }
+/* Reduced motion: the glow stands still, halfway. */
+:root[data-motion="reduced"][data-art~="frame-word"] .sv-strip-warn.is-on { animation: none; filter: drop-shadow(0 0 calc(5px * var(--ui)) var(--hot)) drop-shadow(0 0 calc(14px * var(--ui)) var(--rift-glow-mid)); }
 :root[data-art~="frame-word"] .sv-notice { padding: calc(9px * var(--ui)) calc(18px * var(--ui)); background: none; border: 0 solid transparent; box-shadow: none; filter: drop-shadow(0 0 calc(10px * var(--ui)) var(--danger-glow)); border-image: var(--art-frame-word) var(--art-frame-word-slice) / calc(10px * var(--ui)) calc(13px * var(--ui)) stretch; }
 /* A warning lays the same painted plate over itself in the warning tint (UI pass 3: no CSS ring); the glow follows the plate's own edge. A hint keeps the plain plate. */
 :root[data-art~="frame-word"] .sv-notice:not(.is-hint)::before { content: ""; position: absolute; inset: 0; z-index: -1; border: 0 solid transparent; border-image: inherit; filter: var(--warn-tint); opacity: var(--warn-tint-alpha); pointer-events: none; }

@@ -47,7 +47,7 @@ function ruleDetail(stage: Stage): string {
   return "Bays show each word and its meaning. Your current word shows large above the ship. Its bay adds the pronunciation. Finished words get a ✓.";
 }
 
-/** A chip's short name under its portrait (shown on the focused card); the Swarm's says which part of the lane. */
+/** A chip's short name under its portrait (on every card, brighter on the focused one); the Swarm's says which part of the lane. */
 const CHIP_NAME: Readonly<Record<string, string>> = { "foe-scout": "Scout", "foe-brute": "Brute", "foe-pack-leader": "Leader", "foe-shield-guard": "Shield", "foe-splitter": "Splitter", "foe-shard": "Shard" };
 function chipName(row: CounterRow, role: string): string {
   if (role === "foe-swarm") return row === "swarmFar" ? "Mid Swarm" : "Near Swarm";
@@ -130,7 +130,7 @@ export function renderJourney(journey: Journey): string {
           )
           .join("") +
         "</div>" +
-        '<div class="sv-threats"><b>Threats here · share</b>' +
+        '<div class="sv-threats"><b>Threats this stage (% of foes)</b>' +
         threats.map((threat) => '<span class="' + (threat.covered ? "" : "is-open") + '" title="' + escapeHtml(threat.counters) + '">' + rowRoles(threat.row).map(role => artHtml(role, "threat")).join("") + (threat.covered ? "" : artHtml("icon-warning", "small")) + escapeHtml(threat.label) + " " + Math.round(threat.weight * 100) + "%</span>").join("") +
         "</div>" +
         // The first run's note beside the button, on its row (UI pass 3: on a line of its own it pushed the sheet past 720p).

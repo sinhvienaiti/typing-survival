@@ -27,6 +27,11 @@
 // the tinted word plate with their names on the focused card only, the picked card on the lit button frame, the tags on
 // the word plate, no CSS ring, no large empty area) and the rift's warning as one painted chip with the arrow, the Rift
 // icon and the countdown, inside the corridor between the word line and the bays, clear of the bays' gun tabs.
+// UI pass 3 fixes (31/10, two judges): no card under the corner gear and speaker on any screen (the loadout starts below them);
+// the chips in fixed columns with one gap, their names on every card, never touching; the Settings preview on the word plate with
+// its plate at 58 % of the box; the rift chip in the amber tint with a glow never under 0.5 alpha; the armory's gun art at 96 px and
+// its learning tile; the stage card's art as a band inside the rails; the title's status on the word plate; locked rows readable
+// (only their pictures dimmed); lamp bullets on the notes; the bay-full icon at 28 px; the threats' and kills' wording.
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { DEV_URL, out } from "./common.mjs";
@@ -219,7 +224,8 @@ export default async function (page) {
       const role=i=>(/\\/([\\w-]+)\\.\\d+\\.webp/.exec(i.currentSrc||i.src)||[])[1];
       const images=imgs.map(i=>{const r=i.getBoundingClientRect(),place=[...i.classList].find(c=>c.startsWith('sv-art-'))?.slice(7),b=boxes[place];return {role:role(i),place,width:Math.round(r.width*10)/10,height:Math.round(r.height*10)/10,loaded:i.complete&&i.naturalWidth>0,natural:i.naturalWidth,sizeOK:place==='bg'?Math.abs(r.width-innerWidth)<=1&&Math.abs(r.height-innerHeight)<=1:!!b&&Math.abs(r.width-b.width*ui)<=1&&Math.abs(r.height-b.height*ui)<=1,inside:inside(r)};});
       // Not checked: the kit's focus strip and its preview (letters drawn past their boxes on purpose) and the clock's unlit LED digits "8:88" drawn behind the time.
-      const skip=n=>!!n.closest('.sv-tfx, .tfx-layer, .kit-qs__slot')||n.matches('.sv-clock > b');
+      // The loadout's chip names run into the gaps beside their columns on purpose (chipNames checks they never touch).
+      const skip=n=>!!n.closest('.sv-tfx, .tfx-layer, .kit-qs__slot')||n.matches('.sv-clock > b, .sv-vs ul, .sv-vs li');
       const overflow=[scope,...scope.querySelectorAll('*')].filter(visible).filter(n=>!skip(n)).filter(spills).map(n=>n.className||n.tagName);
       const cards=[...document.querySelectorAll('.sv-overlay .sv-card, .kit-qs__panel')].filter(visible).map(n=>({cls:n.className,inside:inside(n.getBoundingClientRect()),noScroll:n.scrollHeight<=n.clientHeight+1}));
       const keys=[...scope.querySelectorAll('kbd')].filter(visible).map(k=>({text:k.textContent,cap:getComputedStyle(k).borderImageSource.includes('part-keycap'),lit:getComputedStyle(k).borderImageSource.includes('keycap-active'),fits:k.scrollWidth<=k.clientWidth+1,h:Math.round(k.getBoundingClientRect().height*10)/10}));
@@ -251,7 +257,9 @@ export default async function (page) {
       const loadout=gunCards.length?gunCards.map(c=>{const r=c.getBoundingClientRect(),last=[...c.children].filter(k=>getComputedStyle(k).position!=='absolute'&&visible(k)).pop(),pb=parseFloat(getComputedStyle(c).paddingBottom);
         return {on:c.classList.contains('is-on'),picked:c.classList.contains('is-picked'),shadow:getComputedStyle(c).boxShadow,art:(i=>i?Math.round(i.getBoundingClientRect().width):0)(c.querySelector('.sv-art-loadout')),
           chips:[...c.querySelectorAll('.sv-chip')].map(ch=>({frame:roleOf(getComputedStyle(ch).borderImageSource),tint:getComputedStyle(ch,'::before').filter,good:!!ch.closest('.sv-good')})),
-          names:[...c.querySelectorAll('.sv-vs li small')].map(n=>Number(getComputedStyle(n).opacity)),titles:[...c.querySelectorAll('.sv-vs li')].map(li=>li.title),
+          names:[...c.querySelectorAll('.sv-vs li small')].map(n=>Number(getComputedStyle(n).opacity)),nameColors:[...new Set([...c.querySelectorAll('.sv-vs li small')].map(n=>getComputedStyle(n).color))],titles:[...c.querySelectorAll('.sv-vs li')].map(li=>li.title),
+          cols:[...c.querySelectorAll('.sv-vs ul')].map(u=>[...u.children].map(li=>Math.round(li.querySelector('.sv-chip').getBoundingClientRect().left*10)/10)),
+          nameBoxes:[...c.querySelectorAll('.sv-vs ul')].map(u=>[...u.children].map(li=>boxOf(li.querySelector('small')))),card:boxOf(c),
           statsOneLine:(p=>!!p&&p.getBoundingClientRect().height<1.8*parseFloat(getComputedStyle(p).lineHeight||getComputedStyle(p).fontSize))(c.querySelector('.sv-gun-stats')),
           empty:Math.round((r.bottom-pb-last.getBoundingClientRect().bottom)/r.height*1000)/1000};}):null;
       const glyphs=(scope.innerText.match(/[★☆⚠◀▶⌨✓]/g)||[]);
@@ -274,7 +282,20 @@ export default async function (page) {
       const lockOpacity=[...document.querySelectorAll('.sv-bay-lock')].filter(visible).map(n=>Number(getComputedStyle(n).opacity));
       const endEl=document.querySelector('.sv-overlay.is-on .sv-end'), endCard=endEl?rect(endEl):null;
       const starAnim=[...document.querySelectorAll('.sv-overlay.is-on .sv-star-row li.is-on .sv-art-star')].map(i=>getComputedStyle(i).animationName);
-      return {ui,images,failedImages,overflow,cards,keys,mags,contrast,words,quick,frames,rift,loadout,glyphs,goalShown:!!goal&&visible(goal),goalOneLine,logo,requests,brief,notice,lockOpacity,endCard,starAnim};
+      // UI pass 3 fixes: every open card against the corner gear and speaker; locked rows; the status plate; the armory's tile; the stage card's band;
+      // the notes' bullets; the threats' heading and the kills plate; the bay-full icon (measured even while hidden).
+      const cornerBoxes=[...document.querySelectorAll('.kit-qs__corner')].filter(visible).map(rect);
+      const cornerHits=[...document.querySelectorAll('.sv-overlay.is-on .sv-card')].filter(visible).map(rect).flatMap(c=>cornerBoxes.filter(k=>meets(c,k)).map(k=>[c,k]));
+      const locked=[...document.querySelectorAll('.sv-overlay.is-on .sv-item.is-off')].filter(visible).map(n=>({opacity:Number(getComputedStyle(n).opacity),title:getComputedStyle(n.querySelector('b')).color,note:n.querySelector('small')?getComputedStyle(n.querySelector('small')).color:'',art:[...n.querySelectorAll(':scope > img.sv-art:not(.sv-art-led), :scope > .sv-stars')].map(a=>Number(getComputedStyle(a).opacity))}));
+      const statusEl=document.querySelector('.sv-overlay.is-on .sv-status'), status=statusEl?{frame:roleOf(getComputedStyle(statusEl).borderImageSource),bg:getComputedStyle(statusEl).backgroundColor}:null;
+      const tile=document.querySelector('.sv-overlay.is-on .sv-learn-tile'), learnTile=tile?{frame:roleOf(getComputedStyle(tile).borderImageSource),roles:[...tile.querySelectorAll('img.sv-art')].map(role),lines:tile.querySelectorAll('li').length,box:rect(tile)}:null;
+      const introCard=document.querySelector('.sv-overlay.is-on .sv-intro'), introBandEl=introCard?.querySelector('.sv-art-intro:not([hidden])'), introBand=introBandEl?{card:box(introCard),band:box(introBandEl)}:null;
+      const bullets=[...document.querySelectorAll('.sv-overlay.is-on .sv-learning li')].map(li=>({list:getComputedStyle(li.parentElement).listStyleType,art:roleOf(getComputedStyle(li,'::before').backgroundImage),w:Math.round(parseFloat(getComputedStyle(li,'::before').width)*10)/10}));
+      const threatHead=document.querySelector('.sv-overlay.is-on .sv-threats > b')?.textContent??null;
+      const killsEl=document.querySelector('.sv-kills'), kills=killsEl&&visible(killsEl)?{value:killsEl.querySelector('b').textContent,unit:killsEl.querySelector('small').textContent}:null;
+      const bayFull=[...document.querySelectorAll('.sv-slot > header > img.sv-art')].map(i=>({role:role(i),place:[...i.classList].find(c=>c.startsWith('sv-art-'))?.slice(7),w:Math.round(i.getBoundingClientRect().width*10)/10}));
+      const text=scope.innerText;
+      return {ui,images,failedImages,overflow,cards,keys,mags,contrast,words,quick,frames,rift,loadout,glyphs,goalShown:!!goal&&visible(goal),goalOneLine,logo,requests,brief,notice,lockOpacity,endCard,starAnim,cornerHits,cornerBoxes,locked,status,learnTile,introBand,bullets,threatHead,kills,bayFull,internalId:/typing-survival/.test(text)};
     })()`);
     result.name = name; screens.push(result);
     const shot = await page.shot(out("ui-art-" + name + "-" + size + ".png"));
@@ -340,14 +361,17 @@ export default async function (page) {
   // The letter-style preview for 3 s: how far any lit stamp ghost (or other style's copy) goes past the box's edges (UI pass 3).
   const preview = await page.eval(`new Promise((done) => {
     const box = document.querySelector('.sv-tfx-preview'); if (!box) return done(null);
-    const b = box.getBoundingClientRect(), over = { top: 0, bottom: 0, left: 0, right: 0 }, t0 = performance.now(); let lit = 0;
+    const b = box.getBoundingClientRect(), over = { top: 0, bottom: 0, left: 0, right: 0 }, t0 = performance.now(); let lit = 0, seat = null;
+    // UI pass 3 fixes: the box on the word plate's art (no flat fill), the plate's middle as a share of the box's height.
+    const frame = (/\\/([\\w-]+)\\.\\d+\\.webp/.exec(getComputedStyle(box).borderImageSource) || [])[1] || '', fill = getComputedStyle(box).backgroundColor;
     const tick = () => {
       for (const a of box.querySelectorAll('.tfx-a, .tfx-b')) {
         if (parseFloat(a.style.opacity || '0') < 0.05) continue;
         lit++; const q = a.getBoundingClientRect();
         over.top = Math.max(over.top, b.top - q.top); over.bottom = Math.max(over.bottom, q.bottom - b.bottom); over.left = Math.max(over.left, b.left - q.left); over.right = Math.max(over.right, q.right - b.right);
       }
-      if (performance.now() - t0 < 3000) requestAnimationFrame(tick); else done({ box: [b.width, b.height].map(Math.round), lit, over: Object.fromEntries(Object.entries(over).map(([k, v]) => [k, Math.round(v)])) });
+      const p = box.querySelector('.tfx-plate'); if (p && parseFloat(getComputedStyle(p).opacity) > 0.5) { const r = p.getBoundingClientRect(); seat = Math.round(((r.top + r.bottom) / 2 - b.top) / b.height * 1000) / 1000; }
+      if (performance.now() - t0 < 3000) requestAnimationFrame(tick); else done({ box: [b.width, b.height].map(Math.round), lit, seat, frame, fill, over: Object.fromEntries(Object.entries(over).map(([k, v]) => [k, Math.round(v)])) });
     };
     requestAnimationFrame(tick);
   })`);
@@ -383,6 +407,17 @@ export default async function (page) {
   await page.eval(sv("t.advance(400); return true;"));
   const rift = await page.eval(sv("return t.state().rifts;"));
   await capture("fight-rift", ".sv-hud");
+  // UI pass 3 fixes: the chip's own tint layer, and its glow sampled over 1.2 s (the pulse's faintest frame still glows at 0.5 alpha or more).
+  const riftGlow = await page.eval(`new Promise((done) => {
+    const chip = document.querySelector('.sv-strip-warn.is-on'); if (!chip) return done(null);
+    const tint = getComputedStyle(chip, '::before'), alphas = [], t0 = performance.now();
+    const tick = () => {
+      const shadows = [...getComputedStyle(chip).filter.matchAll(/drop-shadow\\((rgba?\\([^)]*\\))/g)].map((m) => { const v = m[1].match(/[\\d.]+/g).map(Number); return v.length > 3 ? v[3] : 1; });
+      if (shadows.length) alphas.push(Math.min(...shadows));
+      if (performance.now() - t0 < 1200) requestAnimationFrame(tick); else done({ tint: tint.filter, frame: (/\\/([\\w-]+)\\.\\d+\\.webp/.exec(tint.borderImageSource) || [])[1] || '', min: Math.min(...alphas), max: Math.max(...alphas), samples: alphas.length });
+    };
+    requestAnimationFrame(tick);
+  })`);
   // The input notice (LL-37): a Vietnamese letter typed as a real key, as a Telex keyboard sends it.
   await page.send("Input.dispatchKeyEvent", { type: "keyDown", key: "ă", text: "ă", unmodifiedText: "ă" });
   await page.send("Input.dispatchKeyEvent", { type: "keyUp", key: "ă" });
@@ -443,7 +478,7 @@ export default async function (page) {
     resultsIcons: ["icon-stat-time", "icon-kills", "icon-stat-accuracy", "icon-stat-words", "icon-retry", "icon-back"].every((r) => has("results-lose", r) && has("results-win", r)) && has("results-win", "icon-star-lit") && has("results-win", "icon-next-stage"),
     // UI pass 2: the ticket 127 frames where the theme's plates were.
     frames: ["menu", "options", "pause"].every((n) => by(n).frames.card.every((f) => f === "frame-panel") && by(n).frames.item.length > 0 && by(n).frames.item.every((f) => f === "frame-button") && by(n).frames.itemOn.every((f) => f === "frame-button-active"))
-      && by("armory").frames.guns.length === 5 && by("armory").frames.guns.every((f) => f === "frame-card")
+      && by("armory").frames.guns.length === 6 && by("armory").frames.guns.every((f) => f === "frame-card")
       && by("loadout").frames.guns.length === 3 && by("loadout").frames.guns.every((f) => f === "frame-card") && by("loadout").frames.gunsPicked.length === 2 && by("loadout").frames.gunsPicked.every((f) => f === "frame-button-active")
       && by("loadout").frames.tags.length === 4 && by("loadout").frames.tags.every((f) => f === "frame-word")
       && by("fight").frames.plates.length === 3 && by("fight").frames.plates.every((f) => f === "frame-plate") && by("fight").frames.bays.every((f) => f === "frame-card") && by("fight").frames.locks.length === 2 && by("fight").frames.locks.every((f) => f === "frame-card")
@@ -475,8 +510,33 @@ export default async function (page) {
       && rift.tabs.every((t) => t[2] <= rift.box[0] || t[0] >= rift.box[2] || t[3] <= rift.box[1] || t[1] >= rift.box[3]))(by("fight-rift")),
     // UI pass 3: the loadout cards. Gun art 96 px × --ui; every chip on the word plate, tinted (green Strong, red Weak), with its row's label as tooltip;
     // the names shown on the focused card only; the stats on one line; no CSS ring on any card; under every card's content at most a fifth empty.
-    loadoutCards: (({ loadout, ui }) => !!loadout && loadout.length === 5 && loadout.every((c) => Math.abs(c.art - 96 * ui) <= 1 && c.shadow === "none" && c.statsOneLine && c.chips.length >= 4 && c.chips.every((ch) => ch.frame === "frame-word" && ch.tint.includes(ch.good ? "hue-rotate(95deg)" : "hue-rotate(-45deg)")) && c.titles.every((t) => t !== "") && c.names.every((o) => o === (c.on ? 1 : 0)) && c.empty <= 0.2)
-      && loadout.filter((c) => c.on).length === 1 && loadout.filter((c) => c.picked).length === 2)(by("loadout")),
+    // UI pass 3 fixes: the names on every card, one colour a card, the focused card's brighter than the others'.
+    loadoutCards: (({ loadout, ui }) => !!loadout && loadout.length === 5 && loadout.every((c) => Math.abs(c.art - 96 * ui) <= 1 && c.shadow === "none" && c.statsOneLine && c.chips.length >= 4 && c.chips.every((ch) => ch.frame === "frame-word" && ch.tint.includes(ch.good ? "hue-rotate(95deg)" : "hue-rotate(-45deg)")) && c.titles.every((t) => t !== "") && c.names.every((o) => o === 1) && c.nameColors.length === 1 && c.empty <= 0.2)
+      && loadout.filter((c) => c.on).length === 1 && loadout.filter((c) => c.picked).length === 2
+      && new Set(loadout.filter((c) => !c.on).map((c) => c.nameColors[0])).size === 1 && loadout.find((c) => c.on).nameColors[0] !== loadout.find((c) => !c.on).nameColors[0])(by("loadout")),
+    // UI pass 3 fixes: the chips in fixed columns, the same step between every two neighbours on every card (±1 px); no two names touch, every name inside its card.
+    chipColumns: (({ loadout, ui }) => { if (!loadout) return false; const steps = loadout.flatMap((c) => c.cols.flatMap((row) => row.slice(1).map((x, k) => x > row[k] ? x - row[k] : null).filter((v) => v !== null))); const firsts = loadout.map((c) => c.cols.map((row) => row[0])); return steps.length > 0 && Math.max(...steps) - Math.min(...steps) <= 1 && Math.min(...steps) >= 44 * ui + 4 && firsts.every((f) => Math.max(...f) - Math.min(...f) <= 1); })(by("loadout")),
+    chipNames: (({ loadout }) => !!loadout && loadout.every((c) => c.nameBoxes.every((row) => row.every((n, k) => n[0] >= c.card[0] && n[2] <= c.card[2] && (k === 0 || row[k - 1][1] !== n[1] || row[k - 1][2] < n[0])))))(by("loadout")),
+    // UI pass 3 fixes: no card under the corner gear and speaker, on any screen (the loadout reached under them).
+    cornersClear: screens.every((s) => s.cornerHits.length === 0) && by("loadout").cornerBoxes.length === 2,
+    // Locked rows keep their words at full strength (only the pictures and the lock dim): the note in --soft, the title in --steel-300.
+    lockedRows: by("journey").locked.length === 3 && by("journey").locked.every((l) => l.opacity === 1 && l.note === "rgb(205, 210, 214)" && l.title === "rgb(146, 156, 165)" && l.art.length >= 2 && l.art.every((o) => o < 1)),
+    // The title's status line on the word plate, not a flat bar.
+    statusPlate: by("menu").status?.frame === "frame-word" && by("menu").status.bg === "rgba(0, 0, 0, 0)",
+    // The armory: the learning notes as its sixth tile (the card frame, the learning-rule icon, two notes); no internal id anywhere a player reads.
+    armoryTile: by("armory").learnTile?.frame === "frame-card" && by("armory").learnTile.roles.join() === "icon-learning-rule" && by("armory").learnTile.lines === 2 && screens.every((s) => !s.internalId),
+    // The stage card's art: a band inside the panel frame's rails (≥ 8.5 px × --ui in from each edge), as the briefing's.
+    introBand: (({ introBand, ui }) => !!introBand && introBand.band[0] - introBand.card[0] >= 8.5 * ui - 0.5 && introBand.card[2] - introBand.band[2] >= 8.5 * ui - 0.5)(by("intro")) && by("intro").images.some((i) => i.place === "intro" && i.sizeOK),
+    // Notes' bullets are the panel lamp's art, 12 px × --ui, no browser disc (Profile and the armory).
+    lampBullets: ["profile", "armory"].every((n) => by(n).bullets.length >= 2 && by(n).bullets.every((b) => b.list === "none" && b.art === "part-led-off" && Math.abs(b.w - 12 * by(n).ui) <= 0.5)),
+    // Wording: the threats' heading says what the numbers are; the kills plate reads "8 kills in 3 s".
+    wording: by("loadout").threatHead === "Threats this stage (% of foes)" && ["fight", "fight-rift"].every((n) => !!by(n).kills && /^\d+$/.test(by(n).kills.value) && by(n).kills.unit === "kills in 3 s"),
+    // The bay-full icon at the 28 px icon box in every gun bay (it shows while the bay is full).
+    bayFullIcon: ["fight", "fight-rift"].every((n) => by(n).bayFull.length >= 2 && by(n).bayFull.every((b) => b.role === "icon-bay-full" && b.place === "icon" && Math.abs(b.w - 28 * by(n).ui) <= 1)),
+    // The Settings preview on the word plate's art (no flat fill), its plate's middle at 58 % ± 3 % of the box.
+    previewPlate: !!preview && preview.frame === "frame-word" && preview.fill === "rgba(0, 0, 0, 0)" && preview.seat !== null && Math.abs(preview.seat - 0.58) <= 0.03,
+    // The rift's chip in the amber tint over its plate, its glow never fainter than 0.5 alpha while it pulses.
+    riftHazard: !!riftGlow && riftGlow.frame === "frame-word" && riftGlow.tint.includes("sepia(1)") && riftGlow.samples >= 20 && riftGlow.min >= 0.5 && riftGlow.max > riftGlow.min,
     // Ticket 121: each screen on its own painted background, full window; the title's logo as its heading.
     backgrounds: Object.entries(BACKGROUNDS).every(([name, role]) => by(name).images.some((i) => i.role === role && i.place === "bg" && i.loaded && i.sizeOK)),
     logo: (({ logo }) => !!logo && logo.alt === "Last Line" && logo.heading && !logo.textName && logo.clearOfCard && logo.clearOfMenu && logo.clearOfCorners && Math.abs(logo.width - boxes.logo.width * by("menu").ui) <= 1)(by("menu")),
@@ -502,5 +562,5 @@ export default async function (page) {
   const panelContrast = Object.fromEntries(Object.keys(BACKGROUNDS).map((name) => [name, by(name).textContrast]));
   const corners = Object.fromEntries(Object.keys(BACKGROUNDS).map((name) => [name, by(name).corners]));
   const endCards = Object.fromEntries(["results-win", "results-lose"].map((n) => [n, by(n).endCard]));
-  return { pass, checks, drawn, contrast, magSizes, lost, won, rift: { state: rift.state }, preview, nogl, endCards, logo: by("menu").logo, logoRing: by("menu").logoRing, rails: by("briefing").rails, corners, requests, panelContrast, screens, warnings, exceptions, noglLogs, noglExceptions, shots };
+  return { pass, checks, drawn, contrast, magSizes, lost, won, rift: { state: rift.state }, preview, riftGlow, nogl, endCards, logo: by("menu").logo, logoRing: by("menu").logoRing, rails: by("briefing").rails, corners, requests, panelContrast, screens, warnings, exceptions, noglLogs, noglExceptions, shots };
 }

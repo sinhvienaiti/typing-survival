@@ -173,7 +173,8 @@ export class Hud {
     const kills = el("div", "sv-kills sv-panel", top);
     appendArt(kills, artAttrs("icon-kills", "icon"));
     this.kills = el("b", "", kills);
-    el("small", "", kills, "kills / 3 s");
+    // "8 kills in 3 s" (UI pass 3 fixes: "×8 kills / 3 s" read as a multiplier).
+    el("small", "", kills, "kills in 3 s");
     this.total = el("em", "", kills);
     this.banner = el("div", "sv-banner", root);
     this.fresh = el("div", "sv-fresh", root);
@@ -202,8 +203,8 @@ export class Hud {
       appendArt(root, artAttrs(gunRole(spec.key), "bay"));
       const head = el("header", "", root);
       el("span", "sv-gun", head, spec.name);
-      // Shown while the bay is full (survival.css), beside its magazine cells.
-      appendArt(head, artAttrs("icon-bay-full", "small"));
+      // Shown while the bay is full (survival.css), beside its magazine cells; 28 px (UI pass 3 fixes: at 20 px its three rounds read as a blob at 720p).
+      appendArt(head, artAttrs("icon-bay-full", "icon"));
       const mags = el("div", "sv-mags", head);
       const line = el("div", "sv-word", root);
       const slot: Slot = { root, line, typed: el("span", "sv-typed", line), head: el("span", "sv-head", line), rest: el("span", "", line), ipa: el("span", "sv-ipa", line), mean: el("div", "sv-mean", root), mags: [], gun, key: "", fullAt: -1e9, loadAt: -1e9, bounced: false, blink: false };
@@ -320,7 +321,7 @@ export class Hud {
     }
     if (now > this.bannerUntil) this.banner.classList.remove("is-on");
     if (killsRecent !== this.last.kills) {
-      this.kills.textContent = "×" + killsRecent;
+      this.kills.textContent = String(killsRecent);
       if (killsRecent > this.last.kills) replay(this.kills, "is-bump");
       this.kills.parentElement!.classList.toggle("is-hot", killsRecent >= 15);
       this.last.kills = killsRecent;

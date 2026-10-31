@@ -180,14 +180,14 @@ describe("HUD icon hookups (tickets 149–153, hud.ts and strip.ts)", () => {
     expect(goal.textContent).toMatch(/^PACK LEADER 0\/3/);
   });
 
-  it("marks a full bay with the bay-full icon in its header, before the magazine cells (LL-43)", () => {
+  it("marks a full bay with the bay-full icon in its header, before the magazine cells, at 28 px (LL-43; UI pass 3 fixes)", () => {
     const { root } = hudOn("c1-s1");
     for (const slot of root.find("sv-slot")) {
       const head = slot.children().find((child) => child.tagName === "HEADER")!;
       expect(roles(head)).toEqual(["icon-bay-full"]);
       const kinds = head.children().map((child) => child.tagName === "IMG" ? "img" : child.className);
       expect(kinds).toEqual(["sv-gun", "img", "sv-mags"]);
-      expect(art(head.nodes[1]).className).toBe("sv-art sv-art-small");
+      expect(art(head.nodes[1]).className).toBe("sv-art sv-art-icon");
     }
   });
 

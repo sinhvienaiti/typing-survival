@@ -20,21 +20,26 @@ const REST = 5;
 const BOX_PX = 170;
 /** How far a letter's effect reaches above the word's row, in font sizes (a Stamp at Ultra lands from 2.45 up; the kit's styles.ts). */
 const REACH = 2.5;
-/** The row and its meaning line below the row's top, in font sizes. */
+/** The row and its meaning line below the row's top, in font sizes (the plate: 73 px at a 36 px word, measured 31/10). */
 const BODY = 2;
+/** Where the plate's middle sits, as a share of the box's height (judges, UI pass 3 fixes: seated low, it left an empty band above it between flights). */
+export const SEAT = 0.58;
+/** Kept clear inside the box's edges (px). */
+const EDGE = 4;
 
 /**
  * The preview word's font and its row's top (px) in a box `height` px tall:
- * the flight above the row, the row and its meaning all inside the box, the
- * word as low as that leaves it. Large takes the size that fits (never more
- * than the line's `lineFont`), Medium its step smaller; Huge stays at Large's
- * (no room above it).
+ * the plate's middle at SEAT of the height, a letter's flight above the row
+ * and the plate's lower half inside the box. Large takes the size that fits
+ * (never more than the line's `lineFont`), Medium its step smaller; Huge
+ * stays at Large's (no room above it).
  */
 export function previewFit(height: number, lineFont: number, size: TypingFxSize): { font: number; top: number } {
-  const fit = (height - 8) / (REACH + BODY);
+  const mid = height * SEAT;
+  const fit = Math.min((mid - EDGE) / (REACH + BODY / 2), (height - EDGE - mid) / (BODY / 2));
   const step = Math.min(1, (TYPING_FX_CAP[size] ?? TYPING_FX_CAP.large).at720 / TYPING_FX_CAP.large.at720);
   const font = Math.max(14, Math.min(lineFont, fit * step));
-  return { font, top: Math.max(0, (height - (REACH + BODY) * font) / 2) + REACH * font };
+  return { font, top: mid - (BODY / 2) * font };
 }
 
 export class TypeFxPreview {
@@ -60,7 +65,8 @@ export class TypeFxPreview {
     this.box = doc.createElement("div");
     this.box.className = "sv-tfx-preview";
     const scale = parseFloat(getComputedStyle(host).getPropertyValue("--kit-qs-s")) || 1;
-    this.box.style.cssText = "position:relative;overflow:hidden;width:100%;height:" + Math.round(BOX_PX * scale) + "px;border-radius:6px;background:var(--steel-950)";
+    // Its glass and frame are survival.css's (the word plate's nine-slice; judges, UI pass 3 fixes: a flat black box).
+    this.box.style.cssText = "position:relative;overflow:hidden;width:100%;height:" + Math.round(BOX_PX * scale) + "px";
     host.append(this.box);
     this.strip = this.make();
     this.driver = new TypingFxDriver([this.strip]);

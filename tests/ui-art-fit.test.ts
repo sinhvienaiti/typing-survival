@@ -104,7 +104,7 @@ describe("the armory's gun icons fit the card (206 browser check b)", () => {
     expect(decl(".sv-stages", "width")).toBe("min(94vw, calc(760px * var(--ui)))");
   });
 
-  it("keeps the 64 px icon box", () => {
-    expect(BOX.armory).toEqual({ width: 64, height: 64 });
+  it("draws the gun art at the loadout's 96 px (UI pass 3 fixes: at 64 px the gun itself was about 48)", () => {
+    expect(BOX.armory).toEqual({ width: 96, height: 96 });
   });
 });

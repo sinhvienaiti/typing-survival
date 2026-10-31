@@ -77,6 +77,9 @@ export const hints = (text: string): string => '<footer class="sv-hints">' + tex
 /** The advice line on its word plate, led by the learning-rule icon (UI pass 3: was a CSS rule on a flat block). */
 const advice = (text: string): string => '<p class="sv-advice">' + artHtml("icon-learning-rule", "icon") + "<span>" + escapeHtml(text) + "</span></p>";
 
+/** Notes as a list; each bullet is the panel lamp's art (survival.css), not the browser's disc. */
+const learningList = (lines: readonly string[]): string => '<ul class="sv-learning">' + lines.map((line) => "<li>" + escapeHtml(line) + "</li>").join("") + "</ul>";
+
 /** A stat tile: its icon beside the number. */
 const statTile = (stat: Stat, note = false): string =>
   "<div><b>" + (stat.icon ? artHtml(stat.icon, "item") : "") + escapeHtml(stat.value) + "</b><small>" + escapeHtml(stat.label) + "</small>" + (note && stat.note ? "<em>" + escapeHtml(stat.note) + "</em>" : "") + "</div>";
@@ -116,8 +119,9 @@ export function renderScreen(view: ScreenView): string {
         '<h1>ARMORY · LEARNING</h1><div class="sv-hazard" aria-hidden="true"></div>' +
         '<div class="sv-guns">' +
         view.guns.map((gun) => '<section class="sv-gun-card sv-' + gun.kind + '">' + artHtml(gunRole(gun.kind), "armory") + '<header><b>' + escapeHtml(gun.name) + "</b><small>" + escapeHtml(gun.title) + "</small></header><p>" + escapeHtml(gun.text) + "</p></section>").join("") +
+        // The learning notes fill the grid's sixth cell as a tile of their own, led by the learning-rule icon (UI pass 3 fixes: an empty cell, then a plain list under the grid).
+        (view.learning.length > 0 ? '<section class="sv-gun-card sv-learn-tile"><header>' + artHtml("icon-learning-rule", "icon") + "<b>HOW LEARNING WORKS</b></header>" + learningList(view.learning) + "</section>" : "") +
         "</div>" +
-        '<ul class="sv-learning">' + view.learning.map((line) => "<li>" + escapeHtml(line) + "</li>").join("") + "</ul>" +
         menu(view.menu) +
         hints("<kbd>Enter</kbd> / <kbd>Esc</kbd> back") +
         "</div>"
@@ -128,7 +132,7 @@ export function renderScreen(view: ScreenView): string {
         '<h1>TYPING PROFILE</h1><div class="sv-hazard" aria-hidden="true"></div>' +
         '<div class="sv-stats">' + view.stats.map((stat) => statTile(stat, true)).join("") + "</div>" +
         advice(view.advice) +
-        '<ul class="sv-learning">' + view.lines.map((line) => "<li>" + escapeHtml(line) + "</li>").join("") + "</ul>" +
+        learningList(view.lines) +
         menu(view.menu) +
         hints("<kbd>Enter</kbd> / <kbd>Esc</kbd> back") +
         "</div>"

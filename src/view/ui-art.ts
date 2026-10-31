@@ -4,12 +4,13 @@ import { KIND } from "../content/foes";
 
 /** CSS boxes at 1280 × 720; the CSS parity test guards these dimensions. */
 export const BOX = {
-  armory: { width: 64, height: 64 }, menu: { width: 96, height: 54 },
+  // UI pass 3 fixes: the armory's gun art at the loadout's 96 px (64 drew the gun about 48 px); the stage card's art a band inside the rails, as the briefing's.
+  armory: { width: 96, height: 96 }, menu: { width: 96, height: 54 },
   briefing: { width: 760, height: 120 }, foe: { width: 40, height: 40 },
   // UI pass 3: the loadout card's gun art at 96 px, its Strong / Weak foes as 36 px portraits on chips; the threat strip's foes 24 px (UI pass 2: 16 px read as smudges).
   teach: { width: 32, height: 32 }, loadout: { width: 96, height: 96 },
   chip: { width: 36, height: 36 }, threat: { width: 24, height: 24 },
-  intro: { width: 384, height: 216 }, introGun: { width: 48, height: 48 },
+  intro: { width: 760, height: 200 }, introGun: { width: 48, height: 48 },
   // A bay's gun sits on a small tab plate on the bay's top edge (padding inside the box).
   fresh: { width: 48, height: 48 }, bay: { width: 44, height: 44 },
   bg: { width: 1280, height: 720 },

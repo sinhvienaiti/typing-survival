@@ -79,14 +79,14 @@ describe("loadout cards", () => {
     expect(css).toContain(':root[data-art~="frame-card"] .sv-cards .sv-gun-card.is-on::before { opacity: 1; filter: drop-shadow(0 0 calc(4px * var(--ui)) var(--hot))');
   });
 
-  it("tints the chips green and red over the painted plate and shows the names on the focused card without moving it", () => {
+  it("tints the chips green and red over the painted plate and shows the names on every card, brighter on the focused one, without moving it", () => {
     expect(css).toMatch(/:root\[data-art~="frame-word"\] \.sv-chip \{ background: none; border: 0 solid transparent; border-image: var\(--art-frame-word\)/);
     expect(css).toContain(':root[data-art~="frame-word"] .sv-good .sv-chip::before { filter: var(--good-tint); }');
     expect(css).toContain(':root[data-art~="frame-word"] .sv-poor .sv-chip::before { filter: var(--warn-tint); }');
     expect(theme).toMatch(/--good-tint: grayscale\(1\) sepia\(1\)/);
-    // Hidden names keep their line (opacity, not display), so focus moves nothing.
-    expect(css).toMatch(/\.sv-vs li small \{[^}]*opacity: 0;/);
-    expect(css).toContain(".sv-cards .sv-gun-card.is-on .sv-vs li small, .sv-cards .sv-gun-card:hover .sv-vs li small { opacity: 1; }");
+    // UI pass 3 fixes: every card shows its names (judge B: 4 of 5 cards could not be read); focus only brightens them, so it moves nothing.
+    expect(css).not.toMatch(/\.sv-vs li small \{[^}]*opacity/);
+    expect(css).toContain(".sv-cards .sv-gun-card.is-on .sv-vs li small, .sv-cards .sv-gun-card:hover .sv-vs li small { color: var(--text); }");
   });
 });
 
@@ -95,7 +95,8 @@ describe("the rift's warning", () => {
     expect(css).not.toMatch(/\.sv-warn\b/);
     expect(css).toMatch(/:root\[data-art~="frame-word"\] \.sv-strip-warn \{[^}]*border-image: var\(--art-frame-word\)[^}]*filter: drop-shadow\(/);
     expect(css).toMatch(/:root\[data-art~="frame-word"\] \.sv-strip-warn\.is-on \{ animation: sv-rift-glow /);
-    expect(css).toContain(':root[data-motion="reduced"][data-art~="frame-word"] .sv-strip-warn.is-on { animation: none; }');
+    // UI pass 3 fixes: reduced motion keeps the glow, standing still at its middle strength.
+    expect(css).toMatch(/:root\[data-motion="reduced"\]\[data-art~="frame-word"\] \.sv-strip-warn\.is-on \{ animation: none; filter: /);
     const hud = readFileSync("src/view/hud.ts", "utf8");
     // Between the word line and the bays, inside the corridor's walls and off the bays' gun tabs.
     expect(hud).toContain("const y = (this.placed.line + this.placed.glow) / 2;");
