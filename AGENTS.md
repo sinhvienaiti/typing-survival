@@ -101,8 +101,12 @@ guns that hold a corridor against a horde. It was split out of Space Typing
 - `tests/boundary.test.ts`: `src/` imports only `src/**`, `three`,
   `three/examples/jsm/*`, `@fontsource/*`, `a11y-dialog` (the kit's
   quick-settings panels); never Space Typing paths.
-- Models: Space Typing's library through the URL `/assets/space-typing/models/`
-  (Vite plugin in dev, nginx alias in play). Never copy models here.
+- Models (since Codex 205, merged 31/10): Last Line's own manifest at
+  `public/assets/typing-survival/models/manifest.json` (tracked); the High and
+  Medium GLBs are imported from Space's library with the parent's
+  `pnpm models:prepare --root games/typing-survival --import …` (205-report §6)
+  and live under `public/assets/typing-survival/models/` (ignored, on Drive).
+  No request goes to `/assets/space-typing/` any more.
 - No media in Git (images, audio, video, `.glb`, `.bin`); `public/assets/**`
   and `art-src/` are ignored. Code comments in English, short.
 - Theme "Vành Chân Trời" (SPLIT_PLAN §1.3, direction A): every DOM colour,
