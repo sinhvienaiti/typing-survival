@@ -709,12 +709,13 @@
     {
       "role": "icon-shake",
       "kind": "icon",
-      "source": "ui/icons/shake",
+      "source": "ui/icons/shake.r5",
       "accepted": true,
-      "ticket": "240",
-      "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (c2-try1)",
+      "ticket": "247",
+      "verdict": "CODEX_QUEUE 247: Tạm 01/11 (chủ dự án \"Gắn tạm\"; chưa đạt 8, tốt nhất sau 3 vòng Firefly Image 5, xem 247-report.md)",
       "alt": "Screen shake",
-      "fill": 0.85
+      "fill": 0.85,
+      "provisional": true
     },
     {
       "role": "icon-reduced-motion",
@@ -739,12 +740,13 @@
     {
       "role": "icon-pace-director",
       "kind": "icon",
-      "source": "ui/icons/pace-director.v2",
+      "source": "ui/icons/pace-director.r5",
       "accepted": true,
-      "ticket": "152",
-      "verdict": "CODEX_QUEUE 152: Nhận 31/10 (v2)",
+      "ticket": "247",
+      "verdict": "CODEX_QUEUE 247: Tạm 01/11 (chủ dự án \"Gắn tạm\"; chưa đạt 8, tốt nhất sau 3 vòng Firefly Image 5, xem 247-report.md)",
       "alt": "Adapt pace",
-      "fill": 0.85
+      "fill": 0.8,
+      "provisional": true
     },
     {
       "role": "icon-quality",
@@ -769,32 +771,35 @@
     {
       "role": "icon-stat-new-word",
       "kind": "icon",
-      "source": "ui/icons/stat-new-word",
+      "source": "ui/icons/stat-new-word.r5",
       "accepted": true,
-      "ticket": "152",
-      "verdict": "CODEX_QUEUE 152: Nhận 31/10",
+      "ticket": "247",
+      "verdict": "CODEX_QUEUE 247: Tạm 01/11 (chủ dự án \"Gắn tạm\"; chưa đạt 8, tốt nhất sau 3 vòng Firefly Image 5, xem 247-report.md)",
       "alt": "New-word read",
-      "fill": 0.85
+      "fill": 0.8,
+      "provisional": true
     },
     {
       "role": "icon-stat-evenness",
       "kind": "icon",
-      "source": "ui/icons/stat-evenness",
+      "source": "ui/icons/stat-evenness.r3",
       "accepted": true,
-      "ticket": "240",
-      "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (try2)",
+      "ticket": "247",
+      "verdict": "CODEX_QUEUE 247: Tạm 01/11 (chủ dự án \"Gắn tạm\"; chưa đạt 8, tốt nhất sau 3 vòng Firefly Image 5, xem 247-report.md)",
       "alt": "Steadiness",
-      "fill": 0.85
+      "fill": 0.8,
+      "provisional": true
     },
     {
       "role": "icon-rift",
       "kind": "icon",
-      "source": "ui/icons/rift",
+      "source": "ui/icons/rift.r3",
       "accepted": true,
-      "ticket": "152",
-      "verdict": "CODEX_QUEUE 152: Nhận 31/10",
+      "ticket": "247",
+      "verdict": "CODEX_QUEUE 247: Tạm 01/11 (chủ dự án \"Gắn tạm\"; chưa đạt 8, tốt nhất sau 3 vòng Firefly Image 5, xem 247-report.md)",
       "alt": "Rift",
-      "fill": 0.85
+      "fill": 0.8,
+      "provisional": true
     },
     {
       "role": "icon-ship",

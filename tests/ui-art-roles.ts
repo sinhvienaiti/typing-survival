@@ -46,18 +46,19 @@ export const ICONS: Readonly<Record<string, { source: string; ticket: string }>>
   "icon-stat-time": { source: "ui/icons/stat-time", ticket: "151" },
   "icon-stat-accuracy": { source: "ui/icons/stat-accuracy.r2", ticket: "242" },
   "icon-stat-words": { source: "ui/icons/stat-words", ticket: "242" },
-  // 152 settings, profile, Rift
+  // 152 settings, profile, Rift; shake, pace-director, stat-new-word, stat-evenness and rift are
+  // 247's provisional redraws (owner 01/11 "Gắn tạm": best of three rounds, below the bar of 8)
   "icon-sfx": { source: "ui/icons/sfx", ticket: "152" },
   "icon-music": { source: "ui/icons/music", ticket: "152" },
-  "icon-shake": { source: "ui/icons/shake", ticket: "240" },
+  "icon-shake": { source: "ui/icons/shake.r5", ticket: "247" },
   "icon-reduced-motion": { source: "ui/icons/reduced-motion", ticket: "240" },
   "icon-read-aloud": { source: "ui/icons/read-aloud", ticket: "152" },
-  "icon-pace-director": { source: "ui/icons/pace-director.v2", ticket: "152" },
+  "icon-pace-director": { source: "ui/icons/pace-director.r5", ticket: "247" },
   "icon-quality": { source: "ui/icons/quality", ticket: "152" },
   "icon-stat-wpm": { source: "ui/icons/stat-wpm.v2", ticket: "152" },
-  "icon-stat-new-word": { source: "ui/icons/stat-new-word", ticket: "152" },
-  "icon-stat-evenness": { source: "ui/icons/stat-evenness", ticket: "240" },
-  "icon-rift": { source: "ui/icons/rift", ticket: "152" },
+  "icon-stat-new-word": { source: "ui/icons/stat-new-word.r5", ticket: "247" },
+  "icon-stat-evenness": { source: "ui/icons/stat-evenness.r3", ticket: "247" },
+  "icon-rift": { source: "ui/icons/rift.r3", ticket: "247" },
   // 243 Options and the quick Settings rows
   "icon-ship": { source: "ui/icons/ship", ticket: "243" },
   "icon-letter-style": { source: "ui/icons/letter-style", ticket: "243" },

@@ -36,11 +36,19 @@ describe("tickets 243 and 244 in the selection", () => {
     expect(table.roles["slider-fill"]).toMatchObject({ kind: "track", widths: [512, 1024], aspect: 16 });
   });
 
-  it("keeps 243's two failed redraws out (pace-director.r2, shake.r2: ticket 247) and nothing of tickets 246–249", () => {
-    expect(entries("icon-pace-director")).toEqual([expect.objectContaining({ source: "ui/icons/pace-director.v2", ticket: "152" })]);
-    expect(entries("icon-shake")).toEqual([expect.objectContaining({ source: "ui/icons/shake", ticket: "240" })]);
+  it("keeps 243's two failed redraws out (pace-director.r2, shake.r2), wires 247's five redraws only as provisional, and nothing of tickets 246 and 248–250", () => {
+    expect(entries("icon-pace-director")).toEqual([expect.objectContaining({ source: "ui/icons/pace-director.r5", ticket: "247", provisional: true })]);
+    expect(entries("icon-shake")).toEqual([expect.objectContaining({ source: "ui/icons/shake.r5", ticket: "247", provisional: true })]);
     expect(selection.entries.filter((entry) => /\.r2$/.test(entry.source ?? "") && /pace-director|shake/.test(entry.source ?? ""))).toEqual([]);
-    expect(selection.entries.filter((entry) => ["246", "247", "248", "249", "250"].includes(entry.ticket))).toEqual([]);
+    // Owner 01/11 "Gắn tạm": the best of three rounds, below the bar of 8 (docs/codex-queue/247-report.md in the parent repo).
+    expect(selection.entries.filter((entry) => entry.ticket === "247").map((entry) => [entry.role, entry.source, entry.provisional]).sort()).toEqual([
+      ["icon-pace-director", "ui/icons/pace-director.r5", true],
+      ["icon-rift", "ui/icons/rift.r3", true],
+      ["icon-shake", "ui/icons/shake.r5", true],
+      ["icon-stat-evenness", "ui/icons/stat-evenness.r3", true],
+      ["icon-stat-new-word", "ui/icons/stat-new-word.r5", true],
+    ]);
+    expect(selection.entries.filter((entry) => ["246", "248", "249", "250"].includes(entry.ticket))).toEqual([]);
   });
 });
 

@@ -32,7 +32,9 @@ describe("the selection and table (149–153, 225)", () => {
       expect(entry.source, role).toBe(want.source);
       expect(entry.ticket, role).toBe(want.ticket);
       expect(entry.kind, role).toBe(role === "slider-track" || role === "slider-fill" ? "track" : "icon");
-      expect(entry.verdict, role).toMatch(new RegExp("^CODEX_QUEUE " + want.ticket + ": Nhận 31/10"));
+      // 247's five redraws are wired provisionally (owner 01/11 "Gắn tạm"), not accepted at 8.
+      if (want.ticket === "247") { expect(entry.verdict, role).toMatch(/^CODEX_QUEUE 247: Tạm 01\/11/); expect((entry as { provisional?: boolean }).provisional, role).toBe(true); }
+      else expect(entry.verdict, role).toMatch(new RegExp("^CODEX_QUEUE " + want.ticket + ": Nhận 31/10"));
       expect(entry.alt, role).toMatch(/^[A-Z][A-Za-z0-9 ,-]+$/);
     }
     expect(selection.entries.find((entry) => entry.role === "foe-shard")).toMatchObject({ source: "ui/foes/shard", accepted: true, ticket: "238" });

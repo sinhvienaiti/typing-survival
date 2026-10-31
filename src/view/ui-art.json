@@ -683,7 +683,7 @@
     "icon-pace-director": {
       "kind": "icon",
       "alt": "Adapt pace",
-      "rev": "9ffdac48",
+      "rev": "25855760",
       "widths": [
         64,
         128,
@@ -749,7 +749,7 @@
     "icon-rift": {
       "kind": "icon",
       "alt": "Rift",
-      "rev": "f7bff82f",
+      "rev": "ef80c60a",
       "widths": [
         64,
         128,
@@ -771,7 +771,7 @@
     "icon-shake": {
       "kind": "icon",
       "alt": "Screen shake",
-      "rev": "9f96299a",
+      "rev": "5153d9fe",
       "widths": [
         64,
         128,
@@ -826,7 +826,7 @@
     "icon-stat-evenness": {
       "kind": "icon",
       "alt": "Steadiness",
-      "rev": "55e9a4f7",
+      "rev": "b7e7993a",
       "widths": [
         64,
         128,
@@ -837,7 +837,7 @@
     "icon-stat-new-word": {
       "kind": "icon",
       "alt": "New-word read",
-      "rev": "4d914293",
+      "rev": "adc5c104",
       "widths": [
         64,
         128,
