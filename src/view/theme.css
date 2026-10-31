@@ -29,6 +29,11 @@
   --volt: #3db8ff;
   --volt-hi: #a6e0ff;
   --volt-glow: rgba(61, 184, 255, 0.38);
+  /* The chosen keyboard sound row (quick panel): its label, the light inside its plate (centre, edge) and its inner rim. */
+  --volt-chosen-text: #d9f2ff;
+  --volt-light: rgba(61, 184, 255, 0.22);
+  --volt-light-edge: rgba(61, 184, 255, 0.08);
+  --volt-rim: rgba(61, 184, 255, 0.45);
 
   /* Semantic colours shared by every game (src/kit/ui tokens). */
   --danger: #ff4a4a;

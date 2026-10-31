@@ -629,6 +629,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 /* A glow, not a scale (a scaled icon spills past its button), and no square ring under the pointer: keyboard focus is the kit's glow. */
 .sv-hud .kit-qs__corner.has-icon:hover:not(:focus-visible) { outline: none; }
 .sv-hud .kit-qs__corner.has-icon:hover img, .sv-hud .kit-qs__corner.has-icon[aria-expanded="true"] img { filter: drop-shadow(0 0 calc(6px * var(--kit-qs-s)) var(--volt)) brightness(1.2); }
+/* Close (ticket 245's round art button): under the pointer it brightens with a pale-cyan glow, as Dragonhold's and Wordwoven's (the kit's brightness(1.18) alone did not show, judges 01/11); a press sinks it; keyboard focus keeps the kit's glow. */
+.sv-hud .kit-qs.kit-qs--skin-close .kit-qs__head .kit-qs__close--icon { transition: filter 0.1s, scale 0.08s; }
+.sv-hud .kit-qs.kit-qs--skin-close .kit-qs__head .kit-qs__close--icon:hover:not(:focus-visible) { filter: brightness(1.25) drop-shadow(0 0 calc(5px * var(--kit-qs-s)) var(--volt-hi)); }
+.sv-hud .kit-qs.kit-qs--skin-close .kit-qs__head .kit-qs__close--icon:active { scale: 0.92; }
 /* Row icons in the kit's cell (--kit-qs-icon-size): the kit draws the named ones (quick.ts quickIcons: the Sound rows, Keyboard volume, the typing-effect rows of 243); the Options screen's quality, motion and shake art and the Sound panel's read-aloud art are the cell's background here. */
 .sv-hud .kit-qs__row:not(.kit-qs__row--slot) { grid-template-columns: var(--kit-qs-icon-size) 9.4em minmax(0, 1fr); }
 .sv-hud .kit-qs__row[data-row="quality"] > .kit-qs__icon-cell { background: var(--art-icon-quality, none) center / contain no-repeat; }
@@ -654,8 +658,17 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
  * same way (LIST_ROW_VARS). Touch keeps at least the kit's 44 px rows.
  */
 .sv-hud .kit-qs__row--keyboards .kit-keyboards { max-height: calc(272px * var(--kit-qs-s)); }
-/* The chosen row's lit plate glows like a chosen chip (the kit's hover and focus filters still win on it). */
-.sv-hud .kit-qs.kit-qs--skin-list .kit-keyboards button.kit-keyboards__option[aria-selected="true"]::before { filter: drop-shadow(0 0 calc(5px * var(--kit-qs-s)) var(--volt-glow)); }
+/*
+ * The chosen row reads at a glance (judges after 245, 01/11: it was only +1.6 L* over a plain row): its lit plate is
+ * brighter with a cyan glow, a cyan light fills it from inside the rim (::after, screened over the plate, under the
+ * label) and its label is a near-white cyan with a soft glow. About +20 L* over a plain row at both sizes. Under the
+ * pointer it brightens further; keyboard focus adds the kit's glow; a disabled chosen row keeps the kit's grey.
+ */
+.sv-hud .kit-qs.kit-qs--skin-list .kit-keyboards button.kit-keyboards__option[aria-selected="true"]:not(:disabled) { color: var(--volt-chosen-text); text-shadow: 0 calc(1px * var(--kit-qs-s)) calc(2px * var(--kit-qs-s)) var(--shadow), 0 0 calc(4px * var(--kit-qs-s)) var(--volt-glow); }
+.sv-hud .kit-qs.kit-qs--skin-list .kit-keyboards button.kit-keyboards__option[aria-selected="true"]:not(:disabled)::before { filter: brightness(1.35) saturate(1.2) drop-shadow(0 0 calc(6px * var(--kit-qs-s)) var(--volt)); }
+.sv-hud .kit-qs.kit-qs--skin-list .kit-keyboards button.kit-keyboards__option[aria-selected="true"]:not(:disabled):hover::before { filter: brightness(1.5) saturate(1.2) drop-shadow(0 0 calc(7px * var(--kit-qs-s)) var(--volt)); }
+.sv-hud .kit-qs.kit-qs--skin-list .kit-keyboards button.kit-keyboards__option[aria-selected="true"]:not(:disabled):focus-visible::before { filter: brightness(1.35) saturate(1.2) var(--kit-qs-glow-filter); }
+.sv-hud .kit-qs.kit-qs--skin-list .kit-keyboards button.kit-keyboards__option[aria-selected="true"]:not(:disabled)::after { content: ""; position: absolute; inset: calc(2px + 4px * var(--kit-qs-s)) calc(6px * var(--kit-qs-s)); z-index: -1; pointer-events: none; background: radial-gradient(ellipse 80% 160% at 50% 50%, var(--volt-light), var(--volt-light-edge) 75%, transparent); box-shadow: inset 0 0 calc(8px * var(--kit-qs-s)) var(--volt-rim); mix-blend-mode: screen; }
 .sv-hud .kit-qs__row--keyboards .kit-keyboards button, .sv-hud .kit-qs__row--keyboards .kit-keyboards__spacer { flex-basis: calc(34px * var(--kit-qs-s)); height: calc(34px * var(--kit-qs-s)); min-height: calc(34px * var(--kit-qs-s)); }
 .sv-hud .kit-qs__row--keyboards .kit-keyboards__family { flex-basis: calc(28px * var(--kit-qs-s)); height: calc(28px * var(--kit-qs-s)); min-height: calc(28px * var(--kit-qs-s)); padding: calc(4px * var(--kit-qs-s)) calc(10px * var(--kit-qs-s)); color: var(--hot-hi); }
 /* The Listen speakers: the kit scales them, glows them under the pointer, presses them and lights the one that sounds; the list's thin scrollbar in the game's cyan. */

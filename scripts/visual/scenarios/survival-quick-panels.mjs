@@ -12,6 +12,8 @@
 // the last control; the Settings preview is never empty for long and its impact ring lands inside the frame.
 // Ticket 245 (31/10, night): Close is the round art button (quick-close, the kit's QuickSkin.close): loaded, named
 // "Close", 32 px × the panel's scale, in the panel's top-right corner, glowing on focus; a click on it closes the panel.
+// Judges after 245 (01/11, docs/changelog/2026-10-31-wire-245.md, judges section): Close glows under the pointer and sinks while
+// pressed; the chosen keyboard row is at least 5 L* brighter than a plain row beside it.
 import { spawnSync } from "node:child_process";
 import { DEV_URL, out } from "./common.mjs";
 import { press, sv } from "./survival-s0-lib.mjs";
@@ -33,6 +35,23 @@ function columnDiff(a, b, y0, y1) {
     cols[x] = Math.max(cols[x], Math.abs(pa[i] - pb[i]), Math.abs(pa[i + 1] - pb[i + 1]), Math.abs(pa[i + 2] - pb[i + 2]));
   }
   return cols;
+}
+/** sRGB byte → linear light. */
+const linear = (v) => { const c = v / 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+/** A shot's mean CIE L* (D65, per pixel). */
+function meanL(file) {
+  const [w, h, p] = pixels(file); let sum = 0;
+  for (let i = 0; i < p.length; i += 3) {
+    const y = 0.2126 * linear(p[i]) + 0.7152 * linear(p[i + 1]) + 0.0722 * linear(p[i + 2]);
+    sum += 116 * (y > 216 / 24389 ? Math.cbrt(y) : (24389 / 27 * y + 16) / 116) - 16;
+  }
+  return Math.round((sum / (w * h)) * 100) / 100;
+}
+/** Mean per-pixel change between two shots of one clip: the largest channel difference, in % of full scale. */
+function meanChange(a, b) {
+  const [w, h, pa] = pixels(a), [, , pb] = pixels(b); let sum = 0;
+  for (let i = 0; i < pa.length; i += 3) sum += Math.max(Math.abs(pa[i] - pb[i]), Math.abs(pa[i + 1] - pb[i + 1]), Math.abs(pa[i + 2] - pb[i + 2]));
+  return Math.round((sum / (w * h) / 255) * 10000) / 100;
 }
 /** First and last column whose difference passes `min` (null: none). */
 const extent = (cols, min = 24) => { const on = cols.map((v, x) => (v >= min ? x : -1)).filter((x) => x >= 0); return on.length ? [on[0], on[on.length - 1]] : null; };
@@ -245,6 +264,31 @@ export default async function (page) {
     report.listen = { value, rest, hover, pressed, litAt, offAt, hoverChange: changed(restShot, hoverShot), pressChange: changed(restShot, pressShot), playChange: litShot ? changed(restShot, litShot) : null };
     report.scrollbar = await page.eval(`(() => { const l = document.querySelector('.kit-qs__dialog[data-panel="sound"] .kit-keyboards'); const cs = getComputedStyle(l); return { width: cs.scrollbarWidth, color: cs.scrollbarColor, scrolls: l.scrollHeight > l.clientHeight }; })()`);
   }
+  // 4d. The chosen keyboard row against a plain row beside it, at rest (no pointer, no focus): the mean L* of each row as drawn (judges 01/11: at least +5).
+  {
+    const ROWS = `(() => { const d = document.querySelector('.kit-qs__dialog[data-panel="sound"]'); const opts = [...d.querySelectorAll('button.kit-keyboards__option')];
+      const i = opts.findIndex((b) => b.getAttribute('aria-selected') === 'true'); if (i < 0) return null;
+      opts[i].scrollIntoView({ block: 'center' }); document.activeElement?.blur?.();
+      const lb = d.querySelector('.kit-keyboards').getBoundingClientRect(), inView = (b) => { const r = b.getBoundingClientRect(); return r.top >= lb.top && r.bottom <= lb.bottom; };
+      const plain = [opts[i + 1], opts[i - 1], ...opts].find((b) => b && b !== opts[i] && !b.disabled && inView(b));
+      const box = (b) => { const r = b.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; };
+      const cs = getComputedStyle(opts[i]);
+      return { chosen: { value: opts[i].dataset.value, ...box(opts[i]), inView: inView(opts[i]), plate: getComputedStyle(opts[i], '::before').filter, light: getComputedStyle(opts[i], '::after').backgroundImage, color: cs.color, shadow: cs.textShadow }, plain: plain ? { value: plain.dataset.value, ...box(plain) } : null }; })()`;
+    await page.eval(ROWS); await page.mouse(5, 5); await page.sleep(400);
+    const rows = await page.eval(ROWS); await page.sleep(250);
+    const clip = (b) => ({ x: Math.floor(b.x), y: Math.floor(b.y), width: Math.ceil(b.w), height: Math.ceil(b.h) });
+    if (rows?.chosen && rows.plain) {
+      const lc = meanL(await shot("row-chosen", { clip: clip(rows.chosen) })), lp = meanL(await shot("row-plain", { clip: clip(rows.plain) }));
+      // The plates alone (labels hidden), whole and inside the rim (the plate's 9 / 10 px edges and the 2 px inset, × scale).
+      await style("qp-nolabel", ".kit-qs .kit-keyboards button.kit-keyboards__option{color:transparent!important;text-shadow:none!important}"); await page.sleep(150);
+      const s = report.titleSound.scale, inner = (b) => ({ x: b.x + 10 * s, y: b.y + 2 + 9 * s, w: b.w - 20 * s, h: b.h - 4 - 18 * s });
+      const pc = meanL(await shot("plate-chosen", { clip: clip(rows.chosen) })), pp = meanL(await shot("plate-plain", { clip: clip(rows.plain) }));
+      const ic = meanL(await shot("inner-chosen", { clip: clip(inner(rows.chosen)) })), ip = meanL(await shot("inner-plain", { clip: clip(inner(rows.plain)) }));
+      await unstyle("qp-nolabel");
+      const d = (a, b) => Math.round((a - b) * 100) / 100;
+      report.rowLift = { ...rows, chosenL: lc, plainL: lp, dL: d(lc, lp), plate: { chosenL: pc, plainL: pp, dL: d(pc, pp) }, inner: { chosenL: ic, plainL: ip, dL: d(ic, ip) } };
+    } else report.rowLift = { ...rows, dL: null };
+  }
   await key(page, "Escape"); await page.sleep(400);
   report.afterEsc = await probe();
 
@@ -253,8 +297,22 @@ export default async function (page) {
   for (let n = 0; n < 40; n++) { if ((await page.eval(sv("return t.state().phase;"))) === "play") break; await page.sleep(250); }
   await page.sleep(1500);
   report.playSettings = await panel("F1", "play-settings");
-  // Ticket 245: the art Close closes the panel (a click, where the title's panels close by Esc).
-  await page.click('.kit-qs__dialog[data-panel="settings"] .kit-qs__close'); await page.sleep(400);
+  // Ticket 245: the art Close closes the panel (a click, where the title's panels close by Esc). On the way, at rest,
+  // under the pointer and held down (judges 01/11: hover lights it with a cyan glow, a press sinks it to 0.92).
+  {
+    const sel = '.kit-qs__dialog[data-panel="settings"] .kit-qs__close';
+    const CLOSE = `(() => { const b = document.querySelector(${JSON.stringify(sel)}); const cs = getComputedStyle(b); return { filter: cs.filter, scale: cs.scale, focusVisible: b.matches(':focus-visible') }; })()`;
+    const at = await page.locate(sel), pad = Math.ceil(14 * report.playSettings.scale);
+    const clip = { x: Math.floor(at.left - pad), y: Math.floor(at.top - pad), width: Math.ceil(at.w + 2 * pad), height: Math.ceil(at.h + 2 * pad) };
+    await page.mouse(5, 5); await page.sleep(300);
+    const rest = await page.eval(CLOSE), restShot = await shot("close-rest", { clip });
+    await page.mouse(at.x, at.y); await page.sleep(300);
+    const hover = await page.eval(CLOSE), hoverShot = await shot("close-hover", { clip });
+    await page.mouse(at.x, at.y, "mousePressed"); await page.sleep(250);
+    const pressed = await page.eval(CLOSE), pressShot = await shot("close-press", { clip });
+    await page.mouse(at.x, at.y, "mouseReleased"); await page.sleep(400);
+    report.closeStates = { rest, hover, pressed, hoverChange: changed(restShot, hoverShot), hoverMean: meanChange(restShot, hoverShot), pressChange: changed(restShot, pressShot) };
+  }
   report.afterClose = await probe();
   await page.sleep(3200);
   report.playSound = await panel("F2", "play-sound");
@@ -298,6 +356,12 @@ export default async function (page) {
       && s.close.box[0] + s.close.box[2] <= s.panel.box[0] + s.panel.box[2] && s.close.box[1] >= s.panel.box[1] && s.close.box[1] + s.close.box[3] <= s.panel.box[1] + 80 * s.scale),
     closeClick: report.afterClose.open === null,
     closeInTab: report.tabs.some((f) => /kit-qs__close--icon/.test(f.cls) && f.filter.includes("rgb(61, 184, 255)") && f.outline === "none"),
+    // Judges 01/11: under the pointer Close brightens with a pale-cyan glow (--volt-hi) you can see (≥ 10 % of the clip changes, ≥ 3 % mean); held down it sinks to 0.92.
+    closeHover: !report.closeStates.hover.focusVisible && /brightness\(1\.25\)/.test(report.closeStates.hover.filter) && report.closeStates.hover.filter.includes("rgb(166, 224, 255)")
+      && report.closeStates.rest.filter === "none" && report.closeStates.hoverChange.share >= 0.1 && report.closeStates.hoverMean >= 3,
+    closePress: report.closeStates.pressed.scale === "0.92" && report.closeStates.rest.scale === "none",
+    // Judges 01/11: the chosen keyboard row reads at a glance, at least 5 L* over a plain row beside it, with its label and on the plate alone.
+    chosenLift: !!report.rowLift?.chosen?.inView && report.rowLift.dL !== null && report.rowLift.dL >= 5 && report.rowLift.plate.dL >= 5,
     panelsFit: all.every((s) => s.panel.noScroll && s.panel.inside),
     tabStaysIn: report.tabs.every((f) => f.inside),
     // A cyan glow (--volt, rgb(61, 184, 255)) hugging the art, no flat outline: on the focused button, and on every focused button, chip or list row the Tab walk met.

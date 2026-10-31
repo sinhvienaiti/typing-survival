@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { quickSkin } from "../src/app/quick";
 import { KIND } from "../src/content/foes";
@@ -72,5 +73,27 @@ describe("the quick panels' Close", () => {
     const close = quickSkin().close;
     expect(close).toBe(artUrl("quick-close", 32));
     expect(close).toMatch(/^\/assets\/typing-survival\/ui\/quick-close\.128\.webp\?v=[a-f0-9]{8}$/);
+  });
+});
+
+/** Judges after the 245 wiring (01/11): Close shows hover and press; the chosen keyboard row reads at a glance. */
+describe("the judges' items after 245", () => {
+  const css = readFileSync("src/view/survival.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const theme = readFileSync("src/view/theme.css", "utf8");
+  const CLOSE = ".sv-hud .kit-qs.kit-qs--skin-close .kit-qs__head .kit-qs__close--icon";
+  const CHOSEN = '.sv-hud .kit-qs.kit-qs--skin-list .kit-keyboards button.kit-keyboards__option[aria-selected="true"]:not(:disabled)';
+
+  it("Close brightens with a pale-cyan glow under the pointer (not over the kit's focus glow) and sinks to 0.92 while pressed", () => {
+    expect(css).toContain(CLOSE + ":hover:not(:focus-visible) { filter: brightness(1.25) drop-shadow(0 0 calc(5px * var(--kit-qs-s)) var(--volt-hi)); }");
+    expect(css).toContain(CLOSE + ":active { scale: 0.92; }");
+  });
+
+  it("the chosen row is lit: a brighter glowing plate, a cyan light inside its rim, a near-white label; hover and focus keep it lit", () => {
+    expect(css).toContain(CHOSEN + "::before { filter: brightness(1.35) saturate(1.2) drop-shadow(0 0 calc(6px * var(--kit-qs-s)) var(--volt)); }");
+    expect(css).toContain(CHOSEN + ":hover::before { filter: brightness(1.5)");
+    expect(css).toContain(CHOSEN + ":focus-visible::before { filter: brightness(1.35) saturate(1.2) var(--kit-qs-glow-filter); }");
+    expect(css).toMatch(new RegExp(CHOSEN.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "::after \\{[^}]*var\\(--volt-light\\)[^}]*inset 0 0 calc\\(8px \\* var\\(--kit-qs-s\\)\\) var\\(--volt-rim\\)[^}]*mix-blend-mode: screen;"));
+    expect(css).toContain(CHOSEN + " { color: var(--volt-chosen-text);");
+    for (const token of ["--volt-chosen-text", "--volt-light", "--volt-light-edge", "--volt-rim"]) expect(theme).toMatch(new RegExp(token + ":"));
   });
 });
