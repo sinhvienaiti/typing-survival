@@ -80,12 +80,15 @@ const statTile = (stat: Stat, note = false): string =>
 
 export function renderScreen(view: ScreenView): string {
   switch (view.kind) {
-    case "title":
+    case "title": {
+      // The painted logo (ticket 121) is the page's heading; without its art the name is set in the title font.
+      const logo = artHtml("logo", "logo", { label: true });
       return (
         artHtml(bgRole("menu"), "bg") + '<div class="sv-title">' +
+        (logo ? '<h1 class="sv-title-logo">' + logo + "</h1>" : "") +
         '<div class="sv-card sv-panel sv-title-card">' +
         '<div class="sv-title-tag">' + artHtml("icon-station-crest", "icon") + "STATION VC-7 · EVENT HORIZON</div>" +
-        '<h1 class="sv-title-name">LAST LINE</h1>' +
+        (logo ? "" : '<h1 class="sv-title-name">LAST LINE</h1>') +
         '<div class="sv-title-en">HOLD THE LINE</div>' +
         '<div class="sv-hazard" aria-hidden="true"></div>' +
         '<p class="sv-lead">' + escapeHtml(view.lead) + "</p>" +
@@ -94,6 +97,7 @@ export function renderScreen(view: ScreenView): string {
         hints("<kbd>↑</kbd><kbd>↓</kbd> select · <kbd>Enter</kbd> play · <kbd>Esc</kbd> back") +
         "</div></div>"
       );
+    }
     case "settings":
       return (
         '<div class="sv-card sv-panel sv-sheet">' +

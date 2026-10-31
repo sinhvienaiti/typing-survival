@@ -13,7 +13,12 @@
 // banner and the quick panels; the quick panels' gear, speakers and row icons (ticket 180 and the
 // Options art); every groove the same length and lit up to its knob; one rift chip with text and
 // a mark on the corridor wall; the banner and the stars measured after their pop.
+// Ticket 121 (31/10): the six screen backgrounds and the title logo (an h1 clear of the card, the menu
+// and the corner buttons); every UI art request's status; on each background screen the contrast of
+// the main card's text against the pixels behind it (a second frame with the text made transparent).
+// Pages open with debug=1, so it also runs on a production build (URL=https://survival.typing-game.local/).
 import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { DEV_URL, out } from "./common.mjs";
 import { press, sv } from "./survival-s0-lib.mjs";
 
@@ -25,6 +30,53 @@ const accepted = new Set(selection.entries.filter((e) => e.accepted).map((e) => 
 const pending = new Set(selection.entries.filter((e) => !e.accepted && !accepted.has(e.role)).map((e) => e.role));
 const base = DEV_URL.replace(/\/$/, "");
 const key = (page, code) => page.key(code, { code });
+/** The screens with a background of their own (ticket 121): capture name → role. */
+const BACKGROUNDS = { menu: "bg-menu", journey: "bg-journey", briefing: "bg-briefing", loadout: "bg-loadout", "results-win": "bg-results-win", "results-lose": "bg-results-lose" };
+const lum = (r, g, b) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+/**
+ * Each text run of the screen's main card against what is behind it: the run's colour against every
+ * pixel of its box (the line box less 15 % top and bottom, where the glyphs are) in a frame shot with
+ * all text transparent. p5 is the worst 5 % of those pixels; WCAG asks 4.5 : 1, 3 : 1 for large text
+ * (24 px, or 18.66 px bold). Key names sit on the key cap art (ticket 153), not on the background:
+ * reported apart, as `keycaps`.
+ */
+async function textContrast(page, file) {
+  const runs = await page.eval(`(() => {
+    const card = document.querySelector('.sv-overlay.is-on .sv-card'); if (!card) return [];
+    const walk = document.createTreeWalker(card, NodeFilter.SHOW_TEXT), runs = [];
+    for (let n; (n = walk.nextNode());) {
+      const text = n.textContent.trim(), el = n.parentElement, cs = getComputedStyle(el);
+      if (!text || cs.visibility === 'hidden' || el.closest('[hidden]')) continue;
+      const range = document.createRange(); range.selectNodeContents(n);
+      for (const r of range.getClientRects()) if (r.width >= 3 && r.height >= 6) runs.push({ text: text.slice(0, 32), color: cs.color, size: parseFloat(cs.fontSize), weight: Number(cs.fontWeight), key: !!el.closest('kbd'), box: [r.left, r.top + 0.15 * r.height, r.width, 0.7 * r.height] });
+    }
+    return runs;
+  })()`);
+  await page.eval("(() => { const s = document.createElement('style'); s.id = 'ui-art-bare'; s.textContent = '.sv-overlay.is-on, .sv-overlay.is-on * { color: transparent !important; -webkit-text-fill-color: transparent !important; text-decoration-color: transparent !important; text-shadow: none !important; transition: none !important; }'; document.head.append(s); return true; })()");
+  await page.sleep(150);
+  await page.shot(file);
+  await page.eval("(document.getElementById('ui-art-bare')?.remove(), true)");
+  const magick = process.env.ART_MAGICK || "magick";
+  const [w, h] = spawnSync(magick, ["identify", "-format", "%w %h", file], { encoding: "utf8" }).stdout.trim().split(" ").map(Number);
+  const px = spawnSync(magick, [file, "-depth", "8", "rgb:-"], { maxBuffer: 64 << 20 }).stdout, scale = w / page.width;
+  const measured = runs.map((run) => {
+    const [r, g, b] = (run.color.match(/[\d.]+/g) || []).map(Number), text = lum(r, g, b), ratios = [];
+    const [x0, y0, bw, bh] = run.box.map((v) => v * scale);
+    for (let y = Math.max(0, Math.floor(y0)); y < Math.min(h, Math.ceil(y0 + bh)); y++) for (let x = Math.max(0, Math.floor(x0)); x < Math.min(w, Math.ceil(x0 + bw)); x++) {
+      const i = (y * w + x) * 3, back = lum(px[i], px[i + 1], px[i + 2]);
+      ratios.push((Math.max(text, back) + 0.05) / (Math.min(text, back) + 0.05));
+    }
+    ratios.sort((a, b) => a - b);
+    const at = (q) => Math.round(ratios[Math.min(ratios.length - 1, Math.floor(q * ratios.length))] * 100) / 100;
+    const need = run.size >= 24 || (run.size >= 18.66 && run.weight >= 700) ? 3 : 4.5;
+    return { text: run.text, size: run.size, key: run.key, need, p5: at(0.05), median: at(0.5), pass: at(0.05) >= need };
+  });
+  const sum = (list) => {
+    const worst = list.reduce((a, m) => (!a || m.p5 / m.need < a.p5 / a.need ? m : a), null), medians = list.map((m) => m.median).sort((a, b) => a - b);
+    return { runs: list.length, worst, medianOfRuns: medians[Math.floor(medians.length / 2)] ?? null, failing: list.filter((m) => !m.pass) };
+  };
+  return { ...sum(measured.filter((m) => !m.key)), keycaps: sum(measured.filter((m) => m.key)) };
+}
 
 export default async function (page) {
   const size = page.width + "x" + page.height, screens = [], shots = [];
@@ -32,7 +84,7 @@ export default async function (page) {
     for (let n = 0; n < 120; n++) { if (await page.eval(sv("return t.ready();"))) return; await page.sleep(250); }
     throw new Error("Game did not become ready");
   };
-  const open = async (query) => { await page.goto(base + "/index.html?" + query, { settle: 300 }); await ready(); };
+  const open = async (query) => { await page.goto(base + "/index.html?" + query + "&debug=1", { settle: 300 }); await ready(); };
   // A scroll container gets no 1 px slack: one pixel is enough for a classic scrollbar (206 browser check).
   const capture = async (name, scopeSelector) => {
     for (let n = 0; n < 80; n++) {
@@ -78,10 +130,18 @@ export default async function (page) {
       const glyphs=(scope.innerText.match(/[★☆⚠◀▶⌨✓]/g)||[]);
       const goal=document.querySelector('.sv-goal');
       const goalText=goal?.querySelector('span'), goalOneLine=!goalText||goalText.getBoundingClientRect().height<1.8*parseFloat(getComputedStyle(goalText).fontSize);
-      return {ui,images,failedImages,overflow,cards,keys,mags,contrast,words,quick,frames,rift,glyphs,goalShown:!!goal&&visible(goal),goalOneLine};
+      // Ticket 121: the title's logo heading against the card, its menu and the corner buttons; every UI art request so far.
+      const rect=n=>{const r=n.getBoundingClientRect();return [Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)];};
+      const meets=(a,b)=>a[0]<b[2]&&b[0]<a[2]&&a[1]<b[3]&&b[1]<a[3];
+      const logoImg=document.querySelector('.sv-overlay.is-on h1.sv-title-logo > img.sv-art-logo');
+      const logo=logoImg?(()=>{const box=rect(logoImg),card=document.querySelector('.sv-overlay.is-on .sv-title-card'),menu=card?.querySelector('.sv-menu'),corners=[...document.querySelectorAll('.kit-qs__corner')].filter(visible).map(rect);
+        return {box,width:box[2]-box[0],alt:logoImg.alt,heading:logoImg.parentElement.textContent===''&&!logoImg.hasAttribute('aria-hidden'),textName:!!document.querySelector('.sv-overlay.is-on .sv-title-name'),card:card?rect(card):null,menu:menu?rect(menu):null,corners,clearOfCard:!card||!meets(box,rect(card)),clearOfMenu:!menu||!meets(box,rect(menu)),clearOfCorners:corners.every(c=>!meets(box,c))};})():null;
+      const requests=performance.getEntriesByType('resource').filter(e=>e.name.includes('/assets/typing-survival/ui/')).map(e=>[new URL(e.name).pathname.split('/').pop(),e.responseStatus]);
+      return {ui,images,failedImages,overflow,cards,keys,mags,contrast,words,quick,frames,rift,glyphs,goalShown:!!goal&&visible(goal),goalOneLine,logo,requests};
     })()`);
     result.name = name; screens.push(result);
     shots.push(await page.shot(out("ui-art-" + name + "-" + size + ".png")));
+    if (BACKGROUNDS[name]) result.textContrast = await textContrast(page, out("ui-art-" + name + "-" + size + "-bare.png"));
     return result;
   };
   // The results' stars light in turn (0.45 s each, 0.2 s apart): measured once they stand still.
@@ -232,6 +292,12 @@ export default async function (page) {
     sliderFill: by("quick-sound").quick.ranges.length >= 5 && Math.max(...by("quick-sound").quick.ranges) - Math.min(...by("quick-sound").quick.ranges) <= 1 && by("quick-sound").quick.lit.every(([value, v]) => Math.abs(value - v) < 0.6),
     // One rift chip with text (by the word line); the wall mark has none and stands inside the corridor, not at the screen's edge.
     oneRiftChip: by("fight-rift").rift !== null && by("fight-rift").rift.text.trim() === "" && by("fight-rift").rift.chips === 1 && by("fight-rift").rift.box[0] > 0.06 * page.width && by("fight-rift").rift.box[2] < 0.94 * page.width,
+    // Ticket 121: each screen on its own painted background, full window; the title's logo as its heading.
+    backgrounds: Object.entries(BACKGROUNDS).every(([name, role]) => by(name).images.some((i) => i.role === role && i.place === "bg" && i.loaded && i.sizeOK)),
+    logo: (({ logo }) => !!logo && logo.alt === "Last Line" && logo.heading && !logo.textName && logo.clearOfCard && logo.clearOfMenu && logo.clearOfCorners && Math.abs(logo.width - boxes.logo.width * by("menu").ui) <= 1)(by("menu")),
+    // Every UI art response the page got: 200 (0 is a cached copy; no 4xx or 5xx).
+    artRequests: screens.every((s) => s.requests.every(([, status]) => status === 0 || (status >= 200 && status < 400))),
+    panelText: Object.keys(BACKGROUNDS).every((name) => by(name).textContrast.runs > 0 && by(name).textContrast.failing.length === 0),
     onlyPendingWarnings: warnings.every((l) => { const role = l.split("no accepted image: ")[1]?.trim(); return !!role && pending.has(role) && !l.includes("missing image:"); }),
     noConsoleErrors: logs.filter((l) => l.startsWith("error")).length === 0,
     noExceptions: exceptions.length === 0,
@@ -241,5 +307,7 @@ export default async function (page) {
   const drawn = {};
   for (const s of screens) for (const i of s.images) if (i.place !== "bg") drawn[i.place] = [i.width, i.height];
   const contrast = by("fight-rift").contrast, magSizes = by("fight").mags.map((m) => [m.w, m.h]);
-  return { pass, checks, drawn, contrast, magSizes, lost, won, rift: { state: rift.state }, screens, warnings, noglLogs, noglExceptions, shots };
+  const requests = Object.fromEntries(screens.flatMap((s) => s.requests).sort(([a], [b]) => a.localeCompare(b)));
+  const panelContrast = Object.fromEntries(Object.keys(BACKGROUNDS).map((name) => [name, by(name).textContrast]));
+  return { pass, checks, drawn, contrast, magSizes, lost, won, rift: { state: rift.state }, logo: by("menu").logo, requests, panelContrast, screens, warnings, exceptions, noglLogs, noglExceptions, shots };
 }

@@ -197,6 +197,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-lead { margin: calc(12px * var(--ui)) 0 !important; font-size: calc(14px * var(--ui)) !important; line-height: 1.45; }
 .sv-status { margin-top: calc(12px * var(--ui)); padding: calc(5px * var(--ui)) calc(10px * var(--ui)); background: var(--screen); border: 1px solid var(--bevel-lo); font: 600 calc(11px * var(--ui)) var(--font-title); letter-spacing: 0.14em; color: var(--led); text-shadow: 0 0 8px var(--led-glow); }
 .sv-title-card .sv-hints { margin-top: calc(10px * var(--ui)); }
+/* The painted logo (ticket 121) is the title's heading: right of the card, over the black hole's sky, clear of the menu and the quick panels' corner buttons. */
+.sv-title-logo { position: absolute; top: calc(72px * var(--ui)); right: calc(36px * var(--ui)); margin: 0; line-height: 0; pointer-events: none; }
+.sv-art-logo { width: calc(600px * var(--ui)); height: calc(200px * var(--ui)); }
+.sv-art-logo:not([hidden]) { display: block; filter: drop-shadow(0 calc(6px * var(--ui)) calc(14px * var(--ui)) var(--shadow)); }
 
 /* Menu items: steel buttons with an LED; the selected one lit hot. */
 .sv-menu { display: flex; flex-direction: column; gap: calc(6px * var(--ui)); margin-top: calc(12px * var(--ui)); text-align: left; }
@@ -330,7 +334,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-slot[data-bay="2"] > .sv-art-bay, .sv-slot[data-bay="4"] > .sv-art-bay { left: auto; right: calc(12px * var(--ui)); }
 .sv-bg:not([hidden]) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; pointer-events: none; }
 .sv-overlay:has(> .sv-bg:not([hidden])) { isolation: isolate; background: none; }
-.sv-overlay:has(> .sv-bg:not([hidden]))::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse at 50% 45%, var(--veil) 30%, var(--veil-edge) 100%); pointer-events: none; }
+.sv-overlay:has(> .sv-bg:not([hidden]))::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse at 50% 45%, var(--veil-art) 30%, var(--veil-art-edge) 100%); pointer-events: none; }
 .sv-overlay[data-screen="title"]:has(> .sv-bg:not([hidden]))::before { background: linear-gradient(90deg, var(--veil-edge) 0%, var(--veil) 42%, transparent 75%); }
 /* Icons and parts (tickets 149–153, 225; sizes as UI_IMAGERY §4 measured them at 720p). Each sits beside the words it marks; a failed one is hidden and takes no space. */
 .sv-art-small { width: calc(20px * var(--ui)); height: calc(20px * var(--ui)); }

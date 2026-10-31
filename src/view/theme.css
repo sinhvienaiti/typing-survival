@@ -84,6 +84,9 @@
   --shadow: rgba(0, 0, 0, 0.55);
   --veil: rgba(4, 5, 7, 0.66);
   --veil-edge: rgba(0, 0, 0, 0.9);
+  /* Over a painted screen background (ticket 121) the panels are opaque painted frames: the veil only settles the art round them, so it shows. */
+  --veil-art: rgba(4, 5, 7, 0.3);
+  --veil-art-edge: rgba(0, 0, 0, 0.58);
   --flash-load: rgba(255, 236, 214, 0.3);
   --flash-perfect: rgba(127, 245, 224, 0.42);
   --track: rgba(255, 255, 255, 0.07);

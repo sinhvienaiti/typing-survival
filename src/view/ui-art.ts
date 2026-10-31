@@ -13,6 +13,8 @@ export const BOX = {
   // A bay's gun sits on a small tab plate on the bay's top edge (padding inside the box).
   fresh: { width: 48, height: 48 }, bay: { width: 44, height: 44 },
   bg: { width: 1280, height: 720 },
+  // The title logo (ticket 121, 3:1): right of the title card, clear of the menu.
+  logo: { width: 600, height: 200 },
   // Icons and parts (tickets 149–153). UI pass 2 (31/10): rows and items 28–32 px at 720p, each icon's painting trimmed to 85 % of its box at prepare time (selection.json `fill`).
   small: { width: 20, height: 20 }, icon: { width: 28, height: 28 },
   item: { width: 32, height: 32 }, lock: { width: 40, height: 40 },

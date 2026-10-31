@@ -4,14 +4,16 @@ import { resolve, dirname, basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
-export const WIDTHS = { icon: [64, 128, 256], portrait: [64, 128, 256], stage: [192, 384, 768, 1536], bg: [1280, 1536], track: [512, 1024], frame: [448, 896] };
-/** Width over height per kind; a track is a slider's groove (ticket 225: 1024 × 64, drawn stretched by the kit); a frame keeps its (cropped) source's. */
-export const ASPECT = { icon: 1, portrait: 1, stage: 16 / 9, bg: 16 / 9, track: 16 };
+export const WIDTHS = { icon: [64, 128, 256], portrait: [64, 128, 256], stage: [192, 384, 768, 1536], bg: [1280, 1536], track: [512, 1024], frame: [448, 896], logo: [640, 1280] };
+/** Width over height per kind; a track is a slider's groove (ticket 225: 1024 × 64, drawn stretched by the kit); a frame keeps its (cropped) source's; the title logo (ticket 121) is a 3:1 word mark. */
+export const ASPECT = { icon: 1, portrait: 1, stage: 16 / 9, bg: 16 / 9, track: 16, logo: 3 };
 /** A nine-slice frame (ticket 127) or an icon or portrait trimmed to its painted part (fill): the options that change the output beyond the source. */
 const variant = entry => (entry.fill !== undefined || entry.kind === 'frame') ? JSON.stringify({ fill: entry.fill, crop: entry.crop, slice: entry.slice }) : undefined;
 const cropBox = crop => { const m = /^(\d+)x(\d+)\+(\d+)\+(\d+)$/.exec(crop ?? ''); return m ? (([width,height,x,y]) => ({width,height,x,y}))(m.slice(1).map(Number)) : null; };
 /** Kinds drawn over the UI with real alpha, made from sized sources (`<source>.<width>.png`) when there are any. */
 const SIZED = new Set(['icon', 'portrait', 'track']);
+/** Kinds encoded with their alpha kept at full quality: the sized kinds and the logo (one full-size source, drawn over the title's art). */
+const ALPHA = new Set([...SIZED, 'logo']);
 /** Where the game fetches UI art (the runtime table's base). */
 export const BASE = '/assets/typing-survival/ui/';
 /** The folder this tool writes: Vite copies public/ into dist as is, so it serves at BASE. */
@@ -64,6 +66,7 @@ export function plan(selection, files) {
       if (width * 9 !== height * 16 || !exactBase || x + width > exactBase.width || y + height > exactBase.height) throw new Error(`Invalid 16:9 crop: ${entry.role}`);
     }
     if (entry.kind === 'stage' && (!exactBase || exactBase.width * 9 !== exactBase.height * 16)) throw new Error(`Stage requires a 16:9 source: ${entry.role}`);
+    if (entry.kind === 'logo' && (!exactBase || exactBase.width !== exactBase.height * ASPECT.logo)) throw new Error(`Logo requires a 3:1 source: ${entry.role}`);
     if (entry.kind === 'frame') {
       if (!exactBase) throw new Error(`No larger source; cannot upscale ${entry.role}`);
       crop = cropBox(entry.crop);
@@ -117,6 +120,10 @@ function frameSlice(entry) {
   const box = cropBox(entry.crop), [top, right, bottom, left] = entry.slice;
   const pct = (n, of) => Math.round(n / of * 1e4) / 100;
   return [pct(top, box.height), pct(right, box.width), pct(bottom, box.height), pct(left, box.width)];
+}
+/** A logo is drawn over painted art: its source must have see-through pixels (an opaque one is a flattened export). */
+function requireAlpha(path) {
+  if (run(process.env.ART_MAGICK || 'magick', ['identify', '-format', '%[opaque]', path]).trim().toLowerCase() !== 'false') throw new Error(`Logo requires real alpha: ${path}`);
 }
 /** Where an icon's painting is (alpha over 6 %), to cut away the empty margin round it. */
 function paintedBox(path) {
@@ -205,6 +212,7 @@ export async function prepare(options = {}) {
         continue;
       }
       const sizes=[];
+      if (group[0].entry.kind === 'logo') requireAlpha(join(artSrc,group[0].source));
       for (const job of group) {
         const {entry,width,height,crop}=job, file=`${role}.${width}.webp`, png=join(work,`${role}.${width}.png`), webp=join(work,file);
         const args=[join(artSrc,job.source)];
@@ -218,7 +226,7 @@ export async function prepare(options = {}) {
         }
         args.push('-colorspace','sRGB','-filter','Lanczos','-resize',`${width}x${height}!`,'-strip',png);
         run(process.env.ART_MAGICK || 'magick',args);
-        const alpha=SIZED.has(entry.kind);
+        const alpha=ALPHA.has(entry.kind);
         let quality=alpha?90:84, lossless=false;
         const encode=()=>run(encoder,['-quiet','-metadata','none','-m','6',...(lossless?['-lossless']:['-q',String(quality),...(alpha?['-alpha_q','100']:[])]),png,'-o',webp]);
         encode(); let metric=psnr(png,webp);

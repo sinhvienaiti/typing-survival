@@ -55,7 +55,38 @@ describe("UI pass 2: nine-slice frames and trimmed icons (31/10)",()=>{
     expect(plan({version:1,entries:[{...entry("foe-test","portrait","portrait"),fill:0.9}]},[{file:"portrait.png",width:1024,height:1024}]).map((j:{source:string})=>j.source)).toEqual(["portrait.png","portrait.png","portrait.png"]);
   });
 });
+describe("the title logo (ticket 121)",()=>{
+  it("plans a logo at 640 and 1280 wide, 3:1, from its one full-size source, never upscaled",()=>{
+    const jobs=plan({version:1,entries:[entry("logo","logo","logo")]},[{file:"logo.png",width:2172,height:724}]);
+    expect(jobs.map((j:{source:string;width:number;height:number})=>[j.source,j.width,j.height])).toEqual([["logo.png",640,213],["logo.png",1280,427]]);
+    expect(()=>plan({version:1,entries:[entry("logo","logo","logo")]},[{file:"logo.png",width:1200,height:400}])).toThrow(/upscale/);
+  });
+  it("rejects a logo whose source is not 3:1, or that has none",()=>{
+    expect(()=>plan({version:1,entries:[entry("logo","logo","logo")]},[{file:"logo.png",width:2172,height:1024}])).toThrow(/3:1/);
+    expect(()=>plan({version:1,entries:[entry("logo","logo","logo")]},[])).toThrow(/3:1/);
+  });
+  it("keeps the selection's checks for a logo: one accepted entry per role, a clean source path",()=>{
+    const files=[{file:"logo.png",width:2172,height:724}];
+    expect(()=>plan({version:1,entries:[entry("logo","logo","logo"),entry("logo","logo","logo")]},files)).toThrow(/Multiple accepted/);
+    expect(()=>plan({version:1,entries:[entry("logo","logo","logo.png")]},files)).toThrow(/source/);
+    expect(()=>plan({version:1,entries:[entry("logo","logo","../logo")]},files)).toThrow(/source/);
+  });
+});
 describe.skipIf(!available)("UI art preparation fixtures",()=>{
+  it("encodes a logo with its alpha and refuses a flattened (opaque) one",async()=>{
+    const src=root+"/logo-src", logoOut=root+"/logo-out";
+    mkdirSync(src,{recursive:true});
+    const make=(name:string,alpha:boolean)=>{const r=spawnSync("magick",["-size","1536x512","gradient:#223344-#ccddee",...(alpha?["-alpha","set","-channel","A","-evaluate","set","60%","+channel"]:[]),src+"/"+name+".png"],{encoding:"utf8"});if(r.status!==0) throw Error(r.stderr);};
+    make("logo",true); make("flat",false);
+    const config={artSrc:src,out:logoOut,table:root+"/logo-table.json",work:root+"/logo-work",pendingOut:root+"/logo-pending"};
+    await prepare({...config,selection:{version:1,entries:[entry("logo","logo","logo")]}});
+    for(const [file,size] of [["logo.640.webp","640 213"],["logo.1280.webp","1280 427"]]) {
+      expect(spawnSync("magick",["identify","-format","%w %h",logoOut+"/"+file],{encoding:"utf8"}).stdout).toBe(size);
+      expect(spawnSync("magick",["identify","-format","%[opaque]",logoOut+"/"+file],{encoding:"utf8"}).stdout.toLowerCase()).toBe("false");
+    }
+    expect(JSON.parse(readFileSync(root+"/logo-table.json","utf8")).roles.logo).toMatchObject({kind:"logo",alt:"logo",widths:[640,1280]});
+    await expect(prepare({...config,out:root+"/flat-out",table:root+"/flat-table.json",selection:{version:1,entries:[entry("logo","logo","flat")]}})).rejects.toThrow(/alpha/);
+  },60000);
   it("builds accepted media transactionally, stays unchanged on rerun, checks corruption, isolates pending and preserves old output on failure",async()=>{
     mkdirSync(artSrc,{recursive:true}); for(const w of [64,128,256]) png("icon."+w,w,w);
     png("portrait",1024,1024); png("stage",1536,864); png("bg",1536,1024);

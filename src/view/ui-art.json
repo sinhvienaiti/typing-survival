@@ -2,6 +2,66 @@
   "version": 1,
   "base": "/assets/typing-survival/ui/",
   "roles": {
+    "bg-briefing": {
+      "kind": "bg",
+      "alt": "",
+      "rev": "aadad5fe",
+      "widths": [
+        1280,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "bg-journey": {
+      "kind": "bg",
+      "alt": "",
+      "rev": "fa5733ef",
+      "widths": [
+        1280,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "bg-loadout": {
+      "kind": "bg",
+      "alt": "",
+      "rev": "b00f1154",
+      "widths": [
+        1280,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "bg-menu": {
+      "kind": "bg",
+      "alt": "",
+      "rev": "ecc901c9",
+      "widths": [
+        1280,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "bg-results-lose": {
+      "kind": "bg",
+      "alt": "",
+      "rev": "54602b1c",
+      "widths": [
+        1280,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "bg-results-win": {
+      "kind": "bg",
+      "alt": "",
+      "rev": "af96f536",
+      "widths": [
+        1280,
+        1536
+      ],
+      "aspect": 1.777778
+    },
     "foe-brute": {
       "kind": "portrait",
       "alt": "Brute",
@@ -752,6 +812,16 @@
       ],
       "aspect": 1
     },
+    "logo": {
+      "kind": "logo",
+      "alt": "Last Line",
+      "rev": "610b1d21",
+      "widths": [
+        640,
+        1280
+      ],
+      "aspect": 3.004695
+    },
     "part-arrow": {
       "kind": "icon",
       "alt": "Arrow",
@@ -853,7 +923,7 @@
     "stage-c1-s1": {
       "kind": "stage",
       "alt": "First Shift",
-      "rev": "79caa17b",
+      "rev": "738ca77c",
       "widths": [
         192,
         384,
@@ -865,7 +935,7 @@
     "stage-c1-s2": {
       "kind": "stage",
       "alt": "Leader Hunt",
-      "rev": "45aeb948",
+      "rev": "d36a2396",
       "widths": [
         192,
         384,
@@ -877,7 +947,7 @@
     "stage-c1-s3": {
       "kind": "stage",
       "alt": "Rift Wall",
-      "rev": "fbafc6ba",
+      "rev": "2c68fb8e",
       "widths": [
         192,
         384,
@@ -889,7 +959,7 @@
     "stage-c1-s4": {
       "kind": "stage",
       "alt": "Shining Shields",
-      "rev": "7be8ecb8",
+      "rev": "6323be90",
       "widths": [
         192,
         384,
