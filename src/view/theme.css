@@ -68,6 +68,8 @@
 
   /* Room the quick panels' buttons take in the top-right corner (main.ts sets it on the HUD at run time). */
   --qs-room: 0px;
+  /* The centre of those buttons (main.ts sets it too; this is the pair at scale 1): the corner scrim sits on it. */
+  --qs-at: calc(100% - 52px * var(--ui)) calc(30px * var(--ui));
 
   /* Surfaces. Panels keep an alpha below 1 (the boot scenario measures contrast through it). */
   --page: #050608;
@@ -87,6 +89,12 @@
   /* Over a painted screen background (ticket 121) the panels are opaque painted frames: the veil only settles the art round them, so it shows. */
   --veil-art: rgba(4, 5, 7, 0.3);
   --veil-art-edge: rgba(0, 0, 0, 0.58);
+  /* Behind the corner gear and speaker over a painted background (judge 31/10): the ring's brightest 10 % under them falls to 3 : 1 or better. */
+  --corner-scrim: rgba(0, 0, 0, 0.78);
+  /* The title logo's halo, near to far: pulls the bright ring down round the letters only. */
+  --logo-halo-near: rgba(0, 0, 0, 0.9);
+  --logo-halo: rgba(0, 0, 0, 0.8);
+  --logo-halo-far: rgba(0, 0, 0, 0.6);
   --flash-load: rgba(255, 236, 214, 0.3);
   --flash-perfect: rgba(127, 245, 224, 0.42);
   --track: rgba(255, 255, 255, 0.07);

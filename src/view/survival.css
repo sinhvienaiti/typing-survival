@@ -200,7 +200,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 /* The painted logo (ticket 121) is the title's heading: right of the card, over the black hole's sky, clear of the menu and the quick panels' corner buttons. */
 .sv-title-logo { position: absolute; top: calc(72px * var(--ui)); right: calc(36px * var(--ui)); margin: 0; line-height: 0; pointer-events: none; }
 .sv-art-logo { width: calc(600px * var(--ui)); height: calc(200px * var(--ui)); }
-.sv-art-logo:not([hidden]) { display: block; filter: drop-shadow(0 calc(6px * var(--ui)) calc(14px * var(--ui)) var(--shadow)); }
+/* A dark halo hugging the letters (judge 31/10: "Last" sat on the ring's brightest part, its cream faces about as bright as the ring), then the drop shadow. */
+.sv-art-logo:not([hidden]) { display: block; filter: drop-shadow(0 0 calc(3px * var(--ui)) var(--logo-halo-near)) drop-shadow(0 0 calc(8px * var(--ui)) var(--logo-halo)) drop-shadow(0 0 calc(18px * var(--ui)) var(--logo-halo-far)) drop-shadow(0 calc(6px * var(--ui)) calc(14px * var(--ui)) var(--shadow)); }
 
 /* Menu items: steel buttons with an LED; the selected one lit hot. */
 .sv-menu { display: flex; flex-direction: column; gap: calc(6px * var(--ui)); margin-top: calc(12px * var(--ui)); text-align: left; }
@@ -319,9 +320,15 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-guns > .sv-gun-card:has(> .sv-art-armory:not([hidden])) { display: grid; grid-template-columns: auto 1fr; align-content: start; align-items: start; column-gap: calc(10px * var(--ui)); }
 .sv-guns > .sv-gun-card:has(> .sv-art-armory:not([hidden])) > header > b, .sv-guns > .sv-gun-card:has(> .sv-art-armory:not([hidden])) > header > small { display: block; }
 .sv-art-menu:not([hidden]) { object-fit: cover; }
-/* The band fills the stage card's padding box edge to edge; the card is wider by its two 1 px borders so the band is BOX.briefing wide (206 browser check: 1 px past the padding box scrolled the card sideways). */
-.sv-brief { width: min(94vw, calc(760px * var(--ui) + 2px)); }
-.sv-art-briefing:not([hidden]) { display: block; object-fit: cover; margin: calc(6px * var(--ui)) calc(-26px * var(--ui)); width: calc(100% + 52px * var(--ui)); }
+/*
+ * The band stands inside the panel frame's side rails, 9 px × --ui in from the card's outer edge
+ * (the 127 frame's rail and its cyan line end 8.5 px in at its 30 px border width); judge 31/10:
+ * drawn edge to edge it covered both rails from the title bar to the hazard stripe. The card is
+ * wider by the two rails, so the band stays BOX.briefing wide and inside the padding box (206
+ * browser check: 1 px past it scrolled the card sideways). A dark inner line seats it on the glass.
+ */
+.sv-brief { width: min(94vw, calc(778px * var(--ui))); }
+.sv-art-briefing:not([hidden]) { display: block; object-fit: cover; margin: calc(6px * var(--ui)) calc(-17px * var(--ui) - 1px); width: calc(100% + 34px * var(--ui) + 2px); outline: 1px solid var(--bevel-lo); outline-offset: -1px; }
 .sv-art-foe:not([hidden]) { float: left; margin-right: calc(6px * var(--ui)); }
 .sv-art-teach:not([hidden]) { margin-right: calc(4px * var(--ui)); }
 .sv-art-loadout:not([hidden]) { display: block; margin-bottom: calc(6px * var(--ui)); }
@@ -336,6 +343,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-overlay:has(> .sv-bg:not([hidden])) { isolation: isolate; background: none; }
 .sv-overlay:has(> .sv-bg:not([hidden]))::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse at 50% 45%, var(--veil-art) 30%, var(--veil-art-edge) 100%); pointer-events: none; }
 .sv-overlay[data-screen="title"]:has(> .sv-bg:not([hidden]))::before { background: linear-gradient(90deg, var(--veil-edge) 0%, var(--veil) 42%, transparent 75%); }
+/* The corner gear and speaker (ticket 180) stand bare: over a painted background a dark scrim lies under the pair (judge 31/10: on the bright ring they fell to 1.1–1.6 : 1), centred on them (--qs-at, main.ts), on every such screen and the title's open right side. It darkens the art only: the logo and the cards stay over it. */
+.sv-overlay:has(> .sv-bg:not([hidden]))::after { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(calc(150px * var(--ui)) calc(100px * var(--ui)) at var(--qs-at), var(--corner-scrim) 34%, transparent 100%); pointer-events: none; }
 /* Icons and parts (tickets 149–153, 225; sizes as UI_IMAGERY §4 measured them at 720p). Each sits beside the words it marks; a failed one is hidden and takes no space. */
 .sv-art-small { width: calc(20px * var(--ui)); height: calc(20px * var(--ui)); }
 .sv-art-icon { width: calc(28px * var(--ui)); height: calc(28px * var(--ui)); }

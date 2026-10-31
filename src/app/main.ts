@@ -781,6 +781,9 @@ function resize(): void {
   // The HUD's top row keeps clear of the quick panels' buttons in the top-right corner (damage numbers too).
   const bar = quickBar?.getBoundingClientRect();
   hudRoot.style.setProperty("--qs-room", bar !== undefined && bar.width > 0 ? Math.round(width - bar.left) + "px" : "0px");
+  // The corner scrim over painted backgrounds centres on the same buttons (survival.css); without them theme.css keeps the scale-1 spot.
+  if (bar !== undefined && bar.width > 0) hudRoot.style.setProperty("--qs-at", Math.round(bar.left + bar.width / 2) + "px " + Math.round(bar.top + bar.height / 2) + "px");
+  else hudRoot.style.removeProperty("--qs-at");
   const keep = bar !== undefined && bar.width > 0 ? [{ x: bar.left - 6, y: bar.top - 6, w: bar.width + 12, h: bar.height + 12 }] : [];
   combat.resize(height, [...hud.protectedRects(), ...keep]);
 }

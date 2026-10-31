@@ -36,14 +36,42 @@ describe("the stage card's art band stays inside the card (206 browser check a)"
     expect(border).toBe(1);
   });
 
-  it("pulls the band out by the side padding only, never over the border", () => {
-    expect(decl(".sv-art-briefing:not([hidden])", "margin")).toBe(`calc(6px * var(--ui)) calc(-${side}px * var(--ui))`);
-    expect(decl(".sv-art-briefing:not([hidden])", "width")).toBe(`calc(100% + ${2 * side}px * var(--ui))`);
+  // Judge 31/10: the band covered the 127 panel frame's side rails; it now stands RAIL px × --ui in from the card's outer edge (the rail and its cyan line end 8.5 px in).
+  const RAIL = 9;
+
+  it("pulls the band out to the frame's rails only, never over them or the border", () => {
+    expect(decl(".sv-art-briefing:not([hidden])", "margin")).toBe(`calc(6px * var(--ui)) calc(-${side - RAIL}px * var(--ui) - ${border}px)`);
+    expect(decl(".sv-art-briefing:not([hidden])", "width")).toBe(`calc(100% + ${2 * (side - RAIL)}px * var(--ui) + ${2 * border}px)`);
+    // Its left edge: border + padding − pull = RAIL × ui from the outer edge, inside the padding box.
+    expect(side - RAIL).toBeGreaterThan(0);
   });
 
-  it("widens the stage card by its border, so the band is BOX.briefing wide at every scale", () => {
-    // Border box = BOX × ui + both borders; padding box = BOX × ui = the band.
-    expect(decl(".sv-brief", "width")).toBe(`min(94vw, calc(${BOX.briefing.width}px * var(--ui) + ${2 * border}px))`);
+  it("widens the stage card by the two rails, so the band is BOX.briefing wide at every scale", () => {
+    // Border box = (BOX + 2 rails) × ui; content box = border box − 2 borders − 2 paddings; band = content + 2 × (padding − rail) × ui + 2 borders = BOX × ui.
+    expect(decl(".sv-brief", "width")).toBe(`min(94vw, calc(${BOX.briefing.width + 2 * RAIL}px * var(--ui)))`);
+  });
+
+  it("seats the band on the frame's glass with a dark inner line", () => {
+    expect(decl(".sv-art-briefing:not([hidden])", "outline")).toBe("1px solid var(--bevel-lo)");
+    expect(decl(".sv-art-briefing:not([hidden])", "outline-offset")).toBe("-1px");
+  });
+});
+
+describe("the corner buttons and the title logo over the painted backgrounds (judge 31/10)", () => {
+  const scrim = '.sv-overlay:has(> .sv-bg:not([hidden]))::after';
+
+  it("lays a dark scrim under the gear and the speaker on every painted screen, centred on them, under the cards and the logo", () => {
+    expect(decl(scrim, "background")).toBe("radial-gradient(calc(150px * var(--ui)) calc(100px * var(--ui)) at var(--qs-at), var(--corner-scrim) 34%, transparent 100%)");
+    expect(decl(scrim, "z-index")).toBe("-1");
+    expect(decl(scrim, "inset")).toBe("0");
+    expect(readFileSync("src/app/main.ts", "utf8")).toContain('hudRoot.style.setProperty("--qs-at"');
+  });
+
+  it("gives the logo a dark halo round its letters before its drop shadow, and leaves its place and size alone", () => {
+    expect(decl(".sv-art-logo:not([hidden])", "filter")).toMatch(/^drop-shadow\(0 0 calc\(3px \* var\(--ui\)\) var\(--logo-halo-near\)\) drop-shadow\(0 0 calc\(8px \* var\(--ui\)\) var\(--logo-halo\)\) drop-shadow\(0 0 calc\(18px \* var\(--ui\)\) var\(--logo-halo-far\)\) drop-shadow\(0 calc\(6px/);
+    expect(decl(".sv-title-logo", "top")).toBe("calc(72px * var(--ui))");
+    expect(decl(".sv-title-logo", "right")).toBe("calc(36px * var(--ui))");
+    expect(BOX.logo).toEqual({ width: 600, height: 200 });
   });
 });
 

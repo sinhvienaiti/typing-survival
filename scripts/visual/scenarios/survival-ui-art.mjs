@@ -17,6 +17,8 @@
 // and the corner buttons); every UI art request's status; on each background screen the contrast of
 // the main card's text against the pixels behind it (a second frame with the text made transparent).
 // Pages open with debug=1, so it also runs on a production build (URL=https://survival.typing-game.local/).
+// Judge fixes (31/10): the corner gear and speaker ≥ 3 : 1 on every background screen, the stage art band
+// inside the panel frame's rails, the logo's "Last" against the ring round it.
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { DEV_URL, out } from "./common.mjs";
@@ -32,6 +34,10 @@ const base = DEV_URL.replace(/\/$/, "");
 const key = (page, code) => page.key(code, { code });
 /** The screens with a background of their own (ticket 121): capture name → role. */
 const BACKGROUNDS = { menu: "bg-menu", journey: "bg-journey", briefing: "bg-briefing", loadout: "bg-loadout", "results-win": "bg-results-win", "results-lose": "bg-results-lose" };
+/** A rail beside the stage art may differ from the rail below it by this much (largest channel mean, 0–255). */
+const RAIL_DIFF = 8;
+/** "Last"'s faces against the ring round them (judge 31/10). */
+const LOGO_RING = 3;
 const lum = (r, g, b) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
 /**
  * Each text run of the screen's main card against what is behind it: the run's colour against every
@@ -76,6 +82,109 @@ async function textContrast(page, file) {
     return { runs: list.length, worst, medianOfRuns: medians[Math.floor(medians.length / 2)] ?? null, failing: list.filter((m) => !m.pass) };
   };
   return { ...sum(measured.filter((m) => !m.key)), keycaps: sum(measured.filter((m) => m.key)) };
+}
+
+/** A shot's pixels: [width, height, rgb bytes]. */
+function pixels(file) {
+  const magick = process.env.ART_MAGICK || "magick";
+  const [w, h] = spawnSync(magick, ["identify", "-format", "%w %h", file], { encoding: "utf8" }).stdout.trim().split(" ").map(Number);
+  return [w, h, spawnSync(magick, [file, "-depth", "8", "rgb:-"], { maxBuffer: 64 << 20 }).stdout];
+}
+const ratio = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+const round2 = (v) => Math.round(v * 100) / 100;
+
+/**
+ * The quick panels' corner gear and speaker against what is behind them (judge, 31/10: bare on the
+ * bright ring, 1.9 : 1 on the title): each icon's alpha-weighted mean colour against every pixel of
+ * its button in a frame shot with both icons hidden. p90 is the ratio at the worst 10 % of those
+ * pixels (the brightest, the icons being light); a control needs 3 : 1.
+ */
+export async function cornerContrast(page, file) {
+  const icons = await page.eval(`(() => [...document.querySelectorAll('.kit-qs__corner')].filter(b => b.getClientRects().length > 0).map(b => {
+    const i = b.querySelector('img'), r = b.getBoundingClientRect(), box = [r.left, r.top, r.width, r.height];
+    if (!i || !i.naturalWidth) return { role: '', box, mean: null };
+    const c = document.createElement('canvas'); c.width = i.naturalWidth; c.height = i.naturalHeight; const x = c.getContext('2d'); x.drawImage(i, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height).data; let R = 0, G = 0, B = 0, A = 0;
+    for (let k = 0; k < d.length; k += 4) { const w = d[k + 3] / 255; R += d[k] * w; G += d[k + 1] * w; B += d[k + 2] * w; A += w; }
+    return { role: (/\\/([\\w-]+)\\.\\d+\\.webp/.exec(i.currentSrc || i.src) || [])[1] || '', box, mean: [R / A, G / A, B / A] };
+  }))()`);
+  await page.eval("(() => { const s = document.createElement('style'); s.id = 'ui-art-corners'; s.textContent = '.kit-qs__corner img { visibility: hidden !important; }'; document.head.append(s); return true; })()");
+  await page.sleep(120);
+  await page.shot(file);
+  await page.eval("(document.getElementById('ui-art-corners')?.remove(), true)");
+  const [w, h, px] = pixels(file), scale = w / page.width;
+  return icons.map((icon) => {
+    if (!icon.mean) return { role: icon.role, p90: 0, median: 0, pass: false };
+    const fg = lum(...icon.mean), [x0, y0, bw, bh] = icon.box.map((v) => v * scale), backs = [];
+    for (let y = Math.max(0, Math.floor(y0)); y < Math.min(h, Math.ceil(y0 + bh)); y++) for (let x = Math.max(0, Math.floor(x0)); x < Math.min(w, Math.ceil(x0 + bw)); x++) { const i = (y * w + x) * 3; backs.push(lum(px[i], px[i + 1], px[i + 2])); }
+    const ratios = backs.map((b) => ratio(fg, b)).sort((a, b) => a - b), at = (q) => round2(ratios[Math.min(ratios.length - 1, Math.floor(q * ratios.length))]);
+    backs.sort((a, b) => a - b);
+    return { role: icon.role, icon: Math.round(fg * 1000) / 1000, back50: Math.round(backs[backs.length >> 1] * 1000) / 1000, back90: Math.round(backs[Math.floor(0.9 * backs.length)] * 1000) / 1000, p90: at(0.1), median: at(0.5), pass: at(0.1) >= 3 };
+  });
+}
+
+/**
+ * The stage card's side rails beside its stage art band (judge, 31/10: the band covered them). Each
+ * rail strip (1.5–7.5 px × --ui in from the card's edge) is averaged over the band's rows and over the
+ * rules' rows below; an unbroken rail looks the same in both (largest channel difference, 0–255).
+ */
+function railCheck(file, brief, page) {
+  const [w, h, px] = pixels(file), scale = w / page.width, ui = brief.ui;
+  const mean = (x0, x1, y0, y1) => {
+    const sum = [0, 0, 0]; let n = 0;
+    for (let y = Math.max(0, Math.round(y0 * scale)); y < Math.min(h, Math.round(y1 * scale)); y++) for (let x = Math.max(0, Math.round(x0 * scale)); x < Math.min(w, Math.round(x1 * scale)); x++) { const i = (y * w + x) * 3; sum[0] += px[i]; sum[1] += px[i + 1]; sum[2] += px[i + 2]; n++; }
+    return sum.map((v) => v / Math.max(1, n));
+  };
+  const side = (x0, x1) => { const at = mean(x0, x1, brief.band[1], brief.band[3]), below = mean(x0, x1, brief.rules[1], brief.rules[3]); return Math.round(Math.max(...at.map((v, k) => Math.abs(v - below[k])))); };
+  return {
+    insetLeft: round2(brief.band[0] - brief.card[0]), insetRight: round2(brief.card[2] - brief.band[2]), bandWidth: round2(brief.band[2] - brief.band[0]),
+    left: side(brief.card[0] + 1.5 * ui, brief.card[0] + 7.5 * ui), right: side(brief.card[2] - 7.5 * ui, brief.card[2] - 1.5 * ui),
+  };
+}
+
+/**
+ * The title logo against the ring behind it (judge, 31/10: "Last" sat on the ring's brightest part and
+ * read only through its thin dark rims). From the logo's own alpha at its drawn size: the letters'
+ * faces (alpha > 0.9) and a band 2–10 px × --ui outside them, read from the shot (halo included);
+ * "Last" and "Line" split at the logo's thinnest column near its middle. ratio = faces' median against
+ * the band's median luminance.
+ */
+export async function logoRing(page, file) {
+  const m = await page.eval(`(() => { const i = document.querySelector('.sv-overlay.is-on img.sv-art-logo'); if (!i || !i.naturalWidth) return null;
+    const r = i.getBoundingClientRect(), w = Math.round(r.width), h = Math.round(r.height), c = document.createElement('canvas'); c.width = w; c.height = h;
+    const x = c.getContext('2d'); x.drawImage(i, 0, 0, w, h); const d = x.getImageData(0, 0, w, h).data; let s = '';
+    for (let k = 3; k < d.length; k += 4) s += String.fromCharCode(d[k]);
+    return { box: [Math.round(r.left), Math.round(r.top), w, h], alpha: btoa(s), ui: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui')) }; })()`);
+  if (!m) return null;
+  const [W, H, px] = pixels(file), [bx, by, bw, bh] = m.box, alpha = Buffer.from(m.alpha, "base64");
+  if (W !== page.width) return null;
+  const near = Math.max(1, Math.round(2 * m.ui)), far = Math.round(10 * m.ui), pad = far + 1, gw = bw + 2 * pad, gh = bh + 2 * pad;
+  const mask = new Uint8Array(gw * gh);
+  for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) if (alpha[y * bw + x] > 127) mask[(y + pad) * gw + x + pad] = 1;
+  // Chebyshev dilation by r: a square max, rows then columns.
+  const dilate = (src, r) => {
+    const a = new Uint8Array(src.length), b = new Uint8Array(src.length);
+    for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) { let v = 0; for (let k = Math.max(0, x - r); k <= Math.min(gw - 1, x + r) && !v; k++) v = src[y * gw + k]; a[y * gw + x] = v; }
+    for (let x = 0; x < gw; x++) for (let y = 0; y < gh; y++) { let v = 0; for (let k = Math.max(0, y - r); k <= Math.min(gh - 1, y + r) && !v; k++) v = a[k * gw + x]; b[y * gw + x] = v; }
+    return b;
+  };
+  const inner = dilate(mask, near), outer = dilate(mask, far);
+  let split = Math.round(bw / 2), least = Infinity;
+  for (let x = Math.round(0.38 * bw); x < Math.round(0.6 * bw); x++) { let s = 0; for (let y = 0; y < bh; y++) s += alpha[y * bw + x]; if (s < least) { least = s; split = x; } }
+  const part = (from, to) => {
+    const faces = [], band = [];
+    for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
+      const bxl = x - pad, sx = bx + bxl, sy = by + y - pad;
+      if (bxl < from || bxl >= to || sx < 0 || sy < 0 || sx >= W || sy >= H) continue;
+      const i = (sy * W + sx) * 3, L = lum(px[i], px[i + 1], px[i + 2]), inBox = bxl >= 0 && bxl < bw && y >= pad && y < pad + bh;
+      if (inBox && alpha[(y - pad) * bw + bxl] > 230) faces.push(L);
+      else if (outer[y * gw + x] && !inner[y * gw + x]) band.push(L);
+    }
+    const med = (list) => list.sort((a, b) => a - b)[list.length >> 1] ?? 0;
+    const face = med(faces), ring = med(band);
+    return { face: Math.round(face * 1000) / 1000, ring: Math.round(ring * 1000) / 1000, ratio: round2(ratio(face, ring)) };
+  };
+  return { split, last: part(-pad, split), line: part(split, bw + pad) };
 }
 
 export default async function (page) {
@@ -137,11 +246,21 @@ export default async function (page) {
       const logo=logoImg?(()=>{const box=rect(logoImg),card=document.querySelector('.sv-overlay.is-on .sv-title-card'),menu=card?.querySelector('.sv-menu'),corners=[...document.querySelectorAll('.kit-qs__corner')].filter(visible).map(rect);
         return {box,width:box[2]-box[0],alt:logoImg.alt,heading:logoImg.parentElement.textContent===''&&!logoImg.hasAttribute('aria-hidden'),textName:!!document.querySelector('.sv-overlay.is-on .sv-title-name'),card:card?rect(card):null,menu:menu?rect(menu):null,corners,clearOfCard:!card||!meets(box,rect(card)),clearOfMenu:!menu||!meets(box,rect(menu)),clearOfCorners:corners.every(c=>!meets(box,c))};})():null;
       const requests=performance.getEntriesByType('resource').filter(e=>e.name.includes('/assets/typing-survival/ui/')).map(e=>[new URL(e.name).pathname.split('/').pop(),e.responseStatus]);
-      return {ui,images,failedImages,overflow,cards,keys,mags,contrast,words,quick,frames,rift,glyphs,goalShown:!!goal&&visible(goal),goalOneLine,logo,requests};
+      // The stage card, its art band and the rules under it (the rails check, judge 31/10).
+      const box=n=>{const r=n.getBoundingClientRect();return [r.left,r.top,r.right,r.bottom];};
+      const briefCard=document.querySelector('.sv-overlay.is-on .sv-brief'),band=briefCard?.querySelector('.sv-art-briefing:not([hidden])'),rules=briefCard?.querySelector('.sv-brief-rules');
+      const brief=band&&rules?{ui,card:box(briefCard),band:box(band),rules:box(rules)}:null;
+      return {ui,images,failedImages,overflow,cards,keys,mags,contrast,words,quick,frames,rift,glyphs,goalShown:!!goal&&visible(goal),goalOneLine,logo,requests,brief};
     })()`);
     result.name = name; screens.push(result);
-    shots.push(await page.shot(out("ui-art-" + name + "-" + size + ".png")));
-    if (BACKGROUNDS[name]) result.textContrast = await textContrast(page, out("ui-art-" + name + "-" + size + "-bare.png"));
+    const shot = await page.shot(out("ui-art-" + name + "-" + size + ".png"));
+    shots.push(shot);
+    if (result.brief) result.rails = railCheck(shot, result.brief, page);
+    if (result.logo) result.logoRing = await logoRing(page, shot);
+    if (BACKGROUNDS[name]) {
+      result.textContrast = await textContrast(page, out("ui-art-" + name + "-" + size + "-bare.png"));
+      result.corners = await cornerContrast(page, out("ui-art-" + name + "-" + size + "-corners.png"));
+    }
     return result;
   };
   // The results' stars light in turn (0.45 s each, 0.2 s apart): measured once they stand still.
@@ -298,6 +417,12 @@ export default async function (page) {
     // Every UI art response the page got: 200 (0 is a cached copy; no 4xx or 5xx).
     artRequests: screens.every((s) => s.requests.every(([, status]) => status === 0 || (status >= 200 && status < 400))),
     panelText: Object.keys(BACKGROUNDS).every((name) => by(name).textContrast.runs > 0 && by(name).textContrast.failing.length === 0),
+    // Judge 31/10: the gear and the speaker ≥ 3 : 1 against the brightest 10 % behind them on every background screen.
+    cornerIcons: Object.keys(BACKGROUNDS).every((name) => by(name).corners.length === 2 && by(name).corners.every((c) => c.pass)),
+    // The stage art band inside the panel frame's rails (≥ 8.5 px × --ui in from each edge), each rail the same beside the band as below it.
+    briefingRails: (({ rails, ui }) => !!rails && rails.insetLeft >= 8.5 * ui - 0.5 && rails.insetRight >= 8.5 * ui - 0.5 && rails.left <= RAIL_DIFF && rails.right <= RAIL_DIFF)(by("briefing")),
+    // The ring pulled down behind "Last": its faces ≥ LOGO_RING : 1 against the band round them.
+    logoRing: !!by("menu").logoRing && by("menu").logoRing.last.ratio >= LOGO_RING,
     onlyPendingWarnings: warnings.every((l) => { const role = l.split("no accepted image: ")[1]?.trim(); return !!role && pending.has(role) && !l.includes("missing image:"); }),
     noConsoleErrors: logs.filter((l) => l.startsWith("error")).length === 0,
     noExceptions: exceptions.length === 0,
@@ -309,5 +434,6 @@ export default async function (page) {
   const contrast = by("fight-rift").contrast, magSizes = by("fight").mags.map((m) => [m.w, m.h]);
   const requests = Object.fromEntries(screens.flatMap((s) => s.requests).sort(([a], [b]) => a.localeCompare(b)));
   const panelContrast = Object.fromEntries(Object.keys(BACKGROUNDS).map((name) => [name, by(name).textContrast]));
-  return { pass, checks, drawn, contrast, magSizes, lost, won, rift: { state: rift.state }, logo: by("menu").logo, requests, panelContrast, screens, warnings, exceptions, noglLogs, noglExceptions, shots };
+  const corners = Object.fromEntries(Object.keys(BACKGROUNDS).map((name) => [name, by(name).corners]));
+  return { pass, checks, drawn, contrast, magSizes, lost, won, rift: { state: rift.state }, logo: by("menu").logo, logoRing: by("menu").logoRing, rails: by("briefing").rails, corners, requests, panelContrast, screens, warnings, exceptions, noglLogs, noglExceptions, shots };
 }
