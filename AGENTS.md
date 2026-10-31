@@ -315,6 +315,9 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   groove, 244 fill cut so its ends sit on the groove's), keyboard rows on the
   127 button plates, cyan focus glow, Chakra Petch; checked by
   `scripts/visual/scenarios/survival-quick-panels.mjs` (both panels, title
-  and fight, fill width in pixels, Tab/Esc, one key one sound).
+  and fight, fill width in pixels, Tab/Esc, one key one sound). The muted
+  Master (Unmute, the 180 muted speaker, struck number), the Listen
+  speakers' states and the list's thin scrollbar are the kit's (parent
+  `fc7f4a11`); the game sets only their colours and dims.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.

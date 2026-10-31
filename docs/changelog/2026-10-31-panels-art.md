@@ -87,3 +87,34 @@ Last Line nhận bản kit bảng nhanh mà Dragonhold (`0ca70a8`) và Wordwoven
   `listRow`/`listRowActive` và `close` của `quickSkin()` là chỗ gắn.
 - Pace (`icon-pace-director`) và Screen shake (`icon-shake`) giữ ảnh cũ tới khi phiếu 247 xong.
 - `media.md5` chưa cập nhật: cần `pnpm media:push` ở repo cha cho 28 file WebP mới (ngoài phạm vi lượt này).
+
+## Lượt sửa theo giám khảo sau bước gắn ảnh (31/10, đêm)
+
+Giám khảo chấm bảng sau lượt gắn ảnh và ghi 6 mục (3 thuộc kit, 3 thuộc game). Kit sửa ở repo cha `fc7f4a11` (Master
+tắt tiếng, nút Listen, thanh cuộn) cùng `ba2b4d65` (Tab và Shift+Tab, một người sửa khác làm), rồi chép vào Last Line:
+`node scripts/sync-game-kit.mjs --target games/typing-survival` (7 file của `ui/quick-settings` và `feedback/typing-fx/audio.ts`,
+thêm `focus.ts`), `verify-kit` OK.
+
+| Mục của giám khảo | Đã làm |
+|---|---|
+| Master khi tắt tiếng nhìn yếu: nút vẫn "Mute", icon hàng vẫn là loa thường, số không gạch (kit) | Kit làm phần này: nút đọc "Unmute" trên tấm button-active, hàng Master mang loa tắt `hud-sound-muted` của phiếu 180 (128 px, đã có trong `quickIcons()`, không phải gắn thêm) khi tắt tiếng hoặc ở 0, con số gạch ngang và mờ 0,55, cả thanh trượt (hai lớp rãnh và núm) mờ. Game chỉ đặt độ mờ cũ của mình qua `--kit-qs-muted-filter: saturate(0.3) opacity(0.45)` và bỏ luật `:has(...)` cũ; nút trong cột 70 px lùi chữ còn 6 px mỗi bên để "Unmute" vừa (đo: không tràn ở cả hai cỡ). |
+| Nút Listen không có phản hồi khi rê, khi nhấn, không cho biết mẫu đang kêu; icon cố định 24 px (kit) | Kit: icon `24px × --kit-qs-s` (36 px ở 1080p, bên dòng 51 px), rê chuột sáng 1,2 kèm quầng (ở Last Line là xanh `--volt`), nhấn thu 0,84, sáng `is-playing` đúng lúc mẫu kêu. Bỏ luật cỡ icon riêng của game (kit đã làm). Đo: rê đổi 17,9 % điểm ảnh quanh nút ở 720p (21,2 % ở 1080p), nhấn 14,1 % / 17,3 %, sáng khi kêu 13,2 % / 16,5 %; sáng 1,00 s / 0,99 s (mẫu nghe thử dài 1 s). |
+| Chip đang chọn vẫn chữ trắng ngà, chỉ có tấm và quầng 12 px (game) | Chip đang chọn và nút bật (On) đọc màu xanh sáng `--volt-hi` (`--kit-qs-active-text`, cùng màu dòng âm phím đang chọn), chỉ khi có tấm button-active. Đo: `rgb(166, 224, 255)`; chip chưa chọn vẫn `rgb(244, 241, 235)`. |
+| Nền sau bảng không mờ, menu màn tựa sắc nét và bị mép bảng cắt (game) | `.kit-qs__backdrop` mờ `blur(5px × --kit-qs-s)` như Dragonhold (5 px ở 720p, 7,5 px ở 1080p). |
+| Ô xem thử trong Settings trống khoảng một phần tư vòng lặp, chỉ còn vòng va chạm nằm trên viền dưới (game) | `src/view/type-fx-preview.ts`: từ nay chữ sau hiện ngay bước sau chữ trước xong (`REST = 1`, 110 ms, đúng khoảng chờ của strip như trong trận; trước là 5 bước nghỉ cộng 1 bước hiện, chữ có phím sai thêm 1 bước). Điểm chữ bay về (`previewTargetY`) lùi lên trên dải viền dưới 12 px × tỉ lệ cộng 0,7125 cỡ vòng (vòng 1,425 lần ở nửa đời), nên vòng nằm trong khung. Đo 4,4 s trên host chơi: 0 % khung hình không có chữ (trước khi sửa 17 % với `REST = 2`), 0 lần vòng (còn ≥ 50 % độ đậm) vượt qua dải viền ở cả hai cỡ. |
+| Shift+Tab từ khung hộp thoại không làm gì; thanh cuộn danh sách là thanh xám của hệ điều hành (kit) | Shift+Tab: `ba2b4d65` (kit tự giữ Tab khi bảng mở); đo: từ khung hộp thoại, Shift+Tab tới nút cuối của bảng (Settings: Screen shake ở màn tựa; Sound: Interface). Thanh cuộn: kit vẽ thanh mảnh, Last Line tô `--volt-glow` (`scrollbar-color: rgba(61, 184, 255, 0.38) transparent`). Chưa có ảnh con trượt cuộn nào được nhận nên chưa dùng ảnh. |
+
+Kiểm:
+
+- `pnpm check`: kit OK, **39 file, 521 test** đều qua (trước 516), build OK; `tests/panels-art.test.ts` thêm 5 test
+  (Master tắt tiếng, màu chip, nền mờ, Listen và thanh cuộn, ô xem thử). `pnpm build:survival` ở repo cha OK.
+- `survival-quick-panels.mjs` trên host chơi (thêm 13 kiểm cho các mục trên): **33/33** ở 1280 × 720 và 1920 × 1080;
+  0 ảnh hỏng, 0 yêu cầu lỗi, 0 ngoại lệ; phần đầy đúng giá trị ở 0/50/100 (720p 513 / 674 / 834, cần 513 / 673,5 / 834;
+  1080p 769 / 1011 / 1252, cần 769 / 1010,25 / 1251,5); sáu rãnh 351 px (720p) và 527,5 px (1080p); hai đầu phần đầy
+  trùng rãnh; Tab ở trong bảng, mũi tên đổi thanh trượt, Esc đóng; chọn bộ Deep trong Sound, một phím kêu đúng một lần.
+- `survival-ui-art.mjs`: **60/60** ở cả hai cỡ (ngoại lệ duy nhất là trang thử không WebGL của chính kịch bản).
+- Tờ ghép `lastline-1280x720.jpg`, `lastline-1920x1080.jpg` (thư mục `panels-art/` trong scratchpad của phiên điều
+  phối); số đo JSON ở `tmp/panels-art-fix/`; ảnh thô đã xoá bằng `tools/capture-prune/prune.mjs`.
+
+Chưa làm: xoá bản `watchMute` riêng trong `src/app/quick.ts` của Dragonhold và Wordwoven (lượt này không được sửa game
+khác); khi hai game chép bản kit `fc7f4a11` phải xoá bản đó cùng CSS của nó.

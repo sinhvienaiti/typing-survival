@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { LIST_ROW_VARS, quickOptions, ROW_EDGE, settingsRows, type QuickHooks } from "../src/app/quick";
 import { TypingSounds } from "../src/kit/feedback/typing-fx";
 import { quickIcons } from "../src/view/ui-art";
+import { FRAME_PX, previewFit, previewTargetY, REST, RING_REACH } from "../src/view/type-fx-preview";
+import { defaultSoundRows } from "../src/kit/ui";
 import table from "../src/view/ui-art.json";
 import selection from "../scripts/ui-art/selection.json";
 
@@ -88,8 +90,51 @@ describe("the quick panels' skin (kit 18722b41 / b8a224d0)", () => {
   it("glows in the game's cyan, titles in Chakra Petch, mutes the whole slider, and drops the old groove paint", () => {
     expect(css).toMatch(/--kit-qs-glow: var\(--volt\);/);
     expect(css).toMatch(/--kit-qs-title-font: var\(--font-title\);/);
-    expect(css).toContain('.sv-hud .kit-qs__row:has([data-toggle="muted"][aria-pressed="true"]) .kit-qs__slider { opacity: 0.45; filter: saturate(0.3); }');
+    // The muted state is the kit's (kit-qs__row--muted, 2026-10-31 night); the game sets only its dim.
+    expect(css).toContain(".sv-hud .kit-qs { --kit-qs-muted-filter: saturate(0.3) opacity(0.45); }");
+    expect(css).not.toContain('[data-toggle="muted"][aria-pressed="true"]) .kit-qs__slider');
     expect(css).toContain(':root[data-art~="frame-button"] .sv-hud .kit-qs__btn:focus-visible, :root[data-art~="frame-button"] .sv-hud .kit-qs__opt input:focus-visible + .kit-qs__chip { outline: none; filter: var(--kit-qs-glow-filter); }');
     expect(css).not.toMatch(/var\(--v\b|--groove-dark|\.sv-hud \.kit-keyboards \{|0 0 0 1px var\(--volt\)/);
+  });
+});
+
+describe("judges' items after the art pass (2026-10-31, night)", () => {
+  it("a muted Master is the kit's: Unmute on the pressed plate, the 180 muted speaker on the row (already in icons), Unmute fits the 70 px column", () => {
+    const master = defaultSoundRows()[0]!;
+    expect(master).toMatchObject({ id: "master", mutedIcon: "hud-sound-muted", toggle: { id: "muted", label: "Mute", pressedLabel: "Unmute" } });
+    expect(quickIcons()["hud-sound-muted"]).toContain("/hud-sound-muted.128.webp?v=" + table.roles["hud-sound-muted"].rev);
+    expect(css).toContain("--kit-qs-aside-w: calc(70px * var(--kit-qs-s));");
+    expect(css).toContain(".sv-hud .kit-qs__aside > .kit-qs__btn { padding: 0 calc(6px * var(--kit-qs-s)); }");
+  });
+
+  it("a chosen chip and a switch that is On read in the chosen keyboard row's lit cyan", () => {
+    expect(css).toContain("--kit-qs-active-text: var(--volt-hi);");
+    // After the active plate's rule (its "color: var(--text)"), at the same weight, so it wins; only on the lit plate.
+    const rule = ':root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn[aria-checked="true"], :root[data-art~="frame-button-active"] .sv-hud .kit-qs__opt input:checked + .kit-qs__chip { color: var(--kit-qs-active-text); }';
+    expect(css).toContain(rule);
+    expect(css.indexOf(rule)).toBeGreaterThan(css.indexOf("border-image-source: var(--art-frame-button-active);"));
+  });
+
+  it("blurs the scene behind an open panel, as Dragonhold does", () => {
+    expect(css).toContain(".sv-hud .kit-qs__backdrop { -webkit-backdrop-filter: blur(calc(5px * var(--kit-qs-s))); backdrop-filter: blur(calc(5px * var(--kit-qs-s))); }");
+  });
+
+  it("leaves the Listen icons' size to the kit and gives the list's thin scrollbar the game's cyan", () => {
+    expect(css).not.toMatch(/kit-keyboards__listen img \{/);
+    expect(css).toContain(".sv-hud .kit-qs { --kit-qs-scroll-thumb: var(--volt-glow); }");
+  });
+
+  it("the Settings preview starts the next word while the last one's letters fly, and its impact ring lands inside the frame", () => {
+    expect(REST).toBe(1);
+    expect(RING_REACH).toBe((0.3 + 1.5 * 0.75) / 2);
+    for (const [height, scale] of [[170, 1], [255, 1.5]] as const) {
+      for (const size of ["medium", "large", "huge"] as const) {
+        const { font, top } = previewFit(height, 36 * scale, size);
+        const y = previewTargetY(height, scale, font);
+        // Until it has faded to half (1.43× its size) the ring stays above the frame's bottom band; at its own size it stays below the plate's middle.
+        expect(y + RING_REACH * (font + 6)).toBeLessThanOrEqual(height - FRAME_PX * scale + 1e-9);
+        expect(y - (font + 6) / 2).toBeGreaterThan(top + font);
+      }
+    }
   });
 });

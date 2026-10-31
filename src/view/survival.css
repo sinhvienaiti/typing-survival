@@ -611,12 +611,16 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 :root[data-art~="frame-panel"] .sv-hud .kit-qs__panel { background: none; border-color: transparent; border-radius: 0; padding: calc(22px * var(--kit-qs-s)) calc(28px * var(--kit-qs-s)) calc(24px * var(--kit-qs-s)); border-image: var(--art-frame-panel) var(--art-frame-panel-slice) / calc(30px * var(--kit-qs-s)) stretch; box-shadow: 0 calc(10px * var(--kit-qs-s)) calc(30px * var(--kit-qs-s)) var(--shadow); }
 :root[data-art~="frame-button"] .sv-hud .kit-qs__btn, :root[data-art~="frame-button"] .sv-hud .kit-qs__chip { background: none; border-color: transparent; border-radius: 0; border-image: var(--art-frame-button) var(--art-frame-button-slice) / calc(9px * var(--kit-qs-s)) calc(10px * var(--kit-qs-s)) stretch; }
 :root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn--primary, :root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn[aria-pressed="true"], :root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn[aria-checked="true"], :root[data-art~="frame-button-active"] .sv-hud .kit-qs__opt input:checked + .kit-qs__chip { background: none; color: var(--text); border-image-source: var(--art-frame-button-active); border-image-slice: var(--art-frame-button-active-slice); box-shadow: 0 0 calc(12px * var(--kit-qs-s)) var(--volt-glow); }
+/* A chosen chip and a switch that is On read in the lit cyan of the chosen keyboard row (the kit's --kit-qs-active-text), not only by their plate (judges, after the art pass). */
+:root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn[aria-checked="true"], :root[data-art~="frame-button-active"] .sv-hud .kit-qs__opt input:checked + .kit-qs__chip { color: var(--kit-qs-active-text); }
 /* Hover and keyboard focus light the plate itself (a glow hugging the art, the kit's --kit-qs-glow-filter for focus), not a flat ring round its box. */
 .sv-hud .kit-qs__btn, .sv-hud .kit-qs__chip { transition: filter 0.1s; }
 :root[data-art~="frame-button"] .sv-hud .kit-qs__btn:hover, :root[data-art~="frame-button"] .sv-hud .kit-qs__opt:hover input:not(:disabled) + .kit-qs__chip { filter: brightness(1.2) drop-shadow(0 0 calc(5px * var(--kit-qs-s)) var(--volt)); }
 :root[data-art~="frame-button"] .sv-hud .kit-qs__btn:focus-visible, :root[data-art~="frame-button"] .sv-hud .kit-qs__opt input:focus-visible + .kit-qs__chip { outline: none; filter: var(--kit-qs-glow-filter); }
 /* A wider panel than the kit's 560 px: each choice row stays on one line (UI pass 3: 720 px puts Letter style's six chips on one line, and the row it gives back goes to the preview's room for a stamp's flight), so Settings fits 720p without scrolling. */
 .sv-hud .kit-qs__panel { width: min(calc(720px * var(--kit-qs-s)), calc(100% - 32px)); }
+/* The scene behind an open panel blurs (as Dragonhold's), so the title menu does not show sharp and cut by the panel's edge. */
+.sv-hud .kit-qs__backdrop { -webkit-backdrop-filter: blur(calc(5px * var(--kit-qs-s))); backdrop-filter: blur(calc(5px * var(--kit-qs-s))); }
 .sv-hud .kit-qs__chip { padding: calc(5px * var(--kit-qs-s)) calc(10px * var(--kit-qs-s)); }
 .sv-hud .kit-qs__btn { min-height: calc(34px * var(--kit-qs-s)); padding: 0 calc(16px * var(--kit-qs-s)); }
 /* The corner gear and speaker (tickets 243 and 180) sit clear of the scene behind them and glow under the pointer. */
@@ -631,9 +635,15 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-hud .kit-qs__row[data-row="reducedMotion"] > .kit-qs__icon-cell { background: var(--art-icon-reduced-motion, none) center / contain no-repeat; }
 .sv-hud .kit-qs__row[data-row="shake"] > .kit-qs__icon-cell { background: var(--art-icon-shake, none) center / contain no-repeat; }
 .sv-hud .kit-qs__row[data-row="speak"] > .kit-qs__icon-cell { background: var(--art-icon-read-aloud, none) center / contain no-repeat; }
-/* The knob lights under a pointer and lifts while dragged; a muted Master dims its whole slider (both groove layers and the knob). */
+/*
+ * The knob lights under a pointer and lifts while dragged. A muted Master is the kit's (kit-qs__row--muted: the button
+ * reads Unmute, the row shows the muted speaker of 180, the number is struck): its whole slider (both groove layers and
+ * the knob) dims to the game's grey through --kit-qs-muted-filter; Mute and Unmute sit in the 70 px column on a
+ * narrower inset, so "Unmute" fits it.
+ */
+.sv-hud .kit-qs { --kit-qs-muted-filter: saturate(0.3) opacity(0.45); }
+.sv-hud .kit-qs__aside > .kit-qs__btn { padding: 0 calc(6px * var(--kit-qs-s)); }
 .sv-hud .kit-qs--skin-slider .kit-qs__range { cursor: pointer; }
-.sv-hud .kit-qs__row:has([data-toggle="muted"][aria-pressed="true"]) .kit-qs__slider { opacity: 0.45; filter: saturate(0.3); }
 .sv-hud .kit-qs--skin-slider .kit-qs__range:hover::-webkit-slider-thumb { filter: brightness(1.18) drop-shadow(0 0 calc(5px * var(--kit-qs-s)) var(--volt)); }
 .sv-hud .kit-qs--skin-slider .kit-qs__range:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.1); }
 .sv-hud .kit-qs--skin-slider .kit-qs__range:hover::-moz-range-thumb { filter: brightness(1.18) drop-shadow(0 0 calc(5px * var(--kit-qs-s)) var(--volt)); }
@@ -648,8 +658,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-hud .kit-qs.kit-qs--skin-list .kit-keyboards button.kit-keyboards__option[aria-selected="true"]::before { filter: drop-shadow(0 0 calc(5px * var(--kit-qs-s)) var(--volt-glow)); }
 .sv-hud .kit-qs__row--keyboards .kit-keyboards button, .sv-hud .kit-qs__row--keyboards .kit-keyboards__spacer { flex-basis: calc(34px * var(--kit-qs-s)); height: calc(34px * var(--kit-qs-s)); min-height: calc(34px * var(--kit-qs-s)); }
 .sv-hud .kit-qs__row--keyboards .kit-keyboards__family { flex-basis: calc(28px * var(--kit-qs-s)); height: calc(28px * var(--kit-qs-s)); min-height: calc(28px * var(--kit-qs-s)); padding: calc(4px * var(--kit-qs-s)) calc(10px * var(--kit-qs-s)); color: var(--hot-hi); }
+/* The Listen speakers: the kit scales them, glows them under the pointer, presses them and lights the one that sounds; the list's thin scrollbar in the game's cyan. */
 .sv-hud .kit-qs__row--keyboards .kit-keyboards__listen { min-width: calc(44px * var(--kit-qs-s)); }
-.sv-hud .kit-qs__row--keyboards .kit-keyboards__listen img { width: calc(24px * var(--kit-qs-s)); height: calc(24px * var(--kit-qs-s)); }
+.sv-hud .kit-qs { --kit-qs-scroll-thumb: var(--volt-glow); }
 @media (any-pointer: coarse) {
   .sv-hud .kit-qs__row--keyboards .kit-keyboards button, .sv-hud .kit-qs__row--keyboards .kit-keyboards__spacer { flex-basis: max(44px, calc(34px * var(--kit-qs-s))); height: max(44px, calc(34px * var(--kit-qs-s))); min-height: max(44px, calc(34px * var(--kit-qs-s))); }
 }
