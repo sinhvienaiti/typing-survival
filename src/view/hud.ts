@@ -2,10 +2,12 @@
  * The HUD (docs/BUILD_S0.md §7, docs/BUILD_S1.md §10, docs/FEEL_PASS_S1.md
  * §2), DOM outside the shaking canvas, dressed as the station's steel
  * consoles (theme.css, survival.css). The word being typed sits on a line
- * just above the ship's nose (strip.ts); the bays sit on the floor beside
- * the ship, under the bottom line: `[bay 3][bay 1] ship [bay 2][bay 4]`
- * (bays 1–2 230 px, 3–4 208 px, 100 px tall at 1280×720), both placed from
- * the still camera's view of the bottom line (layout()). A live bay shows
+ * just above the ship's nose (strip.ts), placed from the still camera's view
+ * of the bottom line; the bays are cards beside the corridor, outside its
+ * walls, at the horde's height (parent docs/games/QUALITY_RESCUE_2026-11-01.md
+ * L4, variant A: bays 1 and 3 on the left, 2 and 4 on the right; bays 1–2
+ * from 30 % of the view's height, 3–4 from 47 %; 230 × 100 px at 1280×720;
+ * placeBays()). A live bay shows
  * its gun (name, colour, magazine LEDs: 2, or 3 at Rèn 3; a top stripe that
  * fills as its word is typed), its word (32 px, long words shrink to no less
  * than 26 px; Thiếu chữ's hidden letters as "_" until typed or shown) and
@@ -15,11 +17,11 @@
  * lines (test pass 27/10: "IPA · meaning" on one line was cut). A finished
  * word's meaning stays with the word on the line (strip.ts), never under the
  * bay's next word. A bay without a gun
- * is a dark plate with a lock (bays 3–4 in R1).
+ * is a small dark chip with a lock (bays 3–4 in R1).
  * Top: armour, clock, kills, the objective's plate (Săn: "PACK LEADER 1/3"),
  * a 2 s card when something new first appears; an input notice just above
  * the word line; a rift's warning (one chip, strip.ts) on its wall's side
- * between the word line and the bays. It publishes the rectangles damage numbers must not cover.
+ * between the word line and the red line's glow. It publishes the rectangles damage numbers must not cover.
  * The word itself is drawn by the kit's focus strip (type-fx.ts) in `fxRoot`,
  * which sits where the old plate stood in the HUD's order (under the menus).
  */
@@ -62,9 +64,19 @@ const NEW_MS = 2000;
 const LINE_LIFT = 1.8;
 /** A bay's meaning shrinks to this share of 15 px (12 px) before it is cut. */
 const MIN_MEAN = 0.8;
-/** Bay columns at 1280×720: bay 3, bay 1, the ship's gap, bay 2, bay 4 (gaps of 12). */
-const COLUMNS = [208, 230, 324, 230, 208] as const;
-const BAY_COLUMN = [2, 4, 1, 5] as const;
+/**
+ * The cards (QUALITY_RESCUE_2026-11-01 L4, variant A; the owner, 01/11: the
+ * bays sat too low, the eye jumped 47 % of the view between a word and the
+ * horde): each band's top as a share of the view's height (bays 1–2, 3–4)
+ * and the most of it a card may take (30–44 %, 47–58 %); 2.5 % of the width
+ * in from the screen's edge; a card 230 × 100 px and a sealed bay's chip
+ * 132 × 34 px at 1280×720 (× --ui); kept `gap` px off the corridor's wall. A
+ * view too narrow for that (4:3) shrinks the card (its own --ui, never under
+ * `least`) to keep it off the lane at least.
+ */
+const CARDS = { bands: [0.3, 0.47], spans: [0.14, 0.11], edge: 0.025, width: 230, height: 100, chipWidth: 132, chipHeight: 34, gap: 10, least: 0.72 } as const;
+/** The corridor's wall as the camera sees it: the outer face of its posts (m from the centre line) and the top of their lamps (m). */
+const WALL = { x: FIELD.halfW + 0.73, top: 1.82 } as const;
 /** Long words shrink down to this share of 32 px (26 px). */
 const MIN_FIT = 26 / 32;
 /** A rift's chip (survival.css): its height and how far it keeps inside the walls and off a bay's gun tab (CSS px × --ui). */
@@ -133,8 +145,10 @@ export class Hud {
   private readonly at = new THREE.Vector3();
   loads = 0;
   reduced = false;
-  /** Where layout() put things (CSS px): the stripes' far edge, the red line's glow edge, Xung's reach (z 11.7 m), the word line's bottom. */
-  readonly placed = { stripes: 0, glow: 0, reach: 0, line: 0 };
+  /** Where layout() put things (CSS px): the stripes' far edge, the red line's glow edge, Xung's reach (z 11.7 m), the word line's bottom; per bay its card's top, scale, and the wall's and the lane's edge (left side) at its lowest row. */
+  readonly placed = { stripes: 0, glow: 0, reach: 0, line: 0, bays: [] as { bay: number; top: number; scale: number; wall: number; lane: number }[] };
+  /** Every bay's card or chip, by bay. */
+  private readonly cards: HTMLElement[] = [];
   private bannerUntil = 0;
   private lastNow = 0;
   private freshUntil = 0;
@@ -190,16 +204,16 @@ export class Hud {
       if (gun < 0) {
         const plate = el("section", "sv-bay-lock sv-panel", this.bottom);
         plate.dataset.bay = String(bay + 1);
-        plate.style.gridArea = "1 / " + BAY_COLUMN[bay];
-        // A sealed bay: a smaller plate with its lock centred over the word (UI pass 2: a large empty plate read as missing content).
+        // A sealed bay: a chip, its lock beside "LOCKED" (UI pass 2: a large empty plate read as missing content; L4: beside the corridor it is only a chip).
         appendArt(plate, artAttrs("icon-lock", "lock"));
         el("span", "", plate, "LOCKED");
+        this.cards[bay] = plate;
         continue;
       }
       const spec = GUN_SPECS[gun]!;
       const root = el("section", "sv-slot sv-panel sv-" + spec.key, this.bottom);
       root.dataset.bay = String(bay + 1);
-      root.style.gridArea = "1 / " + BAY_COLUMN[bay];
+      this.cards[bay] = root;
       appendArt(root, artAttrs(gunRole(spec.key), "bay"));
       const head = el("header", "", root);
       el("span", "sv-gun", head, spec.name);
@@ -216,11 +230,12 @@ export class Hud {
   }
 
   /**
-   * Places the word line and the bays from the still camera (FEEL_PASS_S1
-   * §2.1): the line's bottom 4 px above the deck LINE_LIFT m past the bottom
-   * line (456 px at 720p: the line sits at 400–456, the stripes' far edge at
-   * 476 below it, 74 px under Xung's reach), the bays' top where the red
-   * line's glow ends. Call on resize.
+   * Places the word line from the still camera (FEEL_PASS_S1 §2.1): its
+   * bottom 4 px above the deck LINE_LIFT m past the bottom line (456 px at
+   * 720p: the line sits at 400–456, the stripes' far edge at 476 below it,
+   * 74 px under Xung's reach); the red line's glow edge (the rift chip's row
+   * sits between the two); the bays beside the corridor (placeBays()). Call
+   * on resize.
    */
   layout(stage: Stage, ui: number): void {
     this.stage = stage;
@@ -228,23 +243,76 @@ export class Hud {
     this.last.warn = "";
     this.placed.stripes = stage.project(0, FIELD.bottomZ + 1.05, 0, this.at, true).y;
     const line = (this.placed.line = stage.project(0, FIELD.bottomZ + LINE_LIFT, 0, this.at, true).y - 4 * ui);
-    const glow = (this.placed.glow = stage.project(0, FIELD.bottomZ - 0.32, 0, this.at, true).y);
+    this.placed.glow = stage.project(0, FIELD.bottomZ - 0.32, 0, this.at, true).y;
     this.placed.reach = stage.project(0, 11.7, 0, this.at, true).y;
-    this.bottom.style.top = glow + "px";
-    this.bottom.style.gridTemplateColumns = COLUMNS.map((px) => px * ui + "px").join(" ");
+    this.placeBays(stage, ui);
     this.strip.layout(stage, line, ui);
     // The input notice sits just above the word line (at its widest), where the eyes are while typing.
     this.notice.style.top = this.strip.rect().y - 52 * ui + "px";
   }
 
-  /** The rectangles no damage number may cover (CSS px), with a small margin: the word line (at its widest), the armour, the clock, the kills, the bays, the objective's plate. */
+  /**
+   * Each bay's card (a sealed bay's chip) at its band's top, CARDS.edge in
+   * from its side of the screen, its inner edge CARDS.gap off the corridor's
+   * wall at the card's lowest row (where the wall reaches furthest out). Where
+   * the view is too narrow for that, the card shrinks (its own --ui) to keep
+   * off the lane's edge instead, never under CARDS.least; a card also shrinks
+   * to keep inside its band's span.
+   */
+  private placeBays(stage: Stage, ui: number): void {
+    const { width, height } = stage;
+    const edge = CARDS.edge * width;
+    this.placed.bays.length = 0;
+    this.cards.forEach((card, bay) => {
+      const band = bay < 2 ? 0 : 1;
+      const sealed = this.slots[bay] === undefined;
+      const w = (sealed ? CARDS.chipWidth : CARDS.width) * ui;
+      const h = (sealed ? CARDS.chipHeight : CARDS.height) * ui;
+      const top = CARDS.bands[band]! * height;
+      let scale = Math.min(1, (CARDS.spans[band]! * height) / h);
+      let wall = 0;
+      let lane = 0;
+      // Twice: a smaller card ends higher, where the wall stands further out.
+      for (let pass = 0; pass < 2; pass += 1) {
+        const row = top + h * scale;
+        wall = this.edgeAt(stage, row, WALL.x, WALL.top);
+        lane = this.edgeAt(stage, row, FIELD.halfW - FIELD.wall, 0);
+        const room = (limit: number) => limit - CARDS.gap * ui * scale - edge;
+        if (room(wall) < w * scale) scale = Math.max(CARDS.least, Math.min(scale, room(lane) / w));
+      }
+      const left = bay % 2 === 0;
+      card.style.top = top.toFixed(1) + "px";
+      card.style.left = left ? edge.toFixed(1) + "px" : "";
+      card.style.right = left ? "" : edge.toFixed(1) + "px";
+      card.style.setProperty("--ui", (ui * scale).toFixed(3));
+      this.placed.bays.push({ bay: bay + 1, top: Math.round(top), scale: Math.round(scale * 1000) / 1000, wall: Math.round(wall), lane: Math.round(lane) });
+    });
+  }
+
+  /** The screen x (CSS px, left half; the right is its mirror) of the point at −`x` m and `y` m up whose depth puts it on screen row `row`, through the still camera. */
+  private edgeAt(stage: Stage, row: number, x: number, y: number): number {
+    let near: number = FIELD.minZ;
+    let far: number = FIELD.gateZ + 20;
+    for (let i = 0; i < 20; i += 1) {
+      const z = (near + far) / 2;
+      if (stage.project(-x, z, y, this.at, true).y > row) near = z;
+      else far = z;
+    }
+    return stage.project(-x, (near + far) / 2, y, this.at, true).x;
+  }
+
+  /** The rectangles no damage number may cover (CSS px), with a small margin: the word line (at its widest), the armour, the clock, the kills, the bays with their gun tabs, the sealed bays' chips, the objective's plate. */
   protectedRects(): Rect[] {
-    const nodes = [this.hp, this.time.parentElement!, this.kills.parentElement!, ...this.slots.filter(Boolean).map((slot) => slot.root)];
+    const nodes = [this.hp, this.time.parentElement!, this.kills.parentElement!, ...this.cards.filter(Boolean)];
     if (!this.goal.hidden) nodes.push(this.goal);
     const line = this.strip.rect();
     return [{ x: line.x - 6, y: line.y - 6, w: line.w + 12, h: line.h + 12 }, ...nodes.map((node) => {
       const box = node.getBoundingClientRect();
-      return { x: box.left - 6, y: box.top - 6, w: box.width + 12, h: box.height + 12 };
+      // A bay's gun tab stands on its top edge, outside its box.
+      const tab = node.querySelector?.(".sv-art-bay:not([hidden])")?.getBoundingClientRect();
+      const x = Math.min(box.left, tab?.width ? tab.left : box.left);
+      const y = Math.min(box.top, tab?.height ? tab.top : box.top);
+      return { x: x - 6, y: y - 6, w: Math.max(box.right, tab?.width ? tab.right : box.right) - x + 12, h: box.bottom - y + 12 };
     })];
   }
 
@@ -426,7 +494,7 @@ export class Hud {
    * the wall where the rift opens, the Rift icon and the countdown (UI pass 3:
    * the wall's mark and the countdown were two, the countdown out past the
    * corridor at the screen's edge). It sits on the wall's side between the
-   * word line and the bays, inside the corridor and off the bays' gun tabs.
+   * word line and the red line's glow, inside the corridor and off any gun tab.
    */
   private updateWarn(w: World): void {
     const H = w.hazards;
@@ -448,7 +516,7 @@ export class Hud {
     this.strip.warn(text, side);
   }
 
-  /** The rift chip's row (between the word line and the bays) and its outer edges: the corridor's inner walls at the chip's top on the still camera, and clear of the gun tabs over the bays. */
+  /** The rift chip's row (between the word line and the red line's glow) and its outer edges: the corridor's inner walls at the chip's top on the still camera, and clear of any gun tab on that row. */
   private placeRift(): void {
     const stage = this.stage;
     if (stage === null) return;

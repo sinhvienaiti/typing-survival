@@ -958,6 +958,8 @@ if (devHandleWanted(import.meta.env.DEV, location.search)) installDevHandle({
   ship: () => shipProbe(stage, ship),
   foes: () => foesOnScreen(stage, world),
   rects: () => hud.protectedRects(),
+  /** Where the HUD's layout put the word line and the bays (each card's top, scale, and the wall's and lane's edges at its lowest row; CSS px). */
+  layout: () => ({ ...hud.placed, bays: hud.placed.bays.map((bay) => ({ ...bay })) }),
   /** The shake settings and the camera's shake offset now (px). */
   motion: () => ({ scale: combat.trauma.scale, reduced: combat.trauma.reduced, trauma: combat.trauma.trauma, offset: Math.hypot(stage.shakeX, stage.shakeY) }),
   hold: (on: boolean) => {
