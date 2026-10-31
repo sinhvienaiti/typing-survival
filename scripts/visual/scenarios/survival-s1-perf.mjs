@@ -81,12 +81,12 @@ export default async function (page) {
   const size = page.width + "x" + page.height;
   const gpu = await page.eval(`(() => { const gl = document.createElement("canvas").getContext("webgl2"); const ext = gl && gl.getExtension("WEBGL_debug_renderer_info"); return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : "unknown"; })()`);
   const result = {};
-  result.shields = { ready: await openStage(page, "c1-s4", ["phao", "tia"], "&director=0") };
+  result.shields = { ready: await openStage(page, "c1-s4", ["phao", "tia"], "&director=0" + (process.env.QUERY ?? "")) };
   await countFrames(page);
   result.shields.warm = await play(page, 45);
   result.shields.peak = await play(page, 10, { measure: true, hold: 150 });
   result.shields.shot = await page.shot(out("survival-s1-perf-shields-" + size + ".png"));
-  result.rifts = { ready: await openStage(page, "c1-s3", ["tan", "ray"], "&director=0") };
+  result.rifts = { ready: await openStage(page, "c1-s3", ["tan", "ray"], "&director=0" + (process.env.QUERY ?? "")) };
   await countFrames(page);
   result.rifts.warm = await play(page, 20);
   result.rifts.peak = await play(page, 10, { measure: true, hold: 150 });
@@ -94,7 +94,7 @@ export default async function (page) {
   await page.sleep(400);
   result.rifts.flood = await play(page, 6, { measure: true });
   result.rifts.shot = await page.shot(out("survival-s1-perf-flood-" + size + ".png"));
-  result.bolts = { ready: await openStage(page, "c1-s1", ["xung", "tan"], "&director=0") };
+  result.bolts = { ready: await openStage(page, "c1-s1", ["xung", "tan"], "&director=0" + (process.env.QUERY ?? "")) };
   await countFrames(page);
   result.bolts.warm = await play(page, 15);
   result.bolts.peak = await play(page, 10, { measure: true, hold: 150 });

@@ -251,7 +251,8 @@ uniform float uTime;
 varying vec2 vUv;
 varying vec4 vColor;
 void main() {
-  float across = abs(vUv.x - 0.5) * 2.0;
+  // Clamped: a multisampled buffer (High, Ultra) shades edge pixels with uv past 0 … 1, and pow() of a negative is NaN, which the bloom spreads into black blocks.
+  float across = min(abs(vUv.x - 0.5) * 2.0, 1.0);
   float core = smoothstep(0.42, 0.0, across);
   float glow = pow(1.0 - across, 2.2);
   // Tail fades (rounds fade toward their tail, the column toward its far end).
@@ -338,7 +339,7 @@ uniform vec3 uColor;
 varying vec2 vUv;
 float hash(float n) { return fract(sin(n) * 43758.5453); }
 void main() {
-  float across = abs(vUv.x - 0.5) * 2.0;
+  float across = min(abs(vUv.x - 0.5) * 2.0, 1.0);
   float flow = 0.65 + 0.35 * sin(vUv.y * 60.0 - uTime * 38.0) * sin(vUv.y * 13.0 + uTime * 9.0);
   float core = smoothstep(0.3, 0.0, across) * flow;
   float glow = pow(1.0 - across, 3.0);

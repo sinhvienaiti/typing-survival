@@ -187,7 +187,7 @@ export class ShotFx {
       this.px[bay] = m.x;
       this.py[bay] = m.y - Y;
       this.pz[bay] = m.z + R.z[i]!;
-      // Three tongues of flame along the fan (2.2 m, 4 frames), a white-hot flash 10 % of the view, smoke, two casings.
+      // Three tongues of flame along the fan (2.2 m, 4 frames), a white-hot flash 10 % of the view, dark smoke, two casings.
       for (const a of [-0.3, 0, 0.3]) {
         const c = Math.cos(a);
         const s = Math.sin(a);
@@ -199,7 +199,15 @@ export class ShotFx {
       for (let d = 1; d <= 3; d += 1) g.burst(CELL.soft + FLAT, dx * d, 0.06, -(FIELD.muzzleZ + dz * d), 1.2 + 0.5 * d, 1.6 + 0.6 * d, 3 * F, C.tan, 1.5 - 0.25 * d);
       const soft = this.size(0.1) * 2.2;
       g.burst(CELL.soft, m.x, m.y, m.z, soft * 0.7, soft, 4 * F, C.hot, 2.2);
-      g.burst(CELL.soft, m.x, m.y + 0.3, m.z, 1, 2.4, 0.5, C.smoke, 0.7, 0, 3, 0);
+      // L3: smoke off the flame tongues' tips (the ship stands over smoke in depth: off its nose it would hide), drifting on along the fan in the smoke pool (dark, under the flashes), a sooty puff in the middle.
+      const T = AFTER.smoke.tan;
+      for (let k = 0; k < T.puffs; k += 1) {
+        const a = (k - (T.puffs - 1) / 2) * 0.3;
+        const ex = dx * Math.cos(a) - dz * Math.sin(a);
+        const ez = dz * Math.cos(a) + dx * Math.sin(a);
+        const d = T.out + Math.random() * 0.6;
+        this.p.smoke.burst(CELL.puff, m.x + ex * d, m.y + 0.35, m.z - ez * d, T.from, T.to * (0.85 + Math.random() * 0.3), T.life * (0.85 + Math.random() * 0.3), k === 1 ? C.soot : C.smokeBody, T.alpha, ex * 1.2, T.rise, -ez * 1.2, (Math.random() - 0.5) * 1.2);
+      }
       this.spark(m.x, m.y, m.z, dz, 0.8, dx, 1, 4, C.hot, 0.2, 0.5, 0.4);
       this.spark(m.x, m.y, m.z, -dz, 0.8, -dx, 1, 4, C.hot, 0.2, 0.5, 0.4);
       this.p.lights.flash(LIGHT.tan, m.x + dx, m.y, m.z - dz, C.tan);
@@ -215,25 +223,31 @@ export class ShotFx {
         this.sy[k] = m.y;
         this.sz[k] = m.z;
       }
-      // An upward streak 2.5 m (5 frames), a white-hot flash 6 % of the view, a column of smoke.
+      // An upward streak 2.5 m (5 frames), a white-hot flash 6 % of the view, a dark column of smoke (L3: the smoke pool).
       this.streaks.add(m.x, m.y, m.z, m.x, m.y + 2.5, m.z, 0.55, C.phao, 3, 1, 5 * F);
       const soft = this.size(0.06) * 3;
       g.burst(CELL.soft, m.x, m.y + 0.2, m.z, soft * 0.7, soft, 3 * F, C.hot, 3);
-      g.burst(CELL.soft, m.x, m.y + 0.3, m.z, 1, 3, 0.7, C.smoke, 0.9, 0, 1.6, 0);
+      const P = AFTER.smoke.launch;
+      for (let k = 0; k < P.puffs; k += 1) this.p.smoke.burst(CELL.puff, m.x + (Math.random() - 0.5) * 0.5, m.y + 0.3 + k * 0.45, m.z + 0.2, P.from, P.to * (0.85 + Math.random() * 0.3), P.life * (0.8 + k * 0.15), k === 0 ? C.soot : C.smokeBody, P.alpha, (Math.random() - 0.5) * 0.4, P.rise, 0.3, (Math.random() - 0.5) * 0.8);
       ship.kick("phao");
       ship.cue(AIM_PRIO.phao, R.x[i]!, R.z[i]!);
     } else if (kind === EV.burst) {
       const x = R.x[i]!;
       const z = R.z[i]!;
       const radius = R.value[i]!;
-      // Sized on the view, not in metres: a white flash a fifth of its height (3 frames), the fireball, a shock ring, smoke rising.
+      // Sized on the view, not in metres: a white flash a fifth of its height (3 frames), the fireball, a shock ring, dark smoke rising (L3: the smoke pool; soot and the dark body only: a lit top read lighter than the void behind it).
       const core = this.size(0.18, x, z) * 2.2;
       g.burst(CELL.soft, x, 1.4, -z, core * 0.8, core * 1.4, 3 * F, C.white, 1.5);
       g.burst(CELL.core, x, 1, -z, core * 0.5, core, 5 * F, C.hot, 2.8);
       g.burst(CELL.star8, x, 1.2, -z, 1.2, core * 0.9, 0.2, C.phao, 2.4);
       g.burst(CELL.ring + FLAT, x, 0.08, -z, 0.4, Math.max(radius * 2.6, core * 0.8), 0.45, C.phao, 2.4);
       g.burst(CELL.soft + FLAT, x, 0.07, -z, radius * 1.4, radius * 1.8, 1.2, C.ember, 0.45);
-      g.burst(CELL.soft, x, 1.2, -z, core * 0.35, core * 0.7, 1.4, C.smoke, 0.8, 0, 1.4, 0);
+      const B = AFTER.smoke.burst;
+      for (let k = 0; k < B.puffs; k += 1) {
+        const a = Math.random() * 6.283;
+        const d = Math.random() * radius * 0.4;
+        this.p.smoke.burst(CELL.puff, x + Math.cos(a) * d, 0.9 + k * 0.35, -z + Math.sin(a) * d * 0.4, core * B.from, core * B.to * (0.85 + Math.random() * 0.3), B.life * (0.8 + Math.random() * 0.4), k % 2 === 0 ? C.soot : C.smokeBody, B.alpha, Math.cos(a) * 0.3, B.rise, 0, (Math.random() - 0.5) * 0.6);
+      }
       this.spark(x, 0.8, -z, 0, 1.4, 0, 32, 9, C.hot, 0.3, 0.7, 2.4);
       this.p.lights.flash(LIGHT.phao, x, 1.5, -z, C.phao);
       this.p.trauma.add(0.05);

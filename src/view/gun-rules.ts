@@ -63,7 +63,24 @@ export const AFTER = {
   scorch: { every: 0.1, size: 1.5, life: 2.4, alpha: 0.9, glow: 0.6, embers: 2 },
   tiaCore: { core: 0.55, white: 0.06, floorWhite: 0.1 },
   hurt: { smoke: 1.6, puff: 0.08, alpha: 1.5, sparks: 1, rate: 14 },
+  /**
+   * Gun smoke (parent QUALITY_RESCUE_2026-11-01 L3): Scatter Gun's volley and
+   * Star Mortar's launch and burst lay dark puffs over the deck through the
+   * smoke pool (normal blending, under the flashes), never grey added light
+   * (it lit the deck into a milky haze). Per source: puffs, life (s), alpha
+   * (≤ 1: the half-float buffer of High and Ultra does not clamp it), width
+   * from / to (m; a burst's × its flash core), rise (m/s); Scatter Gun's start
+   * `out` m along the fan (its flame tongues reach 2.2 m).
+   */
+  smoke: {
+    tan: { puffs: 3, life: 0.8, alpha: 0.9, from: 1, to: 2.6, rise: 1.4, out: 1.6 },
+    launch: { puffs: 3, life: 0.9, alpha: 0.75, from: 0.8, to: 2.4, rise: 1.6 },
+    burst: { puffs: 5, life: 1.5, alpha: 0.85, from: 0.3, to: 0.75, rise: 1.2 },
+  },
 } as const;
+
+/** Puffs the smoke pool holds (combat.ts): scorches, the hurt ship, four big kills and the guns' smoke (tests/vfx-pair.test.ts). */
+export const SMOKE_POOL = 200;
 
 /** The slot a new light takes: the first dark one, else the one with the least priority × light left. */
 export function pickLight(prio: ArrayLike<number>, left: ArrayLike<number>, count: number): number {

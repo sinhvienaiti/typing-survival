@@ -23,7 +23,7 @@ import { Bolts } from "./bolts";
 import { Chunks } from "./chunks";
 import type { Crowd } from "./crowd";
 import { CELL, FLAT, Glows, Strips } from "./fx";
-import { CHUNK_CAP, EDGE, FEEL, KILL_NUMBER, LIGHTS, THROW, numberFont } from "./gun-rules";
+import { CHUNK_CAP, EDGE, FEEL, KILL_NUMBER, LIGHTS, SMOKE_POOL, THROW, numberFont } from "./gun-rules";
 import { GunFx } from "./gunfx";
 import { RiftCracks, ShieldWalls } from "./hazard-fx";
 import { GunLights } from "./lights";
@@ -53,7 +53,7 @@ export type CombatHooks = {
 
 export class Combat {
   readonly glows: Glows;
-  readonly smoke = new Glows(160, true); // a big kill's smoke and scorch laid over the scene: one draw call
+  readonly smoke = new Glows(SMOKE_POOL, true); // smoke and scorches laid over the scene (big kills, guns, the hurt ship): one draw call
   readonly strips: Strips;
   readonly sparks: ParticlePool;
   readonly debris: Debris;
