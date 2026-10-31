@@ -4,13 +4,16 @@
  * top-right corner on every screen. Opened from a fight they pause it and
  * freeze typing; closing counts 3-2-1 back in (no count off the fight).
  * Every change applies at once and goes into the save (main.ts owns the
- * values: settings.ts maps them). No icon art yet (Codex ticket 180): the
- * kit shows plain text buttons. The sliders are skinned with the groove and
- * knob of ticket 225 (QUICK_SKIN).
+ * values: settings.ts maps them). The corner buttons are the gear and the
+ * speakers of ticket 180 (quickIcons), with the Sound rows' icons; the
+ * sliders are skinned with the groove and knob of ticket 225 (quickSkin).
+ * The panels' frames, buttons and choices are survival.css's nine-slice
+ * rules on the ticket 127 frames, not the kit's stretched skin.panel and
+ * skin.button; the groove is lit up to the knob from --v (paintRanges).
  */
 import { QuickSettings, defaultSettingsRows, defaultSoundRows, type QuickChoiceOption, type QuickMount, type QuickRow, type QuickSettingsOptions, type QuickSkin, type QuickValue } from "../kit/ui";
 import type { KeyboardSoundChoice, TypingSounds } from "../kit/feedback/typing-fx";
-import { artUrl } from "../view/ui-art";
+import { artUrl, quickIcons } from "../view/ui-art";
 import { manifestJson, sampleBytes } from "./keyboard";
 
 /**
@@ -53,6 +56,20 @@ export function soundRows(choices: readonly KeyboardSoundChoice[]): QuickRow[] {
   return rows;
 }
 
+/**
+ * Each slider's value as --v (0–100) on its input: survival.css darkens the
+ * groove past the knob, so 50 and 100 read apart (UI pass 2; the kit draws
+ * the groove whole and has no fill layer yet).
+ */
+export function paintRanges(host: { querySelectorAll?: (selector: string) => ArrayLike<Element> } | null | undefined): void {
+  if (typeof host?.querySelectorAll !== "function") return;
+  for (const input of Array.from(host.querySelectorAll(".kit-qs__range")) as HTMLInputElement[]) {
+    const min = Number(input.min || 0), max = Number(input.max || 100), value = Number(input.value);
+    const v = max > min ? Math.round(((value - min) / (max - min)) * 1000) / 10 : 0;
+    input.style.setProperty("--v", String(v));
+  }
+}
+
 export type QuickHooks = {
   host: HTMLElement;
   values(): Record<string, QuickValue>;
@@ -77,10 +94,18 @@ export type QuickHooks = {
  * within 3 s, each file within 8 s), and reports a pick that cannot sound.
  */
 export function quickOptions(hooks: QuickHooks): QuickSettingsOptions {
+  // The kit sets each slider's value right after it reads the values or takes a change: light the grooves then.
+  const relight = (): void => queueMicrotask(() => paintRanges(hooks.host));
   return {
     host: hooks.host,
-    getValues: hooks.values,
-    onChange: hooks.change,
+    getValues: () => {
+      relight();
+      return hooks.values();
+    },
+    onChange: (id, value) => {
+      hooks.change(id, value);
+      relight();
+    },
     onPreview: hooks.preview,
     keyboardSounds: hooks.keyboardSounds,
     keyboardFetch: { fetchJson: manifestJson, fetchBytes: sampleBytes },
@@ -91,7 +116,7 @@ export function quickOptions(hooks: QuickHooks): QuickSettingsOptions {
     countdownMs: hooks.countdown,
     settingsRows: settingsRows(hooks.mountPreview),
     soundRows: soundRows(hooks.keyboardChoices),
-    icons: {},
+    icons: quickIcons(),
     skin: quickSkin(),
   };
 }

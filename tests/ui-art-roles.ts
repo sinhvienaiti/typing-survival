@@ -64,4 +64,22 @@ export const ICONS: Readonly<Record<string, { source: string; ticket: string }>>
   "slider-thumb": { source: "ui/quick-settings/sliders/slider-thumb", ticket: "225" },
   "slider-track": { source: "ui/quick-settings/sliders/slider-track", ticket: "225" },
 };
-export const WIRED: readonly string[] = Object.keys(ICONS);
+/**
+ * UI pass 2 (31/10): the ticket 127 frames, drawn as nine-slice borders, and
+ * the ticket 180 gear, speakers and Sound row icons. Both were wired before
+ * their tickets closed (each verdict says so); the frames are cropped to
+ * their painted part with slice lines in source pixels.
+ */
+export const FRAMES: Readonly<Record<string, { source: string; ticket: string }>> = {
+  "frame-panel": { source: "ui/frames-epic/panel-large.alpha", ticket: "127" },
+  "frame-card": { source: "ui/frames-epic/bay-card.alpha", ticket: "127" },
+  "frame-word": { source: "ui/frames-epic/word-plate.alpha", ticket: "127" },
+  "frame-plate": { source: "ui/frames-epic/plate-long.alpha", ticket: "127" },
+  "frame-button": { source: "ui/frames-epic/button.alpha", ticket: "127" },
+  "frame-button-active": { source: "ui/frames-epic/button-active.alpha", ticket: "127" },
+  "frame-banner": { source: "ui/frames-epic/banner.alpha", ticket: "127" },
+};
+export const QUICK: Readonly<Record<string, { source: string; ticket: string }>> = Object.fromEntries(
+  ["hud-settings", "hud-sound", "hud-sound-muted", "vol-master", "vol-music", "vol-effects", "vol-keyboard", "vol-voice", "vol-interface"].map((role) => [role, { source: "ui/quick-settings/selected/" + role, ticket: "180" }]),
+);
+export const WIRED: readonly string[] = [...Object.keys(ICONS), ...Object.keys(FRAMES), ...Object.keys(QUICK)];

@@ -31,6 +31,30 @@ describe("UI art planner",()=>{
     expect(()=>plan({version:1,entries:[entry("stage-test","stage","stage")]},[{file:"stage.png",width:1536,height:1000}])).toThrow(/16:9/);
   });
 });
+describe("UI pass 2: nine-slice frames and trimmed icons (31/10)",()=>{
+  const frame=(extra:object={})=>({...entry("frame-test","frame","frame"),crop:"900x300+50+40",slice:[90,120,80,120],...extra});
+  it("plans a frame at 448 and 896 wide in its crop's shape, from the full canvas, never upscaled",()=>{
+    const jobs=plan({version:1,entries:[frame()]},[{file:"frame.png",width:1024,height:400}]);
+    expect(jobs.map((j:{source:string;width:number;height:number;crop:object})=>[j.source,j.width,j.height,j.crop])).toEqual([["frame.png",448,149,{width:900,height:300,x:50,y:40}],["frame.png",896,299,{width:900,height:300,x:50,y:40}]]);
+    expect(()=>plan({version:1,entries:[frame({crop:"800x300+50+40"})]},[{file:"frame.png",width:1024,height:400}])).toThrow(/upscale/);
+    expect(()=>plan({version:1,entries:[frame({crop:"900x300+200+40"})]},[{file:"frame.png",width:1024,height:400}])).toThrow(/crop/);
+  });
+  it("rejects a frame without a crop, with slice lines that meet, or with a slice that is not four whole numbers",()=>{
+    const files=[{file:"frame.png",width:1024,height:400}];
+    expect(()=>plan({version:1,entries:[frame({crop:undefined})]},files)).toThrow(/crop/);
+    expect(()=>plan({version:1,entries:[frame({slice:[150,120,150,120]})]},files)).toThrow(/slice/);
+    expect(()=>plan({version:1,entries:[frame({slice:[90,120,80]})]},files)).toThrow(/slice/);
+    expect(()=>plan({version:1,entries:[frame({slice:[90,120.5,80,120]})]},files)).toThrow(/slice/);
+  });
+  it("trims an icon or a portrait from its full-size painting (fill), not from the sized copies, and only those kinds with 0.5 ≤ fill ≤ 1",()=>{
+    const files=[{file:"icon.png",width:1024,height:1024},...[64,128,256].map(w=>({file:`icon.${w}.png`,width:w,height:w}))];
+    const jobs=plan({version:1,entries:[{...entry("gun-test","icon","icon"),fill:0.85}]},files);
+    expect(jobs.map((j:{source:string;fill:number})=>[j.source,j.fill])).toEqual([["icon.png",0.85],["icon.png",0.85],["icon.png",0.85]]);
+    for(const fill of [0.4,1.2,"0.85"]) expect(()=>plan({version:1,entries:[{...entry("gun-test","icon","icon"),fill}]},files)).toThrow(/fill/);
+    expect(()=>plan({version:1,entries:[{...entry("stage-test","stage","stage"),fill:0.85}]},[{file:"stage.png",width:1536,height:864}])).toThrow(/fill/);
+    expect(plan({version:1,entries:[{...entry("foe-test","portrait","portrait"),fill:0.9}]},[{file:"portrait.png",width:1024,height:1024}]).map((j:{source:string})=>j.source)).toEqual(["portrait.png","portrait.png","portrait.png"]);
+  });
+});
 describe.skipIf(!available)("UI art preparation fixtures",()=>{
   it("builds accepted media transactionally, stays unchanged on rerun, checks corruption, isolates pending and preserves old output on failure",async()=>{
     mkdirSync(artSrc,{recursive:true}); for(const w of [64,128,256]) png("icon."+w,w,w);

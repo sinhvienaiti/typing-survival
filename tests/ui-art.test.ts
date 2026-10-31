@@ -16,8 +16,8 @@ const roles = selection.entries.map(e => e.role);
 const md5 = (b: Buffer) => createHash("md5").update(b).digest("hex");
 afterEach(() => { vi.restoreAllMocks(); resetArtWarnings(); });
 describe("UI art 206", () => {
-  it("selects precisely 68 accepted roles from 89 entries (206's 15, the Shard, 52 icons and parts), with English names and pending replacements", () => {
-    expect(selection.version).toBe(1); expect(selection.entries).toHaveLength(89);
+  it("selects precisely 84 accepted roles from 105 entries (206's 15, the Shard, 52 icons and parts, UI pass 2's 7 frames of 127 and 9 icons of 180), with English names and pending replacements", () => {
+    expect(selection.version).toBe(1); expect(selection.entries).toHaveLength(105);
     const wanted = [...GUN_KEYS.map(gunRole), ...Object.values(KIND).map(foeRole), ...CHAPTER_1.map(s=>stageRole(s.id)), ...WIRED].sort();
     expect(accepted.map(e=>e.role).sort()).toEqual(wanted);
     for(const role of new Set(roles)) expect(accepted.filter(e=>e.role===role).length).toBeLessThanOrEqual(1);
@@ -35,8 +35,11 @@ describe("UI art 206", () => {
     expect(Object.keys(table.roles).sort()).toEqual(accepted.filter(e=>e.source).map(e=>e.role).sort());
     for(const [role, data] of Object.entries(table.roles)) {
       expect(data.rev).toMatch(/^[a-f0-9]{8}$/);
-      expect(data.widths).toEqual(role.startsWith("stage-")?[192,384,768,1536]:role==="slider-track"?[512,1024]:[64,128,256]);
-      expect(data.aspect).toBe(role.startsWith("stage-")?1.777778:role==="slider-track"?16:1);
+      expect(data.widths).toEqual(role.startsWith("stage-")?[192,384,768,1536]:role==="slider-track"?[512,1024]:role.startsWith("frame-")?[448,896]:[64,128,256]);
+      // A frame keeps its crop's shape (the painted part of its canvas), as its 448 px copy has it.
+      const crop = /^(\d+)x(\d+)/.exec(accepted.find(e=>e.role===role)?.crop ?? "");
+      const frameAspect = crop ? Math.round(448/Math.round(448*Number(crop[2])/Number(crop[1]))*1e6)/1e6 : 0;
+      expect(data.aspect).toBe(role.startsWith("stage-")?1.777778:role==="slider-track"?16:role.startsWith("frame-")?frameAspect:1);
     }
     expect(JSON.stringify(table)).not.toMatch(/art-src|\.png/);
   });
@@ -105,7 +108,7 @@ describe("UI art 206", () => {
     for (const [place, box] of Object.entries(BOX)) expect(css).toContain(`.sv-art-${place} { width: calc(${box.width}px * var(--ui)); height: calc(${box.height}px * var(--ui)); }`);
   });
   it("gives DOM callers the same gun and taught foe dimensions", () => {
-    for(const key of GUN_KEYS) { const a=artAttrs(gunRole(key),"bay")!; expect(a.width).toBe(BOX.bay.width); expect(a.height).toBe(40); expect(a.src).toContain(gunRole(key)+"."); }
+    for(const key of GUN_KEYS) { const a=artAttrs(gunRole(key),"bay")!; expect(a.width).toBe(BOX.bay.width); expect(a.height).toBe(44); expect(a.src).toContain(gunRole(key)+"."); }
     for(const k of [KIND.brute,KIND.leader,KIND.shield,KIND.splitter]) { const a=artAttrs(foeRole(k),"fresh")!; expect(a.width).toBe(48); expect(a.src).toContain(foeRole(k)+"."); }
   });
   it.skipIf(!existsSync("public/assets/typing-survival/ui/manifest.json"))("checks real media bytes, hashes and dimensions", async () => {

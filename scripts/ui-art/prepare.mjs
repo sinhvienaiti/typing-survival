@@ -4,9 +4,12 @@ import { resolve, dirname, basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
-export const WIDTHS = { icon: [64, 128, 256], portrait: [64, 128, 256], stage: [192, 384, 768, 1536], bg: [1280, 1536], track: [512, 1024] };
-/** Width over height per kind; a track is a slider's groove (ticket 225: 1024 × 64, drawn stretched by the kit). */
+export const WIDTHS = { icon: [64, 128, 256], portrait: [64, 128, 256], stage: [192, 384, 768, 1536], bg: [1280, 1536], track: [512, 1024], frame: [448, 896] };
+/** Width over height per kind; a track is a slider's groove (ticket 225: 1024 × 64, drawn stretched by the kit); a frame keeps its (cropped) source's. */
 export const ASPECT = { icon: 1, portrait: 1, stage: 16 / 9, bg: 16 / 9, track: 16 };
+/** A nine-slice frame (ticket 127) or an icon or portrait trimmed to its painted part (fill): the options that change the output beyond the source. */
+const variant = entry => (entry.fill !== undefined || entry.kind === 'frame') ? JSON.stringify({ fill: entry.fill, crop: entry.crop, slice: entry.slice }) : undefined;
+const cropBox = crop => { const m = /^(\d+)x(\d+)\+(\d+)\+(\d+)$/.exec(crop ?? ''); return m ? (([width,height,x,y]) => ({width,height,x,y}))(m.slice(1).map(Number)) : null; };
 /** Kinds drawn over the UI with real alpha, made from sized sources (`<source>.<width>.png`) when there are any. */
 const SIZED = new Set(['icon', 'portrait', 'track']);
 /** Where the game fetches UI art (the runtime table's base). */
@@ -34,6 +37,13 @@ function validate(selection) {
   for (const entry of selection.entries) {
     if (!/^[a-z0-9-]+$/.test(entry.role) || !WIDTHS[entry.kind]) throw new Error(`Invalid role or kind: ${entry.role}`);
     if (entry.source !== null && (typeof entry.source !== 'string' || !/^[\w./-]+$/.test(entry.source) || entry.source.split('/').includes('..') || entry.source.startsWith('/') || /\.png$|\.(64|128|256)$/.test(entry.source))) throw new Error(`Invalid source: ${entry.role}`);
+    if (entry.fill !== undefined && (!['icon', 'portrait'].includes(entry.kind) || typeof entry.fill !== 'number' || !(entry.fill >= 0.5 && entry.fill <= 1))) throw new Error(`Invalid fill: ${entry.role}`);
+    if (entry.kind === 'frame') {
+      // A frame names the painted part of its canvas (crop) and its nine-slice lines inside it, in source pixels: top, right, bottom, left.
+      if (!cropBox(entry.crop)) throw new Error(`Invalid crop: ${entry.role}`);
+      const s = entry.slice;
+      if (!Array.isArray(s) || s.length !== 4 || !s.every(n => Number.isInteger(n) && n >= 0)) throw new Error(`Invalid slice: ${entry.role}`);
+    }
     if (entry.accepted) {
       if (seen.has(entry.role)) throw new Error(`Multiple accepted entries: ${entry.role}`);
       seen.add(entry.role);
@@ -54,17 +64,26 @@ export function plan(selection, files) {
       if (width * 9 !== height * 16 || !exactBase || x + width > exactBase.width || y + height > exactBase.height) throw new Error(`Invalid 16:9 crop: ${entry.role}`);
     }
     if (entry.kind === 'stage' && (!exactBase || exactBase.width * 9 !== exactBase.height * 16)) throw new Error(`Stage requires a 16:9 source: ${entry.role}`);
+    if (entry.kind === 'frame') {
+      if (!exactBase) throw new Error(`No larger source; cannot upscale ${entry.role}`);
+      crop = cropBox(entry.crop);
+      if (crop.x + crop.width > exactBase.width || crop.y + crop.height > exactBase.height) throw new Error(`Invalid frame crop: ${entry.role}`);
+      const [top, right, bottom, left] = entry.slice;
+      if (top + bottom >= crop.height || left + right >= crop.width) throw new Error(`Invalid slice: ${entry.role}`);
+    }
+    const frame = entry.kind === 'frame' ? crop : null;
     return WIDTHS[entry.kind].map(width => {
-      const height = Math.round(width / ASPECT[entry.kind]);
+      const height = frame ? Math.round(width * frame.height / frame.width) : Math.round(width / ASPECT[entry.kind]);
       let source = exactBase;
-      if (SIZED.has(entry.kind)) {
+      // A trimmed icon or portrait is cut from its full-size painting (the sized copies keep the old margin).
+      if (SIZED.has(entry.kind) && entry.fill === undefined) {
         const candidates = files.filter(f => f.file === `${entry.source}.png` || (f.file.startsWith(`${entry.source}.`) && /^\d+\.png$/.test(f.file.slice(entry.source.length + 1))));
         source = candidates.find(f => f.file === `${entry.source}.${width}.png`);
         if (!source) source = candidates.filter(f => f.width >= width && f.height >= height).sort((a,b) => a.width - b.width || a.file.localeCompare(b.file, 'en'))[0];
         if (source && source.width !== source.height * ASPECT[entry.kind]) throw new Error(entry.kind === 'track' ? `Track requires a 16:1 source: ${source.file}` : `Square source required: ${source.file}`);
       }
       if (!source || (crop?.width ?? source.width) < width || (crop?.height ?? source.height) < height) throw new Error(`No larger source; cannot upscale ${entry.role}.${width}`);
-      return { entry, source: source.file, width, height, ...(crop ? {crop} : {}) };
+      return { entry, source: source.file, width, height, ...(crop ? {crop} : {}), ...(entry.fill !== undefined ? {fill: entry.fill} : {}) };
     });
   });
 }
@@ -82,14 +101,28 @@ function fingerprints(jobs, artSrc) {
     const group = jobs.filter(j => j.entry.role === role);
     const sourceFiles = sortObject([...new Set(group.map(j => j.source))].map(file => [file, md5(readFileSync(join(artSrc,file)))]));
     const hashes = Object.values(sourceFiles);
-    return [role, { ticket: group[0].entry.ticket, source: group[0].entry.source, sourceFiles, sourceMd5: hashes.length === 1 ? hashes[0] : md5(json(sourceFiles)) }];
+    const v = variant(group[0].entry);
+    return [role, { ticket: group[0].entry.ticket, source: group[0].entry.source, sourceFiles, sourceMd5: hashes.length === 1 ? hashes[0] : md5(json(sourceFiles)), ...(v !== undefined ? { variant: v } : {}) }];
   }));
 }
 function runtime(selection, roles) {
   return {version:selection.version, base:BASE, roles:sortObject(Object.entries(roles).map(([role,info]) => {
     const entry = selection.entries.find(e => e.role === role && e.accepted);
-    return [role,{kind:entry.kind,alt:entry.alt,rev:info.sourceMd5.slice(0,8),widths:info.sizes.map(s => s.width),aspect:Math.round(info.sizes[0].width / info.sizes[0].height * 1e6) / 1e6}];
+    const rev = (info.variant !== undefined ? md5(info.sourceMd5 + info.variant) : info.sourceMd5).slice(0,8);
+    return [role,{kind:entry.kind,alt:entry.alt,rev,widths:info.sizes.map(s => s.width),aspect:Math.round(info.sizes[0].width / info.sizes[0].height * 1e6) / 1e6,...(entry.kind === 'frame' ? {slice:frameSlice(entry)} : {})}];
   }))};
+}
+/** A frame's slice lines as percentages (top and bottom of the cropped height, right and left of its width), the same at every width (CSS border-image-slice). */
+function frameSlice(entry) {
+  const box = cropBox(entry.crop), [top, right, bottom, left] = entry.slice;
+  const pct = (n, of) => Math.round(n / of * 1e4) / 100;
+  return [pct(top, box.height), pct(right, box.width), pct(bottom, box.height), pct(left, box.width)];
+}
+/** Where an icon's painting is (alpha over 6 %), to cut away the empty margin round it. */
+function paintedBox(path) {
+  const box = cropBox(run(process.env.ART_MAGICK || 'magick', [path, '-alpha', 'extract', '-threshold', '6%', '-format', '%@', 'info:']).trim());
+  if (!box || box.width === 0 || box.height === 0) throw new Error(`No painted pixels: ${path}`);
+  return box;
 }
 function psnr(png, webp) {
   const result = spawnSync(process.env.ART_MAGICK || 'magick', ['compare','-metric','PSNR',png,webp,'null:'], {encoding:'utf8'});
@@ -108,7 +141,7 @@ function safeOutput(path) {
   }
 }
 function sameMeta(a,b) {
-  return a && a.ticket===b.ticket && a.source===b.source && a.sourceMd5===b.sourceMd5 && json(a.sourceFiles)===json(b.sourceFiles);
+  return a && a.ticket===b.ticket && a.source===b.source && a.sourceMd5===b.sourceMd5 && json(a.sourceFiles)===json(b.sourceFiles) && a.variant===b.variant;
 }
 function verifyFile(out, size) {
   const path = join(out,size.file);
@@ -176,6 +209,13 @@ export async function prepare(options = {}) {
         const {entry,width,height,crop}=job, file=`${role}.${width}.webp`, png=join(work,`${role}.${width}.png`), webp=join(work,file);
         const args=[join(artSrc,job.source)];
         if (crop) args.push('-crop',entry.crop,'+repage');
+        if (job.fill !== undefined) {
+          // The painting fills `fill` of the square on its longer side, centred; never smaller than it was.
+          const box = paintedBox(join(artSrc,job.source)), dims = dimensions(join(artSrc,job.source));
+          const side = Math.min(Math.max(dims.width, dims.height), Math.ceil(Math.max(box.width, box.height) / job.fill));
+          if (side < width) throw new Error(`No larger source; cannot upscale ${role}.${width}`);
+          args.push('-crop',`${box.width}x${box.height}+${box.x}+${box.y}`,'+repage','-background','none','-gravity','center','-extent',`${side}x${side}`);
+        }
         args.push('-colorspace','sRGB','-filter','Lanczos','-resize',`${width}x${height}!`,'-strip',png);
         run(process.env.ART_MAGICK || 'magick',args);
         const alpha=SIZED.has(entry.kind);

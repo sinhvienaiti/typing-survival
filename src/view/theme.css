@@ -88,6 +88,8 @@
   --flash-perfect: rgba(127, 245, 224, 0.42);
   --track: rgba(255, 255, 255, 0.07);
   --banner-band: rgba(10, 11, 13, 0.92);
+  /* A slider's groove past its knob (the quick Sound panel): the art dimmed, so the lit part reads as the level. */
+  --groove-dark: rgba(4, 6, 9, 0.68);
   --notice: rgba(122, 18, 18, 0.95);
 
   /* Fonts: Chakra Petch for titles, labels and readouts; Be Vietnam Pro for every word of the fight. */

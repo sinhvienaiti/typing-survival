@@ -57,7 +57,7 @@ function item(entry: MenuItem, index: number, on: boolean, place: ArtPlace, gap:
       : '<span class="sv-value">' + (entry.level !== undefined ? led(entry.level) : "") + artHtml("part-arrow", "arrow", { cls: "is-left" }) + "<b>" + escapeHtml(entry.value) + "</b>" + artHtml("part-arrow", "arrow") + "</span>";
   const icon = entry.icon ? artHtml(entry.icon, place) : gap && !entry.art ? '<i class="sv-icon-gap sv-gap-' + place + '" aria-hidden="true"></i>' : "";
   return (
-    '<div class="' + classes + '" data-index="' + index + '" role="menuitem" aria-disabled="' + !entry.enabled + '"' + (on ? ' aria-current="true"' : "") + ">" +
+    '<div class="' + classes + '" data-index="' + index + '" data-id="' + escapeHtml(entry.id) + '" role="menuitem" aria-disabled="' + !entry.enabled + '"' + (on ? ' aria-current="true"' : "") + ">" +
     artHtml(on ? "part-led-on" : "part-led-off", "led") + icon + (entry.art ? artHtml(entry.art, "menu") : "") +
     '<span class="sv-item-text"><b>' + escapeHtml(entry.label) + "</b>" + (entry.note ? "<small>" + escapeHtml(entry.note) + "</small>" : "") + "</span>" +
     stars(entry) + value +
@@ -65,7 +65,7 @@ function item(entry: MenuItem, index: number, on: boolean, place: ArtPlace, gap:
   );
 }
 
-/** `place`: the size of the items' icons (24 px on the title, 20 px elsewhere: UI_IMAGERY LL-09, LL-48). */
+/** `place`: the size of the items' icons (32 px on the title, 28 px elsewhere: UI pass 2, 31/10; were 24 and 20, UI_IMAGERY LL-09, LL-48). */
 export function menu(m: Menu, extra = "", place: ArtPlace = "icon"): string {
   const gap = m.items.some((entry) => entry.icon !== undefined);
   return '<nav class="sv-menu' + extra + '" role="menu">' + m.items.map((entry, index) => item(entry, index, index === m.index, place, gap)).join("") + "</nav>";

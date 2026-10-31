@@ -98,7 +98,8 @@
       "accepted": true,
       "ticket": "089",
       "verdict": "CODEX_QUEUE 089: Nhận 28/10",
-      "alt": "Swarm"
+      "alt": "Swarm",
+      "fill": 0.9
     },
     {
       "role": "foe-swarm",
@@ -116,7 +117,8 @@
       "accepted": true,
       "ticket": "089",
       "verdict": "CODEX_QUEUE 089: Nhận 28/10",
-      "alt": "Scout"
+      "alt": "Scout",
+      "fill": 0.9
     },
     {
       "role": "foe-scout",
@@ -134,7 +136,8 @@
       "accepted": true,
       "ticket": "089",
       "verdict": "CODEX_QUEUE 089: Nhận 28/10",
-      "alt": "Brute"
+      "alt": "Brute",
+      "fill": 0.9
     },
     {
       "role": "foe-brute",
@@ -152,7 +155,8 @@
       "accepted": true,
       "ticket": "089",
       "verdict": "CODEX_QUEUE 089: Nhận 28/10",
-      "alt": "Pack Leader"
+      "alt": "Pack Leader",
+      "fill": 0.9
     },
     {
       "role": "foe-pack-leader",
@@ -170,7 +174,8 @@
       "accepted": true,
       "ticket": "089",
       "verdict": "CODEX_QUEUE 089: Nhận 28/10",
-      "alt": "Shield Guard"
+      "alt": "Shield Guard",
+      "fill": 0.9
     },
     {
       "role": "foe-shield-guard",
@@ -188,7 +193,8 @@
       "accepted": true,
       "ticket": "089",
       "verdict": "CODEX_QUEUE 089: Nhận 28/10",
-      "alt": "Splitter"
+      "alt": "Splitter",
+      "fill": 0.9
     },
     {
       "role": "foe-splitter",
@@ -206,7 +212,8 @@
       "accepted": true,
       "ticket": "238",
       "verdict": "CODEX_QUEUE 238: Nhận 31/10 03:15 (try2)",
-      "alt": "Shard"
+      "alt": "Shard",
+      "fill": 0.9
     },
     {
       "role": "stage-c1-s1",
@@ -347,7 +354,8 @@
       "accepted": true,
       "ticket": "149",
       "verdict": "CODEX_QUEUE 149: Nhận 31/10",
-      "alt": "Hull armour"
+      "alt": "Hull armour",
+      "fill": 0.85
     },
     {
       "role": "icon-clock",
@@ -356,7 +364,8 @@
       "accepted": true,
       "ticket": "149",
       "verdict": "CODEX_QUEUE 149: Nhận 31/10",
-      "alt": "Time left"
+      "alt": "Time left",
+      "fill": 0.85
     },
     {
       "role": "icon-kills",
@@ -365,7 +374,8 @@
       "accepted": true,
       "ticket": "149",
       "verdict": "CODEX_QUEUE 149: Nhận 31/10",
-      "alt": "Kills"
+      "alt": "Kills",
+      "fill": 0.85
     },
     {
       "role": "icon-surge",
@@ -374,7 +384,8 @@
       "accepted": true,
       "ticket": "149",
       "verdict": "CODEX_QUEUE 149: Nhận 31/10",
-      "alt": "Surge"
+      "alt": "Surge",
+      "fill": 0.85
     },
     {
       "role": "icon-repair-pod",
@@ -383,7 +394,8 @@
       "accepted": true,
       "ticket": "149",
       "verdict": "CODEX_QUEUE 149: Nhận 31/10",
-      "alt": "Repair pod"
+      "alt": "Repair pod",
+      "fill": 0.85
     },
     {
       "role": "icon-keyboard",
@@ -392,7 +404,8 @@
       "accepted": true,
       "ticket": "237",
       "verdict": "CODEX_QUEUE 237: Nhận 31/10 02:56 (try2)",
-      "alt": "Keyboard"
+      "alt": "Keyboard",
+      "fill": 0.85
     },
     {
       "role": "icon-check",
@@ -401,7 +414,8 @@
       "accepted": true,
       "ticket": "149",
       "verdict": "CODEX_QUEUE 149: Nhận 31/10",
-      "alt": "Done"
+      "alt": "Done",
+      "fill": 0.85
     },
     {
       "role": "icon-bay-full",
@@ -410,7 +424,8 @@
       "accepted": true,
       "ticket": "237",
       "verdict": "CODEX_QUEUE 237: Nhận 31/10 02:56 (try3)",
-      "alt": "Bay full"
+      "alt": "Bay full",
+      "fill": 0.85
     },
     {
       "role": "icon-streak",
@@ -419,7 +434,8 @@
       "accepted": true,
       "ticket": "237",
       "verdict": "CODEX_QUEUE 237: Nhận 31/10 02:56 (try2)",
-      "alt": "Clean streak"
+      "alt": "Clean streak",
+      "fill": 0.85
     },
     {
       "role": "icon-lock",
@@ -428,7 +444,8 @@
       "accepted": true,
       "ticket": "149",
       "verdict": "CODEX_QUEUE 149: Nhận 31/10",
-      "alt": "Locked"
+      "alt": "Locked",
+      "fill": 0.85
     },
     {
       "role": "icon-objective",
@@ -437,7 +454,8 @@
       "accepted": true,
       "ticket": "238",
       "verdict": "CODEX_QUEUE 238: Nhận 31/10 03:15 (try2)",
-      "alt": "Goal"
+      "alt": "Goal",
+      "fill": 0.85
     },
     {
       "role": "icon-hazard",
@@ -446,7 +464,8 @@
       "accepted": true,
       "ticket": "150",
       "verdict": "CODEX_QUEUE 150: Nhận 31/10",
-      "alt": "Hazard"
+      "alt": "Hazard",
+      "fill": 0.85
     },
     {
       "role": "icon-learning-rule",
@@ -455,7 +474,8 @@
       "accepted": true,
       "ticket": "150",
       "verdict": "CODEX_QUEUE 150: Nhận 31/10",
-      "alt": "Learning rule"
+      "alt": "Learning rule",
+      "fill": 0.85
     },
     {
       "role": "icon-equipment",
@@ -464,7 +484,8 @@
       "accepted": true,
       "ticket": "150",
       "verdict": "CODEX_QUEUE 150: Nhận 31/10",
-      "alt": "Gear"
+      "alt": "Gear",
+      "fill": 0.85
     },
     {
       "role": "icon-warning",
@@ -473,7 +494,8 @@
       "accepted": true,
       "ticket": "150",
       "verdict": "CODEX_QUEUE 150: Nhận 31/10",
-      "alt": "Warning"
+      "alt": "Warning",
+      "fill": 0.85
     },
     {
       "role": "icon-new-badge",
@@ -482,7 +504,8 @@
       "accepted": true,
       "ticket": "150",
       "verdict": "CODEX_QUEUE 150: Nhận 31/10",
-      "alt": "New"
+      "alt": "New",
+      "fill": 0.85
     },
     {
       "role": "icon-station-crest",
@@ -491,7 +514,8 @@
       "accepted": true,
       "ticket": "240",
       "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (c2-try3)",
-      "alt": "Station VC-7"
+      "alt": "Station VC-7",
+      "fill": 0.85
     },
     {
       "role": "icon-chapter-crest",
@@ -500,7 +524,8 @@
       "accepted": true,
       "ticket": "150",
       "verdict": "CODEX_QUEUE 150: Nhận 31/10",
-      "alt": "Chapter 1"
+      "alt": "Chapter 1",
+      "fill": 0.85
     },
     {
       "role": "icon-load-guns",
@@ -509,7 +534,8 @@
       "accepted": true,
       "ticket": "150",
       "verdict": "CODEX_QUEUE 150: Nhận 31/10",
-      "alt": "Load guns"
+      "alt": "Load guns",
+      "fill": 0.85
     },
     {
       "role": "icon-back",
@@ -518,7 +544,8 @@
       "accepted": true,
       "ticket": "150",
       "verdict": "CODEX_QUEUE 150: Nhận 31/10",
-      "alt": "Back"
+      "alt": "Back",
+      "fill": 0.85
     },
     {
       "role": "icon-menu-play",
@@ -527,7 +554,8 @@
       "accepted": true,
       "ticket": "151",
       "verdict": "CODEX_QUEUE 151: Nhận 31/10",
-      "alt": "Play"
+      "alt": "Play",
+      "fill": 0.85
     },
     {
       "role": "icon-menu-journey",
@@ -536,7 +564,8 @@
       "accepted": true,
       "ticket": "239",
       "verdict": "CODEX_QUEUE 239: Nhận 31/10 05:15 (c2-try3)",
-      "alt": "Campaign"
+      "alt": "Campaign",
+      "fill": 0.85
     },
     {
       "role": "icon-menu-mode",
@@ -545,7 +574,8 @@
       "accepted": true,
       "ticket": "151",
       "verdict": "CODEX_QUEUE 151: Nhận 31/10",
-      "alt": "Mode"
+      "alt": "Mode",
+      "fill": 0.85
     },
     {
       "role": "icon-menu-armory",
@@ -554,7 +584,8 @@
       "accepted": true,
       "ticket": "239",
       "verdict": "CODEX_QUEUE 239: Nhận 31/10 05:15 (c2-try1)",
-      "alt": "Armory"
+      "alt": "Armory",
+      "fill": 0.85
     },
     {
       "role": "icon-menu-settings",
@@ -563,7 +594,8 @@
       "accepted": true,
       "ticket": "151",
       "verdict": "CODEX_QUEUE 151: Nhận 31/10",
-      "alt": "Options"
+      "alt": "Options",
+      "fill": 0.85
     },
     {
       "role": "icon-menu-profile",
@@ -572,7 +604,8 @@
       "accepted": true,
       "ticket": "151",
       "verdict": "CODEX_QUEUE 151: Nhận 31/10",
-      "alt": "Profile"
+      "alt": "Profile",
+      "fill": 0.85
     },
     {
       "role": "icon-star-lit",
@@ -581,7 +614,8 @@
       "accepted": true,
       "ticket": "151",
       "verdict": "CODEX_QUEUE 151: Nhận 31/10",
-      "alt": "Star earned"
+      "alt": "Star earned",
+      "fill": 0.85
     },
     {
       "role": "icon-star-unlit",
@@ -590,7 +624,8 @@
       "accepted": true,
       "ticket": "151",
       "verdict": "CODEX_QUEUE 151: Nhận 31/10",
-      "alt": "Star not earned"
+      "alt": "Star not earned",
+      "fill": 0.85
     },
     {
       "role": "icon-retry",
@@ -599,7 +634,8 @@
       "accepted": true,
       "ticket": "151",
       "verdict": "CODEX_QUEUE 151: Nhận 31/10",
-      "alt": "Retry"
+      "alt": "Retry",
+      "fill": 0.85
     },
     {
       "role": "icon-next-stage",
@@ -608,7 +644,8 @@
       "accepted": true,
       "ticket": "239",
       "verdict": "CODEX_QUEUE 239: Nhận 31/10 05:15 (c3-try2)",
-      "alt": "Next stage"
+      "alt": "Next stage",
+      "fill": 0.85
     },
     {
       "role": "icon-stat-time",
@@ -617,7 +654,8 @@
       "accepted": true,
       "ticket": "151",
       "verdict": "CODEX_QUEUE 151: Nhận 31/10",
-      "alt": "Time"
+      "alt": "Time",
+      "fill": 0.85
     },
     {
       "role": "icon-stat-accuracy",
@@ -626,7 +664,8 @@
       "accepted": true,
       "ticket": "151",
       "verdict": "CODEX_QUEUE 151: Nhận 31/10",
-      "alt": "Accuracy"
+      "alt": "Accuracy",
+      "fill": 0.85
     },
     {
       "role": "icon-sfx",
@@ -635,7 +674,8 @@
       "accepted": true,
       "ticket": "152",
       "verdict": "CODEX_QUEUE 152: Nhận 31/10",
-      "alt": "Effects"
+      "alt": "Effects",
+      "fill": 0.85
     },
     {
       "role": "icon-music",
@@ -644,7 +684,8 @@
       "accepted": true,
       "ticket": "152",
       "verdict": "CODEX_QUEUE 152: Nhận 31/10",
-      "alt": "Music"
+      "alt": "Music",
+      "fill": 0.85
     },
     {
       "role": "icon-shake",
@@ -653,7 +694,8 @@
       "accepted": true,
       "ticket": "240",
       "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (c2-try1)",
-      "alt": "Screen shake"
+      "alt": "Screen shake",
+      "fill": 0.85
     },
     {
       "role": "icon-reduced-motion",
@@ -662,7 +704,8 @@
       "accepted": true,
       "ticket": "240",
       "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (c2-try2)",
-      "alt": "Reduce motion"
+      "alt": "Reduce motion",
+      "fill": 0.85
     },
     {
       "role": "icon-read-aloud",
@@ -671,7 +714,8 @@
       "accepted": true,
       "ticket": "152",
       "verdict": "CODEX_QUEUE 152: Nhận 31/10",
-      "alt": "Read words aloud"
+      "alt": "Read words aloud",
+      "fill": 0.85
     },
     {
       "role": "icon-pace-director",
@@ -680,7 +724,8 @@
       "accepted": true,
       "ticket": "152",
       "verdict": "CODEX_QUEUE 152: Nhận 31/10 (v2)",
-      "alt": "Adapt pace"
+      "alt": "Adapt pace",
+      "fill": 0.85
     },
     {
       "role": "icon-quality",
@@ -689,7 +734,8 @@
       "accepted": true,
       "ticket": "152",
       "verdict": "CODEX_QUEUE 152: Nhận 31/10",
-      "alt": "Graphics"
+      "alt": "Graphics",
+      "fill": 0.85
     },
     {
       "role": "icon-stat-wpm",
@@ -698,7 +744,8 @@
       "accepted": true,
       "ticket": "152",
       "verdict": "CODEX_QUEUE 152: Nhận 31/10 (v2)",
-      "alt": "Speed"
+      "alt": "Speed",
+      "fill": 0.85
     },
     {
       "role": "icon-stat-new-word",
@@ -707,7 +754,8 @@
       "accepted": true,
       "ticket": "152",
       "verdict": "CODEX_QUEUE 152: Nhận 31/10",
-      "alt": "New-word read"
+      "alt": "New-word read",
+      "fill": 0.85
     },
     {
       "role": "icon-stat-evenness",
@@ -716,7 +764,8 @@
       "accepted": true,
       "ticket": "240",
       "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (try2)",
-      "alt": "Steadiness"
+      "alt": "Steadiness",
+      "fill": 0.85
     },
     {
       "role": "icon-rift",
@@ -725,7 +774,8 @@
       "accepted": true,
       "ticket": "152",
       "verdict": "CODEX_QUEUE 152: Nhận 31/10",
-      "alt": "Rift"
+      "alt": "Rift",
+      "fill": 0.85
     },
     {
       "role": "part-keycap",
@@ -807,6 +857,208 @@
       "ticket": "225",
       "verdict": "CODEX_QUEUE 225: Nhận 31/10 05:30",
       "alt": "Slider groove"
+    },
+    {
+      "role": "frame-panel",
+      "kind": "frame",
+      "source": "ui/frames-epic/panel-large.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "900x895+62+62",
+      "slice": [
+        138,
+        138,
+        133,
+        138
+      ]
+    },
+    {
+      "role": "frame-card",
+      "kind": "frame",
+      "source": "ui/frames-epic/bay-card.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "1424x380+56+59",
+      "slice": [
+        141,
+        244,
+        127,
+        244
+      ]
+    },
+    {
+      "role": "frame-word",
+      "kind": "frame",
+      "source": "ui/frames-epic/word-plate.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "1424x328+56+82",
+      "slice": [
+        138,
+        174,
+        118,
+        174
+      ]
+    },
+    {
+      "role": "frame-plate",
+      "kind": "frame",
+      "source": "ui/frames-epic/plate-long.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "1448x325+44+92",
+      "slice": [
+        128,
+        196,
+        125,
+        196
+      ]
+    },
+    {
+      "role": "frame-button",
+      "kind": "frame",
+      "source": "ui/frames-epic/button.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "1438x373+49+68",
+      "slice": [
+        132,
+        141,
+        129,
+        141
+      ]
+    },
+    {
+      "role": "frame-button-active",
+      "kind": "frame",
+      "source": "ui/frames-epic/button-active.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "1439x373+49+67",
+      "slice": [
+        133,
+        142,
+        128,
+        141
+      ]
+    },
+    {
+      "role": "frame-banner",
+      "kind": "frame",
+      "source": "ui/frames-epic/banner.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "1518x226+9+127",
+      "slice": [
+        0,
+        426,
+        0,
+        426
+      ]
+    },
+    {
+      "role": "hud-settings",
+      "kind": "icon",
+      "source": "ui/quick-settings/selected/hud-settings",
+      "accepted": true,
+      "ticket": "180",
+      "verdict": "CODEX_QUEUE 180: chưa đóng phiếu (IoU cặp loa bật/tắt); gắn theo UI pass 2 31/10 (nút góc và hàng Sound)",
+      "alt": "Settings",
+      "fill": 0.85
+    },
+    {
+      "role": "hud-sound",
+      "kind": "icon",
+      "source": "ui/quick-settings/selected/hud-sound",
+      "accepted": true,
+      "ticket": "180",
+      "verdict": "CODEX_QUEUE 180: chưa đóng phiếu (IoU cặp loa bật/tắt); gắn theo UI pass 2 31/10 (nút góc và hàng Sound)",
+      "alt": "Sound",
+      "fill": 0.85
+    },
+    {
+      "role": "hud-sound-muted",
+      "kind": "icon",
+      "source": "ui/quick-settings/selected/hud-sound-muted",
+      "accepted": true,
+      "ticket": "180",
+      "verdict": "CODEX_QUEUE 180: chưa đóng phiếu (IoU cặp loa bật/tắt); gắn theo UI pass 2 31/10 (nút góc và hàng Sound)",
+      "alt": "Sound off",
+      "fill": 0.85
+    },
+    {
+      "role": "vol-master",
+      "kind": "icon",
+      "source": "ui/quick-settings/selected/vol-master",
+      "accepted": true,
+      "ticket": "180",
+      "verdict": "CODEX_QUEUE 180: chưa đóng phiếu (IoU cặp loa bật/tắt); gắn theo UI pass 2 31/10 (nút góc và hàng Sound)",
+      "alt": "Master volume",
+      "fill": 0.85
+    },
+    {
+      "role": "vol-music",
+      "kind": "icon",
+      "source": "ui/quick-settings/selected/vol-music",
+      "accepted": true,
+      "ticket": "180",
+      "verdict": "CODEX_QUEUE 180: chưa đóng phiếu (IoU cặp loa bật/tắt); gắn theo UI pass 2 31/10 (nút góc và hàng Sound)",
+      "alt": "Music volume",
+      "fill": 0.85
+    },
+    {
+      "role": "vol-effects",
+      "kind": "icon",
+      "source": "ui/quick-settings/selected/vol-effects",
+      "accepted": true,
+      "ticket": "180",
+      "verdict": "CODEX_QUEUE 180: chưa đóng phiếu (IoU cặp loa bật/tắt); gắn theo UI pass 2 31/10 (nút góc và hàng Sound)",
+      "alt": "Effects volume",
+      "fill": 0.85
+    },
+    {
+      "role": "vol-keyboard",
+      "kind": "icon",
+      "source": "ui/quick-settings/selected/vol-keyboard",
+      "accepted": true,
+      "ticket": "180",
+      "verdict": "CODEX_QUEUE 180: chưa đóng phiếu (IoU cặp loa bật/tắt); gắn theo UI pass 2 31/10 (nút góc và hàng Sound)",
+      "alt": "Keyboard sound",
+      "fill": 0.85
+    },
+    {
+      "role": "vol-voice",
+      "kind": "icon",
+      "source": "ui/quick-settings/selected/vol-voice",
+      "accepted": true,
+      "ticket": "180",
+      "verdict": "CODEX_QUEUE 180: chưa đóng phiếu (IoU cặp loa bật/tắt); gắn theo UI pass 2 31/10 (nút góc và hàng Sound)",
+      "alt": "Voice volume",
+      "fill": 0.85
+    },
+    {
+      "role": "vol-interface",
+      "kind": "icon",
+      "source": "ui/quick-settings/selected/vol-interface",
+      "accepted": true,
+      "ticket": "180",
+      "verdict": "CODEX_QUEUE 180: chưa đóng phiếu (IoU cặp loa bật/tắt); gắn theo UI pass 2 31/10 (nút góc và hàng Sound)",
+      "alt": "Interface volume",
+      "fill": 0.85
     }
   ]
 }

@@ -140,6 +140,9 @@ export class Hud {
   private freshUntil = 0;
   private readonly met = new Set<number>();
   private readonly teach: Set<number>;
+  /** The still camera's view (layout()), for marks placed on the corridor (the rift's wall mark). */
+  private stage: Stage | null = null;
+  private warnSide = 0;
 
   constructor(root: HTMLElement, private readonly words: (index: number) => Word, w: World) {
     this.root = root;
@@ -188,7 +191,9 @@ export class Hud {
         const plate = el("section", "sv-bay-lock sv-panel", this.bottom);
         plate.dataset.bay = String(bay + 1);
         plate.style.gridArea = "1 / " + BAY_COLUMN[bay];
+        // A sealed bay: a smaller plate with its lock centred over the word (UI pass 2: a large empty plate read as missing content).
         appendArt(plate, artAttrs("icon-lock", "lock"));
+        el("span", "", plate, "LOCKED");
         continue;
       }
       const spec = GUN_SPECS[gun]!;
@@ -218,6 +223,8 @@ export class Hud {
    * line's glow ends. Call on resize.
    */
   layout(stage: Stage, ui: number): void {
+    this.stage = stage;
+    this.last.warn = "";
     this.placed.stripes = stage.project(0, FIELD.bottomZ + 1.05, 0, this.at, true).y;
     const line = (this.placed.line = stage.project(0, FIELD.bottomZ + LINE_LIFT, 0, this.at, true).y - 4 * ui);
     const glow = (this.placed.glow = stage.project(0, FIELD.bottomZ - 0.32, 0, this.at, true).y);
@@ -367,7 +374,10 @@ export class Hud {
     const first = w.guns.left[s]! / magazineUnits(w.stage, slot.gun as GunId);
     for (let m = 0; m < slot.mags.length; m += 1) {
       const fill = m < mags - 1 ? 1 : m === mags - 1 ? Math.max(0, Math.min(1, first)) : 0;
-      slot.mags[m]!.style.setProperty("--fill", fill.toFixed(3));
+      const cell = slot.mags[m]!;
+      cell.style.setProperty("--fill", fill.toFixed(3));
+      // An empty cell steps back, a loaded one glows (survival.css).
+      if (cell.classList.contains("is-empty") !== (fill === 0)) cell.classList.toggle("is-empty", fill === 0);
     }
     slot.root.classList.toggle("is-firing", mags > 0);
     slot.root.classList.toggle("is-full", mags >= w.guns.cap[s]!);
@@ -410,7 +420,13 @@ export class Hud {
     this.goal.classList.toggle("is-done", O.retreat >= 0);
   }
 
-  /** A rift's warning on its wall's side, counting down. */
+  /**
+   * A rift's warning: one countdown chip beside the word line, pointing at
+   * the wall (strip.ts: the eyes are there while typing), and a mark on the
+   * corridor wall where the rift opens (the Rift icon and an arrow at the
+   * wall, no text; UI pass 2: two identical chips showed, one at the
+   * screen's edge over empty space).
+   */
   private updateWarn(w: World): void {
     const H = w.hazards;
     let text = "";
@@ -424,15 +440,30 @@ export class Hud {
     }
     const key = text + side;
     if (key === this.last.warn) return;
+    const placed = this.last.warn !== "" && text !== "" && this.warnSide === side && this.warn.childElementCount > 0;
     this.last.warn = key;
-    // Its countdown also beside the word line, pointing at the wall (the eyes are there while typing); both lead with the Rift icon.
+    this.warnSide = side;
     this.strip.warn(text, side);
-    if (text === "") this.warn.textContent = "";
-    else iconText(this.warn, "icon-rift", "item", text);
     this.warn.classList.toggle("is-on", text !== "");
     this.warn.classList.toggle("is-left", side < 0);
     this.warn.classList.toggle("is-right", side > 0);
     this.warn.style.setProperty("--warn", String(RIFT.warn));
+    if (text === "") {
+      this.warn.replaceChildren();
+      return;
+    }
+    if (placed) return;
+    this.warn.replaceChildren();
+    const arrow = artAttrs("part-arrow", "small", side < 0 ? { cls: "is-left" } : {});
+    if (side < 0) appendArt(this.warn, arrow);
+    appendArt(this.warn, artAttrs("icon-rift", "item"));
+    if (side > 0) appendArt(this.warn, arrow);
+    // On the wall's inner face, 1 m up, at the depth the rift opens; the mark stands just inside it.
+    const at = this.stage?.project(side * (FIELD.halfW - FIELD.wall), H.z[H.next] ?? RIFT.zMin, 1, this.at, true);
+    if (at !== undefined) {
+      this.warn.style.left = at.x.toFixed(1) + "px";
+      this.warn.style.top = at.y.toFixed(1) + "px";
+    }
   }
 
   /** A taught foe's first appearance: a small card for 2 s. */

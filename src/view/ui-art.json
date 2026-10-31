@@ -5,7 +5,7 @@
     "foe-brute": {
       "kind": "portrait",
       "alt": "Brute",
-      "rev": "a79be231",
+      "rev": "aa8e58e4",
       "widths": [
         64,
         128,
@@ -16,7 +16,7 @@
     "foe-pack-leader": {
       "kind": "portrait",
       "alt": "Pack Leader",
-      "rev": "7597978e",
+      "rev": "660ea841",
       "widths": [
         64,
         128,
@@ -27,7 +27,7 @@
     "foe-scout": {
       "kind": "portrait",
       "alt": "Scout",
-      "rev": "154782aa",
+      "rev": "1b172082",
       "widths": [
         64,
         128,
@@ -38,7 +38,7 @@
     "foe-shard": {
       "kind": "portrait",
       "alt": "Shard",
-      "rev": "bb15773f",
+      "rev": "12a2c9cc",
       "widths": [
         64,
         128,
@@ -49,7 +49,7 @@
     "foe-shield-guard": {
       "kind": "portrait",
       "alt": "Shield Guard",
-      "rev": "17a2ec6a",
+      "rev": "1e15c086",
       "widths": [
         64,
         128,
@@ -60,7 +60,7 @@
     "foe-splitter": {
       "kind": "portrait",
       "alt": "Splitter",
-      "rev": "3d0ac268",
+      "rev": "278c8f6e",
       "widths": [
         64,
         128,
@@ -71,13 +71,125 @@
     "foe-swarm": {
       "kind": "portrait",
       "alt": "Swarm",
-      "rev": "c801c58e",
+      "rev": "729f72af",
       "widths": [
         64,
         128,
         256
       ],
       "aspect": 1
+    },
+    "frame-banner": {
+      "kind": "frame",
+      "alt": "",
+      "rev": "7c1962f2",
+      "widths": [
+        448,
+        896
+      ],
+      "aspect": 6.686567,
+      "slice": [
+        0,
+        28.06,
+        0,
+        28.06
+      ]
+    },
+    "frame-button": {
+      "kind": "frame",
+      "alt": "",
+      "rev": "3530928c",
+      "widths": [
+        448,
+        896
+      ],
+      "aspect": 3.862069,
+      "slice": [
+        35.39,
+        9.81,
+        34.58,
+        9.81
+      ]
+    },
+    "frame-button-active": {
+      "kind": "frame",
+      "alt": "",
+      "rev": "4b481029",
+      "widths": [
+        448,
+        896
+      ],
+      "aspect": 3.862069,
+      "slice": [
+        35.66,
+        9.87,
+        34.32,
+        9.8
+      ]
+    },
+    "frame-card": {
+      "kind": "frame",
+      "alt": "",
+      "rev": "be2611cf",
+      "widths": [
+        448,
+        896
+      ],
+      "aspect": 3.733333,
+      "slice": [
+        37.11,
+        17.13,
+        33.42,
+        17.13
+      ]
+    },
+    "frame-panel": {
+      "kind": "frame",
+      "alt": "",
+      "rev": "99ac671b",
+      "widths": [
+        448,
+        896
+      ],
+      "aspect": 1.004484,
+      "slice": [
+        15.42,
+        15.33,
+        14.86,
+        15.33
+      ]
+    },
+    "frame-plate": {
+      "kind": "frame",
+      "alt": "",
+      "rev": "00ea898f",
+      "widths": [
+        448,
+        896
+      ],
+      "aspect": 4.435644,
+      "slice": [
+        39.38,
+        13.54,
+        38.46,
+        13.54
+      ]
+    },
+    "frame-word": {
+      "kind": "frame",
+      "alt": "",
+      "rev": "a5e01159",
+      "widths": [
+        448,
+        896
+      ],
+      "aspect": 4.349515,
+      "slice": [
+        42.07,
+        12.22,
+        35.98,
+        12.22
+      ]
     },
     "gun-phao": {
       "kind": "icon",
@@ -134,10 +246,43 @@
       ],
       "aspect": 1
     },
+    "hud-settings": {
+      "kind": "icon",
+      "alt": "Settings",
+      "rev": "1f22899c",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "hud-sound": {
+      "kind": "icon",
+      "alt": "Sound",
+      "rev": "6b0a600a",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "hud-sound-muted": {
+      "kind": "icon",
+      "alt": "Sound off",
+      "rev": "fff49352",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
     "icon-armour": {
       "kind": "icon",
       "alt": "Hull armour",
-      "rev": "f872b66b",
+      "rev": "16904513",
       "widths": [
         64,
         128,
@@ -148,7 +293,7 @@
     "icon-back": {
       "kind": "icon",
       "alt": "Back",
-      "rev": "2c26221a",
+      "rev": "c9bb0a59",
       "widths": [
         64,
         128,
@@ -159,7 +304,7 @@
     "icon-bay-full": {
       "kind": "icon",
       "alt": "Bay full",
-      "rev": "8edad211",
+      "rev": "7a6e44ff",
       "widths": [
         64,
         128,
@@ -170,7 +315,7 @@
     "icon-chapter-crest": {
       "kind": "icon",
       "alt": "Chapter 1",
-      "rev": "9e6378cd",
+      "rev": "163690ad",
       "widths": [
         64,
         128,
@@ -181,7 +326,7 @@
     "icon-check": {
       "kind": "icon",
       "alt": "Done",
-      "rev": "baf8ed56",
+      "rev": "d64ad2a0",
       "widths": [
         64,
         128,
@@ -192,7 +337,7 @@
     "icon-clock": {
       "kind": "icon",
       "alt": "Time left",
-      "rev": "f36b2e27",
+      "rev": "d6d80a1e",
       "widths": [
         64,
         128,
@@ -203,7 +348,7 @@
     "icon-equipment": {
       "kind": "icon",
       "alt": "Gear",
-      "rev": "7ef131f4",
+      "rev": "e6ee7551",
       "widths": [
         64,
         128,
@@ -214,7 +359,7 @@
     "icon-hazard": {
       "kind": "icon",
       "alt": "Hazard",
-      "rev": "5f42e7b9",
+      "rev": "a4758ede",
       "widths": [
         64,
         128,
@@ -225,7 +370,7 @@
     "icon-keyboard": {
       "kind": "icon",
       "alt": "Keyboard",
-      "rev": "a67bd034",
+      "rev": "c04f2c5f",
       "widths": [
         64,
         128,
@@ -236,7 +381,7 @@
     "icon-kills": {
       "kind": "icon",
       "alt": "Kills",
-      "rev": "30b61a1f",
+      "rev": "01f2f9ed",
       "widths": [
         64,
         128,
@@ -247,7 +392,7 @@
     "icon-learning-rule": {
       "kind": "icon",
       "alt": "Learning rule",
-      "rev": "5021348a",
+      "rev": "6db8f786",
       "widths": [
         64,
         128,
@@ -258,7 +403,7 @@
     "icon-load-guns": {
       "kind": "icon",
       "alt": "Load guns",
-      "rev": "10589976",
+      "rev": "5b8bcb8b",
       "widths": [
         64,
         128,
@@ -269,7 +414,7 @@
     "icon-lock": {
       "kind": "icon",
       "alt": "Locked",
-      "rev": "4b2b4afc",
+      "rev": "1057e3a1",
       "widths": [
         64,
         128,
@@ -280,7 +425,7 @@
     "icon-menu-armory": {
       "kind": "icon",
       "alt": "Armory",
-      "rev": "be26a9ca",
+      "rev": "babcd1a3",
       "widths": [
         64,
         128,
@@ -291,7 +436,7 @@
     "icon-menu-journey": {
       "kind": "icon",
       "alt": "Campaign",
-      "rev": "dcff48c0",
+      "rev": "78865a48",
       "widths": [
         64,
         128,
@@ -302,7 +447,7 @@
     "icon-menu-mode": {
       "kind": "icon",
       "alt": "Mode",
-      "rev": "58dc5a0b",
+      "rev": "99f7249a",
       "widths": [
         64,
         128,
@@ -313,7 +458,7 @@
     "icon-menu-play": {
       "kind": "icon",
       "alt": "Play",
-      "rev": "c82f419e",
+      "rev": "2186f53d",
       "widths": [
         64,
         128,
@@ -324,7 +469,7 @@
     "icon-menu-profile": {
       "kind": "icon",
       "alt": "Profile",
-      "rev": "b88b361d",
+      "rev": "49803243",
       "widths": [
         64,
         128,
@@ -335,7 +480,7 @@
     "icon-menu-settings": {
       "kind": "icon",
       "alt": "Options",
-      "rev": "f833e2e2",
+      "rev": "93f62fa9",
       "widths": [
         64,
         128,
@@ -346,7 +491,7 @@
     "icon-music": {
       "kind": "icon",
       "alt": "Music",
-      "rev": "e230b6a4",
+      "rev": "61d78327",
       "widths": [
         64,
         128,
@@ -357,7 +502,7 @@
     "icon-new-badge": {
       "kind": "icon",
       "alt": "New",
-      "rev": "57a668e5",
+      "rev": "94b939c6",
       "widths": [
         64,
         128,
@@ -368,7 +513,7 @@
     "icon-next-stage": {
       "kind": "icon",
       "alt": "Next stage",
-      "rev": "aaef0f4f",
+      "rev": "5b7c64e9",
       "widths": [
         64,
         128,
@@ -379,7 +524,7 @@
     "icon-objective": {
       "kind": "icon",
       "alt": "Goal",
-      "rev": "cb4b3ef3",
+      "rev": "6ac1404a",
       "widths": [
         64,
         128,
@@ -390,7 +535,7 @@
     "icon-pace-director": {
       "kind": "icon",
       "alt": "Adapt pace",
-      "rev": "768af8cf",
+      "rev": "9ffdac48",
       "widths": [
         64,
         128,
@@ -401,7 +546,7 @@
     "icon-quality": {
       "kind": "icon",
       "alt": "Graphics",
-      "rev": "fb5965b1",
+      "rev": "7ca4773f",
       "widths": [
         64,
         128,
@@ -412,7 +557,7 @@
     "icon-read-aloud": {
       "kind": "icon",
       "alt": "Read words aloud",
-      "rev": "043b34a5",
+      "rev": "b6ccfae7",
       "widths": [
         64,
         128,
@@ -423,7 +568,7 @@
     "icon-reduced-motion": {
       "kind": "icon",
       "alt": "Reduce motion",
-      "rev": "2457919f",
+      "rev": "fd0ddba6",
       "widths": [
         64,
         128,
@@ -434,7 +579,7 @@
     "icon-repair-pod": {
       "kind": "icon",
       "alt": "Repair pod",
-      "rev": "37ce994c",
+      "rev": "12b10e28",
       "widths": [
         64,
         128,
@@ -445,7 +590,7 @@
     "icon-retry": {
       "kind": "icon",
       "alt": "Retry",
-      "rev": "dfc96c3e",
+      "rev": "a2f1e9c1",
       "widths": [
         64,
         128,
@@ -456,7 +601,7 @@
     "icon-rift": {
       "kind": "icon",
       "alt": "Rift",
-      "rev": "2d8ad40e",
+      "rev": "f7bff82f",
       "widths": [
         64,
         128,
@@ -467,7 +612,7 @@
     "icon-sfx": {
       "kind": "icon",
       "alt": "Effects",
-      "rev": "7c228ccb",
+      "rev": "acca07d6",
       "widths": [
         64,
         128,
@@ -478,7 +623,7 @@
     "icon-shake": {
       "kind": "icon",
       "alt": "Screen shake",
-      "rev": "c60da0dc",
+      "rev": "9f96299a",
       "widths": [
         64,
         128,
@@ -489,7 +634,7 @@
     "icon-star-lit": {
       "kind": "icon",
       "alt": "Star earned",
-      "rev": "23d77819",
+      "rev": "cc801de4",
       "widths": [
         64,
         128,
@@ -500,7 +645,7 @@
     "icon-star-unlit": {
       "kind": "icon",
       "alt": "Star not earned",
-      "rev": "5618ffa2",
+      "rev": "d03a8a9a",
       "widths": [
         64,
         128,
@@ -511,7 +656,7 @@
     "icon-stat-accuracy": {
       "kind": "icon",
       "alt": "Accuracy",
-      "rev": "e4aa0e9c",
+      "rev": "c018d905",
       "widths": [
         64,
         128,
@@ -522,7 +667,7 @@
     "icon-stat-evenness": {
       "kind": "icon",
       "alt": "Steadiness",
-      "rev": "fc649c05",
+      "rev": "55e9a4f7",
       "widths": [
         64,
         128,
@@ -533,7 +678,7 @@
     "icon-stat-new-word": {
       "kind": "icon",
       "alt": "New-word read",
-      "rev": "17be877c",
+      "rev": "4d914293",
       "widths": [
         64,
         128,
@@ -544,7 +689,7 @@
     "icon-stat-time": {
       "kind": "icon",
       "alt": "Time",
-      "rev": "3fe48e77",
+      "rev": "9ec65d87",
       "widths": [
         64,
         128,
@@ -555,7 +700,7 @@
     "icon-stat-wpm": {
       "kind": "icon",
       "alt": "Speed",
-      "rev": "bd92b6ff",
+      "rev": "8a5d7185",
       "widths": [
         64,
         128,
@@ -566,7 +711,7 @@
     "icon-station-crest": {
       "kind": "icon",
       "alt": "Station VC-7",
-      "rev": "ac86bf14",
+      "rev": "42210ea5",
       "widths": [
         64,
         128,
@@ -577,7 +722,7 @@
     "icon-streak": {
       "kind": "icon",
       "alt": "Clean streak",
-      "rev": "3ed3514a",
+      "rev": "0ec1bfcc",
       "widths": [
         64,
         128,
@@ -588,7 +733,7 @@
     "icon-surge": {
       "kind": "icon",
       "alt": "Surge",
-      "rev": "6e05f11a",
+      "rev": "b5bf4bf0",
       "widths": [
         64,
         128,
@@ -599,7 +744,7 @@
     "icon-warning": {
       "kind": "icon",
       "alt": "Warning",
-      "rev": "ff9233ae",
+      "rev": "667e23d8",
       "widths": [
         64,
         128,
@@ -752,6 +897,72 @@
         1536
       ],
       "aspect": 1.777778
+    },
+    "vol-effects": {
+      "kind": "icon",
+      "alt": "Effects volume",
+      "rev": "a108f315",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "vol-interface": {
+      "kind": "icon",
+      "alt": "Interface volume",
+      "rev": "9efab5a1",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "vol-keyboard": {
+      "kind": "icon",
+      "alt": "Keyboard sound",
+      "rev": "66a94abc",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "vol-master": {
+      "kind": "icon",
+      "alt": "Master volume",
+      "rev": "32a42316",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "vol-music": {
+      "kind": "icon",
+      "alt": "Music volume",
+      "rev": "f65c07d3",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "vol-voice": {
+      "kind": "icon",
+      "alt": "Voice volume",
+      "rev": "97e684ea",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
     }
   }
 }

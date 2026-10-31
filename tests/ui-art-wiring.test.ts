@@ -100,17 +100,21 @@ describe("HUD art hookups (230-F1, hud.ts)", () => {
       const img = art(slot.nodes[0]);
       expect(img.className).toBe("sv-art sv-art-bay");
       expect(img.src).toContain("/" + gunRole(spec.key) + ".");
-      expect(img.attributes.get("width")).toBe("40");
+      // 44 px: the gun on its small tab plate at the bay's top edge (UI pass 2).
+      expect(img.attributes.get("width")).toBe("44");
       expect(img.attributes.get("aria-hidden")).toBe("true");
       expect(slot.children().filter((child) => child.tagName === "IMG")).toHaveLength(1);
     }
     const plates = root.find("sv-bay-lock");
     expect(plates.length).toBeGreaterThan(0);
     for (const plate of plates) {
-      expect(plate.nodes).toHaveLength(1);
+      // A sealed bay (UI pass 2): the 40 px lock centred over a short "LOCKED".
+      expect(plate.nodes).toHaveLength(2);
       const img = art(plate.nodes[0]);
       expect(img.className).toBe("sv-art sv-art-lock");
       expect(img.src).toContain("/icon-lock.");
+      expect(img.attributes.get("width")).toBe("40");
+      expect((plate.nodes[1] as FakeElement).textContent).toBe("LOCKED");
     }
   });
 
@@ -213,14 +217,17 @@ describe("HUD icon hookups (tickets 149–153, hud.ts and strip.ts)", () => {
     expect(notice.classList.contains("is-hint")).toBe(true);
   });
 
-  it("shows a rift's warning and countdown with the Rift icon and an arrow at its wall (LL-36, LL-44)", () => {
+  it("shows a rift's countdown once, by the word line, and a mark at its wall with the Rift icon and an arrow (LL-36, LL-44, UI pass 2)", () => {
     const { hud, root, world } = hudOn("c1-s3");
     const H = world.hazards;
     H.state = 1; H.next = 0; H.count = Math.max(H.count, 1); H.side[0] = -1; H.at[0] = world.time + 3;
     (hud as unknown as { updateWarn(w: World): void }).updateWarn(world);
+    // The wall's mark: an arrow pointing at the wall and the Rift icon, no text (one countdown only).
     const warn = root.find("sv-warn")[0]!;
-    expect(roles(warn)).toEqual(["icon-rift"]);
-    expect(warn.textContent).toBe("Rift · 3.0 s");
+    expect(roles(warn)).toEqual(["part-arrow", "icon-rift"]);
+    expect(art(warn.nodes[0]).classList.contains("is-left")).toBe(true);
+    expect(warn.textContent).toBe("");
+    expect(warn.classList.contains("is-on") && warn.classList.contains("is-left")).toBe(true);
     const line = root.find("sv-strip-warn")[0]!;
     expect(roles(line)).toEqual(["part-arrow", "icon-rift"]);
     // The arrow at 16 px, mirrored for the left wall (survival.css puts both on dark chips).
@@ -231,6 +238,13 @@ describe("HUD icon hookups (tickets 149–153, hud.ts and strip.ts)", () => {
     (hud as unknown as { updateWarn(w: World): void }).updateWarn(world);
     expect(roles(line)).toEqual(["icon-rift", "part-arrow"]);
     expect(art(line.nodes[2]).classList.contains("is-left")).toBe(false);
+    expect(roles(warn)).toEqual(["icon-rift", "part-arrow"]);
+    expect(warn.classList.contains("is-right")).toBe(true);
+    // The rift opens: both go.
+    H.state = 0;
+    (hud as unknown as { updateWarn(w: World): void }).updateWarn(world);
+    expect(warn.nodes).toEqual([]);
+    expect(warn.classList.contains("is-on")).toBe(false);
   });
 
   it("leads the clean streak's LED with the streak icon and keeps its text (LL-44)", () => {

@@ -7,8 +7,12 @@
 // win and a loss, and the no-WebGL message (review fixes 31/10).
 // Checks: every art image loaded, drawn at its BOX size × --ui, inside the window; no element
 // spills sideways; every card fits without scrolling; key caps, magazine cells and the slider
-// skin use their art; magazine cells 6 × 17 px × --ui in their gun's colour, urgent in a full
+// skin use their art; magazine cells 10 × 28 px × --ui in their gun's colour, urgent in a full
 // bay; the Rift icon and arrow ≥ 3:1 on their chips; only pending roles warn; no console error.
+// UI pass 2 (31/10): the ticket 127 frames on panels, rows, cards, HUD plates, bays, chips, the
+// banner and the quick panels; the quick panels' gear, speakers and row icons (ticket 180 and the
+// Options art); every groove the same length and lit up to its knob; one rift chip with text and
+// a mark on the corridor wall; the banner and the stars measured after their pop.
 import { readFileSync } from "node:fs";
 import { DEV_URL, out } from "./common.mjs";
 import { press, sv } from "./survival-s0-lib.mjs";
@@ -61,15 +65,28 @@ export default async function (page) {
       const contrast=[...document.querySelectorAll('.sv-strip-warn img.sv-art, .sv-warn img.sv-art')].filter(visible).filter(i=>i.naturalWidth>0).map(i=>{const fg=meanOf(i),bg=paint(i),[hi,lo]=[lum(fg),lum(bg)].sort((p,q)=>q-p);return {role:role(i),plate:i.parentElement.className.split(' ')[0],mean:fg.map(Math.round),bg,ratio:Math.round((hi+0.05)/(lo+0.05)*100)/100};});
       const words=[...scope.querySelectorAll('.sv-words li')].map(li=>[...li.querySelectorAll('img.sv-art')].map(role));
       const qs=document.querySelector('.kit-qs');
-      const quick=qs?{skinned:qs.classList.contains('kit-qs--skin-slider'),track:qs.style.getPropertyValue('--kit-qs-skin-track'),thumb:qs.style.getPropertyValue('--kit-qs-skin-thumb'),ranges:[...qs.querySelectorAll('.kit-qs__range')].filter(visible).map(r=>Math.round(r.getBoundingClientRect().width))}:null;
+      const roleOf=t=>(/\\/([\\w-]+)\\.\\d+\\.webp/.exec(t||'')||[])[1]||'';
+      const open=qs&&[...qs.querySelectorAll('.kit-qs__dialog')].find(d=>d.getAttribute('aria-hidden')!=='true'&&visible(d));
+      const quick=qs?{skinned:qs.classList.contains('kit-qs--skin-slider'),track:qs.style.getPropertyValue('--kit-qs-skin-track'),thumb:qs.style.getPropertyValue('--kit-qs-skin-thumb'),ranges:[...qs.querySelectorAll('.kit-qs__range')].filter(visible).map(r=>Math.round(r.getBoundingClientRect().width)),
+        lit:[...qs.querySelectorAll('.kit-qs__range')].filter(visible).map(r=>[Number(r.value),Number(r.style.getPropertyValue('--v'))]),
+        corners:[...qs.querySelectorAll('.kit-qs__corner')].map(b=>({role:roleOf(b.querySelector('img')?.src),w:Math.round(b.getBoundingClientRect().width)})),
+        rowIcons:open?[...open.querySelectorAll('.kit-qs__row')].map(r=>[r.dataset.row,roleOf(r.querySelector('img.kit-qs__icon')?.src)||roleOf(getComputedStyle(r.querySelector('.kit-qs__icon-cell')??r).backgroundImage)]).filter(([,role])=>role):[]}:null;
+      const frameOf=sel=>[...document.querySelectorAll(sel)].filter(visible).map(n=>roleOf(getComputedStyle(n).borderImageSource));
+      const frames={card:frameOf('.sv-overlay.is-on .sv-card'),item:frameOf('.sv-overlay.is-on .sv-item:not(.is-on)'),itemOn:frameOf('.sv-overlay.is-on .sv-item.is-on'),guns:frameOf('.sv-overlay.is-on .sv-gun-card'),plates:frameOf('.sv-hp, .sv-clock, .sv-kills'),bays:frameOf('.sv-slot'),locks:frameOf('.sv-bay-lock'),chips:frameOf('.sv-strip-warn.is-on, .sv-notice:not([hidden])'),banner:frameOf('.sv-banner.is-on'),qsPanel:open?frameOf('.kit-qs__dialog[data-panel="'+open.dataset.panel+'"] .kit-qs__panel'):[],qsButtons:open?frameOf('.kit-qs__dialog[data-panel="'+open.dataset.panel+'"] .kit-qs__btn'):[]};
+      const mark=document.querySelector('.sv-warn.is-on');
+      const rift=mark?{text:mark.textContent,box:(r=>[Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)])(mark.getBoundingClientRect()),chips:[...document.querySelectorAll('.sv-strip-warn.is-on, .sv-warn.is-on')].filter(n=>n.textContent.trim()!=='').length}:null;
       const glyphs=(scope.innerText.match(/[★☆⚠◀▶⌨✓]/g)||[]);
       const goal=document.querySelector('.sv-goal');
       const goalText=goal?.querySelector('span'), goalOneLine=!goalText||goalText.getBoundingClientRect().height<1.8*parseFloat(getComputedStyle(goalText).fontSize);
-      return {ui,images,failedImages,overflow,cards,keys,mags,contrast,words,quick,glyphs,goalShown:!!goal&&visible(goal),goalOneLine};
+      return {ui,images,failedImages,overflow,cards,keys,mags,contrast,words,quick,frames,rift,glyphs,goalShown:!!goal&&visible(goal),goalOneLine};
     })()`);
     result.name = name; screens.push(result);
     shots.push(await page.shot(out("ui-art-" + name + "-" + size + ".png")));
     return result;
+  };
+  // The results' stars light in turn (0.45 s each, 0.2 s apart): measured once they stand still.
+  const starsSettled = async () => {
+    for (let n = 0; n < 40; n++) { if (await page.eval("[...document.querySelectorAll('.sv-art-star')].every(i=>i.getAnimations().every(a=>a.playState==='finished'))")) return; await page.sleep(50); }
   };
   const clickItem = async (index) => { await page.click('.sv-overlay.is-on .sv-item[data-index="' + index + '"]'); await page.sleep(300); };
   // A fast, clean typist on the held clock, through the page's own commands: a whole word, then 450 ms; until \`code\` holds or the fight ends.
@@ -79,7 +96,12 @@ export default async function (page) {
     await page.eval(sv("t.hold(true); return true;"));
     for (let n = 0; n < words; n++) {
       const look = await page.eval(sv("return { done: " + code + ", phase: t.state().phase, slots: t.slots(), banner: !!document.querySelector('.sv-banner.is-on > img') };"));
-      if (banner && look.banner && !surge) { surge = true; await page.sleep(300); await capture("fight-surge", ".sv-hud"); }
+      if (banner && look.banner && !surge) {
+        surge = true;
+        // Measured once its pop has settled (scale 1.4 → 1 in the first 10 % of 2.2 s: llB's 46.8 px against 45 was mid-pop).
+        for (let n = 0; n < 40; n++) { if (await page.eval("(document.querySelector('.sv-banner').getAnimations()[0]?.currentTime ?? 1e9) >= 320")) break; await page.sleep(50); }
+        await capture("fight-surge", ".sv-hud");
+      }
       if (look.done === true || look.phase !== "play") break;
       const locked = look.slots.findIndex((s) => s.locked);
       const bay = locked >= 0 ? locked : look.slots.reduce((best, s, i) => (s.mags < look.slots[best].mags ? i : best), 0);
@@ -121,7 +143,7 @@ export default async function (page) {
   for (let n = 0; n < 60; n++) { if ((await page.eval(sv("return t.state().phase;"))) !== "play") break; await page.eval(sv("for (const x of [-6, -2, 2, 6]) t.place(2, x, -100); t.advance(5000); return true;")); }
   await page.eval(sv("t.advance(1500); t.hold(false); return true;")); await page.sleep(400);
   const lost = await page.eval(sv("return { phase: t.state().phase, mode: t.mode() };"));
-  await capture("results-lose");
+  await starsSettled(); await capture("results-lose");
 
   // The hunt (stage 2): the objective plate; a typed clean streak lights the streak LED.
   await open("seed=3&autostart=1&stage=c1-s2&guns=ray,tia");
@@ -152,7 +174,7 @@ export default async function (page) {
   await typeHeld("false", 400, true);
   await page.eval(sv("t.advance(1500); t.hold(false); return true;")); await page.sleep(400);
   const won = await page.eval(sv("return { phase: t.state().phase, mode: t.mode(), stars: t.journey().stars };"));
-  await capture("results-win");
+  await starsSettled(); await capture("results-win");
 
   // No WebGL (LL-02): the page's own message, with every WebGL context refused. The checks above read only what came before.
   const logsBefore = page.logs.length, exceptionsBefore = page.exceptions.length;
@@ -175,8 +197,8 @@ export default async function (page) {
     cardsFit: screens.every((s) => s.cards.every((c) => c.inside && c.noScroll)),
     noGlyphIcons: screens.every((s) => s.glyphs.length === 0),
     keyCaps: screens.every((s) => s.keys.every((k) => k.cap && k.fits)) && by("loadout").keys.filter((k) => k.lit).length === 2,
-    // Cells 6 × 17 px × --ui (a 24 px canvas, review 31/10); each bay's glass in its gun's colour, two guns two colours; urgent in a full bay.
-    magCells: by("fight").mags.length > 0 && by("fight").mags.every((m) => m.art && m.w >= 6 * by("fight").ui - 0.5 && m.h >= 17 * by("fight").ui - 0.5 && m.tint === m.gun) && new Set(by("fight").mags.map((m) => m.tint)).size === 2,
+    // Cells 10 × 28 px × --ui (a 40 px canvas, UI pass 2); each bay's glass in its gun's colour, two guns two colours; urgent in a full bay.
+    magCells: by("fight").mags.length > 0 && by("fight").mags.every((m) => m.art && m.w >= 10 * by("fight").ui - 0.5 && m.h >= 28 * by("fight").ui - 0.5 && m.tint === m.gun) && new Set(by("fight").mags.map((m) => m.tint)).size === 2,
     overfullCells: by("fight-overfull").mags.filter((m) => m.bay === "1").every((m) => m.tint === "rgb(255, 176, 32)") && by("fight-overfull").mags.some((m) => m.bay === "1") && by("fight-overfull").mags.filter((m) => m.bay !== "1").every((m) => m.tint === m.gun),
     warnContrast: by("fight-rift").contrast.length >= 3 && by("fight-rift").contrast.every((c) => c.ratio >= 3),
     noticeIcon: has("fight-notice", "icon-keyboard") && by("fight-notice").images.some((i) => i.role === "icon-keyboard" && i.place === "item"),
@@ -195,6 +217,21 @@ export default async function (page) {
     surgeBanner: surge && has("fight-surge", "icon-surge"),
     pauseIcons: ["icon-menu-play", "icon-menu-settings", "icon-back"].every((r) => has("pause", r)),
     resultsIcons: ["icon-stat-time", "icon-kills", "icon-stat-accuracy", "icon-keyboard", "icon-retry", "icon-back"].every((r) => has("results-lose", r) && has("results-win", r)) && has("results-win", "icon-star-lit") && has("results-win", "icon-next-stage"),
+    // UI pass 2: the ticket 127 frames where the theme's plates were.
+    frames: ["menu", "options", "pause"].every((n) => by(n).frames.card.every((f) => f === "frame-panel") && by(n).frames.item.length > 0 && by(n).frames.item.every((f) => f === "frame-button") && by(n).frames.itemOn.every((f) => f === "frame-button-active"))
+      && ["armory", "loadout"].every((n) => by(n).frames.guns.length === 5 && by(n).frames.guns.every((f) => f === "frame-card"))
+      && by("fight").frames.plates.length === 3 && by("fight").frames.plates.every((f) => f === "frame-plate") && by("fight").frames.bays.every((f) => f === "frame-card") && by("fight").frames.locks.length === 2 && by("fight").frames.locks.every((f) => f === "frame-card")
+      && by("fight-rift").frames.chips.every((f) => f === "frame-word") && by("fight-notice").frames.chips.length >= 1 && by("fight-notice").frames.chips.every((f) => f === "frame-word")
+      && by("fight-surge").frames.banner.every((f) => f === "frame-banner")
+      && ["quick-settings", "quick-sound"].every((n) => by(n).frames.qsPanel.length === 1 && by(n).frames.qsPanel[0] === "frame-panel" && by(n).frames.qsButtons.length > 0 && by(n).frames.qsButtons.every((f) => f === "frame-button" || f === "frame-button-active")),
+    // The gear and the speaker on the corner buttons (ticket 180), 36 px × the panel's scale; the Sound rows' icons and the Settings rows' quality, motion and shake.
+    quickIcons: by("quick-sound").quick.corners.map((c) => c.role).join() === "hud-settings,hud-sound" && by("quick-sound").quick.corners.every((c) => c.w >= 32)
+      && ["vol-master", "vol-music", "vol-effects", "vol-keyboard", "vol-voice", "vol-interface"].every((r) => by("quick-sound").quick.rowIcons.some(([, role]) => role === r))
+      && ["icon-quality", "icon-reduced-motion", "icon-shake"].every((r) => by("quick-settings").quick.rowIcons.some(([, role]) => role === r)),
+    // Every groove the same length; each lit to its value (--v), so 50 and 100 differ.
+    sliderFill: by("quick-sound").quick.ranges.length >= 5 && Math.max(...by("quick-sound").quick.ranges) - Math.min(...by("quick-sound").quick.ranges) <= 1 && by("quick-sound").quick.lit.every(([value, v]) => Math.abs(value - v) < 0.6),
+    // One rift chip with text (by the word line); the wall mark has none and stands inside the corridor, not at the screen's edge.
+    oneRiftChip: by("fight-rift").rift !== null && by("fight-rift").rift.text.trim() === "" && by("fight-rift").rift.chips === 1 && by("fight-rift").rift.box[0] > 0.06 * page.width && by("fight-rift").rift.box[2] < 0.94 * page.width,
     onlyPendingWarnings: warnings.every((l) => { const role = l.split("no accepted image: ")[1]?.trim(); return !!role && pending.has(role) && !l.includes("missing image:"); }),
     noConsoleErrors: logs.filter((l) => l.startsWith("error")).length === 0,
     noExceptions: exceptions.length === 0,

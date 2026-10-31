@@ -62,11 +62,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 /* The objective's plate (top centre, fixed: only its numbers change). */
 .sv-goal { align-self: flex-start; padding: calc(7px * var(--ui)) calc(18px * var(--ui)); font: 700 calc(16px * var(--ui)) var(--font-title); letter-spacing: 0.14em; color: var(--led); text-shadow: 0 0 10px var(--led-glow); background-color: var(--screen); }
 .sv-goal.is-done { color: var(--typing); }
-/* A rift's warning, on its wall's side. */
-.sv-warn { position: absolute; top: 38%; padding: calc(6px * var(--ui)) calc(12px * var(--ui)); font: 700 calc(15px * var(--ui)) var(--font-title); letter-spacing: 0.1em; color: var(--ink); background: var(--hot); box-shadow: 0 0 22px var(--hot-glow); opacity: 0; transition: opacity 0.15s; }
+/* A rift's mark on its wall: the Rift icon and an arrow at the wall, no text (the countdown is the one chip by the word line, strip.ts). hud.ts puts it where the rift opens on the still camera's view, just inside the wall (UI pass 2: no second chip at the screen's edge). */
+.sv-warn { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: calc(4px * var(--ui)); filter: drop-shadow(0 0 calc(8px * var(--ui)) var(--hot)); opacity: 0; transition: opacity 0.15s; pointer-events: none; }
 .sv-warn.is-on { opacity: 1; animation: sv-blink 0.5s steps(2, jump-none) infinite; }
-.sv-warn.is-left { left: calc(14px * var(--ui)); }
-.sv-warn.is-right { right: calc(14px * var(--ui)); }
+.sv-warn.is-left { transform: translate(0, -50%); }
+.sv-warn.is-right { transform: translate(-100%, -50%); }
 /* Something new appears: a small card for 2 s under the top bar. */
 .sv-fresh { position: absolute; top: calc(70px * var(--ui)); left: 50%; transform: translateX(-50%); padding: calc(4px * var(--ui)) calc(14px * var(--ui)); font: 700 calc(13px * var(--ui)) var(--font-title); letter-spacing: 0.12em; color: var(--text); background: var(--banner-band); border: 1px solid var(--urgent); opacity: 0; transition: opacity 0.2s; }
 .sv-fresh.is-on { opacity: 1; }
@@ -90,14 +90,14 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-gun { font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.12em; white-space: nowrap; color: var(--gun); }
 .sv-slot .sv-typed { color: var(--gun-ink); text-decoration: underline calc(2px * var(--ui)) var(--gun-ink); text-underline-offset: calc(4px * var(--ui)); }
 .sv-head { display: inline-block; transform-origin: 50% 85%; }
-.sv-mags { margin: calc(-3px * var(--ui)) 0 calc(-3px * var(--ui)) auto; display: flex; gap: calc(4px * var(--ui)); color: var(--gun); }
+.sv-mags { margin: calc(-8px * var(--ui)) 0 calc(-8px * var(--ui)) auto; display: flex; gap: calc(3px * var(--ui)); color: var(--gun); }
 /*
  * Magazine cells (part-mag-empty / part-mag-full, tickets 153, 240): the empty cell, and the full one over it cut down from the top as the magazine empties.
- * Each cell fills 25 % × 72 % of its square canvas: a 24 px canvas gives a cell 6 × 17 px (ui-art.ts artVars; the header keeps its height through the negative margins above).
+ * Each cell fills 25 % × 72 % of its square canvas: a 40 px canvas gives a cell 10 × 29 px (UI pass 2, 31/10: 6 × 17 read as ticks; ui-art.ts artVars; the header stays low through the negative margins above).
  * The full cell's glass takes the gun's colour (--tint): a flat layer over the glass only (62 % × 76 % of the cell), blended `color`, so the art keeps its light and the frame stays steel.
  * Without the art (variables unset, ui-art.ts applyArtVars) the cells are flat: track, then the tint.
  */
-.sv-mags i { --fill: 0; --cell: calc(24px * var(--ui)); --tint: var(--gun); position: relative; width: calc(var(--cell) * 0.25); height: calc(var(--cell) * 0.71875); background: var(--art-mag-empty, linear-gradient(var(--track), var(--track))) center / var(--cell) var(--cell) no-repeat; }
+.sv-mags i { --fill: 0; --cell: calc(40px * var(--ui)); --tint: var(--gun); position: relative; width: calc(var(--cell) * 0.25); height: calc(var(--cell) * 0.71875); background: var(--art-mag-empty, linear-gradient(var(--track), var(--track))) center / var(--cell) var(--cell) no-repeat; }
 .sv-mags i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(var(--tint), var(--tint)) center / 62% 76% no-repeat, var(--art-mag-full, linear-gradient(var(--tint), var(--tint))) center / var(--cell) var(--cell) no-repeat; background-blend-mode: color, normal; clip-path: inset(calc((1 - var(--fill)) * 100%) 0 0 0); }
 /* A word into a full bay: the magazine cells blink urgent, glass and glow (hud.ts times it on the frame clock). */
 .sv-slot.is-overfull .sv-mags { color: var(--urgent); filter: drop-shadow(0 0 calc(6px * var(--ui)) var(--urgent)); }
@@ -111,7 +111,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-slot.is-active .sv-mean { font-size: calc(14px * var(--ui)); line-height: 1.25; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
 .sv-slot.is-active { border-color: var(--gun); box-shadow: inset 0 1px 0 var(--bevel-hi), 0 0 0 2px var(--gun), 0 0 26px var(--gun-glow); }
 /* A bay without a gun: a dark steel plate (bay 3 opens at the Mốc, bay 4 later). */
-.sv-bay-lock { height: calc(100px * var(--ui)); display: grid; place-items: center; background-color: var(--bay-glass); font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.16em; color: var(--steel-400); opacity: 0.8; }
+.sv-bay-lock { justify-self: center; width: 78%; height: calc(76px * var(--ui)); margin-top: calc(12px * var(--ui)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(2px * var(--ui)); background-color: var(--bay-glass); font: 700 calc(11px * var(--ui)) var(--font-title); letter-spacing: 0.2em; color: var(--steel-300); opacity: 0.85; }
 .sv-slot.is-active .sv-word { color: var(--text); }
 /* The other bay steps back: its words dim, the plate stays solid. */
 .sv-slot.is-dim > * { opacity: 0.72; }
@@ -129,8 +129,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 /* The strip's word layer sits in a zero-width box: sized to its content, the meaning wraps at its own 24 em, not at the word's width. */
 .sv-tfx .tfx-layer, .sv-tfx-preview .tfx-layer { width: max-content; }
 
-/* The quick panels (the kit's ui/quick-settings): labels in one column, so the sliders line up (no icon art yet: the icon cell stays empty). */
-.sv-hud .kit-qs__row:not(.kit-qs__row--slot) { grid-template-columns: 1.6em 9.4em minmax(0, 1fr); }
 /* The 3-2-1 back into the fight stands over the field, above the word line, not over the word. */
 .sv-hud .kit-qs__count { bottom: 56%; }
 
@@ -204,7 +202,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-menu { display: flex; flex-direction: column; gap: calc(6px * var(--ui)); margin-top: calc(12px * var(--ui)); text-align: left; }
 /* A row wraps two a line: a stage's end has up to 4 items, wider than the card at 180 px each (R1 review). */
 .sv-menu.sv-row { flex-direction: row; flex-wrap: wrap; justify-content: center; }
-.sv-item { display: flex; align-items: center; gap: calc(12px * var(--ui)); min-height: calc(46px * var(--ui)); padding: calc(6px * var(--ui)) calc(14px * var(--ui)); background-color: var(--panel-raised); background-image: var(--plate-light); border: 1px solid var(--line); border-left: calc(4px * var(--ui)) solid var(--steel-600); cursor: pointer; transition: border-color 0.1s, background-color 0.1s; }
+.sv-item { display: flex; align-items: center; gap: calc(12px * var(--ui)); min-height: calc(46px * var(--ui)); padding: calc(5px * var(--ui)) calc(14px * var(--ui)); background-color: var(--panel-raised); background-image: var(--plate-light); border: 1px solid var(--line); border-left: calc(4px * var(--ui)) solid var(--steel-600); cursor: pointer; transition: border-color 0.1s, background-color 0.1s; }
 .sv-item b { display: block; font: 700 calc(18px * var(--ui)) var(--font-title); letter-spacing: 0.04em; line-height: 1.25; color: var(--soft); }
 .sv-item small { display: block; font: 500 calc(12px * var(--ui)) var(--font-battle); color: var(--muted); }
 .sv-item-text { flex: 1; min-width: 0; }
@@ -304,12 +302,12 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-art-foe { width: calc(40px * var(--ui)); height: calc(40px * var(--ui)); }
 .sv-art-teach { width: calc(32px * var(--ui)); height: calc(32px * var(--ui)); }
 .sv-art-loadout { width: calc(72px * var(--ui)); height: calc(72px * var(--ui)); }
-.sv-art-counter { width: calc(20px * var(--ui)); height: calc(20px * var(--ui)); }
-.sv-art-threat { width: calc(16px * var(--ui)); height: calc(16px * var(--ui)); }
+.sv-art-counter { width: calc(24px * var(--ui)); height: calc(24px * var(--ui)); }
+.sv-art-threat { width: calc(24px * var(--ui)); height: calc(24px * var(--ui)); }
 .sv-art-intro { width: calc(384px * var(--ui)); height: calc(216px * var(--ui)); }
 .sv-art-introGun { width: calc(48px * var(--ui)); height: calc(48px * var(--ui)); }
 .sv-art-fresh { width: calc(48px * var(--ui)); height: calc(48px * var(--ui)); }
-.sv-art-bay { width: calc(40px * var(--ui)); height: calc(40px * var(--ui)); }
+.sv-art-bay { width: calc(44px * var(--ui)); height: calc(44px * var(--ui)); }
 .sv-art-bg { width: calc(1280px * var(--ui)); height: calc(720px * var(--ui)); }
 /* The armory: each gun's icon takes its own column beside the name and the text, so it adds no row, and the sheet takes the journey sheets' width so the text keeps its measure (206 browser check: icons in the header row pushed the card past 94vh). */
 .sv-armory { width: min(94vw, calc(760px * var(--ui))); }
@@ -328,26 +326,26 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-art-introGun:not([hidden]) { margin-right: calc(4px * var(--ui)); }
 .sv-art-fresh:not([hidden]) { margin-right: calc(8px * var(--ui)); }
 .sv-fresh:has(> .sv-art-fresh:not([hidden])) { display: flex; align-items: center; }
-.sv-art-bay:not([hidden]) { position: absolute; top: 0; transform: translateY(-100%); left: 0; }
-.sv-slot[data-bay="2"] > .sv-art-bay, .sv-slot[data-bay="4"] > .sv-art-bay { left: auto; right: 0; }
+.sv-art-bay:not([hidden]) { position: absolute; top: calc(2px * var(--ui)); transform: translateY(-100%); left: calc(12px * var(--ui)); padding: calc(5px * var(--ui)); background-color: var(--bay-glass); border: 1px solid var(--line); border-bottom: 0; }
+.sv-slot[data-bay="2"] > .sv-art-bay, .sv-slot[data-bay="4"] > .sv-art-bay { left: auto; right: calc(12px * var(--ui)); }
 .sv-bg:not([hidden]) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; pointer-events: none; }
 .sv-overlay:has(> .sv-bg:not([hidden])) { isolation: isolate; background: none; }
 .sv-overlay:has(> .sv-bg:not([hidden]))::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse at 50% 45%, var(--veil) 30%, var(--veil-edge) 100%); pointer-events: none; }
 .sv-overlay[data-screen="title"]:has(> .sv-bg:not([hidden]))::before { background: linear-gradient(90deg, var(--veil-edge) 0%, var(--veil) 42%, transparent 75%); }
 /* Icons and parts (tickets 149–153, 225; sizes as UI_IMAGERY §4 measured them at 720p). Each sits beside the words it marks; a failed one is hidden and takes no space. */
-.sv-art-small { width: calc(16px * var(--ui)); height: calc(16px * var(--ui)); }
-.sv-art-icon { width: calc(20px * var(--ui)); height: calc(20px * var(--ui)); }
-.sv-art-item { width: calc(24px * var(--ui)); height: calc(24px * var(--ui)); }
-.sv-art-lock { width: calc(24px * var(--ui)); height: calc(24px * var(--ui)); }
-.sv-art-banner { width: calc(28px * var(--ui)); height: calc(28px * var(--ui)); }
-.sv-art-star { width: calc(40px * var(--ui)); height: calc(40px * var(--ui)); }
-.sv-art-chapter { width: calc(32px * var(--ui)); height: calc(32px * var(--ui)); }
-.sv-art-led { width: calc(10px * var(--ui)); height: calc(10px * var(--ui)); }
-.sv-art-arrow { width: calc(12px * var(--ui)); height: calc(12px * var(--ui)); }
+.sv-art-small { width: calc(20px * var(--ui)); height: calc(20px * var(--ui)); }
+.sv-art-icon { width: calc(28px * var(--ui)); height: calc(28px * var(--ui)); }
+.sv-art-item { width: calc(32px * var(--ui)); height: calc(32px * var(--ui)); }
+.sv-art-lock { width: calc(40px * var(--ui)); height: calc(40px * var(--ui)); }
+.sv-art-banner { width: calc(40px * var(--ui)); height: calc(40px * var(--ui)); }
+.sv-art-star { width: calc(64px * var(--ui)); height: calc(64px * var(--ui)); }
+.sv-art-chapter { width: calc(40px * var(--ui)); height: calc(40px * var(--ui)); }
+.sv-art-led { width: calc(12px * var(--ui)); height: calc(12px * var(--ui)); }
+.sv-art-arrow { width: calc(16px * var(--ui)); height: calc(16px * var(--ui)); }
 /* An item without an icon in a menu that has them keeps the icon column. */
 .sv-icon-gap { flex: none; }
-.sv-gap-icon { width: calc(20px * var(--ui)); height: calc(20px * var(--ui)); }
-.sv-gap-item { width: calc(24px * var(--ui)); height: calc(24px * var(--ui)); }
+.sv-gap-icon { width: calc(28px * var(--ui)); height: calc(28px * var(--ui)); }
+.sv-gap-item { width: calc(32px * var(--ui)); height: calc(32px * var(--ui)); }
 /* HUD: the top panels lead with their icons; the kills panel gives its icon a column. */
 .sv-hp > .sv-art-icon { margin-right: calc(-4px * var(--ui)); }
 .sv-clock > .sv-art-icon { align-self: center; }
@@ -359,7 +357,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-goal > .sv-art-icon:not([hidden]) + .sv-art-icon { margin-left: calc(-3px * var(--ui)); }
 .sv-banner > .sv-art-banner { margin: 0 calc(12px * var(--ui)) calc(4px * var(--ui)) 0; }
 .sv-notice > .sv-art-item { margin: calc(-4px * var(--ui)) calc(8px * var(--ui)) calc(-3px * var(--ui)) 0; vertical-align: middle; }
-.sv-warn > .sv-art-item { margin: calc(-4px * var(--ui)) calc(6px * var(--ui)) calc(-3px * var(--ui)) 0; }
 .sv-fresh > .sv-art-small { margin-right: calc(6px * var(--ui)); }
 .sv-streak > .sv-art-small { margin-right: calc(5px * var(--ui)); }
 .sv-strip-warn > .sv-art-item { margin-right: calc(8px * var(--ui)); }
@@ -397,3 +394,125 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-hud .kit-qs--skin-slider .kit-qs__range::-moz-range-thumb { background-color: transparent; }
 /* No WebGL (main.ts, LL-02): the message leads with the warning icon. */
 .sv-nogl { position: absolute; top: 40%; left: 50%; transform: translateX(-50%); margin: 0; display: flex; align-items: center; gap: calc(10px * var(--ui)); padding: calc(10px * var(--ui)) calc(18px * var(--ui)); font: 700 calc(18px * var(--ui)) var(--font-title); letter-spacing: 0.06em; white-space: nowrap; color: var(--text); background: var(--notice); border: 2px solid var(--danger); }
+
+/*
+ * Painted chrome (ticket 127 frames, UI pass 2, 31/10): nine-slice border
+ * images over the steel plates above. ui-art.ts applyArtVars sets each
+ * frame's image (--art-frame-*), its slice lines (--art-frame-*-slice, with
+ * `fill`: the frame's smoked glass is the box's ground) and its token in the
+ * root's data-art; a frame without art (or one that fails to load) leaves
+ * the theme's plates. Widths keep each frame's corner in proportion
+ * (its slice lines in source pixels, scaled to the box).
+ */
+:root[data-art~="frame-panel"] .sv-card.sv-panel { background: none; border-color: transparent; border-image: var(--art-frame-panel) var(--art-frame-panel-slice) / calc(30px * var(--ui)) stretch; }
+:root[data-art~="frame-button"] .sv-item, :root[data-art~="frame-button"] .sv-start { background: none; border-color: transparent; border-image: var(--art-frame-button) var(--art-frame-button-slice) / calc(13px * var(--ui)) calc(14px * var(--ui)) stretch; }
+:root[data-art~="frame-button-active"] .sv-item.is-on, :root[data-art~="frame-button-active"] .sv-start.is-on { border-image-source: var(--art-frame-button-active); border-image-slice: var(--art-frame-button-active-slice); box-shadow: 0 0 calc(16px * var(--ui)) var(--volt-glow); }
+:root[data-art~="frame-button-active"] .sv-item.is-on > .sv-art-led { filter: drop-shadow(0 0 calc(4px * var(--ui)) var(--volt)); }
+/* Armory and loadout cards: the gun card frame; the gun's colour stays in the name, a picked card rings in it. */
+:root[data-art~="frame-card"] .sv-gun-card { background: none; border-color: transparent; border-image: var(--art-frame-card) var(--art-frame-card-slice) / calc(12px * var(--ui)) calc(21px * var(--ui)) stretch; }
+:root[data-art~="frame-card"] .sv-cards .sv-gun-card.is-picked { box-shadow: 0 0 0 calc(2px * var(--ui)) var(--gun), 0 0 calc(18px * var(--ui)) var(--gun-glow); }
+:root[data-art~="frame-card"] .sv-cards .sv-gun-card.is-on.is-picked { box-shadow: 0 0 0 calc(2px * var(--ui)) var(--gun), 0 0 0 calc(4px * var(--ui)) var(--hot), 0 0 calc(18px * var(--ui)) var(--gun-glow); }
+/* HUD plates (hull, clock, kills, the objective, the new foe's card) and the stat tiles: the long plate. */
+:root[data-art~="frame-plate"] .sv-hp, :root[data-art~="frame-plate"] .sv-clock, :root[data-art~="frame-plate"] .sv-kills, :root[data-art~="frame-plate"] .sv-goal, :root[data-art~="frame-plate"] .sv-fresh, :root[data-art~="frame-plate"] .sv-stats div { background: none; border-color: transparent; box-shadow: 0 calc(4px * var(--ui)) calc(14px * var(--ui)) var(--shadow); border-image: var(--art-frame-plate) var(--art-frame-plate-slice) / calc(10px * var(--ui)) calc(15px * var(--ui)) stretch; }
+:root[data-art~="frame-plate"] .sv-fresh { border-width: 0; }
+/* The bay's gun tab: a small plate on the bay's top edge. */
+:root[data-art~="frame-plate"] .sv-art-bay:not([hidden]) { background: none; border: 0 solid transparent; border-image: var(--art-frame-plate) var(--art-frame-plate-slice) / calc(6px * var(--ui)) calc(8px * var(--ui)) stretch; }
+/* Bays: the gun card frame; a sealed bay is the same plate, dimmed, smaller, its lock centred over "LOCKED". */
+:root[data-art~="frame-card"] .sv-slot, :root[data-art~="frame-card"] .sv-bay-lock { background: none; border-color: transparent; border-image: var(--art-frame-card) var(--art-frame-card-slice) / calc(12px * var(--ui)) calc(21px * var(--ui)) stretch; }
+:root[data-art~="frame-card"] .sv-bay-lock { filter: saturate(0.35) brightness(0.8); }
+/* The top stripe and its load sit just inside the frame's top edge. */
+:root[data-art~="frame-card"] .sv-slot::before, :root[data-art~="frame-card"] .sv-slot::after { top: calc(4px * var(--ui)); left: calc(14px * var(--ui)); height: calc(4px * var(--ui)); }
+:root[data-art~="frame-card"] .sv-slot::before { right: calc(14px * var(--ui)); }
+:root[data-art~="frame-card"] .sv-slot::after { width: calc(var(--load) * (100% - 28px * var(--ui))); }
+:root[data-art~="frame-card"] .sv-slot.is-charged::after { width: calc(100% - 28px * var(--ui)); }
+/* The frame's glass covers the plate's inner flash: a load lights the whole bay instead. */
+:root[data-art~="frame-card"] .sv-slot.is-loaded { animation: sv-load-lit 0.35s ease-out; }
+:root[data-art~="frame-card"] .sv-slot.is-loaded.is-perfect { animation: sv-perfect-lit 0.5s ease-out; }
+@keyframes sv-load-lit { 0% { filter: brightness(1.7); } 100% { filter: none; } }
+@keyframes sv-perfect-lit { 0% { filter: brightness(1.6); box-shadow: 0 0 calc(30px * var(--ui)) var(--flash-perfect); } 100% { filter: none; } }
+[data-motion="reduced"] .sv-slot.is-loaded { animation: none !important; }
+/* Chips: the rift's countdown by the word line, the input notice, the clean streak and the briefing's threat chips sit on the word plate. */
+:root[data-art~="frame-word"] .sv-strip-warn { color: var(--hot-hi); text-shadow: 0 0 calc(8px * var(--ui)) var(--hot-glow); background: none; box-shadow: 0 0 calc(18px * var(--ui)) var(--hot-glow); border: 0 solid transparent; border-image: var(--art-frame-word) var(--art-frame-word-slice) / calc(9px * var(--ui)) calc(11px * var(--ui)) stretch; }
+:root[data-art~="frame-word"] .sv-notice { background: none; border-color: transparent; box-shadow: 0 0 0 calc(2px * var(--ui)) var(--danger), 0 0 calc(18px * var(--ui)) var(--danger-glow); border-image: var(--art-frame-word) var(--art-frame-word-slice) / calc(10px * var(--ui)) calc(13px * var(--ui)) stretch; }
+:root[data-art~="frame-word"] .sv-notice.is-hint { box-shadow: 0 0 calc(18px * var(--ui)) var(--volt-glow); }
+:root[data-art~="frame-word"] .sv-streak { background: none; border-color: transparent; border-image: var(--art-frame-word) var(--art-frame-word-slice) / calc(7px * var(--ui)) calc(9px * var(--ui)) stretch; }
+:root[data-art~="frame-word"] .sv-threats span { background: none; border-color: transparent; border-image: var(--art-frame-word) var(--art-frame-word-slice) / calc(7px * var(--ui)) calc(9px * var(--ui)) stretch; }
+:root[data-art~="frame-word"] .sv-threats span.is-open { box-shadow: 0 0 0 1px var(--urgent); }
+:root[data-art~="frame-button"] .sv-foes li { background: none; border-color: transparent; border-image: var(--art-frame-button) var(--art-frame-button-slice) / calc(12px * var(--ui)) calc(13px * var(--ui)) stretch; }
+:root[data-art~="frame-button-active"] .sv-foes li.is-new { border-image-source: var(--art-frame-button-active); border-image-slice: var(--art-frame-button-active-slice); }
+/* A surge, a repair pod, a stage's start: the banner plate with its two burning ends; the words sit above its light line. */
+.sv-banner { display: flex; align-items: center; white-space: nowrap; }
+:root[data-art~="frame-banner"] .sv-banner { height: calc(66px * var(--ui)); padding: 0 calc(112px * var(--ui)) calc(10px * var(--ui)); line-height: 1; background: none; border: 0 solid transparent; border-image: var(--art-frame-banner) var(--art-frame-banner-slice) / 0 calc(124px * var(--ui)) stretch; }
+/* The Options volume meters: the panel lamps (part-led-on / -off), lit up to the level. */
+.sv-ledbar { align-items: center; }
+.sv-ledbar i { width: calc(11px * var(--ui)); height: calc(11px * var(--ui)); background: var(--art-led-off, linear-gradient(var(--steel-700), var(--steel-700))) center / contain no-repeat; }
+.sv-ledbar i.is-lit { background: var(--art-led-on, linear-gradient(var(--led), var(--led))) center / contain no-repeat; box-shadow: none; filter: drop-shadow(0 0 calc(3px * var(--ui)) var(--volt-glow)); }
+/* Magazine cells: an empty one steps back, a loaded one glows in its gun's colour, a word into a full bay pulses them urgent. hud.ts marks each cell. */
+.sv-mags i.is-empty { opacity: 0.5; }
+.sv-mags i:not(.is-empty) { filter: drop-shadow(0 0 calc(4px * var(--ui)) var(--tint)); }
+.sv-slot.is-overfull .sv-mags i { opacity: 1; filter: brightness(1.35) drop-shadow(0 0 calc(6px * var(--ui)) var(--urgent)); animation: sv-mag-urgent 0.24s steps(2, jump-none) infinite; }
+@keyframes sv-mag-urgent { 0% { transform: scale(1.12); } 100% { transform: scale(1); } }
+[data-motion="reduced"] .sv-slot.is-overfull .sv-mags i { animation: none; }
+/* Results: each earned star lights in turn (the row is the card's hero); a missed one stays grey and dim. */
+.sv-star-row { gap: calc(26px * var(--ui)); }
+.sv-star-row li.is-on .sv-art-star { animation: sv-star-in 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) backwards; }
+.sv-star-row li.is-on:nth-child(2) .sv-art-star { animation-delay: 0.2s; }
+.sv-star-row li.is-on:nth-child(3) .sv-art-star { animation-delay: 0.4s; }
+@keyframes sv-star-in { 0% { opacity: 0; transform: scale(0.3); } 100% { opacity: 1; transform: scale(1); } }
+[data-motion="reduced"] .sv-star-row li.is-on .sv-art-star { animation: none; }
+.sv-star-row li:not(.is-on) .sv-art-star { opacity: 0.35; }
+/* The results' next stage: the one wide row, its name as large as a title, beside its icon and picture. */
+.sv-end { width: min(94vw, calc(700px * var(--ui))); }
+.sv-menu.sv-row .sv-item[data-id="next"] { flex-basis: 100%; max-width: none; }
+.sv-item[data-id="next"] b { font-size: calc(22px * var(--ui)); color: var(--text); }
+.sv-item[data-id="next"] small { font-size: calc(14px * var(--ui)); color: var(--soft); }
+/* The other rows (retry, stages, main menu) share one line under it, so the card holds without scrolling at 720p. */
+.sv-end .sv-menu.sv-row .sv-item:not([data-id="next"]) { flex: 1 1 0; max-width: none; gap: calc(8px * var(--ui)); padding-inline: calc(10px * var(--ui)); }
+.sv-end .sv-menu.sv-row .sv-item:not([data-id="next"]) b { white-space: nowrap; }
+
+/*
+ * The quick panels (the kit's ui/quick-settings) in Last Line's chrome: the
+ * panel, its buttons and choices on the ticket 127 frames (nine-slice here:
+ * the kit's own skin.panel / skin.button stretch one image over the box),
+ * the Settings rows' icons from the Options screen's art (the kit's icon
+ * names cover only the Sound rows), the knob that lights under a pointer
+ * and a groove lit up to the knob (quick.ts sets --v on each slider).
+ */
+.sv-hud .kit-qs { --kit-qs-bg: var(--steel-900); --kit-qs-control: var(--steel-800); --kit-qs-text: var(--text); --kit-qs-muted: var(--soft); --kit-qs-accent: var(--volt-hi); --kit-qs-accent-text: var(--ink); --kit-qs-focus: var(--urgent); --kit-qs-line: var(--line-strong); font-family: var(--font-battle); }
+.sv-hud .kit-qs__title { font-family: var(--font-title); letter-spacing: 0.12em; text-transform: uppercase; text-shadow: var(--title-glow); }
+.sv-hud .kit-qs__heading { font-family: var(--font-title); color: var(--hot-hi); }
+:root[data-art~="frame-panel"] .sv-hud .kit-qs__panel { background: none; border-color: transparent; border-radius: 0; padding: calc(22px * var(--kit-qs-s)) calc(28px * var(--kit-qs-s)) calc(24px * var(--kit-qs-s)); border-image: var(--art-frame-panel) var(--art-frame-panel-slice) / calc(30px * var(--kit-qs-s)) stretch; box-shadow: 0 calc(10px * var(--kit-qs-s)) calc(30px * var(--kit-qs-s)) var(--shadow); }
+:root[data-art~="frame-button"] .sv-hud .kit-qs__btn, :root[data-art~="frame-button"] .sv-hud .kit-qs__chip { background: none; border-color: transparent; border-radius: 0; border-image: var(--art-frame-button) var(--art-frame-button-slice) / calc(9px * var(--kit-qs-s)) calc(10px * var(--kit-qs-s)) stretch; }
+:root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn--primary, :root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn[aria-pressed="true"], :root[data-art~="frame-button-active"] .sv-hud .kit-qs__btn[aria-checked="true"], :root[data-art~="frame-button-active"] .sv-hud .kit-qs__opt input:checked + .kit-qs__chip { background: none; color: var(--text); border-image-source: var(--art-frame-button-active); border-image-slice: var(--art-frame-button-active-slice); box-shadow: 0 0 calc(12px * var(--kit-qs-s)) var(--volt-glow); }
+:root[data-art~="frame-button"] .sv-hud .kit-qs__btn:hover, :root[data-art~="frame-button"] .sv-hud .kit-qs__opt:hover input:not(:disabled) + .kit-qs__chip { box-shadow: 0 0 0 1px var(--volt), 0 0 calc(10px * var(--kit-qs-s)) var(--volt-glow); }
+/* A wider panel than the kit's 560 px: each choice row stays on one line where it can, so Settings fits 720p without scrolling. */
+.sv-hud .kit-qs__panel { width: min(calc(640px * var(--kit-qs-s)), calc(100% - 32px)); }
+.sv-hud .kit-qs__chip { padding: calc(5px * var(--kit-qs-s)) calc(10px * var(--kit-qs-s)); }
+.sv-hud .kit-qs__btn { min-height: calc(34px * var(--kit-qs-s)); padding: 0 calc(16px * var(--kit-qs-s)); }
+/* The corner gear and speaker (ticket 180) sit clear of the scene behind them and glow under the pointer. */
+.sv-hud .kit-qs__corner.has-icon { width: calc(36px * var(--kit-qs-s)); height: calc(36px * var(--kit-qs-s)); }
+.sv-hud .kit-qs__corner.has-icon img { filter: drop-shadow(0 calc(1px * var(--kit-qs-s)) calc(2px * var(--kit-qs-s)) var(--shadow)); transition: filter 0.1s; }
+/* A glow, not a scale (a scaled icon spills past its button), and no square ring under the pointer: keyboard focus keeps the kit's outline. */
+.sv-hud .kit-qs__corner.has-icon:hover:not(:focus-visible) { outline: none; }
+.sv-hud .kit-qs__corner.has-icon:hover img, .sv-hud .kit-qs__corner.has-icon[aria-expanded="true"] img { filter: drop-shadow(0 0 calc(6px * var(--kit-qs-s)) var(--volt)) brightness(1.2); }
+/* Row icons: 28 px (× the panel's scale); the Settings rows draw the Options screen's quality, motion and shake art, the Sound panel's "Read words aloud" its read-aloud art. */
+.sv-hud .kit-qs__row:not(.kit-qs__row--slot) { grid-template-columns: calc(28px * var(--kit-qs-s)) 9.4em minmax(0, 1fr); }
+.sv-hud .kit-qs__icon, .sv-hud .kit-qs__icon-cell { width: calc(28px * var(--kit-qs-s)); height: calc(28px * var(--kit-qs-s)); }
+.sv-hud .kit-qs__row[data-row="quality"] > .kit-qs__icon-cell { background: var(--art-icon-quality, none) center / contain no-repeat; }
+.sv-hud .kit-qs__row[data-row="reducedMotion"] > .kit-qs__icon-cell { background: var(--art-icon-reduced-motion, none) center / contain no-repeat; }
+.sv-hud .kit-qs__row[data-row="shake"] > .kit-qs__icon-cell { background: var(--art-icon-shake, none) center / contain no-repeat; }
+.sv-hud .kit-qs__row[data-row="speak"] > .kit-qs__icon-cell { background: var(--art-icon-read-aloud, none) center / contain no-repeat; }
+/* Every slider's groove the same length: the control is groove, number, then a fixed column for Master's Mute (empty on the others). */
+.sv-hud .kit-qs__row:has(> .kit-qs__control > .kit-qs__range) > .kit-qs__control { display: grid; grid-template-columns: minmax(0, 1fr) 2.6em calc(70px * var(--kit-qs-s)); }
+/* The groove lit up to the knob, dark past it (--v from quick.ts); a muted Master dims its whole groove. */
+.sv-hud .kit-qs--skin-slider .kit-qs__range { cursor: pointer; }
+.sv-hud .kit-qs--skin-slider .kit-qs__range::-webkit-slider-runnable-track { background-image: linear-gradient(90deg, transparent calc(var(--v, 100) * 1%), var(--groove-dark) calc(var(--v, 100) * 1%)), var(--kit-qs-skin-track, none); background-size: 100% 100%; background-repeat: no-repeat; }
+.sv-hud .kit-qs--skin-slider .kit-qs__range::-moz-range-track { background-image: linear-gradient(90deg, transparent calc(var(--v, 100) * 1%), var(--groove-dark) calc(var(--v, 100) * 1%)), var(--kit-qs-skin-track, none); background-size: 100% 100%; background-repeat: no-repeat; }
+.sv-hud .kit-qs__row:has([data-toggle="muted"][aria-pressed="true"]) .kit-qs__range { opacity: 0.45; filter: saturate(0.3); }
+.sv-hud .kit-qs--skin-slider .kit-qs__range:hover::-webkit-slider-thumb { filter: brightness(1.18) drop-shadow(0 0 calc(5px * var(--kit-qs-s)) var(--volt)); }
+.sv-hud .kit-qs--skin-slider .kit-qs__range:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.1); }
+.sv-hud .kit-qs--skin-slider .kit-qs__range:hover::-moz-range-thumb { filter: brightness(1.18) drop-shadow(0 0 calc(5px * var(--kit-qs-s)) var(--volt)); }
+/* The keyboard-sound list as a game list: dark glass rows, the picked one lit in the game's blue with a bar. */
+.sv-hud .kit-keyboards { border-color: var(--line-strong); background: var(--steel-900); }
+.sv-hud .kit-keyboards button[aria-selected="true"], .sv-hud .kit-keyboards button[aria-selected="true"]:hover:not(:disabled) { background: var(--steel-700); color: var(--volt-hi); box-shadow: inset calc(4px * var(--kit-qs-s)) 0 0 var(--volt); }
+.sv-hud .kit-keyboards button:hover:not(:disabled) { background: var(--steel-800); }

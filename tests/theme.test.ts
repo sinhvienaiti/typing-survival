@@ -5,6 +5,7 @@ import { hordeIntensity, layerGains } from "../src/audio/music";
 import { BUSES, SOUND_IDS } from "../src/audio/theme-audio";
 import { Menu, cycle, stepVolume } from "../src/app/menu";
 import { ROOT } from "./survival/scan";
+import { artVars, frameSlices } from "../src/view/ui-art";
 
 /**
  * The "Vành Chân Trời" theme (docs/changelog/2026-10-23-theme.md): one theme
@@ -26,8 +27,9 @@ describe("Tuyến Cuối theme", () => {
     expect(literals).toEqual([]);
   });
 
-  it("every variable the HUD reads is defined in theme.css (or set at run time: --ui, --fill, --fit, --mfit, --load, the typed letter's --k, --g, --sw, --swo, --sp, and the art ui-art.ts artVars sets; or a magazine cell's own canvas and tint, --cell and --tint)", () => {
-    const runtime = new Set(["--ui", "--fill", "--fit", "--mfit", "--load", "--k", "--g", "--sw", "--swo", "--sp", "--art-keycap", "--art-keycap-on", "--art-mag-empty", "--art-mag-full", "--cell", "--tint"]);
+  it("every variable the HUD reads is defined in theme.css (or set at run time: --ui, --fill, --fit, --mfit, --load, the typed letter's --k, --g, --sw, --swo, --sp, the art ui-art.ts artVars and frameSlices set, a slider's --v and the kit's --kit-qs-s and groove; or a magazine cell's own canvas and tint, --cell and --tint)", () => {
+    // UI pass 2: the frames' images and slice lines (frameSlices), each slider's --v (quick.ts paintRanges) and the kit's panel scale and groove (--kit-qs-s, --kit-qs-skin-track).
+    const runtime = new Set(["--ui", "--fill", "--fit", "--mfit", "--load", "--k", "--g", "--sw", "--swo", "--sp", ...Object.keys(artVars()), ...Object.keys(frameSlices()), "--cell", "--tint", "--v", "--kit-qs-s", "--kit-qs-skin-track"]);
     const used = [...new Set([...hud.matchAll(/var\((--[\w-]+)/g)].map((match) => match[1]!))];
     expect(used.filter((name) => !defined.has(name) && !runtime.has(name))).toEqual([]);
     for (const token of ["--steel-900", "--hot", "--volt", "--danger", "--typing", "--hazard", "--rivet", "--led", "--panel"]) expect(defined.has(token)).toBe(true);

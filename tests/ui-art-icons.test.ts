@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Menu } from "../src/app/menu";
-import { quickOptions, quickSkin, type QuickHooks } from "../src/app/quick";
+import { paintRanges, quickOptions, quickSkin, type QuickHooks } from "../src/app/quick";
 import { TypingSounds } from "../src/kit/feedback/typing-fx";
 import { renderScreen } from "../src/view/screens";
 import { renderJourney, starRow } from "../src/view/screens-journey";
-import { applyArtVars, artUrl, artVars, BOX, resetArtWarnings } from "../src/view/ui-art";
+import { applyArtVars, artUrl, artVars, BOX, FRAMES, frameSlices, quickIcons, resetArtWarnings } from "../src/view/ui-art";
 import table from "../src/view/ui-art.json";
 import selection from "../scripts/ui-art/selection.json";
 import { ICONS, WIRED } from "./ui-art-roles";
@@ -46,12 +46,19 @@ describe("the selection and table (149–153, 225)", () => {
 
   it("gives CSS its background art as variables and the quick panels their slider art", () => {
     const vars = artVars();
-    expect(Object.keys(vars).sort()).toEqual(["--art-keycap", "--art-keycap-on", "--art-mag-empty", "--art-mag-full"]);
+    expect(Object.keys(vars).sort()).toEqual([
+      "--art-frame-banner", "--art-frame-button", "--art-frame-button-active", "--art-frame-card", "--art-frame-panel", "--art-frame-plate", "--art-frame-word",
+      "--art-icon-quality", "--art-icon-read-aloud", "--art-icon-reduced-motion", "--art-icon-shake",
+      "--art-keycap", "--art-keycap-on", "--art-led-off", "--art-led-on", "--art-mag-empty", "--art-mag-full",
+    ]);
     expect(vars["--art-keycap"]).toMatch(/^url\("\/assets\/typing-survival\/ui\/part-keycap\.256\.webp\?v=[a-f0-9]{8}"\)$/);
     expect(vars["--art-keycap-on"]).toContain("/part-keycap-active.256.webp");
-    // A magazine cell's 24 px canvas, sharp at 2× on the 1080p scale (36 px → 72 device px).
+    // A magazine cell's 40 px canvas (UI pass 2), sharp at 2× on the 1080p scale (60 px → 120 device px).
     expect(vars["--art-mag-empty"]).toContain("/part-mag-empty.128.webp");
     expect(vars["--art-mag-full"]).toContain("/part-mag-full.128.webp");
+    // The Settings rows' icons (the Options screen's art) at 28 px; every frame from its 896 px copy.
+    expect(vars["--art-icon-quality"]).toContain("/icon-quality.128.webp");
+    for (const role of FRAMES) expect(vars["--art-" + role]).toContain("/" + role + ".896.webp?v=");
     expect(quickSkin()).toEqual({ sliderTrack: artUrl("slider-track", 290), sliderThumb: artUrl("slider-thumb", 22) });
     expect(quickSkin().sliderTrack).toContain("/slider-track.1024.webp?v=");
     expect(quickSkin().sliderThumb).toContain("/slider-thumb.128.webp?v=");
@@ -70,7 +77,7 @@ describe("the selection and table (149–153, 225)", () => {
     const root = { style: { setProperty: (name: string, value: string) => { set.set(name, value); }, removeProperty: (name: string) => set.delete(name) } };
     // Node has no Image: the variables are set, nothing is probed.
     applyArtVars(root);
-    expect(Object.fromEntries(set)).toEqual(artVars());
+    expect(Object.fromEntries(set)).toEqual({ ...frameSlices(), ...artVars() });
     // In the page each image is probed; one that fails drops its variable (survival.css draws the var() fallback) and warns once.
     const probes: { url: string; fail(): void }[] = [];
     vi.stubGlobal("Image", class {
@@ -84,7 +91,7 @@ describe("the selection and table (149–153, 225)", () => {
     expect(probes.map((probe) => probe.url)).toEqual(Object.values(artVars()).map((value) => value.slice(5, -2)));
     probes[2]!.fail();
     probes[2]!.fail();
-    expect([...set.keys()].sort()).toEqual(["--art-keycap", "--art-keycap-on", "--art-mag-full"]);
+    expect([...set.keys()].sort()).toEqual(Object.keys({ ...frameSlices(), ...artVars() }).filter((name) => name !== "--art-mag-empty").sort());
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0]![0]).toMatch(/^\[ui-art\] missing image: \/assets\/typing-survival\/ui\/part-mag-empty\.128\.webp\?v=/);
   });
@@ -100,8 +107,8 @@ describe("menus (LL-09, LL-48, LL-53)", () => {
   it("draws each item's lamp lit or dark, its icon at the menu's size, and a gap where an item has none", () => {
     const title = renderScreen({ kind: "title", menu: items, lead: "", status: "" });
     expect(roles(title, "led")).toEqual(["part-led-on", "part-led-off", "part-led-off"]);
-    // The lamp draws 7 px of its 10 px box (the art keeps a 15 % margin).
-    expect(BOX.led).toEqual({ width: 10, height: 10 });
+    // The lamp draws 8 px of its 12 px box (the art keeps a 15 % margin; UI pass 2: was 10).
+    expect(BOX.led).toEqual({ width: 12, height: 12 });
     expect(roles(title, "item")).toEqual(["icon-menu-play", "icon-back"]);
     expect(title).toContain('<i class="sv-icon-gap sv-gap-item" aria-hidden="true"></i>');
     expect(title).not.toMatch(/sv-led"|sv-dot/);
@@ -166,9 +173,9 @@ describe("results and the profile (LL-14, LL-50 to LL-52)", () => {
   it("draws the star row as lit and dark stars that name themselves, over their rules", () => {
     const html = starRow([true, false, true], 0.9);
     expect(roles(html, "star")).toEqual(["icon-star-lit", "icon-star-unlit", "icon-star-lit"]);
-    // A 40 px box: the star itself 28 px, LL-50's measure (review 31/10).
-    expect(BOX.star).toEqual({ width: 40, height: 40 });
-    expect(html).toContain('width="40" height="40"');
+    // A 64 px box, the results card's hero (UI pass 2, 31/10: 40 px was small for the reward).
+    expect(BOX.star).toEqual({ width: 64, height: 64 });
+    expect(html).toContain('width="64" height="64"');
     expect(html).toContain('alt="Star earned"');
     expect(html).toContain('alt="Star not earned"');
     expect(html).not.toMatch(/[★☆]/);
@@ -197,8 +204,8 @@ describe("CSS for the parts (survival.css)", () => {
     expect(css).toContain(".sv-cards .sv-gun-card.is-picked kbd { border-image-source: var(--art-keycap-on, linear-gradient(var(--steel-600), var(--steel-600))); }");
     expect(css).not.toMatch(/\.sv-hints kbd \{[^}]*background: var\(--steel-800\)/);
   });
-  it("draws magazine cells from the empty and full art on a 24 px canvas, the full glass in the gun's colour, cut down as it empties", () => {
-    expect(css).toMatch(/\.sv-mags i \{[^}]*--cell: calc\(24px \* var\(--ui\)\); --tint: var\(--gun\);[^}]*width: calc\(var\(--cell\) \* 0\.25\); height: calc\(var\(--cell\) \* 0\.71875\);[^}]*background: var\(--art-mag-empty, linear-gradient\(var\(--track\), var\(--track\)\)\)/);
+  it("draws magazine cells from the empty and full art on a 40 px canvas, the full glass in the gun's colour, cut down as it empties", () => {
+    expect(css).toMatch(/\.sv-mags i \{[^}]*--cell: calc\(40px \* var\(--ui\)\); --tint: var\(--gun\);[^}]*width: calc\(var\(--cell\) \* 0\.25\); height: calc\(var\(--cell\) \* 0\.71875\);[^}]*background: var\(--art-mag-empty, linear-gradient\(var\(--track\), var\(--track\)\)\)/);
     expect(css).toMatch(/\.sv-mags i::after \{[^}]*background: linear-gradient\(var\(--tint\), var\(--tint\)\) center \/ 62% 76% no-repeat, var\(--art-mag-full, linear-gradient\(var\(--tint\), var\(--tint\)\)\)[^}]*background-blend-mode: color, normal;[^}]*clip-path: inset\(calc\(\(1 - var\(--fill\)\) \* 100%\) 0 0 0\)/);
     // A word into a full bay turns the cells themselves urgent, as they blink.
     expect(css).toContain(".sv-slot.is-overfull .sv-mags i { --tint: var(--urgent); filter: brightness(1.35); }");
@@ -228,5 +235,66 @@ describe("the briefing's stage art still leads its rules", () => {
   it("keeps the stage band right after the title", () => {
     const html = renderJourney(journey206("c1-s2"));
     expect(html).toMatch(/<h1>STAGE 2 · LEADER HUNT<\/h1><img class="sv-art sv-art-briefing"/);
+  });
+});
+
+describe("UI pass 2: frames, quick panel icons and lit grooves (31/10)", () => {
+  it("gives each ticket 127 frame its slice lines as percentages with fill, and marks the root's data-art", () => {
+    const slices = frameSlices();
+    expect(Object.keys(slices).sort()).toEqual(FRAMES.map((role) => "--art-" + role + "-slice").sort());
+    for (const value of Object.values(slices)) expect(value).toMatch(/^(\d+(\.\d+)?% ){4}fill$/);
+    // The banner's two burning ends only: no top or bottom slice.
+    expect(slices["--art-frame-banner-slice"]).toBe("0% 28.06% 0% 28.06% fill");
+    const attrs = new Map<string, string>();
+    const set = new Map<string, string>();
+    const root = { style: { setProperty: (name: string, value: string) => { set.set(name, value); }, removeProperty: (name: string) => set.delete(name) }, setAttribute: (name: string, value: string) => { attrs.set(name, value); } };
+    const probes: { url: string; fail(): void }[] = [];
+    vi.stubGlobal("Image", class {
+      private onError: (() => void) | null = null;
+      addEventListener(type: string, handler: () => void): void { if (type === "error") this.onError = handler; }
+      set src(url: string) { probes.push({ url, fail: () => this.onError?.() }); }
+    });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    applyArtVars(root);
+    expect(attrs.get("data-art")!.split(" ").sort()).toEqual([...FRAMES].sort());
+    // A frame that fails to load leaves the theme's plate: its token goes, the others stay.
+    probes.find((probe) => probe.url.includes("/frame-card."))!.fail();
+    expect(attrs.get("data-art")!.split(" ")).not.toContain("frame-card");
+    expect(attrs.get("data-art")!.split(" ")).toContain("frame-panel");
+    expect(set.has("--art-frame-card")).toBe(false);
+  });
+
+  it("hands the kit the ticket 180 gear and speakers (32 px) and the Sound rows' icons (24 px), sharp at 2× on the 1080p scale", () => {
+    const icons = quickIcons();
+    expect(Object.keys(icons).sort()).toEqual(["hud-settings", "hud-sound", "hud-sound-muted", "vol-effects", "vol-interface", "vol-keyboard", "vol-master", "vol-music", "vol-voice"]);
+    for (const [name, url] of Object.entries(icons)) expect(url).toContain("/" + name + ".128.webp?v=");
+    const hooks: QuickHooks = {
+      host: {} as HTMLElement, values: () => ({}), change: () => {}, preview: () => {}, keyboardChoices: [], keyboardSounds: new TypingSounds(),
+      keyboardFail: () => {}, mountPreview: () => {}, pause: () => {}, resume: () => {}, quit: () => {}, countdown: () => 0,
+    };
+    expect(quickOptions(hooks).icons).toEqual(icons);
+  });
+
+  it("lights each slider's groove up to its value (--v, 0–100), so 50 and 100 read apart", () => {
+    const inputs = [{ min: "0", max: "100", value: "50" }, { min: "0", max: "100", value: "100" }, { min: "", max: "", value: "0" }, { min: "10", max: "10", value: "10" }].map((attrs) => {
+      const props = new Map<string, string>();
+      return { ...attrs, props, style: { setProperty: (name: string, value: string) => { props.set(name, value); } } };
+    });
+    paintRanges({ querySelectorAll: (selector: string) => (selector === ".kit-qs__range" ? (inputs as unknown as Element[]) : []) });
+    expect(inputs.map((input) => input.props.get("--v"))).toEqual(["50", "100", "0", "0"]);
+    // No host (the kit not mounted yet): nothing to paint, no throw.
+    expect(() => paintRanges(null)).not.toThrow();
+    expect(() => paintRanges({} as never)).not.toThrow();
+  });
+
+  it("draws the panels, rows, cards, HUD plates, chips, banner and quick panels on the frames only while their token is set", () => {
+    const css = readFileSync("src/view/survival.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    for (const [, selectors, body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const frame = /var\(--art-(frame-[\w-]+?)(?:-slice)?\)/.exec(body!);
+      if (!frame) continue;
+      // Every rule that draws a frame is guarded by that frame's token (or the button's, for the active state's swap).
+      for (const selector of selectors!.split(",")) expect(selector.trim(), selector).toMatch(/^:root\[data-art~="frame-[\w-]+"\]/);
+    }
+    for (const role of FRAMES) expect(css).toContain(':root[data-art~="' + role + '"]');
   });
 });
