@@ -58,6 +58,8 @@ function page(store = new Map<string, string>(), guns = [GUN.ray, GUN.tia], stag
     window: win, params: new URLSearchParams("card=1"), safeSessionStorage, NEXT_KEY,
     GUN_KEYS, introKey, installKeys,
     session: { send: (command: unknown) => sent.push(command) },
+    // The quick panels (quick.ts): while one is open or counting back in, the page's own key handlers take nothing.
+    quick: { blocking: false },
     audio: { resume: () => { resumed += 1; }, ui: (kind: string) => sounds.push(kind) },
     hud: { showBanner: () => {} }, imeNotice: { note: () => {} },
     setMode: (next: string) => { context.mode = next; context.screen = next === "play" ? "none" : "title"; },
@@ -158,6 +160,26 @@ describe("actual stage card listeners", () => {
     expect(p.sent).toEqual([]);
     p.fire("keydown", "a");
     expect(p.sent).toEqual([{ t: "key", letter: 0 }]);
+  });
+
+  it("an open quick panel (or its countdown) holds the card and the fight's keys", () => {
+    const p = page(leave("loadout"));
+    p.context.quick.blocking = true;
+    p.fire("keydown", "a");
+    p.fire("keydown", "Escape");
+    expect(p.context.mode).toBe("intro");
+    expect(p.journey.active).toBe(false);
+    p.context.quick.blocking = false;
+    p.fire("keydown", "a");
+    expect(p.context.mode).toBe("play");
+    p.context.quick.blocking = true;
+    p.fire("keydown", "b");
+    p.fire("keydown", "Escape");
+    expect(p.sent).toEqual([]);
+    expect(p.context.mode).toBe("play");
+    p.context.quick.blocking = false;
+    p.fire("keydown", "b");
+    expect(p.sent).toEqual([{ t: "key", letter: 1 }]);
   });
 
   it("ignores held or untrusted card keys, and Escape works before assets are ready", () => {

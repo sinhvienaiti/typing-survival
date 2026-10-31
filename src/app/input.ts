@@ -15,7 +15,7 @@ import { isComposingKey, typedLetter, vietnameseInputSign } from "../kit/input";
 import type { CommandBody } from "../sim/world";
 
 export type KeyAction = "pause" | "enter" | "repeat" | "up" | "down" | "left" | "right";
-export type KeyHandlers = { send(command: CommandBody): void; act(action: KeyAction): void; onVietnamese(): void; allowUntrusted: boolean; pick?: (n: number) => void };
+export type KeyHandlers = { send(command: CommandBody): void; act(action: KeyAction): void; onVietnamese(): void; allowUntrusted: boolean; pick?: (n: number) => void; space?: () => void };
 
 /** Digit keys (top row and keypad) → 1 … 9. */
 const DIGIT = /^(?:Digit|Numpad)([1-9])$/;
@@ -43,7 +43,10 @@ export function installKeys(target: Window, keys: KeyHandlers): void {
       event.preventDefault();
       keys.act(arrow);
     } else if (event.repeat) return;
-    else if (DIGIT.test(event.code) && keys.pick !== undefined) {
+    else if (event.code === "Space" && keys.space !== undefined) {
+      event.preventDefault();
+      keys.space();
+    } else if (DIGIT.test(event.code) && keys.pick !== undefined) {
       event.preventDefault();
       keys.pick(Number(DIGIT.exec(event.code)![1]));
     } else if (event.code === "Escape") keys.act("pause");

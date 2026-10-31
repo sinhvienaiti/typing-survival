@@ -94,7 +94,8 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   `node scripts/sync-game-kit.mjs --target games/typing-survival` (run in the
   parent repo). Never edit it by hand; `pnpm check` verifies its sha256.
 - `tests/boundary.test.ts`: `src/` imports only `src/**`, `three`,
-  `three/examples/jsm/*`, `@fontsource/*`; never Space Typing paths.
+  `three/examples/jsm/*`, `@fontsource/*`, `a11y-dialog` (the kit's
+  quick-settings panels); never Space Typing paths.
 - Models: Space Typing's library through the URL `/assets/space-typing/models/`
   (Vite plugin in dev, nginx alias in play). Never copy models here.
 - No media in Git (images, audio, video, `.glb`, `.bin`); `public/assets/**`
@@ -287,5 +288,19 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   (`ACTIONS=xung,tia,hurt`, `VARIANT=lit`); the rules in
   `tests/vfx-pair.test.ts`. Scatter Gun, Rail Gun and Star Mortar are
   TS-M1-16.
+- Typing feedback and quick panels (29/10, lane TF2;
+  `docs/changelog/2026-10-29-typing-fx.md`): the word being typed is the
+  kit's `FocusStrip` (`src/view/type-fx.ts`, fed by `TypeFeel.read` through
+  `TypingFxDriver`; its own clock stands still while paused); the old
+  `WordStrip` runs in host mode (plate hidden by `.is-tfx`, only the CLEAN
+  LED, rift countdown and near-foe ticks). Settings (F1) and Sound (F2) are
+  the kit's `QuickSettings` (`src/app/quick.ts`; values in
+  `src/app/settings.ts`, `survival.settings`): while one is open or counting
+  3-2-1, key handlers check `quick.blocking` and the fight is `frozen`.
+  Keyboard sound: Off, Relay (the game's own key sound) and the Typing Feel
+  sets, read at run time from `VITE_TYPING_FEEL_ORIGIN` (`src/app/keyboard.ts`,
+  parent `docs/games/TYPING_FEEL_SERVICE.md`; unset: Off and Relay only); no
+  set is copied into the game. Captures:
+  `scripts/visual/scenarios/survival-typefx.mjs`.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.

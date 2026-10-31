@@ -1,7 +1,7 @@
 # Tuyến Cuối — bộ âm "Vành Chân Trời"
 
 > Ngày 23/10/2026. Chủ đề: một trạm thép cũ giữ hành lang cuối cùng ở mép hố đen. Âm **industrial**: synth trầm, trống máy, bass; trong trận là thép, súng nặng, điện, kim loại vỡ. Khác hẳn tiếng laser và nhạc điện tử vũ trụ của Space Typing.
-> **Hiện tại mọi âm đều tổng hợp bằng mã** (`src/audio/theme-audio.ts`, `src/audio/music.ts`, khối dựng `src/audio/synth.ts`), không có file. Danh sách này để sau này làm file thật: mỗi id một mục, khi nào phát, cảm giác, và một prompt cho công cụ tạo âm.
+> **Cập nhật 29/10/2026:** tiếng phím Firefly đã dùng file thật (phiếu 191, mục 2.1). Relay và âm trận vẫn tổng hợp bằng mã (`src/audio/theme-audio.ts`, `src/audio/music.ts`, khối dựng `src/audio/synth.ts`). Các mục dưới giữ mô tả và prompt cho việc thay âm trận bằng file sau này.
 
 ## 1. Cách âm chạy
 
@@ -29,6 +29,43 @@
 - Prompt dưới đây viết bằng tiếng Anh vì các công cụ tạo âm hiểu tiếng Anh tốt nhất.
 - **Âm hành động** (súng, trúng, nổ, quái chết, quái bắn, tuyến bị đánh; quyết định Q6 của chủ dự án ngày 24/10/2026, ghi ở `tools/audio-lab/DECISIONS.md` của repo cha): đủ các phần mà hành động có (nạp, khóa nòng; đầu tiếng có lực; thân; đuôi vang trong hành lang thép), cỡ âm theo nguồn. Lớp sub chỉ làm lớp dưới. Không dùng hướng "bụp, thụp", "pop", "puff", tiếng trầm ngắn đứng riêng, kiểu đồ chơi. Dải 1–4 kHz chỉ ở đầu tiếng; đuôi nằm dưới 1 kHz hoặc trên 4 kHz.
 - **Mỗi file tự có thân và đuôi.** `theme-audio.ts` phát một tiếng cho mỗi bậc trúng (`flush`) và mỗi phát súng, không ghép lớp nào lúc chạy. Các lớp dùng chung hit.sub, hit.tail, gun.xung.tail mới là đề xuất của Audio Lab (`AUDIO_PIPELINE.md` §6.3 #3; §16 #6 còn mở). Audio Lab có ghép lớp thì ghép sẵn vào file của từng id.
+
+### 2.1. Bộ tiếng phím Firefly (phiếu 191, 29/10/2026; 32 bộ từ 30/10/2026; 33 bộ từ tối 30/10/2026; 34 bộ từ cùng tối; đọc từ Typing Feel từ 31/10/2026)
+
+Từ 31/10 (bước B3 của `docs/games/TYPING_FEEL_SERVICE.md` ở repo cha) game **không giữ bản chép nào** của bộ âm: không OGG, không manifest, không dòng `audio/keys` nào trong `media.md5`. Danh mục (`typing-feel/catalogue-3`) và các bộ (`typing-feel/set-1`) đọc lúc chạy từ host Typing Feel, `<VITE_TYPING_FEEL_ORIGIN>/v1/keys/` (`KEYS_BASE` trong `src/app/keyboard.ts`). Biến này do script build đặt, mã không có giá trị mặc định: `build:survival` (gọi từ `build:local`) và `dev:survival:app` của repo cha đặt `https://feel.typing-game.local`. Không đặt (clone riêng, CI, `pnpm dev` chạy riêng) thì Typing Feel tắt: không gọi mạng, chỉ Off và Relay. Bộ âm, nguồn Firefly và giấy phép nay thuộc `typing-feel/` của repo cha (bản seed `r1` lấy nguyên byte từ staging `~/AudioLab/review/staging/keys-firefly/`).
+
+- Khởi động không chờ danh mục: danh mục tải song song (hạn 3 s, `no-cache`), bảng Sound dựng ngay với Off, Relay và bộ đã lưu ("Loading…"), rồi thay bằng danh sách thật khi danh mục về (`QuickSettings.setChoiceOptions`). Manifest bộ tải với hạn 3 s và cache HTTP thường (URL có dấu phiên bản, không đổi).
+- Save: trường thô `typingFx.soundProfile` được đọc trước khi mặc định cứng điền vào. Danh mục về mà thiếu id đã lưu thì chuyển sang `default` của danh mục (rồi `bright-clack`, rồi bộ đầu, rồi Relay) và lưu một lần. Danh mục không về (host hỏng, 404, HTML mã 200, quá 3 s, CORS) thì **giữ** id đã lưu, hiện "Saved sound · unavailable" và báo "Keyboard sounds unavailable" 6 s; không đặt biến thì không báo. Người chơi đổi Off/Relay trong lúc chờ thì lựa chọn đó giữ nguyên.
+- Save chưa có trường âm phím thì game **không ghi** trường đó khi người chơi đổi mục khác (âm lượng, Mute, `?mode=`); chỉ ghi khi danh mục sửa (`repaired`) hoặc khi người chơi tự chọn âm phím (`storedSettings` trong `src/app/settings.ts`). Nhờ vậy Relay lúc host hỏng, hay mặc định cứng lúc danh mục chưa về, không bị lưu thành lựa chọn.
+- Bộ đã lưu không phát được trong phiên (Typing Feel tắt hay hỏng nên bộ thành "Saved sound · unavailable"; manifest hỏng hay quá 3 s; cả đợt giải mã đầu hỏng): **Relay phát thay** (mục 5.1 bước 5 và 5.3 của tài liệu Typing Feel). Save vẫn giữ id của bộ. Relay thôi phát thay khi người chơi chọn một âm phím bất kỳ.
+- Bộ người chơi chọn trong bảng Sound mà không phát được (manifest hỏng hay quá 3 s, không file nào giải mã được): Relay cũng phát thay (`pickFailed` trong `src/app/keyboard.ts`, qua `onKeyboardFail` của kit). Save giữ id vừa chọn; lần chọn sau thì Relay thôi thay.
+- Mỗi file OGG, cả preview 1 s của bảng Sound, có hạn 8 s (`timedBytes`, `KEYBOARD_SAMPLE_TIMEOUT_MS` của kit), nên lượt nạp một bộ luôn kết thúc. Bảng Sound tải manifest và file bằng đúng các hàm của lúc khởi động (`keyboardFetch` của `QuickSettings`). Đợt đầu (16 file) không giải mã được file nào thì kit thôi xin các file còn lại của bộ đó (`TypingSounds.load`), lúc khởi động cũng như khi chọn trong bảng. Host treo thì Relay phát thay sau khoảng 8 s, không phải 8 s cho mỗi đợt.
+- Người chơi chọn một âm phím trong lúc bộ đã lưu đang nạp lúc khởi động thì lượt nạp khởi động dừng, không đụng tới lựa chọn mới, kể cả khi chọn lại đúng bộ đó.
+- Trận chờ đợt giải mã đầu của bộ đã lưu **tối đa 1,5 s**, rồi vào trận dù chưa có âm; bộ phát từ lúc đợt đầu về.
+
+Bộ thứ 33, `raindrop-tile` (Raindrop Tile, họ Crisp, ngay sau Crisp Silk, `order` 18; các bộ sau lùi một bậc): chủ dự án chọn bản A ngày 30/10 (đuôi tự nhiên và giọt nước, không EQ). Danh mục ghi `score: null`, `ownerPick: true`: không có điểm, vì thước đo 218 trừ điểm đúng phần đuôi dài chủ dự án muốn; đừng tự đặt điểm. Manifest bộ theo schema `typing-feel/set-1` của Typing Feel (`files: [{file, set, durationMs}]`, `preview`). OGG Vorbis **stereo** 48 kHz (32 bộ của 218 mono); phím dài tới 450 ms, Space tới 535 ms. Kit phát hết đuôi: không cắt độ dài, preview đúng 1 s; ở 10 chữ/giây 6 giọng phím và 2 giọng Space đủ, không giọng nào bị cướp.
+
+Bộ thứ 34, `hail-stone` (Hail Stone, họ Solid, ngay sau Solid Amber, `order` 12; các bộ sau lùi một bậc, Crisp Velvet thành 13, Raindrop Tile 19): chủ dự án chọn bản v4 ngày 30/10 (mưa đá nhỏ rơi trên đá dày, xử lý tự nhiên như Raindrop Tile). Như Raindrop Tile: `score: null`, `ownerPick: true`, đừng tự đặt điểm; schema `typing-feel/set-1`; OGG Vorbis stereo 48 kHz; 25 phím dài 90–450 ms, 8 Space dài 331–535 ms; kit phát hết đuôi.
+
+Bảng dưới là danh mục `r1` của Typing Feel (31/10):
+
+| Họ (tiêu đề trong Sound) | Số bộ | Id bộ (tên trong Sound) |
+|---|---|---|
+| Deep | 3 | `deep` (Deep Velvet), `deep-amber`, `deep-cedar` |
+| Warm | 6 | `warm` (Warm Velvet), `warm-amber`, `warm-cedar`, `warm-pebble`, `warm-slate`, `warm-silk` |
+| Rounded | 1 | `rounded` (Rounded Velvet) |
+| Solid | 3 | `solid` (Solid Velvet), `solid-amber`, `hail-stone` (Hail Stone) |
+| Crisp | 7 | `crisp` (Crisp Velvet), `crisp-amber`, `crisp-cedar`, `crisp-pebble`, `crisp-slate`, `crisp-silk`, `raindrop-tile` (Raindrop Tile) |
+| Clear | 4 | `clear` (Clear Velvet), `clear-amber`, `clear-cedar`, `clear-pebble` |
+| Bright Clack | 10 | `bright-clack` (Bright Clack Velvet, mặc định), `bright-clack-amber`, `-cedar`, `-pebble`, `-slate`, `-silk`, `-copper`, `-walnut`, `-moss`, `-ember` |
+
+Bảy id cũ (`deep`, `warm`, `rounded`, `solid`, `crisp`, `clear`, `bright-clack`) vẫn còn, nên save cũ không đổi. Tên các bộ khác là "<Họ> <Chất>" (Amber, Cedar, Pebble, Slate, Silk, Copper, Walnut, Moss, Ember), trừ Raindrop Tile và Hail Stone; thứ tự và điểm nằm trong danh mục của Typing Feel (`typing-feel/public/v1/keys/keys-manifest.json` ở repo cha).
+
+- Hàng Sound: Off, Relay (không có họ, không tiêu đề), rồi 34 bộ theo thứ tự danh mục, mỗi họ một tiêu đề của kit; PageUp/PageDown nhảy giữa các họ, mở bảng thì danh sách cuộn tới bộ đang chọn. Mặc định là `default` của danh mục (`bright-clack` ở `r1`); `DEFAULT_KEYBOARD_SOUND` trong `src/app/settings.ts` (`bright-clack`, chủ dự án 30/10) chỉ dùng khi danh mục không ghi `default`. Save `survival.settings.typingFx.soundProfile` giữ lựa chọn theo luật ở trên.
+- `TypingSounds` của kit chọn biến thể theo vòng xáo, không lặp trong 8 phím gần nhất; giải mã theo lô 16 file, đổi bộ thì nhả bộ cũ. Bộ đã lưu nạp lúc khởi động mà người chơi chọn bộ khác giữa chừng cũng được nhả (`loadSavedKeyboard`). Mỗi chữ đúng phát một `key-*`, Space phát `space-*`. Phím sai/lạc dùng cùng nhóm phím ở mức nhỏ hơn của kit. Hoàn tất từ chỉ giữ tiếng nạp đạn của game, không thêm một sample phím cách.
+- Firefly đi vào destination của AudioContext chung ở Master × Keyboard volume, ngoài Effects và bus Relay. Relay cũng có mức Keyboard riêng ngoài Effects; chỉ chọn Relay mới mở synth `key.ok`/`key.bad`. Off hoặc Master mute/0 làm im tiếng phím.
+- Có thể chuẩn bị context và giải mã bộ đã lưu trước khi chơi; nhạc và âm trận vẫn chờ cử chỉ đầu tiên. Trận chờ đợt giải mã đầu của bộ đã lưu, tối đa 1,5 s, trước khi bước sim.
+- Rê chuột/focus tên bộ: chờ 150 ms rồi phát preview 1 s; rời/chuyển/đóng bảng tắt dần 30 ms, do kit phiếu 190 quản lý. Mở bảng và đếm 3-2-1 tiếp tục khóa phím gõ và dừng trận.
 
 ## 3. Gõ và nạp đạn
 

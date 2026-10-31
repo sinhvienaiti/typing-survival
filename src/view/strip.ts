@@ -16,8 +16,15 @@
  * plate hides. Every effect runs on the
  * page's frame clock (`now`), never CSS keyframes, so the held clock of the
  * scenarios captures it frame by frame. DOM outside the canvas: never shaken.
+ *
+ * Host mode (attach(), parent docs/games/TYPING_FEEDBACK_REVIEW.md §20): the
+ * kit's focus strip (type-fx.ts) shows the word instead. This plate and the
+ * stray key's ghost hide (`.is-tfx` on the HUD) and do no work; the streak
+ * LED, the rift's countdown and the near-foe ticks stay, laid out around the
+ * host's plate.
  */
 import * as THREE from "three";
+import type { Rect } from "../kit/feedback";
 import { GUN_SPECS } from "../content/guns";
 import { NEAR } from "../content/rules";
 import type { World } from "../sim/world";
@@ -41,6 +48,21 @@ function el<T extends HTMLElement>(tag: string, className: string, parent: HTMLE
 }
 
 type Done = { word: string; text: string; full: boolean; gun: string; start: number };
+
+/** What stands in for the plate (type-fx.ts). */
+export type StripHost = {
+  /** Pins the line's bottom centre at (x, bottom) (CSS px). */
+  place(x: number, bottom: number): void;
+  /** Its plate now (CSS px). */
+  rect(): Rect;
+  /** Its plate at its widest (damage numbers and the rift's countdown keep off it). */
+  widest(): Rect;
+  /** The word row's centre now (CSS px). */
+  rowY(): number;
+};
+
+/** Host mode: the LED stays this long after a word is done (the host's plate leaves in ~180 ms). */
+const HOST_DONE_MS = 200;
 
 export class WordStrip {
   private readonly plate: HTMLElement;
@@ -80,6 +102,7 @@ export class WordStrip {
   private readonly at = new THREE.Vector3();
   private readonly markX = [0, 0, 0, 0, 0, 0];
   private readonly css = new WeakMap<HTMLElement, Record<string, string>>();
+  private host: StripHost | null = null;
   reduced = false;
 
   constructor(root: HTMLElement) {
@@ -97,12 +120,22 @@ export class WordStrip {
     for (let i = 0; i < MARKS; i += 1) this.ticks.push(el("i", "", marks));
   }
 
+  /** The focus strip takes the line (host mode, see the file's note). */
+  attach(host: StripHost): void {
+    this.host = host;
+  }
+
   /** Places the line: centred on the view, its bottom at `bottom` (CSS px). */
   layout(stage: Stage, bottom: number, ui: number): void {
     this.stage = stage;
     this.center = stage.width / 2;
     this.bottom = bottom;
     this.ui = ui;
+    if (this.host !== null) {
+      this.host.place(this.center, bottom);
+      this.placeLed();
+      return;
+    }
     const top = bottom - PLATE.height * ui;
     this.plate.style.top = top + "px";
     this.ghost.style.top = top + "px";
@@ -114,7 +147,8 @@ export class WordStrip {
   }
 
   /** The widest the plate gets (damage numbers keep off it even while it is hidden). */
-  rect(): { x: number; y: number; w: number; h: number } {
+  rect(): Rect {
+    if (this.host !== null) return this.host.widest();
     const w = PLATE.width * this.ui;
     return { x: this.center - w / 2, y: this.bottom - PLATE.height * this.ui, w, h: PLATE.height * this.ui };
   }
@@ -130,6 +164,7 @@ export class WordStrip {
   }
 
   typed(index: number, now: number): void {
+    if (this.host !== null) return;
     if (index === 0) this.lockAt = now;
     if (index < LETTERS) this.popAt[index] = now;
     this.keyAt = now;
@@ -150,18 +185,21 @@ export class WordStrip {
 
   private placeHazard(): void {
     // Clear of the widest plate (420 px) and of the streak LED on the right.
-    const off = (PLATE.width / 2 + (this.hazard.classList.contains("is-left") ? 12 : 120)) * this.ui;
+    const gap = (this.hazard.classList.contains("is-left") ? 12 : 120) * this.ui;
+    const off = this.host !== null ? this.host.widest().w / 2 + gap : PLATE.width * this.ui / 2 + gap;
     this.put(this.hazard, "transform", this.hazard.classList.contains("is-left") ? "translateX(calc(" + (this.center - off).toFixed(1) + "px - 100%))" : "translateX(" + (this.center + off).toFixed(1) + "px)");
   }
 
   /** A wrong key in the locked word: the letter due (`index`) underlined red, the plate's edge flashes. */
   miss(index: number, now: number): void {
+    if (this.host !== null) return;
     if (index < LETTERS) this.missAt[index] = now;
     this.badAt = now;
   }
 
   /** A key no bay starts with: it ghosts in red at the line's centre. */
   stray(letter: string, now: number): void {
+    if (this.host !== null) return;
     this.ghost.textContent = letter;
     this.strayAt = now;
   }
@@ -169,6 +207,10 @@ export class WordStrip {
   /** A word finished: the word white-hot for 2 frames, then "word · meaning ✓" (or "word ✓" over the meaning when one line is too wide; "word ✓ · ĐẦY"). */
   finished(word: string, meaning: string, gun: number, full: boolean, now: number): void {
     const key = GUN_SPECS[gun]?.key ?? "xung";
+    if (this.host !== null) {
+      this.last = { word, text: "", full, gun: key, start: now };
+      return;
+    }
     this.setDone(full ? word + " ✓ · " : word + " · " + meaning + " ✓", full, "");
     // Measured at its own size (26 px) while shown for a moment; update() picks what shows this frame.
     const wasHidden = this.done.hidden;
@@ -209,7 +251,14 @@ export class WordStrip {
   }
 
   private placeLed(): void {
-    this.led.style.left = this.center + this.wide / 2 + 8 * this.ui + "px";
+    if (this.host !== null) {
+      // Beside the host's plate, on its word row; the rift's countdown on the same row.
+      const plate = this.host.rect();
+      const row = this.host.rowY();
+      this.put(this.led, "left", (plate.x + plate.w + 8 * this.ui).toFixed(1) + "px");
+      this.put(this.led, "top", (row - 11 * this.ui).toFixed(1) + "px");
+      this.put(this.hazard, "top", (row - 15 * this.ui).toFixed(1) + "px");
+    } else this.led.style.left = this.center + this.wide / 2 + 8 * this.ui + "px";
     this.placeHazard();
   }
 
@@ -218,12 +267,16 @@ export class WordStrip {
     let count = 0;
     if ((this.mode === "word" || this.mode === "done") && this.stage !== null) {
       const F = w.foes;
-      const left = this.center - this.wide / 2;
-      const top = this.bottom - PLATE.height * this.ui;
+      const plate = this.host?.rect();
+      const left = plate !== undefined ? plate.x : this.center - this.wide / 2;
+      const wide = plate !== undefined ? plate.w : this.wide;
+      const top = plate !== undefined ? plate.y : this.bottom - PLATE.height * this.ui;
+      const bottom = plate !== undefined ? plate.y + plate.h : this.bottom;
+      if (plate !== undefined) this.put(this.ticks[0]!.parentElement as HTMLElement, "top", (bottom - 3 * this.ui).toFixed(1) + "px");
       for (let s = 0; s < F.top && count < MARKS; s += 1) {
         if (F.alive[s] !== 1 || F.z[s]! > NEAR.z) continue;
         const p = this.stage.project(F.x[s]!, F.z[s]!, 0.6, this.at, true);
-        if (p.x >= left && p.x <= left + this.wide && p.y >= top && p.y <= this.bottom + 6) this.markX[count++] = p.x;
+        if (p.x >= left && p.x <= left + wide && p.y >= top && p.y <= bottom + 6) this.markX[count++] = p.x;
       }
     }
     const on = Math.floor(now / 125) % 2 === 0;
@@ -239,6 +292,14 @@ export class WordStrip {
     const T = w.typing;
     const last = this.last;
     const doneAge = last === null ? 1e9 : now - last.start;
+    if (this.host !== null) {
+      // The host draws the word: here only the LED and the ticks follow its plate.
+      this.mode = T.lock >= 0 ? "word" : doneAge < HOST_DONE_MS ? "done" : "hidden";
+      this.placeLed();
+      this.animateLed(now, this.mode, !this.reduced);
+      this.marks(w, now);
+      return;
+    }
     let mode = "hidden";
     if (T.lock >= 0) mode = "word";
     else if (last !== null && doneAge < DONE.show + DONE.fade) mode = doneAge < DONE.word ? "final" : "done";
@@ -381,6 +442,10 @@ export class WordStrip {
     // A stray key's ghost fades in 250 ms.
     const ghost = now - this.strayAt;
     this.put(this.ghost, "opacity", ghost >= 0 && ghost < 250 ? (0.6 * (1 - ghost / 250)).toFixed(3) : "0");
+    this.animateLed(now, mode, move);
+  }
+
+  private animateLed(now: number, mode: string, move: boolean): void {
     // The streak LED: shown from 3, a bump at each rise; broken, it greys and fades in 400 ms.
     const broke = now - this.brokeAt;
     const lit = this.streakN >= STREAK.show;
