@@ -7,6 +7,7 @@ import { Menu, cycle, stepVolume } from "../src/app/menu";
 import { ROOT } from "./survival/scan";
 import { artVars, frameSlices } from "../src/view/ui-art";
 import { QUICK_SETTINGS_VARS } from "../src/kit/ui";
+import { CSS_FILES, THEME_FILES, hudSource, survivalCss, themeCss } from "./survival/css";
 
 /**
  * The "Vành Chân Trời" theme (docs/changelog/2026-10-23-theme.md): one theme
@@ -19,8 +20,8 @@ const text = (path: string): string => readFileSync(join(ROOT, path), "utf8");
 const stripComments = (css: string): string => css.replace(/\/\*[\s\S]*?\*\//g, "");
 
 describe("Tuyến Cuối theme", () => {
-  const theme = stripComments(text("src/view/theme.css"));
-  const hud = stripComments(text("src/view/survival.css"));
+  const theme = stripComments(themeCss());
+  const hud = stripComments(survivalCss());
   const defined = new Set([...theme.matchAll(/(--[\w-]+)\s*:/g)].map((match) => match[1]!));
 
   it("the HUD and screens use no literal colour: every colour comes from theme.css", () => {
@@ -47,8 +48,14 @@ describe("Tuyến Cuối theme", () => {
     expect(hud).not.toMatch(/Exo 2/);
   });
 
+  it("main.ts loads the theme files, then the base and the area CSS, in the cascade's order (ALIVE_PLAN AL-00)", () => {
+    const main = text("src/app/main.ts");
+    const imports = [...main.matchAll(/^import "\.\.\/view\/([\w-]+\.css)";$/gm)].map((match) => match[1]);
+    expect(imports).toEqual([...THEME_FILES, ...CSS_FILES]);
+  });
+
   it("the player sees the game's name, never Space's mode", () => {
-    const visible = [text("index.html"), text("src/view/screens.ts"), text("src/view/hud.ts")].join("\n");
+    const visible = [text("index.html"), text("src/view/screens.ts"), hudSource()].join("\n");
     expect(visible).toContain("LAST LINE");
     expect(visible).not.toMatch(/SINH TỒN|Sinh Tồn/);
   });
@@ -114,7 +121,7 @@ describe("Tuyến Cuối theme", () => {
   });
 
   it("every gun has its colour as a theme variable, each its own hue (BUILD_S1 §12)", () => {
-    const theme = text("src/view/theme.css");
+    const theme = themeCss();
     const hue = (hex: string): number => {
       const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255) as [number, number, number];
       const max = Math.max(r, g, b);

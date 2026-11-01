@@ -1,13 +1,14 @@
 /**
  * Every shot of the five guns, seen (docs/FEEL_PASS_S1.md §4.1–4.2, §4.6,
- * §11–12): each leaves its real muzzle (Ship sockets) and joins the sim's
+ * §11–12): each leaves its real muzzle (the PilotRig's sockets) and joins the sim's
  * path within 3 m, so where it hits stays the sim's. Xung: 3D bolts, a 3.7 m
  * tracer, a star and a soft flash (a magazine's first round twice as big,
  * sparks, a 1.5 px shove); Tán: three flame tongues, smoke, casings, amber
  * bolts; Pháo Sao: an upward flash, shells ≥ 4 % of the view long, a burst a
- * fifth of the view; a Trâu's or Đầu Đàn's death as its own event (bigKill);
- * the hits' looks by gun. Ray and Tia are BeamFx's (beams.ts). Shots light
- * the deck and the horde (lights.ts). Reads the world, never writes it.
+ * fifth of the view; the hits' looks by gun. Kills and a Trâu's or Đầu
+ * Đàn's death are kills.ts's (ALIVE_PLAN AL-00). Ray and Tia are BeamFx's
+ * (beams.ts). Shots light the deck and the horde (lights.ts). Reads the
+ * world, never writes it.
  */
 import * as THREE from "three";
 import type { ThemeAudio } from "../audio/theme-audio";
@@ -25,7 +26,7 @@ import { CELL, FLAT, Streaks, type Glows, type Strips } from "./fx";
 import { AFTER, BLOOM, FEEL, LIGHT, joinWeight, screenMetres } from "./gun-rules";
 import type { GunLights } from "./lights";
 import type { Stage } from "./scene";
-import { MUZZLE, PILOT_COLORS, type Pilot, type Ship } from "./ship";
+import { MUZZLE, PILOT_COLORS, type Pilot, type PilotRig } from "./pilot";
 import { AIM, AIM_PRIO } from "./ship-rules";
 import { BLOW as C } from "./theme";
 import { tier } from "../kit/feedback";
@@ -36,16 +37,12 @@ const ARC = 6;
 const F = 1 / 60;
 const Y = 0.95;
 
-/** A big kill's cloud by layer (a sooty base, a dark body, lit tops): puffs, height (m), spread, width from / to (× the view's 16 %), alpha. */
-const CLOUD = { n: [5, 16, 23], y: [0.4, 1, 1.8], spread: [1.1, 1.4, 1.1], from: [1.2, 1.4, 0.8], to: [2.8, 4.2, 2.4], alpha: [1.5, 1.6, 0.8] } as const;
-const CLOUD_COLOR = [C.soot, C.smokeBody, C.smokeLit] as const;
-
 /** A point of a shell's arc from `m` to (tx, 0.3, tz) at u (0 … 1): a parabola ARC m high at the middle. */
 function arcPoint(m: THREE.Vector3, tx: number, tz: number, u: number, out: THREE.Vector3): THREE.Vector3 {
   return out.set(m.x + (tx - m.x) * u, m.y + (0.3 - m.y) * u + ARC * 4 * u * (1 - u), m.z + (tz - m.z) * u);
 }
 
-export type ShotParts = { stage: Stage; glows: Glows; smoke: Glows; strips: Strips; sparks: ParticlePool; trauma: Trauma; ship: Ship; lights: GunLights; bolts: Bolts; audio: ThemeAudio; pilot: Pilot };
+export type ShotParts = { stage: Stage; glows: Glows; smoke: Glows; strips: Strips; sparks: ParticlePool; trauma: Trauma; ship: PilotRig; lights: GunLights; bolts: Bolts; audio: ThemeAudio; pilot: Pilot };
 
 export class ShotFx {
   readonly beams: BeamFx;
@@ -114,8 +111,8 @@ export class ShotFx {
     });
   }
 
-  /** Metres that look `share` of the view's height at sim depth z (the muzzle's when not given). */
-  private size(share: number, x = 0, z: number = FIELD.muzzleZ): number {
+  /** Metres that look `share` of the view's height at sim depth z (the muzzle's when not given); kills.ts sizes a big kill by it. */
+  size(share: number, x = 0, z: number = FIELD.muzzleZ): number {
     if (z === FIELD.muzzleZ) return share * this.mPerView;
     const s = this.p.stage;
     const a = s.project(x, z, 1, this.at, true).x;
@@ -273,55 +270,6 @@ export class ShotFx {
       this.p.trauma.add(0.05);
     } else if (kind === EV.charge) ship.cue(AIM_PRIO.ray, R.x[i]!, R.z[i]!);
     else if (kind === EV.rail || kind === EV.beamStart || kind === EV.beamEnd) this.beams.event(R, i, now);
-  }
-
-  /** A heap of N kills (or a scout) at sim (x, z), `size` √N-scaled: a white core and a star kept below a haze that would hide the chunks (bloom 0.85), a streak of light for a scout or 5+, a ring, scorch. */
-  kill(x: number, z: number, size: number, scout: boolean, heap: boolean, tint: THREE.Color): void {
-    const g = this.p.glows;
-    g.burst(CELL.core, x, 1, -z, 0.5 * size, 1.1 * size, 0.08, C.hot, 1.3);
-    g.burst(scout ? CELL.star12 : CELL.star8, x, 1.1, -z, 1.3 * size, 3.8 * size, 0.18, tint, 1.8, 0, 0, 0, (Math.random() - 0.5) * 3);
-    g.burst(CELL.soft, x, 1, -z, 1.6 * size, 3 * size, 0.28, tint, 0.45);
-    if (scout || heap) g.burst(CELL.flare, x, 1.2, -z, 3 * size, 8 * size, 0.18, scout ? C.elite : C.hot, 1.5);
-    g.burst(CELL.ring + FLAT, x, 0.08, -z, 0.6, 4.2 * size, 0.42, scout ? C.volt : C.swarm, 1.8);
-    g.burst(CELL.soft + FLAT, x, 0.07, -z, 2 * size, 2.6 * size, 1.2, C.ember, 0.35);
-  }
-
-  /** A Trâu or Đầu Đàn (`leader`: a quarter bigger, gold) killed at sim (x, z), its own event sized on the view (§12, §13): f0–f2 a warm flash, round and gold where Ray's line is thin and white-blue, the lane lit round it; a fireball rolling up and out; a dark cloud as wide as the flash with lit edges, laid over the deck and the beams 3.5–4.5 s, embers drifting out of it; a scorch 9 s whose cracks glow 7 s; a small ring. Returns its stop (T3). */
-  bigKill(x: number, z: number, leader: boolean): number {
-    const g = this.p.glows;
-    const s = this.p.smoke;
-    const k = leader ? 1.25 : 1;
-    const v = this.size(0.16, x, z) * k;
-    const gold = leader ? C.beacon : C.crit;
-    const r = () => Math.random();
-    // Billboard sizes are full widths: the core's white disc is 0.35 of it (here 17 % of the view across), the rays reach half.
-    g.burst(CELL.core, x, 1.2, -z, v * 1.8, v * 2.3, 3 * F, C.hot, 3, 0, 0, 0, 0, NaN);
-    g.burst(CELL.star12, x, 1.3, -z, v * 2, v * 3.6, 5 * F, gold, 2.6, 0, 0, 0, 0.6, NaN);
-    g.burst(CELL.soft + FLAT, x, 0.07, -z, v * 3, v * 4, 4 * F, gold, 1.2, 0, 0, 0, 0, NaN);
-    this.p.lights.flash(LIGHT.big, x, 1.6, -z, gold);
-    // The fireball, sized on the view: lumpy puffs of flame, white-hot and gold (not Tia's orange), rolling up and out to both sides (Ray's line stays thin between them).
-    for (let i = 0; i < 9; i += 1) {
-      const side = (i % 2 === 0 ? -1 : 1) * (0.3 + r());
-      g.burst(CELL.puff, x + side * 0.25 * v, 0.9 + r() * 0.6, -z, 0.35 * v, (0.9 + r() * 0.4) * v, 0.3 + r() * 0.15, i < 3 ? C.hot : gold, 1.2, side * 0.45 * v, (0.35 + r() * 0.35) * v, 0, (r() - 0.5) * 2, NaN);
-    }
-    // The cloud (Glows smoke mode, over the beams), as wide as the flash, rising slowly 3.5–4.5 s: a sooty base, a dark body, lit tops.
-    for (let i = 0, l = 0; i < CLOUD.n[2]; i += 1) {
-      if (i >= CLOUD.n[l]!) l += 1;
-      const a = r() * 6.283;
-      const d = (0.15 + r() * CLOUD.spread[l]!) * v;
-      s.burst(CELL.puff, x + Math.cos(a) * d, CLOUD.y[l]! + r() * 0.8, -z + Math.sin(a) * d * 0.4, CLOUD.from[l]! * v, (CLOUD.to[l]! + r() * 0.5) * v, 3.5 + r(), CLOUD_COLOR[l]!, CLOUD.alpha[l]!, Math.cos(a) * 0.08 * v, (0.06 + r() * 0.08) * v, 0, (r() - 0.5) * 0.6);
-    }
-    // The scorch (9 s), its cracks glowing as they cool (7 s), the bed of embers under the chunks (3.5 s).
-    const crack = r() * 6.283;
-    s.burst(CELL.soft + FLAT, x, 0.062, -z, 1.5 * v, 1.6 * v, 9, C.scorch, 0.8);
-    s.burst(CELL.star12 + FLAT, x, 0.064, -z, 1.7 * v, 1.8 * v, 9, C.scorch, 0.9, 0, 0, 0, 0, crack);
-    g.burst(CELL.star12 + FLAT, x, 0.066, -z, 1.4 * v, 1.5 * v, 7, C.ember, 1.1, 0, 0, 0, 0, crack);
-    g.burst(CELL.star8 + FLAT, x, 0.067, -z, 0.9 * v, 0.95 * v, 7, C.ember, 0.9, 0, 0, 0, 0, crack + 0.3);
-    g.burst(CELL.soft + FLAT, x, 0.065, -z, 7 * k, 8 * k, 3.5, C.swarm, 0.55);
-    g.burst(CELL.ring + FLAT, x, 0.08, -z, 2, 5 * k, 0.35, C.hot, 1.1);
-    this.spark(x, 1, -z, 0, 1.6, 0, 36, 10, C.hot, 0.32, 0.8, 2.2);
-    for (let i = 0; i < 14; i += 1) this.p.sparks.spawn(this.w3.set(x + (r() - 0.5) * 0.5 * v, 1 + r() * 2, -z), this.v.set((r() - 0.5) * 2, 0.5 + r(), (r() - 0.5)), C.ember, 0.28, 1.4 + r(), { drag: 1.2, gravity: -0.6 });
-    return tier(3).stopMs;
   }
 
   /** A blow's look by gun (Combat draws numbers and sounds); `armour`: Vỏ's look is drawn (gunfx). */

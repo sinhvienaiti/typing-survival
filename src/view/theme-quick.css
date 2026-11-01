@@ -1,0 +1,8 @@
+/* Theme tokens only the quick panels (quick.css) uses (ALIVE_PLAN AL-00 split of theme.css; shared tokens stay in theme.css). */
+:root {
+  /* The chosen keyboard sound row (quick panel): its label, the light inside its plate (centre, edge) and its inner rim. */
+  --volt-chosen-text: #d9f2ff;
+  --volt-light: rgba(61, 184, 255, 0.22);
+  --volt-light-edge: rgba(61, 184, 255, 0.08);
+  --volt-rim: rgba(61, 184, 255, 0.45);
+}

@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "base": "/assets/typing-survival/ui/",
+  "roles": {
+    "frame-card": {
+      "kind": "frame",
+      "alt": "",
+      "rev": "be2611cf",
+      "widths": [
+        448,
+        896
+      ],
+      "aspect": 3.733333,
+      "slice": [
+        37.11,
+        17.13,
+        33.42,
+        17.13
+      ]
+    },
+    "gun-phao": {
+      "kind": "icon",
+      "alt": "Star Mortar",
+      "rev": "29a7ca25",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "gun-ray": {
+      "kind": "icon",
+      "alt": "Rail Gun",
+      "rev": "8081eccf",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "gun-tan": {
+      "kind": "icon",
+      "alt": "Scatter Gun",
+      "rev": "82adb879",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "gun-tia": {
+      "kind": "icon",
+      "alt": "Heat Beam",
+      "rev": "f44238c3",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "gun-xung": {
+      "kind": "icon",
+      "alt": "Pulse Gun",
+      "rev": "ac11e01b",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-bay-full": {
+      "kind": "icon",
+      "alt": "Bay full",
+      "rev": "a52287cb",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-lock": {
+      "kind": "icon",
+      "alt": "Locked",
+      "rev": "1057e3a1",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "part-mag-empty": {
+      "kind": "icon",
+      "alt": "Empty magazine",
+      "rev": "25b072e6",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "part-mag-full": {
+      "kind": "icon",
+      "alt": "Full magazine",
+      "rev": "2cd5c041",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    }
+  }
+}

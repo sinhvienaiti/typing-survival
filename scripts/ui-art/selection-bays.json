@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "role": "gun-xung",
+      "kind": "icon",
+      "source": "ui/icons/gun-xung.norm",
+      "accepted": true,
+      "ticket": "108",
+      "verdict": "CODEX_QUEUE 108: Nhận 29/10",
+      "alt": "Pulse Gun"
+    },
+    {
+      "role": "gun-xung",
+      "kind": "icon",
+      "source": "ui/icons/gun-xung.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Pulse Gun"
+    },
+    {
+      "role": "gun-tia",
+      "kind": "icon",
+      "source": "ui/icons/gun-tia.norm",
+      "accepted": true,
+      "ticket": "108",
+      "verdict": "CODEX_QUEUE 108: Nhận 29/10",
+      "alt": "Heat Beam"
+    },
+    {
+      "role": "gun-tia",
+      "kind": "icon",
+      "source": "ui/icons/gun-tia.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Heat Beam"
+    },
+    {
+      "role": "gun-tan",
+      "kind": "icon",
+      "source": "ui/icons/gun-tan.norm",
+      "accepted": true,
+      "ticket": "108",
+      "verdict": "CODEX_QUEUE 108: Nhận 29/10",
+      "alt": "Scatter Gun"
+    },
+    {
+      "role": "gun-tan",
+      "kind": "icon",
+      "source": "ui/icons/gun-tan.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Scatter Gun"
+    },
+    {
+      "role": "gun-ray",
+      "kind": "icon",
+      "source": "ui/icons/gun-ray.norm",
+      "accepted": true,
+      "ticket": "108",
+      "verdict": "CODEX_QUEUE 108: Nhận 29/10",
+      "alt": "Rail Gun"
+    },
+    {
+      "role": "gun-ray",
+      "kind": "icon",
+      "source": "ui/icons/gun-ray.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Rail Gun"
+    },
+    {
+      "role": "gun-phao",
+      "kind": "icon",
+      "source": "ui/icons/gun-phao-sao.norm",
+      "accepted": true,
+      "ticket": "108",
+      "verdict": "CODEX_QUEUE 108: Nhận 29/10",
+      "alt": "Star Mortar"
+    },
+    {
+      "role": "gun-phao",
+      "kind": "icon",
+      "source": "ui/icons/gun-phao-sao.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Star Mortar"
+    },
+    {
+      "role": "icon-bay-full",
+      "kind": "icon",
+      "source": "ui/icons/bay-full.r2",
+      "accepted": true,
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
+      "alt": "Bay full",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-lock",
+      "kind": "icon",
+      "source": "ui/icons/lock",
+      "accepted": true,
+      "ticket": "149",
+      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "alt": "Locked",
+      "fill": 0.85
+    },
+    {
+      "role": "part-mag-empty",
+      "kind": "icon",
+      "source": "ui/parts/mag-empty",
+      "accepted": true,
+      "ticket": "240",
+      "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (try3)",
+      "alt": "Empty magazine"
+    },
+    {
+      "role": "part-mag-full",
+      "kind": "icon",
+      "source": "ui/parts/mag-full",
+      "accepted": true,
+      "ticket": "153",
+      "verdict": "CODEX_QUEUE 153: Nhận 31/10",
+      "alt": "Full magazine"
+    },
+    {
+      "role": "frame-card",
+      "kind": "frame",
+      "source": "ui/frames-epic/bay-card.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "1424x380+56+59",
+      "slice": [
+        141,
+        244,
+        127,
+        244
+      ]
+    }
+  ]
+}

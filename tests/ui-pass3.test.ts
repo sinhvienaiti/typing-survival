@@ -7,8 +7,9 @@ import type { World } from "../src/sim/world";
 import { renderScreen } from "../src/view/screens";
 import { quickIcons } from "../src/view/ui-art";
 import { previewFit } from "../src/view/type-fx-preview";
-import table from "../src/view/ui-art.json";
-import selection from "../scripts/ui-art/selection.json";
+import { UI_ART_TABLE as table } from "../src/view/ui-art";
+import { selection } from "./survival/art-selection";
+import { survivalCss, themeCss } from "./survival/css";
 
 /**
  * Last Line UI pass 3 (31/10), from the second in-game scoring: the ticket 242
@@ -19,8 +20,8 @@ import selection from "../scripts/ui-art/selection.json";
  * a Stamp's flight inside its box. The browser scenario survival-ui-art.mjs
  * measures each on the page.
  */
-const css = readFileSync("src/view/survival.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-const theme = readFileSync("src/view/theme.css", "utf8");
+const css = survivalCss().replace(/\/\*[\s\S]*?\*\//g, "");
+const theme = themeCss();
 const roleOf = (html: string): string[] => [...html.matchAll(/\/([\w-]+)\.\d+\.webp/g)].map(([, role]) => role!);
 
 describe("ticket 242 (accepted 31/10 17:05, graded at real size)", () => {
@@ -120,7 +121,7 @@ describe("sealed bays, the results card and its stars", () => {
     expect(css).toMatch(/@keyframes sv-star-in \{\s*0% \{ opacity: 0; transform: scale\(0\.35\)/);
     expect(css).toContain('[data-motion="reduced"] .sv-star-row li.is-on .sv-art-star { animation: none; }');
     // Two lines of four words make the room (the card holds 720p without scrolling).
-    expect(readFileSync("src/view/screens.ts", "utf8")).toContain("const END_WORDS = 8;");
+    expect(readFileSync("src/view/screen-end.ts", "utf8")).toContain("const END_WORDS = 8;");
   });
 });
 

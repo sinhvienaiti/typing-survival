@@ -1,0 +1,55 @@
+/*
+ * The results card (screen-end.ts; ALIVE_PLAN AL-00 split of survival.css):
+ * stars, words, the next stage row.
+ */
+.sv-more { margin: calc(4px * var(--ui)) 0 0 !important; }
+.sv-star-row { list-style: none; display: flex; justify-content: center; gap: calc(14px * var(--ui)); margin: calc(4px * var(--ui)) 0 calc(6px * var(--ui)); padding: 0; font: 600 calc(13px * var(--ui)) var(--font-battle); color: var(--muted); }
+.sv-star-row li.is-on { color: var(--soft); }
+
+.sv-end-mode { margin: calc(-6px * var(--ui)) 0 calc(8px * var(--ui)); font: 600 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.3em; color: var(--steel-300); }
+
+/* Results. */
+.sv-end.is-lost h1 { color: var(--danger); }
+
+.sv-words { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: calc(4px * var(--ui)) calc(18px * var(--ui)); text-align: left; }
+.sv-words li { font: 500 calc(14px * var(--ui)) var(--font-battle); color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sv-words b { color: var(--text); margin-right: 6px; }
+
+.sv-star-row .sv-art-star:not([hidden]) { display: block; margin: 0 auto calc(3px * var(--ui)); }
+
+.sv-star-row .sv-art-star.is-lit { filter: drop-shadow(0 0 calc(3px * var(--ui)) var(--led)) drop-shadow(0 0 calc(12px * var(--ui)) var(--led-glow)); }
+.sv-star-row li:not(.is-on) .sv-art-star { opacity: 0.45; filter: grayscale(1) brightness(0.6); }
+
+.sv-words .sv-art-small { margin: calc(-3px * var(--ui)) calc(6px * var(--ui)) 0 0; }
+
+/* Results: the stars are the card's hero (80 px); each earned one lights in turn, flying in white-hot and settling into its glow (UI pass 3); reduced motion shows them lit at once. A missed one stays grey and dim. */
+.sv-star-row { gap: calc(34px * var(--ui)); }
+.sv-star-row li.is-on .sv-art-star { animation: sv-star-in 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) backwards; }
+.sv-star-row li.is-on:nth-child(2) .sv-art-star { animation-delay: 0.25s; }
+.sv-star-row li.is-on:nth-child(3) .sv-art-star { animation-delay: 0.5s; }
+@keyframes sv-star-in {
+  0% { opacity: 0; transform: scale(0.35) rotate(-30deg); filter: brightness(2.6) drop-shadow(0 0 0 var(--white-hot)) drop-shadow(0 0 0 var(--led-glow)); }
+  45% { opacity: 1; transform: scale(1.2) rotate(5deg); filter: brightness(1.9) drop-shadow(0 0 calc(10px * var(--ui)) var(--white-hot)) drop-shadow(0 0 calc(30px * var(--ui)) var(--led-glow)); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); filter: brightness(1) drop-shadow(0 0 calc(3px * var(--ui)) var(--led)) drop-shadow(0 0 calc(12px * var(--ui)) var(--led-glow)); }
+}
+[data-motion="reduced"] .sv-star-row li.is-on .sv-art-star { animation: none; }
+.sv-star-row li:not(.is-on) .sv-art-star { opacity: 0.35; }
+/* The results' stat tiles a little lower, so the card holds its hero stars at 720p. */
+.sv-end .sv-stats div { padding-block: calc(7px * var(--ui)); }
+/* The results' next stage: the one wide row, its name as large as a title, beside its icon and picture. */
+.sv-end { width: min(94vw, calc(700px * var(--ui))); }
+/*
+ * Over its painted background the results card stands left of centre, so the hero painted on the right stays clear
+ * (UI pass 3: the card's right edge at most 62 % of a 16:9 width, 58.6 % here); the veil darkens the card's side and leaves
+ * the hero lit. A narrow or tall view keeps the card centred.
+ */
+@media (min-aspect-ratio: 4/3) and (min-width: 1000px) {
+  .sv-overlay[data-screen="end"]:has(> .sv-bg:not([hidden])) { place-items: center start; padding-left: max(4vw, calc(48px * var(--ui))); }
+  .sv-overlay[data-screen="end"]:has(> .sv-bg:not([hidden]))::before { background: linear-gradient(90deg, var(--veil-art-edge) 0%, var(--veil-art) 55%, transparent 80%); }
+}
+.sv-menu.sv-row .sv-item[data-id="next"] { flex-basis: 100%; max-width: none; }
+.sv-item[data-id="next"] b { font-size: calc(22px * var(--ui)); color: var(--text); }
+.sv-item[data-id="next"] small { font-size: calc(14px * var(--ui)); color: var(--soft); }
+/* The other rows (retry, stages, main menu) share one line under it, so the card holds without scrolling at 720p. */
+.sv-end .sv-menu.sv-row .sv-item:not([data-id="next"]) { flex: 1 1 0; max-width: none; gap: calc(8px * var(--ui)); padding-inline: calc(10px * var(--ui)); }
+.sv-end .sv-menu.sv-row .sv-item:not([data-id="next"]) b { white-space: nowrap; }

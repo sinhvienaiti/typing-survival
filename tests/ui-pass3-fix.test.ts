@@ -7,6 +7,7 @@ import { renderJourney } from "../src/view/screens-journey";
 import { previewFit, SEAT } from "../src/view/type-fx-preview";
 import { BOX, resetArtWarnings } from "../src/view/ui-art";
 import { journey206 } from "./ui-art-fixtures";
+import { survivalCss, themeCss, hudSource } from "./survival/css";
 
 /**
  * Last Line UI pass 3, the judges' fixes (31/10, two judges after parts A and
@@ -18,8 +19,8 @@ import { journey206 } from "./ui-art-fixtures";
  * readable locked rows, lamp bullets, the bay-full icon at 28 px and clearer
  * wording. The browser scenario survival-ui-art.mjs measures each on the page.
  */
-const css = readFileSync("src/view/survival.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-const theme = readFileSync("src/view/theme.css", "utf8");
+const css = survivalCss().replace(/\/\*[\s\S]*?\*\//g, "");
+const theme = themeCss();
 const source = (path: string): string => readFileSync(path, "utf8");
 
 afterEach(() => { vi.restoreAllMocks(); resetArtWarnings(); });
@@ -105,7 +106,8 @@ describe("the armory", () => {
   });
 
   it("tells the player where the words go without the game's internal id", () => {
-    const main = source("src/app/main.ts");
+    // The armory's notes are screen-items.ts's view() (moved from main.ts, ALIVE_PLAN AL-00).
+    const main = source("src/app/screen-items.ts");
     expect(main).toContain('"Every word you finish goes into your learning log, shared across the portal\'s games."');
     expect(main).not.toMatch(/learning log \(typing-survival\)/);
   });
@@ -142,7 +144,7 @@ describe("notes, the stage card, the title and locked rows", () => {
 
 describe("the fight's HUD", () => {
   it("reads the kills plate as \"8 kills in 3 s\" and draws the bay-full icon at 28 px", () => {
-    const hud = source("src/view/hud.ts");
+    const hud = hudSource();
     expect(hud).toContain('el("small", "", kills, "kills in 3 s");');
     expect(hud).toContain("this.kills.textContent = String(killsRecent);");
     expect(hud).not.toContain('"×" + killsRecent');

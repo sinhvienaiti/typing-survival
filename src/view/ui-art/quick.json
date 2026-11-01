@@ -1,0 +1,180 @@
+{
+  "version": 1,
+  "base": "/assets/typing-survival/ui/",
+  "roles": {
+    "hud-settings": {
+      "kind": "icon",
+      "alt": "Settings",
+      "rev": "2e1d0eea",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "hud-sound": {
+      "kind": "icon",
+      "alt": "Sound",
+      "rev": "6b0a600a",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "hud-sound-muted": {
+      "kind": "icon",
+      "alt": "Sound off",
+      "rev": "fff49352",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-effect-strength": {
+      "kind": "icon",
+      "alt": "Effect strength",
+      "rev": "8812ae7b",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-letter-style": {
+      "kind": "icon",
+      "alt": "Letter style",
+      "rev": "112bff5e",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-word-size": {
+      "kind": "icon",
+      "alt": "Word size",
+      "rev": "0f196b12",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "quick-close": {
+      "kind": "icon",
+      "alt": "Close",
+      "rev": "3bb7f39c",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "slider-fill": {
+      "kind": "track",
+      "alt": "Slider fill",
+      "rev": "3bc4281c",
+      "widths": [
+        512,
+        1024
+      ],
+      "aspect": 16
+    },
+    "slider-thumb": {
+      "kind": "icon",
+      "alt": "Slider knob",
+      "rev": "9e574c1e",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "slider-track": {
+      "kind": "track",
+      "alt": "Slider groove",
+      "rev": "8a9dcffc",
+      "widths": [
+        512,
+        1024
+      ],
+      "aspect": 16
+    },
+    "vol-effects": {
+      "kind": "icon",
+      "alt": "Effects volume",
+      "rev": "66c44456",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "vol-interface": {
+      "kind": "icon",
+      "alt": "Interface volume",
+      "rev": "f6ffa5b0",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "vol-keyboard": {
+      "kind": "icon",
+      "alt": "Keyboard sound",
+      "rev": "66a94abc",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "vol-master": {
+      "kind": "icon",
+      "alt": "Master volume",
+      "rev": "32a42316",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "vol-music": {
+      "kind": "icon",
+      "alt": "Music volume",
+      "rev": "f65c07d3",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "vol-voice": {
+      "kind": "icon",
+      "alt": "Voice volume",
+      "rev": "97e684ea",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    }
+  }
+}

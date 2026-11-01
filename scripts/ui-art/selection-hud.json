@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "role": "icon-armour",
+      "kind": "icon",
+      "source": "ui/icons/armour",
+      "accepted": true,
+      "ticket": "149",
+      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "alt": "Hull armour",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-clock",
+      "kind": "icon",
+      "source": "ui/icons/clock.r2",
+      "accepted": true,
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
+      "alt": "Time left",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-kills",
+      "kind": "icon",
+      "source": "ui/icons/kills.r2",
+      "accepted": true,
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
+      "alt": "Kills",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-surge",
+      "kind": "icon",
+      "source": "ui/icons/surge",
+      "accepted": true,
+      "ticket": "149",
+      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "alt": "Surge",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-repair-pod",
+      "kind": "icon",
+      "source": "ui/icons/repair-pod",
+      "accepted": true,
+      "ticket": "149",
+      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "alt": "Repair pod",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-keyboard",
+      "kind": "icon",
+      "source": "ui/icons/keyboard.r2",
+      "accepted": true,
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
+      "alt": "Keyboard",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-objective",
+      "kind": "icon",
+      "source": "ui/icons/objective",
+      "accepted": true,
+      "ticket": "238",
+      "verdict": "CODEX_QUEUE 238: Nhận 31/10 03:15 (try2)",
+      "alt": "Goal",
+      "fill": 0.85
+    },
+    {
+      "role": "frame-plate",
+      "kind": "frame",
+      "source": "ui/frames-epic/plate-long.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "1448x325+44+92",
+      "slice": [
+        128,
+        196,
+        125,
+        196
+      ]
+    },
+    {
+      "role": "frame-banner",
+      "kind": "frame",
+      "source": "ui/frames-epic/banner.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "1518x226+9+127",
+      "slice": [
+        0,
+        426,
+        0,
+        426
+      ]
+    }
+  ]
+}

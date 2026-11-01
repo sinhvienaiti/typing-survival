@@ -1,0 +1,11 @@
+/*
+ * The stage card before a fight (screen-intro.ts; ALIVE_PLAN AL-00 split of
+ * survival.css). Its start line is journey.css's .sv-start.
+ */
+.sv-start.sv-go { animation: sv-blink 0.9s steps(2, jump-none) infinite; }
+[data-motion="reduced"] .sv-start.sv-go { animation: none; }
+
+/* The stage card before a fight: its stage art a band inside the frame's rails as on the briefing (judges, UI pass 3 fixes: a 384 × 216 picture between empty margins read as a web modal); the trial's card, with no art, keeps the narrow sheet. */
+.sv-intro:has(> .sv-art-intro:not([hidden])) { width: min(94vw, calc(778px * var(--ui))); }
+.sv-art-intro:not([hidden]) { display: block; object-fit: cover; margin: calc(8px * var(--ui)) calc(-17px * var(--ui) - 1px) calc(10px * var(--ui)); width: calc(100% + 34px * var(--ui) + 2px); outline: 1px solid var(--bevel-lo); outline-offset: -1px; }
+.sv-art-introGun:not([hidden]) { margin-right: calc(4px * var(--ui)); }

@@ -1,20 +1,21 @@
 /**
  * The screens over the fight (DOM in the HUD's overlay, styled by
- * survival.css with theme.css's variables): the title "Tuyến Cuối" (with the
+ * screens.css with the theme's variables): the title "Tuyến Cuối" (with the
  * mode), settings (with "Nhịp tự điều"), the armory and learning placeholder,
- * the typing profile "Hồ sơ gõ", pause and the results (with one line of
- * advice). Each is drawn
- * whole from its menu (src/app/menu.ts) whenever something changes; a pointer
- * can hover (select) and click (take) the items too.
+ * the typing profile "Hồ sơ gõ" and pause; the stage card is
+ * screen-intro.ts's, the results screen-end.ts's, their shared parts (menu,
+ * hints, advice, stat tiles) screen-parts.ts's (split by ALIVE_PLAN AL-00).
+ * Each is drawn whole from its menu (src/app/menu.ts) whenever something
+ * changes; a pointer can hover (select) and click (take) the items too.
  */
-import type { Menu, MenuItem } from "../app/menu";
+import type { Menu } from "../app/menu";
 import type { GunKey } from "../content/guns";
-import { artHtml, gunRole, stageRole, bgRole, type ArtPlace } from "./ui-art";
+import { renderEnd, type EndView } from "./screen-end";
+import { renderIntro, type IntroView } from "./screen-intro";
+import { advice, escapeHtml, hints, learningList, menu, statTile, type Stat } from "./screen-parts";
+import { artHtml, gunRole, bgRole } from "./ui-art";
 
-/** `icon`: a role (ui-art.ts) drawn beside the number. */
-export type Stat = { value: string; label: string; note?: string; icon?: string };
-/** `fresh`: finished for the first time ever in this run (the new badge, LL-52); others get the check. */
-export type Learned = { en: string; vi: string; fresh?: boolean };
+export { escapeHtml, hints, menu, type Learned, type Stat } from "./screen-parts";
 export type GunCard = { name: string; title: string; text: string; kind: GunKey };
 
 export type ScreenView =
@@ -23,66 +24,8 @@ export type ScreenView =
   | { kind: "armory"; menu: Menu; guns: readonly GunCard[]; learning: readonly string[] }
   | { kind: "profile"; menu: Menu; stats: readonly Stat[]; advice: string; lines: readonly string[] }
   | { kind: "pause"; menu: Menu }
-  | { kind: "intro"; title: string; lines: readonly string[]; ready: boolean; stage?: string; guns?: readonly GunKey[] }
-  | { kind: "end"; menu: Menu; mode: string; won: boolean; stats: readonly Stat[]; words: readonly Learned[]; advice: string; note: string; stage?: string; stars?: string };
-
-/** Words listed on the end screen (two columns of four: UI pass 3 gave the fifth row to the 80 px stars, so the card still fits 720p). */
-const END_WORDS = 8;
-
-export const escapeHtml = (text: string): string => text.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]!);
-
-/** An LED bar of ten segments, `level` 0 … 1 lit. */
-function led(level: number): string {
-  const lit = Math.round(Math.max(0, Math.min(1, level)) * 10);
-  let cells = "";
-  for (let k = 0; k < 10; k += 1) cells += k < lit ? '<i class="is-lit"></i>' : "<i></i>";
-  return '<span class="sv-ledbar" aria-hidden="true">' + cells + "</span>";
-}
-
-/** A stage's stars after its label (lit, then dark), or the lock of a stage not open yet. */
-function stars(entry: MenuItem): string {
-  if (entry.locked) return '<span class="sv-stars">' + artHtml("icon-lock", "icon") + "</span>";
-  if (entry.stars === undefined) return "";
-  let html = "";
-  for (let k = 0; k < 3; k += 1) html += k < entry.stars ? artHtml("icon-star-lit", "icon", { cls: "is-lit" }) : artHtml("icon-star-unlit", "icon");
-  return '<span class="sv-stars" role="img" aria-label="' + entry.stars + ' of 3 stars">' + html + "</span>";
-}
-
-/** `place`: the icons' size; `gap`: an item without an icon keeps the column (its menu has icons). */
-function item(entry: MenuItem, index: number, on: boolean, place: ArtPlace, gap: boolean): string {
-  const classes = ["sv-item", on ? "is-on" : "", entry.enabled ? "" : "is-off", entry.value !== undefined ? "is-setting" : ""].filter(Boolean).join(" ");
-  const value =
-    entry.value === undefined
-      ? ""
-      : '<span class="sv-value">' + (entry.level !== undefined ? led(entry.level) : "") + artHtml("part-arrow", "arrow", { cls: "is-left" }) + "<b>" + escapeHtml(entry.value) + "</b>" + artHtml("part-arrow", "arrow") + "</span>";
-  const icon = entry.icon ? artHtml(entry.icon, place) : gap && !entry.art ? '<i class="sv-icon-gap sv-gap-' + place + '" aria-hidden="true"></i>' : "";
-  return (
-    '<div class="' + classes + '" data-index="' + index + '" data-id="' + escapeHtml(entry.id) + '" role="menuitem" aria-disabled="' + !entry.enabled + '"' + (on ? ' aria-current="true"' : "") + ">" +
-    artHtml(on ? "part-led-on" : "part-led-off", "led") + icon + (entry.art ? artHtml(entry.art, "menu") : "") +
-    '<span class="sv-item-text"><b>' + escapeHtml(entry.label) + "</b>" + (entry.note ? "<small>" + escapeHtml(entry.note) + "</small>" : "") + "</span>" +
-    stars(entry) + value +
-    "</div>"
-  );
-}
-
-/** `place`: the size of the items' icons (32 px on the title, 28 px elsewhere: UI pass 2, 31/10; were 24 and 20, UI_IMAGERY LL-09, LL-48). */
-export function menu(m: Menu, extra = "", place: ArtPlace = "icon"): string {
-  const gap = m.items.some((entry) => entry.icon !== undefined);
-  return '<nav class="sv-menu' + extra + '" role="menu">' + m.items.map((entry, index) => item(entry, index, index === m.index, place, gap)).join("") + "</nav>";
-}
-
-/** The key hints; each key is drawn on a key cap (survival.css, part-keycap). */
-export const hints = (text: string): string => '<footer class="sv-hints">' + text + "</footer>";
-
-/** The advice line on its word plate, led by the learning-rule icon (UI pass 3: was a CSS rule on a flat block). */
-const advice = (text: string): string => '<p class="sv-advice">' + artHtml("icon-learning-rule", "icon") + "<span>" + escapeHtml(text) + "</span></p>";
-
-/** Notes as a list; each bullet is the panel lamp's art (survival.css), not the browser's disc. */
-const learningList = (lines: readonly string[]): string => '<ul class="sv-learning">' + lines.map((line) => "<li>" + escapeHtml(line) + "</li>").join("") + "</ul>";
-
-/** A stat tile: its icon beside the number. */
-const statTile = (stat: Stat, note = false): string =>
-  "<div><b>" + (stat.icon ? artHtml(stat.icon, "item") : "") + escapeHtml(stat.value) + "</b><small>" + escapeHtml(stat.label) + "</small>" + (note && stat.note ? "<em>" + escapeHtml(stat.note) + "</em>" : "") + "</div>";
+  | IntroView
+  | EndView;
 
 export function renderScreen(view: ScreenView): string {
   switch (view.kind) {
@@ -146,30 +89,8 @@ export function renderScreen(view: ScreenView): string {
         "</div>"
       );
     case "intro":
-      // The stage's card before its fight (a page from the journey or a replay): the first key goes in and opens the sound.
-      return (
-        '<div class="sv-card sv-panel sv-sheet sv-intro">' +
-        "<h1>" + escapeHtml(view.title) + '</h1><div class="sv-hazard" aria-hidden="true"></div>' +
-        (view.stage ? artHtml(stageRole(view.stage), "intro") : "") +
-        view.lines.map((line, n) => "<p>" + (n === 1 && view.guns ? line.split(" · ").map((name, i) => (view.guns?.[i] ? artHtml(gunRole(view.guns[i]!), "introGun") : "") + escapeHtml(name)).join(" · ") : escapeHtml(line)) + "</p>").join("") +
-        '<div class="sv-start' + (view.ready ? " is-on sv-go" : " is-off") + '">' + (view.ready ? "PRESS ANY KEY TO PLAY" : "LOADING…") + "</div>" +
-        hints("In battle: <kbd>Esc</kbd> pause") +
-        "</div>"
-      );
+      return renderIntro(view);
     case "end":
-      return (
-        artHtml(bgRole(view.won ? "results-win" : "results-lose"), "bg") + '<div class="sv-card sv-panel sv-sheet sv-end ' + (view.won ? "is-won" : "is-lost") + '">' +
-        "<h1>" + (view.stage ? (view.won ? "STAGE CLEAR!" : "STAGE LOST") : view.won ? "LINE HELD!" : "LINE LOST") + '</h1><div class="sv-end-mode">' + escapeHtml(((view.stage ? view.stage + " · " : "") + view.mode).toUpperCase()) + '</div><div class="sv-hazard" aria-hidden="true"></div>' +
-        (view.stars ?? "") +
-        '<div class="sv-stats">' + view.stats.map((stat) => statTile(stat)).join("") + "</div>" +
-        (view.advice ? advice(view.advice) : "") +
-        (view.note ? '<p class="sv-note">' + escapeHtml(view.note) + "</p>" : "") +
-        // The last words typed, as many as the card holds without scrolling (the keys cannot scroll it), and how many more.
-        '<ul class="sv-words">' + view.words.slice(-END_WORDS).map((word) => "<li>" + (word.fresh ? artHtml("icon-new-badge", "small", { label: true }) : artHtml("icon-check", "small")) + "<b>" + escapeHtml(word.en) + "</b>" + escapeHtml(word.vi) + "</li>").join("") + "</ul>" +
-        (view.words.length > END_WORDS ? '<p class="sv-note sv-more">' + "Last " + END_WORDS + " words · " + (view.words.length - END_WORDS) + " more in your learning log</p>" : "") +
-        menu(view.menu, " sv-row") +
-        hints("<kbd>↑</kbd><kbd>↓</kbd> select · <kbd>Enter</kbd> confirm · <kbd>Esc</kbd> menu") +
-        "</div>"
-      );
+      return renderEnd(view);
   }
 }

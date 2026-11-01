@@ -22,20 +22,15 @@ import type { World } from "../sim/world";
 import { CELL, type Glows, type Strips } from "./fx";
 import { models, shipModelRequest } from "./models";
 import { AIM, AIM_LEVELS, AIM_PRIO, DRIFT, ENGINE, HOLD, KICK, KICKS, NOSE_MAX_Z, REDUCED, driftBank, driftTarget, holdStep, hover, kickLevel, pickAim, springStep, threatSums, thrust, yawTo, type KickName } from "./ship-rules";
+import { MUZZLE, PILOT_COLORS, type Pilot, type PilotPose, type PilotRig } from "./pilot";
 import { BLOW } from "./theme";
 
-export type Pilot = "vanguard" | "draconis";
-/** Muzzle sockets: the centre gun, Xung's left and right, the core (Pháo Sao fires upward from it). */
-export const MUZZLE = { centre: 0, left: 1, right: 2, core: 3 } as const;
+export type { Pilot } from "./pilot";
 const SOCKETS = ["FX_MUZZLE", "FX_MUZZLE_L", "FX_MUZZLE_R", "FX_CORE"] as const;
 /** Where a socket stands when the model has none (ship space: the root rides 0.9 m over the deck). */
 const ANCHORS: readonly (readonly [number, number, number])[] = [[0, 0.05, -1.5], [-0.45, 0.05, -1.5], [0.45, 0.05, -1.5], [0, 0.35, -0.2]];
 const ENGINES = ["FX_ENGINE_L", "FX_ENGINE_R", "FX_ENGINE_C"] as const;
 const RIDE = 0.9;
-export const PILOT_COLORS: Record<Pilot, { shot: THREE.Color; beam: THREE.Color }> = {
-  vanguard: { shot: new THREE.Color("#3db8ff"), beam: new THREE.Color("#ff8c32") },
-  draconis: { shot: new THREE.Color("#ff8a3a"), beam: new THREE.Color("#ff5a1f") },
-};
 const KICK_INDEX = Object.fromEntries(KICKS.map((name, k) => [name, k])) as Record<KickName, number>;
 
 function stand(): THREE.Group {
@@ -53,7 +48,8 @@ function stand(): THREE.Group {
 /** The pose drawn this frame (the scenarios' probe, info().ship): metres, radians, 0 … 1. */
 export type ShipPose = { x: number; vx: number; target: number; weight: number; yaw: number; aim: number; back: number; down: number; pitch: number; roll: number; bob: number; nose: number; thrust: number };
 
-export class Ship {
+/** The ship behind the PilotRig (pilot.ts): the fight's effects call only those methods. */
+export class Ship implements PilotRig {
   readonly root = new THREE.Group();
   private hero: Hero | null = null;
   private readonly fallback = stand();
@@ -66,8 +62,8 @@ export class Ship {
   });
   private readonly nodes: THREE.Object3D[] = this.anchors.slice();
   private engines: THREE.Object3D[] = [];
-  /** The engine's glow × this (the clean streak's tier 3, FEEL_PASS_S1 §3.6). */
-  boost = 1;
+  /** The engine's glow × this (the clean streak's tier 3, FEEL_PASS_S1 §3.6; set through boost()). */
+  private glow = 1;
   loaded = false;
   /** The motion's own clock (s): it runs with the frames drawn, so the hover and kicks hold still under the pause. */
   private t = 0;
@@ -90,7 +86,8 @@ export class Ship {
   private readonly hov = { y: 0, roll: 0, pitch: 0 };
   private readonly end = new Float64Array(2);
   private readonly color: THREE.Color;
-  readonly pose: ShipPose = { x: 0, vx: 0, target: 0, weight: 0, yaw: 0, aim: 0, back: 0, down: 0, pitch: 0, roll: 0, bob: 0, nose: 0, thrust: 0 };
+  /** The pose drawn this frame (`pose()` is the PilotRig hook). */
+  readonly drawn: ShipPose = { x: 0, vx: 0, target: 0, weight: 0, yaw: 0, aim: 0, back: 0, down: 0, pitch: 0, roll: 0, bob: 0, nose: 0, thrust: 0 };
 
   constructor(scene: THREE.Scene, readonly pilot: Pilot, public reduced = false) {
     this.root.position.set(0, RIDE, 0);
@@ -189,6 +186,16 @@ export class Ship {
     this.hero?.hurt(0.4);
   }
 
+  boost(level: number): void {
+    this.glow = level;
+  }
+
+  /** The ship takes a foe's blow as a hurt only (AL-09 gives the heroine's guard its own look). */
+  shield(_dx: number, _dz: number): void {}
+
+  /** The ship holds no pose of its own (AL-11, AL-15). */
+  pose(_name: PilotPose): void {}
+
   /**
    * One frame: the drift from the near horde, the turn to the heaviest blow
    * (`aim`, the sim's unit aim of the bay firing, when no blow was cued), the
@@ -262,7 +269,7 @@ export class Ship {
       this.hero.turnYaw = 0;
       this.hero.turnBank = roll - this.kitBank;
       this.hero.update(dt, t, 0, 0);
-      this.hero.setLook(this.hurtFlash, 0.4 * this.boost + push * 0.6, 1);
+      this.hero.setLook(this.hurtFlash, 0.4 * this.glow + push * 0.6, 1);
       this.place();
       // Engine trails stream back toward the camera.
       this.hero.tips.forEach((tip, index) => {
@@ -274,7 +281,7 @@ export class Ship {
       this.fallback.updateMatrixWorld(true);
       this.place();
     }
-    const P = this.pose;
+    const P = this.drawn;
     P.x = x;
     P.vx = vx;
     P.target = target;
@@ -296,21 +303,21 @@ export class Ship {
    * the fight's glows and strips (between strips.begin() and end()): no draw
    * call of their own.
    */
-  drawEngines(glows: Glows, strips: Strips): void {
+  drawFx(glows: Glows, strips: Strips): void {
     if (this.engines.length === 0) return;
-    const u = this.pose.thrust;
+    const u = this.drawn.thrust;
     const flicker = 1 + ENGINE.flicker * Math.sin(2 * Math.PI * ENGINE.flickerHz * this.t);
     const halo = 2 * ENGINE.halo * (1 + (ENGINE.boost - 1) * u);
     // The clean streak's tier 3 burns them × 1.3 (§3.6).
-    const k = flicker * this.boost;
+    const k = flicker * this.glow;
     const flame = ENGINE.flame[0] + (ENGINE.flame[1] - ENGINE.flame[0]) * u;
     // Back along the ship's axis, a little down: toward the camera behind and above.
-    const yaw = this.pose.yaw;
+    const yaw = this.drawn.yaw;
     const bx = Math.sin(yaw);
     const bz = Math.cos(yaw);
     for (const node of this.engines) {
       const at = node.getWorldPosition(this.tip);
-      glows.stamp(CELL.soft, at.x, at.y, at.z, halo * flicker, 0, this.color, ENGINE.alpha * (1 + 0.5 * u) * this.boost);
+      glows.stamp(CELL.soft, at.x, at.y, at.z, halo * flicker, 0, this.color, ENGINE.alpha * (1 + 0.5 * u) * this.glow);
       glows.stamp(CELL.core, at.x, at.y, at.z, halo * 0.35, 0, BLOW.hot, (0.5 + 0.6 * u) * k);
       strips.add(at.x + bx * flame, at.y - 0.1 * flame, at.z + bz * flame, at.x, at.y, at.z, 0.22 + 0.12 * u, this.color, (0.9 + 0.9 * u) * k, 0.35 + 0.3 * u);
     }

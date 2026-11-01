@@ -1,0 +1,11 @@
+/* Theme tokens only the screens (screens.css) uses (ALIVE_PLAN AL-00 split of theme.css; shared tokens stay in theme.css). */
+:root {
+  --veil: rgba(4, 5, 7, 0.66);
+  --veil-edge: rgba(0, 0, 0, 0.9);
+  /* Behind the corner gear and speaker over a painted background (judge 31/10): the ring's brightest 10 % under them falls to 3 : 1 or better. */
+  --corner-scrim: rgba(0, 0, 0, 0.78);
+  /* The title logo's halo, near to far: pulls the bright ring down round the letters only. */
+  --logo-halo-near: rgba(0, 0, 0, 0.9);
+  --logo-halo: rgba(0, 0, 0, 0.8);
+  --logo-halo-far: rgba(0, 0, 0, 0.6);
+}

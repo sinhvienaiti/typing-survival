@@ -26,7 +26,7 @@ import type { World } from "../sim/world";
 import { CELL, FLAT, Glows, Strips } from "./fx";
 import type { Hud } from "./hud";
 import type { Stage } from "./scene";
-import { MUZZLE, type Ship } from "./ship";
+import { MUZZLE, type PilotRig } from "./pilot";
 import { BLOW } from "./theme";
 import { WORD_ID, type TypeFx } from "./type-fx";
 import { CHARGE, CleanStreak, KEY_MARK as K, chargePower, chargeSize, keyMarkLive } from "./type-rules";
@@ -83,7 +83,7 @@ export class TypeFeel {
   constructor(
     private readonly hud: Hud,
     private readonly stage: Stage,
-    private readonly ship: Ship,
+    private readonly ship: PilotRig,
     private readonly sparks: ParticlePool,
     private readonly audio: ThemeAudio,
     /** The word line (the kit's focus strip). */
@@ -359,7 +359,7 @@ export class TypeFeel {
       const c = GUN_COLOR[this.flowGun] ?? BLOW.volt;
       this.bolts.add(this.glow.x, this.glow.y, this.glow.z, this.glow.x + (this.tip.x - this.glow.x) * k, this.glow.y + (this.tip.y - this.glow.y) * k, this.glow.z + (this.tip.z - this.glow.z) * k, 0.35, c, 2.4 * fade, 0.8 * fade);
     }
-    this.ship.boost = this.streak.tier >= 3 ? 1.3 : 1;
+    this.ship.boost(this.streak.tier >= 3 ? 1.3 : 1);
   }
 
   /** Phase A at Pulse Gun's two muzzles or Heat Beam's: a glow in the gun's colour, a core a third of it, a star from half the word. */

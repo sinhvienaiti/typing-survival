@@ -90,10 +90,10 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   hash in Node and Chrome), `src/view` (three.js), `src/app` (page, input,
   session), `docs/` (design and build notes). Combat feedback is the kit's
   `src/kit/feedback` ("ship" profile); there is no local copy.
-- UI art: chosen in `scripts/ui-art/selection.json`, built by
+- UI art: chosen in `scripts/ui-art/selection-<area>.json`, built by
   `scripts/ui-art/prepare.mjs` (`pnpm ui-art:prepare`), read through the
-  generated table `src/view/ui-art.json`; only `src/view/ui-art.ts` builds UI
-  image URLs. The art manifest beside the WebP files is a build record and
+  generated tables `src/view/ui-art/<area>.json`; only `src/view/ui-art.ts`
+  builds UI image URLs. The art manifest beside the WebP files is a build record and
   stays out of `dist` (vite.config.ts).
 - `src/kit/` is copied from the parent repo's `shared/game-kit` by
   `node scripts/sync-game-kit.mjs --target games/typing-survival` (run in the
@@ -110,8 +110,9 @@ guns that hold a corridor against a horde. It was split out of Space Typing
 - No media in Git (images, audio, video, `.glb`, `.bin`); `public/assets/**`
   and `art-src/` are ignored. Code comments in English, short.
 - Theme "Vành Chân Trời" (SPLIT_PLAN §1.3, direction A): every DOM colour,
-  font and surface is a variable in `src/view/theme.css` (`survival.css` uses
-  only those; `tests/theme.test.ts` checks it); the 3D palette is
+  font and surface is a variable in `src/view/theme.css` or an area's
+  `theme-<area>.css` (the CSS files use only those; `tests/theme.test.ts`
+  reads the group); the 3D palette is
   `src/view/theme.ts`. Titles Chakra Petch 700, every word of the fight Be
   Vietnam Pro. The horde's shared "Bầy Hố Đen" material is in
   `src/view/crowd.ts`; the stage (steel deck, black hole backdrop, title
@@ -362,5 +363,26 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   streaks hidden (`gunFx`/`typingFx` hooks), so the floor lamp and hull drop
   out. At 4:3 and 5:4 a gun card climbs toward the gate or shrinks to clear
   the wall.
+- File map since ALIVE_PLAN AL-00 (02/11, `docs/ALIVE_PLAN.md` §3–4.3,
+  `docs/changelog/2026-11-02-al-00.md`; each later package edits only the
+  files §4.2 gives it): `combat.ts` dispatches through a cue bus
+  (`on(kind, fn)`); kills and big kills in `kills.ts`, numbers in
+  `damage-numbers.ts`, shields, Pack Leader and Splitter in `foe-fx.ts`,
+  objective, telegraph and rift in `stage-fx.ts`, only guns in `gunfx.ts`.
+  Effects talk to `PilotRig` (`pilot.ts`, with `MUZZLE`, `PILOT_COLORS`);
+  `ship.ts` implements it and only `main.ts` and `probes.ts` import it. HUD:
+  `hud.ts` (frame, `protectedRects`, notices) with `hud-bays.ts`,
+  `hud-panels.ts`, `hud-banners.ts`; screens: `screens.ts` (title, Options,
+  Armory, Profile, Pause), `screen-intro.ts`, `screen-end.ts`, shared
+  `screen-parts.ts`, their items and view in `src/app/screen-items.ts`. CSS
+  and art by area (`survival.css` the base, then `hud`, `bays`, `strip`,
+  `screens`, `journey`, `intro`, `results`, `quick`, in `main.ts`'s order).
+  Registries instead of shared edits: `registerWarm` (`warm.ts`),
+  `registerProbe` (`probes.ts`), `extendDevHandle` (`src/app/dev.ts`),
+  scenes of `scripts/visual/scenarios/survival-alive.mjs` in
+  `alive/al<nn>.mjs`; new sounds only through `audio.cue(id, opts)`. The
+  coverage table `src/view/coverage/al<nn>.ts` (`tests/coverage.test.ts`; the
+  debt in `tests/golden/coverage-debt.txt` only shrinks). Audit evidence of
+  01/11: the main checkout's `tmp/alive-audit-0111/`.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.

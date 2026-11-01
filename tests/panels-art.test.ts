@@ -5,8 +5,9 @@ import { TypingSounds } from "../src/kit/feedback/typing-fx";
 import { quickIcons } from "../src/view/ui-art";
 import { FRAME_PX, previewFit, previewTargetY, REST, RING_REACH } from "../src/view/type-fx-preview";
 import { defaultSoundRows } from "../src/kit/ui";
-import table from "../src/view/ui-art.json";
-import selection from "../scripts/ui-art/selection.json";
+import { UI_ART_TABLE as table } from "../src/view/ui-art";
+import { selection } from "./survival/art-selection";
+import { survivalCss } from "./survival/css";
 
 /**
  * The quick panels after the kit's skin pass (parent 18722b41, b8a224d0) and
@@ -14,7 +15,7 @@ import selection from "../scripts/ui-art/selection.json";
  * 243's gear, Sound and Options icons and the typing-effect rows' icons,
  * 244's lit fill on the 225 groove; Resume and Quit to title only in a run.
  */
-const css = readFileSync("src/view/survival.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+const css = survivalCss().replace(/\/\*[\s\S]*?\*\//g, "");
 const entries = (role: string) => selection.entries.filter((entry) => entry.role === role);
 const hooks = (extra: Partial<QuickHooks> = {}): QuickHooks => ({
   host: {} as HTMLElement, values: () => ({}), change: () => {}, preview: () => {}, keyboardChoices: [], keyboardSounds: new TypingSounds(),

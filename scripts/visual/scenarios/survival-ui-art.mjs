@@ -45,7 +45,8 @@ import { press, sv } from "./survival-s0-lib.mjs";
 // Read BOX from its single source, without importing TypeScript in the CDP runner.
 const source = readFileSync(new URL("../../../src/view/ui-art.ts", import.meta.url), "utf8");
 const boxes = Object.fromEntries([...source.matchAll(/(\w+): \{ width: (\d+), height: (\d+) \}/g)].map(([, key, w, h]) => [key, { width: Number(w), height: Number(h) }]));
-const selection = JSON.parse(readFileSync(new URL("../../ui-art/selection.json", import.meta.url), "utf8"));
+// The selection by area (ALIVE_PLAN AL-00): prepare.mjs reads the group.
+const { selection } = (await import("../../ui-art/prepare.mjs")).readSelection();
 const accepted = new Set(selection.entries.filter((e) => e.accepted).map((e) => e.role));
 const pending = new Set(selection.entries.filter((e) => !e.accepted && !accepted.has(e.role)).map((e) => e.role));
 const base = DEV_URL.replace(/\/$/, "");

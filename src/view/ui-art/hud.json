@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "base": "/assets/typing-survival/ui/",
+  "roles": {
+    "frame-banner": {
+      "kind": "frame",
+      "alt": "",
+      "rev": "7c1962f2",
+      "widths": [
+        448,
+        896
+      ],
+      "aspect": 6.686567,
+      "slice": [
+        0,
+        28.06,
+        0,
+        28.06
+      ]
+    },
+    "frame-plate": {
+      "kind": "frame",
+      "alt": "",
+      "rev": "00ea898f",
+      "widths": [
+        448,
+        896
+      ],
+      "aspect": 4.435644,
+      "slice": [
+        39.38,
+        13.54,
+        38.46,
+        13.54
+      ]
+    },
+    "icon-armour": {
+      "kind": "icon",
+      "alt": "Hull armour",
+      "rev": "16904513",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-clock": {
+      "kind": "icon",
+      "alt": "Time left",
+      "rev": "2783967c",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-keyboard": {
+      "kind": "icon",
+      "alt": "Keyboard",
+      "rev": "ad723cd5",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-kills": {
+      "kind": "icon",
+      "alt": "Kills",
+      "rev": "d406a3d1",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-objective": {
+      "kind": "icon",
+      "alt": "Goal",
+      "rev": "6ac1404a",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-repair-pod": {
+      "kind": "icon",
+      "alt": "Repair pod",
+      "rev": "12b10e28",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-surge": {
+      "kind": "icon",
+      "alt": "Surge",
+      "rev": "b5bf4bf0",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    }
+  }
+}

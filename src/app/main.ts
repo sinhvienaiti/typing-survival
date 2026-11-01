@@ -6,17 +6,33 @@ import "@fontsource/chakra-petch/700.css";
 import "@fontsource/be-vietnam-pro/500.css";
 import "@fontsource/be-vietnam-pro/600.css";
 import "@fontsource/be-vietnam-pro/800.css";
+// The theme (shared tokens, then each area's), the base, then the areas: this order is the cascade's (tests/theme.test.ts).
 import "../view/theme.css";
+import "../view/theme-hud.css";
+import "../view/theme-bays.css";
+import "../view/theme-strip.css";
+import "../view/theme-screens.css";
+import "../view/theme-journey.css";
+import "../view/theme-intro.css";
+import "../view/theme-results.css";
+import "../view/theme-quick.css";
 import "../view/survival.css";
+import "../view/hud.css";
+import "../view/bays.css";
+import "../view/strip.css";
+import "../view/screens.css";
+import "../view/journey.css";
+import "../view/intro.css";
+import "../view/results.css";
+import "../view/quick.css";
 import { runFrameLoop, safeLocalStorage, safeSessionStorage } from "../kit/platform";
 import { speakEnglish } from "../kit/speech";
 import { hordeIntensity } from "../audio/music";
 import { ThemeAudio } from "../audio/theme-audio";
-import { MODES, MODE_SPECS, TRIAL_KIT, isMode, lengthFor, stageHeader, type RunPace } from "../content/balance";
+import { MODES, TRIAL_KIT, isMode, lengthFor, stageHeader, type RunPace } from "../content/balance";
 import { CHAPTER_1, stageById } from "../content/chapter-1";
 import { GUN_KEYS, GUN_SPECS } from "../content/guns";
 import { FIELD, FOE_CAP, type Tier } from "../content/rules";
-import { LEARN_RULES } from "../content/stage-rules";
 import { STAGE_S0 } from "../content/stage-s0";
 import { peakAt } from "../sim/plan";
 import { hashHex } from "../sim/hash";
@@ -25,10 +41,10 @@ import { Crowd } from "../view/crowd";
 import { Hud } from "../view/hud";
 import { applyArtVars, artNode, bgRole, watchArt } from "../view/ui-art";
 import { Stage } from "../view/scene";
-import { renderScreen, type ScreenView } from "../view/screens";
-import { renderJourney, starRow } from "../view/screens-journey";
+import { renderScreen } from "../view/screens";
+import { renderJourney } from "../view/screens-journey";
 import { Ship, type Pilot } from "../view/ship";
-import { foesOnScreen, shipProbe } from "../view/probes";
+import { foesOnScreen, probeNames, readProbe, shipProbe } from "../view/probes";
 import { TypeFeel } from "../view/typing-feel";
 import { GUN_ACCENT, TypeFx } from "../view/type-fx";
 import { TypeFxPreview, type PreviewWord } from "../view/type-fx-preview";
@@ -36,13 +52,13 @@ import { warmPrograms } from "../view/warm";
 import { QUICK_COUNTDOWN_STEP_MS, type QuickValue } from "../kit/ui";
 import { FrameCosts, bays, devHandleWanted, eventCounts, installDevHandle, numberBoxes, runState, snapshot } from "./dev";
 import { LoadHint, noticeFor } from "./guide";
-import { Journey, NEXT_KEY, introKey, objectiveText, recordStage, starsOf, takeChoice, type RunChoice } from "./journey";
-import { adviceText, countedText, profileView, runStats, runWords } from "./results";
+import { Journey, NEXT_KEY, introKey, recordStage, starsOf, takeChoice, type RunChoice } from "./journey";
 import { ImeNotice, installAutoPause, installKeys, type KeyAction } from "./input";
 import { reportWord } from "./learning";
 import { blendSkill, type SkillUpdate } from "../kit/balance";
-import { Menu, cycle, stepVolume, type MenuItem } from "./menu";
+import { Menu, cycle, stepVolume } from "./menu";
 import { createQuickSettings } from "./quick";
+import { items, view, type Screen, type ScreenState } from "./screen-items";
 import { KEYBOARD_UNAVAILABLE, RELAY, applyKeyboardLevels, pickFailed, requestKeyboardCatalogue, savedKeyboardId, startKeyboard } from "./keyboard";
 import { pendingKeyboardChoices, type KeyboardCatalog } from "../kit/feedback/typing-fx";
 import { Session } from "./session";
@@ -77,10 +93,7 @@ const END_BEAT_MS = 900;
 const KEYBOARD_NOTICE_MS = 6000;
 const TIERS = Object.keys(FOE_CAP) as Tier[];
 const PILOTS = ["vanguard", "draconis"] as const satisfies readonly Pilot[];
-const TIER_NAMES: Record<Tier, string> = { low: "Low", medium: "Medium", high: "High", ultra: "Ultra" };
-const PILOT_NAMES: Record<Pilot, string> = { vanguard: "Vanguard", draconis: "Draconis" };
 const MOTIONS = ["full", "system", "reduced"] as const satisfies readonly MotionPreference[];
-const MOTION_NAMES: Record<MotionPreference, string> = { full: "Off", system: "System", reduced: "On" };
 
 function byId<T extends HTMLElement = HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -173,8 +186,6 @@ audio.setLevels(soundLevels(settings));
 
 /** "intro": the stage card of a page that came from the journey or a replay; the fight waits for a key (it opens the audio). */
 type Mode = "start" | "intro" | "play" | "paused" | "end";
-/** What the overlay shows: a menu screen, or nothing in a running fight. */
-type Screen = "title" | "settings" | "armory" | "profile" | "pause" | "end" | "intro" | "none";
 let mode: Mode = "start";
 let screen: Screen = "none";
 /** A quick panel (or its 3-2-1 back in) holds the fight still and types nothing. */
@@ -331,119 +342,40 @@ void startKeyboard(typeFx.sounds, keyboardFeed, savedKeyboard, {
   },
 }, { signal: keyboardStartup.signal });
 
-const percent = (value: number): string => Math.round(value * 100) + "%";
-const onOff = (on: boolean): string => (on ? "On" : "Off");
-/** During a run, a new mode or "Nhịp tự điều" waits for the next one. */
-const nextRun = (): string | undefined => (started ? "Applies next run" : undefined);
-
-function items(which: Screen): MenuItem[] {
-  switch (which) {
-    case "title":
-      return [
-        { id: "journey", icon: "icon-menu-journey", label: "Campaign", note: "Chapter 1 · stages 1–" + CHAPTER_1.length + " · pick stage and guns", enabled: true },
-        { id: "start", icon: "icon-clock", label: started ? "New trial" : "Trial", note: started ? "Abandon " + (level.id === "s0" ? "this run" : "Stage " + level.index) + " for a new trial" : "Pulse Gun and Heat Beam · hold for " + STAGE_S0.seconds / 60 + " min", enabled: true },
-        { id: "continue", icon: "icon-menu-play", label: "Resume", note: started ? "Back to your paused run" : "No run to resume", enabled: started },
-        { id: "mode", icon: "icon-menu-mode", label: "Mode", value: MODE_SPECS[settings.mode].label, note: nextRun() ?? MODE_SPECS[settings.mode].note, enabled: true },
-        { id: "profile", icon: "icon-menu-profile", label: "Profile", note: "Speed, accuracy, advice", enabled: true },
-        { id: "settings", icon: "icon-menu-settings", label: "Options", note: "Audio, shake, pace, ship, graphics", enabled: true },
-        { id: "armory", icon: "icon-menu-armory", label: "Armory · Learning", note: "5 guns: ammo, range; how learning works", enabled: true },
-      ];
-    case "settings": {
-      const later = started ? "End your run to change this" : undefined;
-      return [
-        { id: "sfx", icon: "icon-sfx", label: "Effects", value: percent(settings.sfxVolume), level: settings.sfxVolume, enabled: true },
-        // The Sound panel's music art (a note), so Options and the panel match (UI pass 3).
-        { id: "music", icon: "vol-music", label: "Music", value: percent(settings.musicVolume), level: settings.musicVolume, enabled: true },
-        { id: "shake", icon: "icon-shake", label: "Screen shake", value: onOff(settings.screenShake), note: shakeAllowed ? undefined : "Disabled by ?shake=0", enabled: true },
-        { id: "motion", icon: "icon-reduced-motion", label: "Reduce motion", value: MOTION_NAMES[motionPreference()], note: "No ship drift or lunges; no letter bounce", enabled: true },
-        { id: "speak", icon: "icon-read-aloud", label: "Read words aloud", value: onOff(settings.pronunciationEnabled), enabled: true },
-        { id: "adapt", icon: "icon-pace-director", label: "Adapt pace to your typing", value: onOff(settings.paceAdapt), note: nextRun() ?? (settings.paceAdapt ? "Swarm density follows your profile" : "Fixed pace throughout the run"), enabled: true },
-        { id: "pilot", icon: "icon-ship", label: "Ship", value: PILOT_NAMES[chosen.pilot], note: later, enabled: !started },
-        { id: "quality", icon: "icon-quality", label: "Graphics", value: TIER_NAMES[chosen.tier], note: later, enabled: !started },
-        { id: "done", icon: "icon-check", label: "Done", enabled: true },
-      ];
-    }
-    case "armory":
-    case "profile":
-      return [{ id: "back", icon: "icon-back", label: "Back", enabled: true }];
-    case "pause":
-      return [
-        { id: "resume", icon: "icon-menu-play", label: "Resume", note: "Esc", enabled: true },
-        { id: "settings", icon: "icon-menu-settings", label: "Options", note: "Audio, shake, speech", enabled: true },
-        { id: "title", icon: "icon-back", label: "Main menu", note: "Your run stays paused", enabled: true },
-      ];
-    case "end": {
-      const next = world.phase === "won" ? CHAPTER_1[level.index] : undefined;
-      const list: MenuItem[] = [
-        ...(next !== undefined ? [{ id: "next", icon: "icon-next-stage", art: "stage-" + next.id, label: "Stage " + next.index, note: next.name, enabled: true }] : []),
-        { id: "replay", icon: "icon-retry", label: level.id === "s0" ? "Retry" : "Retry stage", enabled: true },
-        ...(level.id === "s0" ? [] : [{ id: "stages", icon: "icon-menu-journey", label: "Stages", note: "Campaign", enabled: true }]),
-        { id: "title", icon: "icon-back", label: "Main menu", note: "Esc", enabled: true },
-      ];
-      // Enter takes the first item (the one selected): the key is named there.
-      list[0] = { ...list[0]!, note: (list[0]!.note ? list[0]!.note + " · " : "") + "Enter" };
-      return list;
-    }
-    default:
-      return [];
-  }
-}
-
-function view(which: Screen): ScreenView | null {
-  switch (which) {
-    case "title":
-      return {
-        kind: "title",
-        menu,
-        lead: "The Black Hole Horde is coming. Type words to reload your guns; they fire on their own. Flawless words pierce armor and crit.",
-        status: "SHIP " + PILOT_NAMES[pilot].toUpperCase() + " · GFX " + TIER_NAMES[tier].toUpperCase() + " · " + MODE_SPECS[settings.mode].label.toUpperCase(),
-      };
-    case "profile":
-      return { kind: "profile", menu, ...profileView(profile, settings.mode, settings.paceAdapt) };
-    case "settings":
-      return { kind: "settings", menu, note: started ? "" : "Changing ships or graphics reloads the page when you press Done." };
-    case "armory":
-      return {
-        kind: "armory",
-        menu,
-        guns: GUN_SPECS.map((gun) => ({ kind: gun.key, name: gun.name, title: gun.title, text: gun.magazine + (gun.trial ? " (" + gun.trial + ")" : "") + ", range " + gun.range + (gun.heavy ? ", words up to 1 letter longer" : "") + "." })),
-        learning: [
-          "Flawless words pierce armor (it blocks only 75%) and crit more often; in the Trial they hit 6% harder.",
-          "Every word you finish goes into your learning log, shared across the portal's games.",
-        ],
-      };
-    case "pause":
-      return { kind: "pause", menu };
-    case "intro":
-      return {
-        kind: "intro",
-        title: level.id === "s0" ? "TRIAL" : "STAGE " + level.index + " · " + level.name.toUpperCase(),
-        lines: [level.id === "s0" ? "Hold the lane for " + STAGE_S0.seconds / 60 + " min" : objectiveText(level), world.header.kit.guns.map((gun) => GUN_SPECS[gun]!.name).join(" · ")],
-        ready: live, stage: level.id === "s0" ? undefined : level.id, guns: world.header.kit.guns.map((gun) => GUN_SPECS[gun]!.key),
-      };
-    case "end": {
-      const report = skillReport(profile, settings.mode);
-      return {
-        kind: "end",
-        menu,
-        stage: level.id === "s0" ? "" : "Stage " + level.index + " · " + level.name,
-        stars: stars === null ? "" : starRow(stars, LEARN_RULES[level.learn].starAccuracy),
-        mode: MODE_SPECS[world.header.mode].label,
-        advice: adviceText(report, settled, world.phase === "won"),
-        note: [countedText(settled, report), report.suggestionText].filter(Boolean).join(" "),
-        won: world.phase === "won",
-        stats: runStats(world),
-        words: runWords(world, wordOf, (index) => firstTime.has(index)),
-      };
-    }
-    default:
-      return null;
-  }
-}
+/** The page's state as the screens read it (screen-items.ts). */
+const screenState: ScreenState = {
+  get menu() {
+    return menu;
+  },
+  get started() {
+    return started;
+  },
+  get live() {
+    return live;
+  },
+  level,
+  world,
+  settings,
+  get profile() {
+    return profile;
+  },
+  get settled() {
+    return settled;
+  },
+  get stars() {
+    return stars;
+  },
+  pilot,
+  tier,
+  chosen,
+  shakeAllowed,
+  wordOf,
+  firstTime,
+};
 
 /** Shows `which` with a fresh menu (or redraws it in place, keeping the selection); `focus` selects that item. */
 function show(which: Screen, keep = false, focus?: string): void {
-  const list = items(which);
+  const list = items(which, screenState);
   menu = new Menu(list, keep && which === screen ? menu.index : 0);
   if (which === "title" && started && !keep) menu.select("continue");
   if (focus !== undefined) menu.select(focus);
@@ -452,7 +384,7 @@ function show(which: Screen, keep = false, focus?: string): void {
 }
 
 function drawScreen(): void {
-  const shown = journey.active ? null : view(screen);
+  const shown = journey.active ? null : view(screen, screenState);
   hud.overlay.innerHTML = journey.active ? renderJourney(journey) : shown === null ? "" : renderScreen(shown);
   hud.overlay.classList.toggle("is-on", journey.active || shown !== null);
   hud.overlay.dataset.screen = journey.active ? "journey-" + journey.screen : screen;
@@ -946,7 +878,7 @@ if (devHandleWanted(import.meta.env.DEV, location.search)) installDevHandle({
   /** Typing Feel's keyboard sounds: the keys base (null: off), the catalogue, the chosen and the saved id, whether the save owns it, Relay's stand-in, the set playing, the gate's times. */
   keyboard: () => ({ base: keyboardFeed.base, ...keyboardProbe, id: settings.typingFx.soundProfile, saved: savedKeyboard, owned: keyboardOwned, standIn: keyboardStandIn, profile: typeFx.sounds.profile?.id ?? null, stats: { ...typeFx.sounds.stats }, ready: keyboardReady, live }),
   /** Sounds started so far by id (docs/audio/THEME_SOUND_LIST.md), and whether audio runs. */
-  sounds: () => ({ ready: audio.ready, played: Object.fromEntries(audio.played) }),
+  sounds: () => ({ ready: audio.ready, played: Object.fromEntries(audio.played), cued: Object.fromEntries(audio.cued), silent: [...audio.silent] }),
   screen: () => screen,
   /** The quick panels: which is open, whether keys are held back, whether the fight is frozen. */
   quick: () => ({ panel: quick.panel, blocking: quick.blocking, frozen }),
@@ -957,6 +889,9 @@ if (devHandleWanted(import.meta.env.DEV, location.search)) installDevHandle({
   /** The ship's pose (cheap enough for every frame); live foes on screen with their body radius (CSS px; the balance pass's wash-out). */
   ship: () => shipProbe(stage, ship),
   foes: () => foesOnScreen(stage, world),
+  /** A package's own probe (probes.ts registry): by name, with its arguments; probes() lists them. */
+  probe: (name: string, ...args: unknown[]) => readProbe(name, ...args),
+  probes: () => probeNames(),
   rects: () => hud.protectedRects(),
   /** Where the HUD's layout put the word line and the bays (each card's top, scale, and the wall's and lane's edges at its lowest row; CSS px). */
   layout: () => ({ ...hud.placed, bays: hud.placed.bays.map((bay) => ({ ...bay })) }),

@@ -4,12 +4,13 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { GUN_KEYS, GUN_SPECS, COUNTER_ROWS } from "../src/content/guns";
 import { KIND, FOES } from "../src/content/foes";
 import { CHAPTER_1 } from "../src/content/chapter-1";
-import selection from "../scripts/ui-art/selection.json";
-import table from "../src/view/ui-art.json";
+import { selection } from "./survival/art-selection";
+import { UI_ART_TABLE as table } from "../src/view/ui-art";
 import { BOX, pick, artHtml, artAttrs, gunRole, foeRole, stageRole, rowRoles, bgRole, resetArtWarnings, handleArtError, watchArt } from "../src/view/ui-art";
 import { screens206, plain206 } from "./ui-art-fixtures";
 import golden from "./golden/ui-text-206.json";
 import { WIRED } from "./ui-art-roles";
+import { survivalCss } from "./survival/css";
 
 /** The screens with a background of their own (ticket 121). */
 const SCREENS = ["menu","journey","briefing","loadout","results-win","results-lose"];
@@ -124,7 +125,7 @@ describe("UI art 206", () => {
     expect(title).not.toContain("LAST LINE");
     // 3:1 like its art, 600 × 200 px × --ui (560–640 px at 720p), absolutely placed so it never pushes the card.
     expect(BOX.logo.width/BOX.logo.height).toBe(3);
-    const css=readFileSync("src/view/survival.css","utf8");
+    const css=survivalCss();
     expect(css).toMatch(/\.sv-title-logo \{ position: absolute; top: calc\(\d+px \* var\(--ui\)\); right: calc\(\d+px \* var\(--ui\)\);/);
   });
   it("sets the name in the title font while the table has no logo", () => {
@@ -138,7 +139,7 @@ describe("UI art 206", () => {
     } finally { roles.logo=saved; }
   });
   it("keeps CSS box dimensions equal to BOX without adding theme variables", () => {
-    const css = readFileSync("src/view/survival.css", "utf8");
+    const css = survivalCss();
     for (const [place, box] of Object.entries(BOX)) expect(css).toContain(`.sv-art-${place} { width: calc(${box.width}px * var(--ui)); height: calc(${box.height}px * var(--ui)); }`);
   });
   it("gives DOM callers the same gun and taught foe dimensions", () => {
