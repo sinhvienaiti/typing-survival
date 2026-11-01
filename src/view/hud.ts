@@ -74,7 +74,13 @@ const MIN_MEAN = 0.8;
  * view too narrow for that (4:3) shrinks the card (its own --ui, never under
  * `least`) to keep it off the lane at least.
  */
-const CARDS = { bands: [0.3, 0.47], spans: [0.14, 0.11], edge: 0.025, width: 230, height: 100, chipWidth: 132, chipHeight: 34, gap: 10, least: 0.72 } as const;
+/**
+ * The gun cards beside the corridor (L4, variant A): each band's top (share of the height), its span, the edge in from
+ * the screen's side, a card's and a sealed chip's size, the gap off the wall, the least scale; where a narrow view
+ * lifts a card (wave 1 fix): its gun tab's height, the gap under the top panels and between stacked cards, the top
+ * panels' foot when not laid out (CSS px × --ui).
+ */
+const CARDS = { bands: [0.3, 0.47], spans: [0.14, 0.11], edge: 0.025, width: 230, height: 100, chipWidth: 132, chipHeight: 34, gap: 10, least: 0.72, tab: 56, stack: 8, ceiling: 76 } as const;
 /** The corridor's wall as the camera sees it: the outer face of its posts (m from the centre line) and the top of their lamps (m). */
 const WALL = { x: FIELD.halfW + 0.73, top: 1.82 } as const;
 /** Long words shrink down to this share of 32 px (26 px). */
@@ -254,33 +260,53 @@ export class Hud {
   /**
    * Each bay's card (a sealed bay's chip) at its band's top, CARDS.edge in
    * from its side of the screen, its inner edge CARDS.gap off the corridor's
-   * wall at the card's lowest row (where the wall reaches furthest out). Where
-   * the view is too narrow for that, the card shrinks (its own --ui) to keep
-   * off the lane's edge instead, never under CARDS.least; a card also shrinks
-   * to keep inside its band's span.
+   * wall at the card's lowest row (where the wall reaches furthest out). A
+   * card also shrinks to keep inside its band's span. Where the view is too
+   * narrow for that (4:3, 5:4: wave 1 fix), the card climbs toward the gate,
+   * where the corridor narrows, never over the top panels (with its gun tab)
+   * nor over the card above it; still too narrow at the top, it shrinks (its
+   * own --ui, never under CARDS.least) to keep off the wall, else off the lane.
    */
   private placeBays(stage: Stage, ui: number): void {
     const { width, height } = stage;
     const edge = CARDS.edge * width;
+    const tab = CARDS.tab * ui;
+    // The top panels' foot (armour, clock, kills), laid out by now; a card's gun tab stands over its top.
+    const panels = [this.hp, this.time.parentElement, this.kills.parentElement].map((node) => node?.getBoundingClientRect().bottom ?? 0);
+    const ceiling = Math.max(CARDS.ceiling * ui, ...panels) + CARDS.stack * ui + tab;
+    const below = [ceiling, ceiling];
     this.placed.bays.length = 0;
     this.cards.forEach((card, bay) => {
       const band = bay < 2 ? 0 : 1;
+      const side = bay % 2;
       const sealed = this.slots[bay] === undefined;
       const w = (sealed ? CARDS.chipWidth : CARDS.width) * ui;
       const h = (sealed ? CARDS.chipHeight : CARDS.height) * ui;
-      const top = CARDS.bands[band]! * height;
-      let scale = Math.min(1, (CARDS.spans[band]! * height) / h);
+      const span = Math.min(1, (CARDS.spans[band]! * height) / h);
+      const room = (limit: number, scale: number) => limit - CARDS.gap * ui * scale - edge;
+      const wallAt = (top: number, scale: number) => this.edgeAt(stage, top + h * scale, WALL.x, WALL.top);
+      const fits = (top: number, scale: number) => room(wallAt(top, scale), scale) >= w * scale;
+      // Its band's top; past the wall there, up toward the gate in steps of 1 % of the height until it clears it, never over
+      // `highest` (under the top panels, or under the card above with this one's gun tab); clearing it nowhere, at the highest.
+      const highest = below[side]!;
+      const bandTop = CARDS.bands[band]! * height;
+      let top = bandTop;
+      let scale = span;
+      if (!fits(top, scale) && highest < bandTop) {
+        while (!fits(top, scale) && top - 0.01 * height >= highest) top -= 0.01 * height;
+        if (!fits(top, scale)) top = highest;
+      }
+      // Twice: a smaller card ends higher, where the wall stands further in.
       let wall = 0;
       let lane = 0;
-      // Twice: a smaller card ends higher, where the wall stands further out.
       for (let pass = 0; pass < 2; pass += 1) {
-        const row = top + h * scale;
-        wall = this.edgeAt(stage, row, WALL.x, WALL.top);
-        lane = this.edgeAt(stage, row, FIELD.halfW - FIELD.wall, 0);
-        const room = (limit: number) => limit - CARDS.gap * ui * scale - edge;
-        if (room(wall) < w * scale) scale = Math.max(CARDS.least, Math.min(scale, room(lane) / w));
+        wall = wallAt(top, scale);
+        lane = this.edgeAt(stage, top + h * scale, FIELD.halfW - FIELD.wall, 0);
+        if (room(wall, scale) < w * scale) scale = Math.max(CARDS.least, Math.min(scale, room(wall, scale) / w));
+        if (room(lane, scale) < w * scale) scale = Math.max(CARDS.least, Math.min(scale, room(lane, scale) / w));
       }
-      const left = bay % 2 === 0;
+      below[side] = top + h * scale + CARDS.stack * ui + tab;
+      const left = side === 0;
       card.style.top = top.toFixed(1) + "px";
       card.style.left = left ? edge.toFixed(1) + "px" : "";
       card.style.right = left ? "" : edge.toFixed(1) + "px";
