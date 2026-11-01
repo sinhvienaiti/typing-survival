@@ -342,11 +342,24 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   ring, flare, puff) and every streak's colour at 0.9 a channel (`hdr` streaks
   pass: Heat Beam's 0.12 m core at 3), the Heat Beam column too, with a narrow
   burning groove; tone mapping is Khronos PBR Neutral on every tier
-  (`?tone=aces|agx|neutral`, `?bloom=s,r` for A/B). The foes' veins,
-  hairlines and model glow (eyes) are the foe faction's purple (`FACTION` in
-  `crowd.ts`, never a gun's colour); Pháo Sao's landing ring is our pale
-  orange with a white rim (`BLOW.mark`; red is the foes'). `f5` grades a
-  muzzle flash by how far it lights the deck over the frame before (or is
-  white): "brighter than 0.8" measured the old bloom's glare.
+  (`?tone=aces|agx|neutral`, `?bloom=s,r` for A/B; every A/B switch reads
+  only with `debug=1`). The foes' veins, hairlines and model glow (eyes) are
+  the foe faction's purple (`FACTION` in `crowd.ts`, never a gun's colour).
+  Wave 1 fix (01/11, `docs/changelog/2026-11-01-wave1-fix.md`): the typing
+  feel (a shared system, bar 9) has its own pools (`TypeFeel` pool and bolts:
+  marks, core, stream and the charge at the muzzles, never held) and blooms
+  and tone maps as on main (`feel-bloom.ts`: L1's one bloom chain carries the
+  marks' share in alpha; three's UnrealBloomPass blends its composite by an
+  alpha of 3 × strength, so a mip adds 3 × strength² × its factor; the output
+  pass tone maps toward ACES by the marks' share; `?feel=gain,blend`). Foes
+  are near-black glass and chitin with thin purple veins and eyes, a warm and a
+  navy hairline (Pack Leaders gold). Rail Gun is electric cobalt with a white
+  thread and an ionised afterglow (`BLOOM.ray`). Star Mortar's landing ring
+  is a white line in a pale orange band between dark bands, pulsing
+  (`BLOW.mark`; red is the foes'). `f5` grades a muzzle flash by its own
+  reach: the frame against a control frame with the guns' billboards and
+  streaks hidden (`gunFx`/`typingFx` hooks), so the floor lamp and hull drop
+  out. At 4:3 and 5:4 a gun card climbs toward the gate or shrinks to clear
+  the wall.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.

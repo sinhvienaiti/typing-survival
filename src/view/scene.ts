@@ -348,7 +348,8 @@ export class Stage {
       const [strength, radius] = (abSwitch("bloom") ?? "").split(",").map(Number);
       const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), Number.isFinite(strength) && strength! > 0 ? strength! : BLOOM.strength, Number.isFinite(radius) ? radius! : BLOOM.radius, BLOOM.threshold);
       // The typing feel's marks drawn alone first: the bloom adds what they give its bright pass as the old bloom did, the output tone maps them as main did (feel-bloom.ts).
-      const feel = (abSwitch("feel") ?? "").split(",").map(Number);
+      // ?feel=gain,blend: A/B in scenarios (debug only); a part left out or empty keeps BLOOM.feel's.
+      const feel = (abSwitch("feel") ?? "").split(",").map((part) => (part.trim() === "" ? NaN : Number(part)));
       this.feel = new FeelBloomPass(this.camera, bloom, BLOOM.old, Number.isFinite(feel[0]) ? feel[0]! : BLOOM.feel.gain, Number.isFinite(feel[1]) ? feel[1]! : BLOOM.feel.blend);
       this.composer.addPass(this.feel);
       this.composer.addPass(bloom);
