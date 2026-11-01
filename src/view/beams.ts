@@ -26,9 +26,6 @@ import { AIM_PRIO } from "./ship-rules";
 import { BLOW as C } from "./theme";
 
 const RAILS = 8;
-/** Ray's line: held, then fading (s). */
-const RAIL_HOLD = 0.35;
-const RAIL_FADE = 0.15;
 const F = 1 / 60;
 const Y = 0.95;
 
@@ -70,22 +67,26 @@ export class BeamFx {
       r[k] = m.x; r[k + 1] = m.y; r[k + 2] = m.z;
       r[k + 3] = dx * 3; r[k + 4] = -(FIELD.muzzleZ + dz * 3);
       r[k + 5] = R.x[i]!; r[k + 6] = -R.z[i]!; r[k + 7] = 0;
-      // A muzzle streak 3.4 m (5 frames), a star 12 % of the view (4 frames), ion rings along the line; the soft white round it
-      // smaller and dimmer than build 2's (it washed the ship and the bays' edges white each shot, test pass 27/10).
-      this.p.streaks.add(m.x, m.y, m.z, m.x + dx * 3.4, m.y, m.z - dz * 3.4, 0.5, C.rayCore, 3.4, 1, 5 * F);
-      // The star and its white sit 1 m out along the shot: on the muzzle they whitened the ship's front (§12).
+      // A muzzle tongue 3.4 m (5 frames): its cobalt body held, a thin HDR core; a star 12 % of the view (4 frames), its hot
+      // core, ion rings along the line; the soft halo round it held under the bloom (build 2's white washed the ship, 27/10).
+      const B = BLOOM.ray;
+      this.p.streaks.add(m.x, m.y, m.z, m.x + dx * 3.4, m.y, m.z - dz * 3.4, 0.5, C.ray, 1.6, 0, 5 * F);
+      this.p.streaks.add(m.x, m.y, m.z, m.x + dx * 3.4, m.y, m.z - dz * 3.4, B.tongue, C.rayCore, B.power, B.white, 5 * F, true);
+      // The star and its core sit 1 m out along the shot: on the muzzle they whitened the ship's front (§12). Whole on the
+      // shot's frame (VFX_STANDARD §3.5.5: it grew from 0.6 and read small on its one bright frame); a pale halo held under
+      // the bloom round them, wide enough to light §4.2's radius by itself (f5's own reach, wave 1 fix).
       const star = this.p.size(0.12) * 2.8;
       const [sx, sz] = [m.x + dx, m.z - dz];
-      g.burst(CELL.star8, sx, m.y, sz, star * 0.6, star, 4 * F, C.ray, 2.8);
-      g.burst(CELL.core, sx, m.y, sz, star * 0.2, star * 0.35, 4 * F, C.rayCore, 2.6);
+      g.burst(CELL.star8, sx, m.y, sz, star * 0.9, star, 4 * F, C.ray, 3.2);
+      g.burst(CELL.core, sx, m.y, sz, star * 0.22, star * 0.3, 4 * F, C.rayCore, 3.6);
       const halo = star * (this.bloom ? BLOOM.flash.ray : 1);
-      g.burst(CELL.soft, sx, m.y, sz, halo * 0.45, halo * 0.6, 3 * F, C.rayCore, 1.1);
+      g.burst(CELL.soft, sx, m.y, sz, halo * 0.8, halo * 0.9, 3 * F, C.rayCore, 1.1);
       const ex = R.x[i]!;
       const ez = -R.z[i]!;
       const length = Math.hypot(ex - r[k + 3]!, ez - r[k + 4]!);
       for (let d = 2.5; d < length; d += 3.2) {
         const t = d / length;
-        g.burst(CELL.ring, r[k + 3]! + (ex - r[k + 3]!) * t, Y, r[k + 4]! + (ez - r[k + 4]!) * t, 0.3, 1.4, 0.3, C.ray, 1.6);
+        g.burst(CELL.ring, r[k + 3]! + (ex - r[k + 3]!) * t, Y, r[k + 4]! + (ez - r[k + 4]!) * t, 0.3, 1.4, 0.3, C.rayIon, 1.6);
       }
       this.p.lights.flash(LIGHT.ray, m.x + dx * 1.5, m.y, m.z - dz * 1.5, C.ray);
       this.p.ship.kick("ray");
@@ -116,16 +117,25 @@ export class BeamFx {
     this.beam(w, time, dt);
   }
 
-  /** Ray: its lines (real muzzle → the sim's line 3 m out → the far end), the frost bolt armed over the muzzle, the charge. */
+  /**
+   * Ray: its lines (real muzzle → the sim's line 3 m out → the far end): a thin HDR core with a white thread, gone in
+   * 0.2 s, over a cobalt body; then the ionised afterglow, wider and held under the bloom, crackling as it widens and
+   * fades by 0.6 s; a band of light on the deck. The frost bolt armed over the muzzle, the charge.
+   */
   private ray(w: World, dt: number, time: number): void {
     const S = this.p.strips;
     const g = this.p.glows;
     const r = this.rails;
+    const B = BLOOM.ray;
     for (let q = 0; q < Math.min(RAILS, this.railCount); q += 1) {
       const k = q * 8;
       const age = (r[k + 7] = r[k + 7]! + dt);
-      if (age >= RAIL_HOLD + RAIL_FADE) continue;
-      const f = age < RAIL_HOLD ? 1 : 1 - (age - RAIL_HOLD) / RAIL_FADE;
+      if (age >= B.ionEnd) continue;
+      // The core and body, then the afterglow (1 → 0 by ionEnd), widening as it goes.
+      const fc = age < B.hold ? 1 : Math.max(0, 1 - (age - B.hold) / B.fade);
+      const fi = age < B.ionHold ? 1 : 1 - (age - B.ionHold) / (B.ionEnd - B.ionHold);
+      const crackle = 0.8 + 0.2 * Math.sin(time * 90 + q * 2.1) * Math.sin(time * 37 + q);
+      const ion = B.ion[0] + (B.ion[1] - B.ion[0]) * (1 - fi);
       for (let seg = 0; seg < 2; seg += 1) {
         const ax = seg === 0 ? r[k]! : r[k + 3]!;
         const ay = seg === 0 ? r[k + 1]! : Y;
@@ -133,8 +143,11 @@ export class BeamFx {
         const bx = seg === 0 ? r[k + 3]! : r[k + 5]!;
         const bz = seg === 0 ? r[k + 4]! : r[k + 6]!;
         const near = seg === 0 ? 0.6 : 1; // over the ship (its first 3 m): a key's mark shows through
-        S.add(ax, ay, az, bx, Y, bz, 0.5 * f, C.ray, 1.8 * f * near, 0);
-        S.add(ax, ay, az, bx, Y, bz, 0.12 + 0.06 * f, C.rayCore, 2.4 * f * near, f * near);
+        S.add(ax, ay, az, bx, Y, bz, ion, C.rayIon, 1.2 * fi * crackle * near, 0);
+        if (fc > 0) {
+          S.add(ax, ay, az, bx, Y, bz, B.body * (0.6 + 0.4 * fc), C.ray, B.bodyPower * fc * near, 0);
+          S.add(ax, ay, az, bx, Y, bz, B.core * (0.7 + 0.3 * fc), C.rayCore, B.power * fc * near, B.white * fc * near, true);
+        }
         // A flat band of light along the line on the deck for 0.3 s.
         if (age < 0.3) S.add(ax, 0.05, az, bx, 0.05, bz, 1.2, C.ray, 0.7 * (1 - age / 0.3), 0.15);
       }

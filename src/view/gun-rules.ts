@@ -93,7 +93,9 @@ export const AFTER = {
  * `glowPower`, its floor column's burning core `groove` of its half-width
  * (was 0.3: a metre-wide stripe that set the beam's width), no floor strip.
  * `flash`: Xung's and Ray's release halos this much wider (held under the
- * threshold they no longer spread into a glare).
+ * threshold they no longer spread into a glare); `release`: m along the shot
+ * where Xung's first release stands, off the hull, and its pale halo × the
+ * held one (wave 1 fix: f5's own reach, §4.2's radius by the flash alone).
  */
 export const BLOOM = {
   strength: 0.45,

@@ -166,16 +166,25 @@ export class ShotFx {
       const soft = this.size(first ? 0.08 : 0.04) * 2.2;
       // A magazine's first star stands 0.7 m out along the shot, clear of the core's load flash.
       const o = first ? 0.7 : 0;
-      g.burst(CELL.star4, m.x + dx * o, m.y, m.z - dz * o, 0.5, first ? 2 : 1.1, 3 * F, crit ? C.crit : this.shot, 3);
+      // Whole on the shot's frame for a magazine's first (VFX_STANDARD §3.5.5: from 0.5 m it read small on its one bright frame).
+      g.burst(CELL.star4, m.x + dx * o, m.y, m.z - dz * o, first ? 1.5 : 0.5, first ? 2 : 1.1, 3 * F, crit ? C.crit : this.shot, 3);
       // L1 (bloom tiers): the halo is held under the threshold, so it is a little wider (its reach was the old bloom's glare).
       const halo = soft * (this.bloom ? BLOOM.flash.xung : 1);
       g.burst(CELL.soft, m.x, m.y, m.z, halo * 0.7, halo, (first ? 4 : 3) * F, this.shot, first ? 2.6 : 2);
-      g.burst(CELL.core, m.x, m.y, m.z, soft * 0.25, soft * 0.4, (first ? 4 : 3) * F, C.hot, 2.4);
+      // A white-hot core (HDR; the magazine's first a third bigger and hotter: the release's energy is its thin core, not a wide glare).
+      g.burst(CELL.core, m.x, m.y, m.z, soft * (first ? 0.32 : 0.25), soft * (first ? 0.5 : 0.4), (first ? 4 : 3) * F, C.hot, first ? 3.6 : 2.4);
       // Its light 1.2 m out along the shot, off the hull (on the muzzle it lit the ship white, as Tia's and Ray's did: §12).
       this.p.lights.flash(first ? LIGHT.xungFirst : LIGHT.xung, m.x + dx * 1.2, m.y, m.z - dz * 1.2, this.shot);
       if (first) {
-        // The magazine's release reads off the core's load flash: a tongue of the gun's colour 1.6 m along the shot (4 frames).
+        // The magazine's release reads off the core's load flash: a tongue of the gun's colour 1.6 m along the shot (4 frames), held,
+        // with a thin white-blue HDR core down its middle; off the hull (the muzzle sits mid-ship: there the hull hid it), a pale halo
+        // held under the bloom, its white-hot core and a star, whole on the shot's frame (wave 1 fix: held alone it read as a dull blue disc).
         this.streaks.add(m.x, m.y, m.z, m.x + dx * 1.6, m.y, m.z - dz * 1.6, 0.45, this.shot, 3, 0.25, 4 * F);
+        this.streaks.add(m.x, m.y, m.z, m.x + dx * 1.9, m.y, m.z - dz * 1.9, 0.11, this.shotHi, 4, 0.5, 4 * F, true);
+        const [rx, rz] = [m.x + dx * BLOOM.release.xung, m.z - dz * BLOOM.release.xung];
+        g.burst(CELL.soft, rx, m.y, rz, halo * BLOOM.release.halo * 0.9, halo * BLOOM.release.halo, 3 * F, this.shotHi, 1.1);
+        g.burst(CELL.core, rx, m.y, rz, soft * 0.18, soft * 0.26, 3 * F, C.hot, 3.6);
+        g.burst(CELL.star8, rx, m.y, rz, 1.1, 1.4, 3 * F, this.shotHi, 3.4, 0, 0, 0, 0, Math.atan2(dz, dx));
         this.spark(m.x, m.y, m.z, dx, 0.4, -dz, 6, 7, this.shotHi, 0.22, 0.35, 1.6);
         this.p.trauma.kick(-dx, dz, 1.5);
       }
@@ -320,8 +329,12 @@ export class ShotFx {
     const g = this.p.glows;
     if ((flags & FLAG.phao) !== 0) return;
     if ((flags & FLAG.ray) !== 0) {
-      g.burst(CELL.star8, x, 1, -z, 0.6 * k, 2 * k, 4 * F, C.ray, 2.6);
-      this.spark(x, 1, -z, dx, 0.3, -dz, 6, 10, C.rayCore, 0.24, 0.35, 0.8);
+      // A punch where the line goes through: a hot core and a cobalt star (HDR, 3–4 frames), a shock ring held under the bloom, sparks thrown on along the line.
+      g.burst(CELL.core, x, 1, -z, BLOOM.ray.hit * k, BLOOM.ray.hit * 2 * k, 3 * F, C.rayCore, 3.6);
+      g.burst(CELL.star8, x, 1, -z, 0.6 * k, 2.2 * k, 4 * F, C.ray, 3);
+      g.burst(CELL.ring, x, 1, -z, 0.3 * k, 2.6 * k, 0.16, C.rayIon, 1.6);
+      this.spark(x, 1, -z, dx, 0.3, -dz, 8, 12, C.rayCore, 0.24, 0.35, 0.8);
+      this.spark(x, 1, -z, dx, 0.5, -dz, 4, 7, C.ray, 0.28, 0.3, 1.6);
       return;
     }
     if (armour) return;
