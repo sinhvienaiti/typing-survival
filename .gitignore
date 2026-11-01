@@ -4,7 +4,8 @@ tmp/
 .vite/
 .DS_Store
 *.log
-coverage/
+# Test coverage reports at the root only (src/view/coverage is the ALIVE_PLAN coverage table, tracked).
+/coverage/
 
 # No media in Git, ever: models, images, audio and video live on Google Drive
 # (parent repo `pnpm media:push`). Only code, JSON data and docs are tracked.
