@@ -1,0 +1,309 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "role": "bg-menu",
+      "kind": "bg",
+      "source": "ui/screens-epic/menu-bg",
+      "accepted": true,
+      "ticket": "121",
+      "verdict": "CODEX_QUEUE 121: Nhận 31/10 16:30 (Claude chấm 8–8,5)",
+      "alt": "",
+      "crop": "1536x864+0+80"
+    },
+    {
+      "role": "logo",
+      "kind": "logo",
+      "source": "ui/screens-epic/logo-clean",
+      "accepted": true,
+      "ticket": "121",
+      "verdict": "CODEX_QUEUE 121: Nhận 31/10 16:30 (Claude chấm 8), bản tách nền sạch (_review/121/logo-clean.alpha.png)",
+      "alt": "Last Line"
+    },
+    {
+      "role": "icon-check",
+      "kind": "icon",
+      "source": "ui/icons/check",
+      "accepted": true,
+      "ticket": "149",
+      "verdict": "CODEX_QUEUE 149: Nhận 31/10",
+      "alt": "Done",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-learning-rule",
+      "kind": "icon",
+      "source": "ui/icons/learning-rule",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "Learning rule",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-warning",
+      "kind": "icon",
+      "source": "ui/icons/warning",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "Warning",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-station-crest",
+      "kind": "icon",
+      "source": "ui/icons/station-crest",
+      "accepted": true,
+      "ticket": "240",
+      "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (c2-try3)",
+      "alt": "Station VC-7",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-back",
+      "kind": "icon",
+      "source": "ui/icons/back",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "Back",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-menu-play",
+      "kind": "icon",
+      "source": "ui/icons/menu-play",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Play",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-menu-journey",
+      "kind": "icon",
+      "source": "ui/icons/menu-journey",
+      "accepted": true,
+      "ticket": "239",
+      "verdict": "CODEX_QUEUE 239: Nhận 31/10 05:15 (c2-try3)",
+      "alt": "Campaign",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-menu-mode",
+      "kind": "icon",
+      "source": "ui/icons/menu-mode",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Mode",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-menu-armory",
+      "kind": "icon",
+      "source": "ui/icons/menu-armory",
+      "accepted": true,
+      "ticket": "239",
+      "verdict": "CODEX_QUEUE 239: Nhận 31/10 05:15 (c2-try1)",
+      "alt": "Armory",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-menu-settings",
+      "kind": "icon",
+      "source": "ui/icons/menu-settings.r2",
+      "accepted": true,
+      "ticket": "243",
+      "verdict": "CODEX_QUEUE 243: Nhận 31/10 17:40 (cỡ thật)",
+      "alt": "Options",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-menu-profile",
+      "kind": "icon",
+      "source": "ui/icons/menu-profile",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Profile",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-sfx",
+      "kind": "icon",
+      "source": "ui/icons/sfx",
+      "accepted": true,
+      "ticket": "152",
+      "verdict": "CODEX_QUEUE 152: Nhận 31/10",
+      "alt": "Effects",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-music",
+      "kind": "icon",
+      "source": "ui/icons/music",
+      "accepted": true,
+      "ticket": "152",
+      "verdict": "CODEX_QUEUE 152: Nhận 31/10",
+      "alt": "Music",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-shake",
+      "kind": "icon",
+      "source": "ui/icons/shake.r5",
+      "accepted": true,
+      "ticket": "247",
+      "verdict": "CODEX_QUEUE 247: Tạm 01/11 (chủ dự án \"Gắn tạm\"; chưa đạt 8, tốt nhất sau 3 vòng Firefly Image 5, xem 247-report.md)",
+      "alt": "Screen shake",
+      "fill": 0.85,
+      "provisional": true
+    },
+    {
+      "role": "icon-reduced-motion",
+      "kind": "icon",
+      "source": "ui/icons/reduced-motion",
+      "accepted": true,
+      "ticket": "240",
+      "verdict": "CODEX_QUEUE 240: Nhận 31/10 05:15 (c2-try2)",
+      "alt": "Reduce motion",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-read-aloud",
+      "kind": "icon",
+      "source": "ui/icons/read-aloud",
+      "accepted": true,
+      "ticket": "152",
+      "verdict": "CODEX_QUEUE 152: Nhận 31/10",
+      "alt": "Read words aloud",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-pace-director",
+      "kind": "icon",
+      "source": "ui/icons/pace-director.r5",
+      "accepted": true,
+      "ticket": "247",
+      "verdict": "CODEX_QUEUE 247: Tạm 01/11 (chủ dự án \"Gắn tạm\"; chưa đạt 8, tốt nhất sau 3 vòng Firefly Image 5, xem 247-report.md)",
+      "alt": "Adapt pace",
+      "fill": 0.8,
+      "provisional": true
+    },
+    {
+      "role": "icon-quality",
+      "kind": "icon",
+      "source": "ui/icons/quality",
+      "accepted": true,
+      "ticket": "152",
+      "verdict": "CODEX_QUEUE 152: Nhận 31/10",
+      "alt": "Graphics",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-ship",
+      "kind": "icon",
+      "source": "ui/icons/ship",
+      "accepted": true,
+      "ticket": "243",
+      "verdict": "CODEX_QUEUE 243: Nhận 31/10 17:40 (cỡ thật)",
+      "alt": "Ship",
+      "fill": 0.85
+    },
+    {
+      "role": "part-keycap",
+      "kind": "icon",
+      "source": "ui/parts/keycap",
+      "accepted": true,
+      "ticket": "153",
+      "verdict": "CODEX_QUEUE 153: Nhận 31/10",
+      "alt": "Key"
+    },
+    {
+      "role": "part-keycap-active",
+      "kind": "icon",
+      "source": "ui/parts/keycap-active",
+      "accepted": true,
+      "ticket": "153",
+      "verdict": "CODEX_QUEUE 153: Nhận 31/10",
+      "alt": "Key, lit"
+    },
+    {
+      "role": "part-led-on",
+      "kind": "icon",
+      "source": "ui/parts/led-on",
+      "accepted": true,
+      "ticket": "153",
+      "verdict": "CODEX_QUEUE 153: Nhận 31/10",
+      "alt": "Lamp on"
+    },
+    {
+      "role": "part-led-off",
+      "kind": "icon",
+      "source": "ui/parts/led-off",
+      "accepted": true,
+      "ticket": "153",
+      "verdict": "CODEX_QUEUE 153: Nhận 31/10",
+      "alt": "Lamp off"
+    },
+    {
+      "role": "part-arrow",
+      "kind": "icon",
+      "source": "ui/parts/arrow",
+      "accepted": true,
+      "ticket": "153",
+      "verdict": "CODEX_QUEUE 153: Nhận 31/10",
+      "alt": "Arrow"
+    },
+    {
+      "role": "frame-panel",
+      "kind": "frame",
+      "source": "ui/frames-epic/panel-large.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "900x895+62+62",
+      "slice": [
+        138,
+        138,
+        133,
+        138
+      ]
+    },
+    {
+      "role": "frame-button",
+      "kind": "frame",
+      "source": "ui/frames-epic/button.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "1438x373+49+68",
+      "slice": [
+        132,
+        141,
+        129,
+        141
+      ]
+    },
+    {
+      "role": "frame-button-active",
+      "kind": "frame",
+      "source": "ui/frames-epic/button-active.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "1439x373+49+67",
+      "slice": [
+        133,
+        142,
+        128,
+        141
+      ]
+    }
+  ]
+}

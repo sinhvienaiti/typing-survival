@@ -3,8 +3,8 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { quickSkin } from "../src/app/quick";
 import { KIND } from "../src/content/foes";
 import { artAttrs, artHtml, artUrl, BOX, foeArt, foeRole, resetArtWarnings, rowRoles, SILHOUETTE_MAX, type ArtPlace } from "../src/view/ui-art";
-import table from "../src/view/ui-art.json";
-import selection from "../scripts/ui-art/selection.json";
+import { UI_ART_TABLE as table } from "../src/view/ui-art";
+import { selection } from "./survival/art-selection";
 import { SILHOUETTES, WIRED_245 } from "./ui-art-roles";
 import { survivalCss, themeCss } from "./survival/css";
 

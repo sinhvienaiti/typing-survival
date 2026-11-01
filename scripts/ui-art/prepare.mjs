@@ -20,6 +20,13 @@ export const BASE = '/assets/typing-survival/ui/';
 export const OUT = 'public' + BASE.slice(0, -1);
 /** The build record beside the WebP files; vite.config.ts UI_ART_RECORD keeps it out of dist. */
 export const RECORD = 'manifest.json';
+/**
+ * The selection and the runtime table are split by area (ALIVE_PLAN AL-00): each package owns its
+ * area's files, `selection-<area>.json` here and `src/view/ui-art/<area>.json` (ui-art.ts merges them).
+ */
+export const AREAS = ['screens', 'intro', 'results', 'journey', 'hud', 'bays', 'strip', 'quick'];
+/** The default runtime table: a folder of one JSON per area. */
+export const TABLE = 'src/view/ui-art';
 const json = value => JSON.stringify(value, null, 2) + '\n';
 const md5 = data => createHash('md5').update(data).digest('hex');
 const readJson = path => existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : null;
@@ -32,6 +39,23 @@ function run(command, args) {
 function dimensions(path) {
   const [width, height] = run(process.env.ART_MAGICK || 'magick', ['identify', '-format', '%w %h', path]).trim().split(/\s+/).map(Number);
   return { width, height };
+}
+/** Every area's selection as one ({version, entries} in AREAS order) and each role's area; a role in two areas is an error. */
+export function readSelection(dir = fileURLToPath(new URL('.', import.meta.url))) {
+  const entries = [], areas = new Map();
+  let version;
+  for (const area of AREAS) {
+    const part = readJson(join(dir, `selection-${area}.json`));
+    if (part === null) throw new Error(`Missing selection-${area}.json`);
+    if (version !== undefined && part.version !== version) throw new Error(`Selection versions differ: ${area}`);
+    version = part.version;
+    for (const entry of part.entries ?? []) {
+      if (areas.has(entry.role) && areas.get(entry.role) !== area) throw new Error(`Role in two areas: ${entry.role}`);
+      areas.set(entry.role, area);
+      entries.push(entry);
+    }
+  }
+  return { selection: { version, entries }, areas };
 }
 function validate(selection) {
   if (!Number.isInteger(selection.version) || selection.version < 1 || !Array.isArray(selection.entries)) throw new Error('Invalid selection version or entries');
@@ -174,14 +198,20 @@ function publish(changes, removals, work, finalChanges) {
   }
 }
 export async function prepare(options = {}) {
-  const {selection = readJson(fileURLToPath(new URL('./selection.json',import.meta.url))), artSrc = 'art-src', out:requestedOut = OUT, table = 'src/view/ui-art.json', check = false, pending = false, work = 'tmp/ui-art/work', pendingOut = 'tmp/ui-art/pending', encoder = 'cwebp', force = false} = options;
+  const read = options.selection === undefined ? readSelection() : null;
+  const {selection = read.selection, areas = read?.areas, artSrc = 'art-src', out:requestedOut = OUT, table = TABLE, check = false, pending = false, work = 'tmp/ui-art/work', pendingOut = 'tmp/ui-art/pending', encoder = 'cwebp', force = false} = options;
+  // A table path ending in .json is one file (the fixtures'); otherwise a folder of one file per area.
+  const tables = value => table.endsWith('.json') ? [[table, value]] : AREAS.map(area => {
+    if (!areas) throw new Error('A table folder needs the roles\' areas');
+    return [join(table, `${area}.json`), {...value, roles: Object.fromEntries(Object.entries(value.roles).filter(([role]) => areas.get(role) === area))}];
+  });
   if (!existsSync(artSrc)) { const error = new Error(`Missing --art-src directory: ${artSrc}. Pass --art-src ../typing-survival/art-src in the worktree.`); error.exitCode = 2; throw error; }
   if (check && pending) throw new Error('--check and --pending are separate modes');
   validate(selection);
   const selected = pending ? {...selection, entries:selection.entries.filter(e=>!e.accepted && e.source).map(e=>({...e,accepted:true}))} : selection;
   const out = pending ? pendingOut : requestedOut;
   if (pending && !resolve(out).startsWith(resolve('tmp') + '/')) throw new Error('Pending output must be inside tmp/');
-  safeOutput(out); if (!pending) safeOutput(table);
+  safeOutput(out); if (!pending) for (const [file] of tables({roles: {}})) safeOutput(file);
   const jobs = plan(selected,inventory(selected,artSrc));
   const stamps = fingerprints(jobs,artSrc), old = readJson(join(out,RECORD));
   const expectedNames = jobs.map(j => `${j.entry.role}.${j.width}.webp`);
@@ -196,7 +226,7 @@ export async function prepare(options = {}) {
       previous.sizes.forEach(s=>verifyFile(out,s));
     }
     for (const name of readdirSync(out)) if (name.endsWith('.webp') && selection.entries.some(e=>name.startsWith(e.role+'.')) && !expectedNames.includes(name)) throw new Error(`Unknown role WebP: ${name}`);
-    if (!existsSync(table) || readFileSync(table,'utf8') !== json(runtime(selected,old.roles))) throw new Error(`Runtime table differs: ${table}`);
+    for (const [file, value] of tables(runtime(selected,old.roles))) if (!existsSync(file) || readFileSync(file,'utf8') !== json(value)) throw new Error(`Runtime table differs: ${file}`);
     console.log('UI art check: OK'); return {written:0,manifest:old};
   }
   const roles = {}, changes = [];
@@ -243,7 +273,7 @@ export async function prepare(options = {}) {
     const finalChanges=[];
     const save=(target,value,name)=>{ const data=json(value); if(existsSync(target)&&readFileSync(target,'utf8')===data)return; const staged=join(work,name);writeFileSync(staged,data); finalChanges.push([target,staged]); };
     save(join(out,RECORD),manifest,'manifest.next.json');
-    if(!pending) save(table,runtime(selected,roles),'table.next.json');
+    if(!pending) tables(runtime(selected,roles)).forEach(([file, value], k) => save(file, value, `table.next.${k}.json`));
     const written=changes.length+finalChanges.length;
     publish(changes,removals,work,finalChanges);
     console.log(`UI art: ${written} files written, ${removals.length} removed${pending?' (pending, tmp only)':''}`);
@@ -251,7 +281,7 @@ export async function prepare(options = {}) {
   } finally { rmSync(work,{recursive:true,force:true}); }
 }
 export async function main(args=process.argv.slice(2)) {
-  if(args.includes('--help')) { console.log('pnpm ui-art:prepare [--art-src <dir>] [--out <dir>] [--table <file>] [--check] [--pending] [--help]'); return; }
+  if(args.includes('--help')) { console.log('pnpm ui-art:prepare [--art-src <dir>] [--out <dir>] [--table <folder or file.json>] [--check] [--pending] [--help]'); return; }
   const options={};
   for(let i=0;i<args.length;i++) {
     const arg=args[i];

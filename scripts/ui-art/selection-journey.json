@@ -1,0 +1,331 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "role": "foe-swarm",
+      "kind": "portrait",
+      "source": "ui/foes/swarm",
+      "accepted": true,
+      "ticket": "089",
+      "verdict": "CODEX_QUEUE 089: Nhận 28/10",
+      "alt": "Swarm",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-swarm",
+      "kind": "portrait",
+      "source": "ui/foes/swarm.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Swarm"
+    },
+    {
+      "role": "foe-scout",
+      "kind": "portrait",
+      "source": "ui/foes/scout",
+      "accepted": true,
+      "ticket": "089",
+      "verdict": "CODEX_QUEUE 089: Nhận 28/10",
+      "alt": "Scout",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-scout",
+      "kind": "portrait",
+      "source": "ui/foes/scout.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Scout"
+    },
+    {
+      "role": "foe-brute",
+      "kind": "portrait",
+      "source": "ui/foes/brute",
+      "accepted": true,
+      "ticket": "089",
+      "verdict": "CODEX_QUEUE 089: Nhận 28/10",
+      "alt": "Brute",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-brute",
+      "kind": "portrait",
+      "source": "ui/foes/brute.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Brute"
+    },
+    {
+      "role": "foe-pack-leader",
+      "kind": "portrait",
+      "source": "ui/foes/pack-leader",
+      "accepted": true,
+      "ticket": "089",
+      "verdict": "CODEX_QUEUE 089: Nhận 28/10",
+      "alt": "Pack Leader",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-pack-leader",
+      "kind": "portrait",
+      "source": "ui/foes/pack-leader.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Pack Leader"
+    },
+    {
+      "role": "foe-shield-guard",
+      "kind": "portrait",
+      "source": "ui/foes/shield-guard",
+      "accepted": true,
+      "ticket": "089",
+      "verdict": "CODEX_QUEUE 089: Nhận 28/10",
+      "alt": "Shield Guard",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-shield-guard",
+      "kind": "portrait",
+      "source": "ui/foes/shield-guard.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Shield Guard"
+    },
+    {
+      "role": "foe-splitter",
+      "kind": "portrait",
+      "source": "ui/foes/splitter",
+      "accepted": true,
+      "ticket": "089",
+      "verdict": "CODEX_QUEUE 089: Nhận 28/10",
+      "alt": "Splitter",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-splitter",
+      "kind": "portrait",
+      "source": "ui/foes/splitter.v2",
+      "accepted": false,
+      "ticket": "157",
+      "verdict": "CODEX_QUEUE 157: Chờ chấm",
+      "alt": "Splitter"
+    },
+    {
+      "role": "foe-shard",
+      "kind": "portrait",
+      "source": "ui/foes/shard",
+      "accepted": true,
+      "ticket": "238",
+      "verdict": "CODEX_QUEUE 238: Nhận 31/10 03:15 (try2)",
+      "alt": "Shard",
+      "fill": 0.9
+    },
+    {
+      "role": "stage-c1-s1",
+      "kind": "stage",
+      "source": "ui/stages/c1-s1",
+      "accepted": false,
+      "ticket": "109",
+      "verdict": "CODEX_QUEUE 109: Nhận tạm 8,5 ngày 29/10",
+      "alt": "First Shift"
+    },
+    {
+      "role": "stage-c1-s1",
+      "kind": "stage",
+      "source": "ui/stages-v2/c1-s1",
+      "accepted": true,
+      "ticket": "126",
+      "verdict": "CODEX_QUEUE 126: Nhận 31/10 16:30 (Claude chấm 8,5), thay 109",
+      "alt": "First Shift"
+    },
+    {
+      "role": "stage-c1-s2",
+      "kind": "stage",
+      "source": "ui/stages/c1-s2",
+      "accepted": false,
+      "ticket": "109",
+      "verdict": "CODEX_QUEUE 109: Nhận tạm 8,5 ngày 29/10",
+      "alt": "Leader Hunt"
+    },
+    {
+      "role": "stage-c1-s2",
+      "kind": "stage",
+      "source": "ui/stages-v2/c1-s2",
+      "accepted": true,
+      "ticket": "126",
+      "verdict": "CODEX_QUEUE 126: Nhận 31/10 16:30 (Claude chấm 8,5), thay 109",
+      "alt": "Leader Hunt"
+    },
+    {
+      "role": "stage-c1-s3",
+      "kind": "stage",
+      "source": "ui/stages/c1-s3",
+      "accepted": false,
+      "ticket": "109",
+      "verdict": "CODEX_QUEUE 109: Nhận tạm 8,5 ngày 29/10",
+      "alt": "Rift Wall"
+    },
+    {
+      "role": "stage-c1-s3",
+      "kind": "stage",
+      "source": "ui/stages-v2/c1-s3",
+      "accepted": true,
+      "ticket": "126",
+      "verdict": "CODEX_QUEUE 126: Nhận 31/10 16:30 (Claude chấm 8,5), thay 109",
+      "alt": "Rift Wall"
+    },
+    {
+      "role": "stage-c1-s4",
+      "kind": "stage",
+      "source": "ui/stages/c1-s4",
+      "accepted": false,
+      "ticket": "109",
+      "verdict": "CODEX_QUEUE 109: Nhận tạm 8,5 ngày 29/10",
+      "alt": "Shining Shields"
+    },
+    {
+      "role": "stage-c1-s4",
+      "kind": "stage",
+      "source": "ui/stages-v2/c1-s4",
+      "accepted": true,
+      "ticket": "126",
+      "verdict": "CODEX_QUEUE 126: Nhận 31/10 16:30 (Claude chấm 8,5), thay 109",
+      "alt": "Shining Shields"
+    },
+    {
+      "role": "bg-journey",
+      "kind": "bg",
+      "source": "ui/screens-epic/journey-bg",
+      "accepted": true,
+      "ticket": "121",
+      "verdict": "CODEX_QUEUE 121: Nhận 31/10 16:30 (Claude chấm 8–8,5)",
+      "alt": "",
+      "crop": "1536x864+0+80"
+    },
+    {
+      "role": "bg-briefing",
+      "kind": "bg",
+      "source": "ui/screens-epic/briefing-bg",
+      "accepted": true,
+      "ticket": "121",
+      "verdict": "CODEX_QUEUE 121: Nhận 31/10 16:30 (Claude chấm 8–8,5)",
+      "alt": "",
+      "crop": "1536x864+0+80"
+    },
+    {
+      "role": "bg-loadout",
+      "kind": "bg",
+      "source": "ui/screens-epic/loadout-bg",
+      "accepted": true,
+      "ticket": "121",
+      "verdict": "CODEX_QUEUE 121: Nhận 31/10 16:30 (Claude chấm 8–8,5)",
+      "alt": "",
+      "crop": "1536x864+0+80"
+    },
+    {
+      "role": "icon-hazard",
+      "kind": "icon",
+      "source": "ui/icons/hazard.r2",
+      "accepted": true,
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
+      "alt": "Hazard",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-equipment",
+      "kind": "icon",
+      "source": "ui/icons/equipment",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "Gear",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-chapter-crest",
+      "kind": "icon",
+      "source": "ui/icons/chapter-crest",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "Chapter 1",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-load-guns",
+      "kind": "icon",
+      "source": "ui/icons/load-guns",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "Load guns",
+      "fill": 0.85
+    },
+    {
+      "role": "foe-swarm-small",
+      "kind": "portrait",
+      "source": "ui/foes/swarm.small",
+      "accepted": true,
+      "ticket": "245",
+      "verdict": "CODEX_QUEUE 245: Nhận 31/10 23:55 (cỡ thật)",
+      "alt": "Swarm",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-scout-small",
+      "kind": "portrait",
+      "source": "ui/foes/scout.small",
+      "accepted": true,
+      "ticket": "245",
+      "verdict": "CODEX_QUEUE 245: Nhận 31/10 23:55 (cỡ thật)",
+      "alt": "Scout",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-brute-small",
+      "kind": "portrait",
+      "source": "ui/foes/brute.small",
+      "accepted": true,
+      "ticket": "245",
+      "verdict": "CODEX_QUEUE 245: Nhận 31/10 23:55 (cỡ thật)",
+      "alt": "Brute",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-pack-leader-small",
+      "kind": "portrait",
+      "source": "ui/foes/pack-leader.small",
+      "accepted": true,
+      "ticket": "245",
+      "verdict": "CODEX_QUEUE 245: Nhận 31/10 23:55 (cỡ thật)",
+      "alt": "Pack Leader",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-shield-guard-small",
+      "kind": "portrait",
+      "source": "ui/foes/shield-guard.small",
+      "accepted": true,
+      "ticket": "245",
+      "verdict": "CODEX_QUEUE 245: Nhận 31/10 23:55 (cỡ thật)",
+      "alt": "Shield Guard",
+      "fill": 0.9
+    },
+    {
+      "role": "foe-splitter-small",
+      "kind": "portrait",
+      "source": "ui/foes/splitter.small",
+      "accepted": true,
+      "ticket": "245",
+      "verdict": "CODEX_QUEUE 245: Nhận 31/10 23:55 (cỡ thật)",
+      "alt": "Splitter",
+      "fill": 0.9
+    }
+  ]
+}

@@ -1,4 +1,11 @@
-import table from "./ui-art.json";
+import screens from "./ui-art/screens.json";
+import intro from "./ui-art/intro.json";
+import results from "./ui-art/results.json";
+import journey from "./ui-art/journey.json";
+import hud from "./ui-art/hud.json";
+import bays from "./ui-art/bays.json";
+import strip from "./ui-art/strip.json";
+import quick from "./ui-art/quick.json";
 import type { GunKey, CounterRow } from "../content/guns";
 import { KIND } from "../content/foes";
 
@@ -16,7 +23,7 @@ export const BOX = {
   bg: { width: 1280, height: 720 },
   // The title logo (ticket 121, 3:1): right of the title card, clear of the menu.
   logo: { width: 600, height: 200 },
-  // Icons and parts (tickets 149–153). UI pass 2 (31/10): rows and items 28–32 px at 720p, each icon's painting trimmed to 85 % of its box at prepare time (selection.json `fill`).
+  // Icons and parts (tickets 149–153). UI pass 2 (31/10): rows and items 28–32 px at 720p, each icon's painting trimmed to 85 % of its box at prepare time (the selection's `fill`, scripts/ui-art/selection-<area>.json).
   small: { width: 20, height: 20 }, icon: { width: 28, height: 28 },
   item: { width: 32, height: 32 }, lock: { width: 40, height: 40 },
   // A banner's icon beside its 34 px capitals; a results star is the card's hero (80 px, UI pass 3: 64 still read small).
@@ -40,6 +47,18 @@ export function rowRoles(row: CounterRow): readonly string[] {
   return { swarmFar: ["foe-swarm"], swarmNear: ["foe-swarm"], scout: ["foe-scout"], armoured: ["foe-brute", "foe-pack-leader"], shield: ["foe-shield-guard"], splitter: ["foe-splitter", "foe-shard"] }[row];
 }
 type Role = { kind: string; alt: string; rev: string; widths: number[]; aspect: number; slice?: number[] };
+const merged = { ...screens.roles, ...intro.roles, ...results.roles, ...journey.roles, ...hud.roles, ...bays.roles, ...strip.roles, ...quick.roles };
+/**
+ * The runtime art table (scripts/ui-art/prepare.mjs writes it), one JSON per
+ * area (ALIVE_PLAN AL-00: each package owns its area's file), merged here in
+ * the roles' sorted order; this module still builds every UI image URL.
+ */
+export const UI_ART_TABLE = {
+  version: screens.version,
+  base: screens.base,
+  roles: Object.fromEntries(Object.entries(merged).sort(([a], [b]) => a.localeCompare(b, "en"))) as typeof merged,
+};
+const table = UI_ART_TABLE;
 const roles: Record<string, Role> = table.roles as Record<string, Role>;
 function accepted(role: string): Role | undefined {
   const data = roles[role];

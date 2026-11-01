@@ -17,7 +17,7 @@ const env = (name: string): string | undefined => process.env[name]?.trim() || u
 /**
  * The UI art build record (scripts/ui-art/prepare.mjs writes it beside the
  * WebP files): art-src file names, source md5 and PSNR for `--check` and
- * reruns. The game reads src/view/ui-art.json instead, so Vite's copy of
+ * reruns. The game reads src/view/ui-art/*.json instead, so Vite's copy of
  * public/ must not ship it (recheck 230-F3). The dev server still serves it.
  * The path is prepare.mjs's RECORD inside its OUT folder, relative to public/;
  * tests/ui-art-wiring.test.ts fails if either side moves.

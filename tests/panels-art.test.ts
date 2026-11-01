@@ -5,8 +5,8 @@ import { TypingSounds } from "../src/kit/feedback/typing-fx";
 import { quickIcons } from "../src/view/ui-art";
 import { FRAME_PX, previewFit, previewTargetY, REST, RING_REACH } from "../src/view/type-fx-preview";
 import { defaultSoundRows } from "../src/kit/ui";
-import table from "../src/view/ui-art.json";
-import selection from "../scripts/ui-art/selection.json";
+import { UI_ART_TABLE as table } from "../src/view/ui-art";
+import { selection } from "./survival/art-selection";
 import { survivalCss } from "./survival/css";
 
 /**

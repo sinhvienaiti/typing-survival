@@ -7,8 +7,8 @@ import type { World } from "../src/sim/world";
 import { renderScreen } from "../src/view/screens";
 import { quickIcons } from "../src/view/ui-art";
 import { previewFit } from "../src/view/type-fx-preview";
-import table from "../src/view/ui-art.json";
-import selection from "../scripts/ui-art/selection.json";
+import { UI_ART_TABLE as table } from "../src/view/ui-art";
+import { selection } from "./survival/art-selection";
 import { survivalCss, themeCss } from "./survival/css";
 
 /**

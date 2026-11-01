@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "base": "/assets/typing-survival/ui/",
+  "roles": {
+    "frame-word": {
+      "kind": "frame",
+      "alt": "",
+      "rev": "a5e01159",
+      "widths": [
+        448,
+        896
+      ],
+      "aspect": 4.349515,
+      "slice": [
+        42.07,
+        12.22,
+        35.98,
+        12.22
+      ]
+    },
+    "icon-rift": {
+      "kind": "icon",
+      "alt": "Rift",
+      "rev": "ef80c60a",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-streak": {
+      "kind": "icon",
+      "alt": "Clean streak",
+      "rev": "0ec1bfcc",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    }
+  }
+}

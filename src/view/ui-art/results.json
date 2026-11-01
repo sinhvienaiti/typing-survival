@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "base": "/assets/typing-survival/ui/",
+  "roles": {
+    "bg-results-lose": {
+      "kind": "bg",
+      "alt": "",
+      "rev": "54602b1c",
+      "widths": [
+        1280,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "bg-results-win": {
+      "kind": "bg",
+      "alt": "",
+      "rev": "af96f536",
+      "widths": [
+        1280,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "icon-new-badge": {
+      "kind": "icon",
+      "alt": "New",
+      "rev": "94b939c6",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-next-stage": {
+      "kind": "icon",
+      "alt": "Next stage",
+      "rev": "f819a5cd",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-retry": {
+      "kind": "icon",
+      "alt": "Retry",
+      "rev": "a2f1e9c1",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-star-lit": {
+      "kind": "icon",
+      "alt": "Star earned",
+      "rev": "cc801de4",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-star-unlit": {
+      "kind": "icon",
+      "alt": "Star not earned",
+      "rev": "d03a8a9a",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-stat-accuracy": {
+      "kind": "icon",
+      "alt": "Accuracy",
+      "rev": "3b247db7",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-stat-evenness": {
+      "kind": "icon",
+      "alt": "Steadiness",
+      "rev": "b7e7993a",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-stat-new-word": {
+      "kind": "icon",
+      "alt": "New-word read",
+      "rev": "adc5c104",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-stat-time": {
+      "kind": "icon",
+      "alt": "Time",
+      "rev": "9ec65d87",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-stat-words": {
+      "kind": "icon",
+      "alt": "Words",
+      "rev": "cee5ad2a",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-stat-wpm": {
+      "kind": "icon",
+      "alt": "Speed",
+      "rev": "8a5d7185",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    }
+  }
+}

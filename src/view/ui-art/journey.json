@@ -1,0 +1,271 @@
+{
+  "version": 1,
+  "base": "/assets/typing-survival/ui/",
+  "roles": {
+    "bg-briefing": {
+      "kind": "bg",
+      "alt": "",
+      "rev": "aadad5fe",
+      "widths": [
+        1280,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "bg-journey": {
+      "kind": "bg",
+      "alt": "",
+      "rev": "fa5733ef",
+      "widths": [
+        1280,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "bg-loadout": {
+      "kind": "bg",
+      "alt": "",
+      "rev": "b00f1154",
+      "widths": [
+        1280,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "foe-brute": {
+      "kind": "portrait",
+      "alt": "Brute",
+      "rev": "aa8e58e4",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-brute-small": {
+      "kind": "portrait",
+      "alt": "Brute",
+      "rev": "adcc0c55",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-pack-leader": {
+      "kind": "portrait",
+      "alt": "Pack Leader",
+      "rev": "660ea841",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-pack-leader-small": {
+      "kind": "portrait",
+      "alt": "Pack Leader",
+      "rev": "ef426b16",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-scout": {
+      "kind": "portrait",
+      "alt": "Scout",
+      "rev": "1b172082",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-scout-small": {
+      "kind": "portrait",
+      "alt": "Scout",
+      "rev": "e821aa23",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-shard": {
+      "kind": "portrait",
+      "alt": "Shard",
+      "rev": "12a2c9cc",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-shield-guard": {
+      "kind": "portrait",
+      "alt": "Shield Guard",
+      "rev": "1e15c086",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-shield-guard-small": {
+      "kind": "portrait",
+      "alt": "Shield Guard",
+      "rev": "6b09309e",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-splitter": {
+      "kind": "portrait",
+      "alt": "Splitter",
+      "rev": "278c8f6e",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-splitter-small": {
+      "kind": "portrait",
+      "alt": "Splitter",
+      "rev": "f831e55d",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-swarm": {
+      "kind": "portrait",
+      "alt": "Swarm",
+      "rev": "729f72af",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "foe-swarm-small": {
+      "kind": "portrait",
+      "alt": "Swarm",
+      "rev": "6f1affe3",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-chapter-crest": {
+      "kind": "icon",
+      "alt": "Chapter 1",
+      "rev": "163690ad",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-equipment": {
+      "kind": "icon",
+      "alt": "Gear",
+      "rev": "e6ee7551",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-hazard": {
+      "kind": "icon",
+      "alt": "Hazard",
+      "rev": "1d5f7fc4",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "icon-load-guns": {
+      "kind": "icon",
+      "alt": "Load guns",
+      "rev": "5b8bcb8b",
+      "widths": [
+        64,
+        128,
+        256
+      ],
+      "aspect": 1
+    },
+    "stage-c1-s1": {
+      "kind": "stage",
+      "alt": "First Shift",
+      "rev": "738ca77c",
+      "widths": [
+        192,
+        384,
+        768,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "stage-c1-s2": {
+      "kind": "stage",
+      "alt": "Leader Hunt",
+      "rev": "d36a2396",
+      "widths": [
+        192,
+        384,
+        768,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "stage-c1-s3": {
+      "kind": "stage",
+      "alt": "Rift Wall",
+      "rev": "2c68fb8e",
+      "widths": [
+        192,
+        384,
+        768,
+        1536
+      ],
+      "aspect": 1.777778
+    },
+    "stage-c1-s4": {
+      "kind": "stage",
+      "alt": "Shining Shields",
+      "rev": "6323be90",
+      "widths": [
+        192,
+        384,
+        768,
+        1536
+      ],
+      "aspect": 1.777778
+    }
+  }
+}

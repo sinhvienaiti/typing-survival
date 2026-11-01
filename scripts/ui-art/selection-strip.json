@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "role": "icon-streak",
+      "kind": "icon",
+      "source": "ui/icons/streak",
+      "accepted": true,
+      "ticket": "237",
+      "verdict": "CODEX_QUEUE 237: Nhận 31/10 02:56 (try2)",
+      "alt": "Clean streak",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-rift",
+      "kind": "icon",
+      "source": "ui/icons/rift.r3",
+      "accepted": true,
+      "ticket": "247",
+      "verdict": "CODEX_QUEUE 247: Tạm 01/11 (chủ dự án \"Gắn tạm\"; chưa đạt 8, tốt nhất sau 3 vòng Firefly Image 5, xem 247-report.md)",
+      "alt": "Rift",
+      "fill": 0.8,
+      "provisional": true
+    },
+    {
+      "role": "frame-word",
+      "kind": "frame",
+      "source": "ui/frames-epic/word-plate.alpha",
+      "accepted": true,
+      "ticket": "127",
+      "verdict": "CODEX_QUEUE 127: chưa nghiệm thu (alpha, chốt cạnh); gắn theo UI pass 2 31/10 làm khung 9-slice",
+      "alt": "",
+      "crop": "1424x328+56+82",
+      "slice": [
+        138,
+        174,
+        118,
+        174
+      ]
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "role": "bg-results-win",
+      "kind": "bg",
+      "source": "ui/screens-epic/results-win-bg",
+      "accepted": true,
+      "ticket": "121",
+      "verdict": "CODEX_QUEUE 121: Nhận 31/10 16:30 (Claude chấm 8–8,5)",
+      "alt": "",
+      "crop": "1536x864+0+80"
+    },
+    {
+      "role": "bg-results-lose",
+      "kind": "bg",
+      "source": "ui/screens-epic/results-lose-bg",
+      "accepted": true,
+      "ticket": "121",
+      "verdict": "CODEX_QUEUE 121: Nhận 31/10 16:30 (Claude chấm 8–8,5)",
+      "alt": "",
+      "crop": "1536x864+0+80"
+    },
+    {
+      "role": "icon-new-badge",
+      "kind": "icon",
+      "source": "ui/icons/new-badge",
+      "accepted": true,
+      "ticket": "150",
+      "verdict": "CODEX_QUEUE 150: Nhận 31/10",
+      "alt": "New",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-star-lit",
+      "kind": "icon",
+      "source": "ui/icons/star-lit",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Star earned",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-star-unlit",
+      "kind": "icon",
+      "source": "ui/icons/star-unlit",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Star not earned",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-retry",
+      "kind": "icon",
+      "source": "ui/icons/retry",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Retry",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-next-stage",
+      "kind": "icon",
+      "source": "ui/icons/next-stage.r2",
+      "accepted": true,
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
+      "alt": "Next stage",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-stat-time",
+      "kind": "icon",
+      "source": "ui/icons/stat-time",
+      "accepted": true,
+      "ticket": "151",
+      "verdict": "CODEX_QUEUE 151: Nhận 31/10",
+      "alt": "Time",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-stat-accuracy",
+      "kind": "icon",
+      "source": "ui/icons/stat-accuracy.r2",
+      "accepted": true,
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
+      "alt": "Accuracy",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-stat-words",
+      "kind": "icon",
+      "source": "ui/icons/stat-words",
+      "accepted": true,
+      "ticket": "242",
+      "verdict": "CODEX_QUEUE 242: Nhận 31/10 17:05 (cỡ thật)",
+      "alt": "Words",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-stat-wpm",
+      "kind": "icon",
+      "source": "ui/icons/stat-wpm.v2",
+      "accepted": true,
+      "ticket": "152",
+      "verdict": "CODEX_QUEUE 152: Nhận 31/10 (v2)",
+      "alt": "Speed",
+      "fill": 0.85
+    },
+    {
+      "role": "icon-stat-new-word",
+      "kind": "icon",
+      "source": "ui/icons/stat-new-word.r5",
+      "accepted": true,
+      "ticket": "247",
+      "verdict": "CODEX_QUEUE 247: Tạm 01/11 (chủ dự án \"Gắn tạm\"; chưa đạt 8, tốt nhất sau 3 vòng Firefly Image 5, xem 247-report.md)",
+      "alt": "New-word read",
+      "fill": 0.8,
+      "provisional": true
+    },
+    {
+      "role": "icon-stat-evenness",
+      "kind": "icon",
+      "source": "ui/icons/stat-evenness.r3",
+      "accepted": true,
+      "ticket": "247",
+      "verdict": "CODEX_QUEUE 247: Tạm 01/11 (chủ dự án \"Gắn tạm\"; chưa đạt 8, tốt nhất sau 3 vòng Firefly Image 5, xem 247-report.md)",
+      "alt": "Steadiness",
+      "fill": 0.8,
+      "provisional": true
+    }
+  ]
+}

@@ -11,7 +11,7 @@ import { createWorld, type World } from "../src/sim/world";
 import { Hud } from "../src/view/hud";
 import { renderScreen } from "../src/view/screens";
 import { foeRole, gunRole, resetArtWarnings, stageRole } from "../src/view/ui-art";
-import table from "../src/view/ui-art.json";
+import { UI_ART_TABLE as table } from "../src/view/ui-art";
 import config, { UI_ART_RECORD, uiArtRecordStaysHome } from "../vite.config";
 // @ts-expect-error Node-only build tool has no declaration file.
 import { BASE as ART_BASE, OUT as ART_OUT, RECORD as ART_RECORD } from "../scripts/ui-art/prepare.mjs";
