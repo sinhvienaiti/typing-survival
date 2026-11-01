@@ -76,6 +76,8 @@ export const AFTER = {
     tan: { puffs: 3, life: 0.8, alpha: 0.9, from: 1, to: 2.6, rise: 1.4, out: 1.6 },
     launch: { puffs: 3, life: 0.9, alpha: 0.75, from: 0.8, to: 2.4, rise: 1.6 },
     burst: { puffs: 5, life: 1.5, alpha: 0.85, from: 0.3, to: 0.75, rise: 1.2 },
+    /** Heat Beam burning (wave 1 fix): one soft dark puff each `every` s off its far half, in place of the held orange haze. */
+    tia: { every: 0.1, life: 1.1, alpha: 0.4, from: 0.8, to: 2.2, rise: 0.9 },
   },
 } as const;
 

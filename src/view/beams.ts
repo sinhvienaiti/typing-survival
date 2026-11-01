@@ -45,13 +45,18 @@ export class BeamFx {
   private readonly w3 = new THREE.Vector3();
   private readonly end = new Float64Array(2);
 
-  /** A bloom tier (L1): Heat Beam's core is a thin HDR streak, its glow narrower and held under the threshold, its floor column a narrow groove. */
+  /** A bloom tier (L1): Heat Beam's glow and floor column held under the threshold. */
   private readonly bloom: boolean;
+  /** Medium, High, Ultra (L1, Medium since the wave 1 fix): Heat Beam's core a thin HDR streak, its glow narrower, its floor column a narrow groove, no haze; Low keeps the old wide beam. */
+  private readonly narrow: boolean;
   private readonly tiaCore = new THREE.Color(BLOOM.tia.color);
+  /** The last puff of smoke off the burning end (s). */
+  private smokeAt = -1e9;
 
   constructor(private readonly p: BeamParts, private readonly tia: THREE.Color) {
     this.bloom = p.stage.composer !== null;
-    this.column = new Column(tia, TIA.length, 3.6, FIELD.muzzleZ, this.bloom ? BLOOM.halo : 0, this.bloom ? BLOOM.tia.groove : 0.3);
+    this.narrow = p.stage.tier !== "low";
+    this.column = new Column(tia, TIA.length, 3.6, FIELD.muzzleZ, this.bloom ? BLOOM.halo : 0, this.narrow ? BLOOM.tia.groove : 0.3);
   }
 
   /** EV.rail, beamStart, beamEnd; `now` in ms. */
@@ -226,8 +231,9 @@ export class BeamFx {
       // A faint haze 2.4 m (none over the ship), the hot glow 1.1 m (0.55 at 0.7), a core 0.22 m of the gun's own orange with a thread of white (0.7).
       const near = seg === 0 ? 0.7 : 1;
       const T = AFTER.tiaCore;
-      if (seg === 1) S.add(x0, y0, z0, x1, y1, z1, 2.4 * thin, this.tia, 0.18 * k, 0);
-      if (this.bloom) {
+      // The haze only on Low: held under the bloom it read as a dirty orange fog round the narrow beam (wave 1 fix).
+      if (seg === 1 && !this.narrow) S.add(x0, y0, z0, x1, y1, z1, 2.4 * thin, this.tia, 0.18 * k, 0);
+      if (this.narrow) {
         // L1: a glow held under the threshold and a thin HDR core of the gun's hot yellow-orange, the only part that blooms.
         const B = BLOOM.tia;
         S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 0.4 : B.glow) * thin, this.tia, B.glowPower * k * near, 0);
@@ -236,19 +242,32 @@ export class BeamFx {
         S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 0.55 : 1.1) * thin, this.tia, (seg === 0 ? 0.7 : 1.3) * k, 0);
         S.add(x0, y0, z0, x1, y1, z1, 0.22 * thin, this.tia, T.core * k * near, T.white * near);
       }
-      // Its light on the deck (the bloom tiers leave it to the column's groove: stacked under the core it turned it cream).
-      if (!this.bloom) S.add(x0, 0.4, z0, x1, 0.4, z1, 1.1 * thin, this.tia, 0.5 * k * near * near, T.floorWhite * k * near);
+      // Its light on the deck (the narrow beam leaves it to the column's groove: stacked under the core it turned it cream).
+      if (!this.narrow) S.add(x0, 0.4, z0, x1, 0.4, z1, 1.1 * thin, this.tia, 0.5 * k * near * near, T.floorWhite * k * near);
     }
     const g = this.p.glows;
     g.stamp(CELL.star8, m.x, m.y, m.z, 1 * k, time * 3, this.tia, 1.2 * k);
-    g.stamp(CELL.soft, fx, 0.6, fz, 2.4 * k, 0, this.tia, 1.5 * k);
+    if (this.narrow) {
+      // The burning end: a small held glow and a flickering hot core (was a 2.4 m soft disc, held into an orange blob).
+      const flicker = 0.85 + 0.15 * Math.sin(time * 47) * Math.sin(time * 23);
+      g.stamp(CELL.soft, fx, 0.6, fz, 1.2 * k, 0, this.tia, 0.9 * k);
+      g.stamp(CELL.core, fx, 0.65, fz, 0.42 * k * flicker, 0, this.tiaCore, 3 * k * flicker);
+    } else g.stamp(CELL.soft, fx, 0.6, fz, 2.4 * k, 0, this.tia, 1.5 * k);
     if (on) {
       this.p.lights.hold(1, LIGHT.tia, m.x + ux * 1.5, m.y, m.z - uz * 1.5, this.tia);
       this.p.lights.hold(2, LIGHT.tiaSlide, m.x + (ex - m.x) * 0.6, 0.9, m.z + (-ez - m.z) * 0.6, this.tia);
-      if (Math.random() < dt * 40) {
-        const t = Math.random();
+      // Sparks off the burn (the narrow beam: off its far end only; along the whole beam they speckled the air round it).
+      if (Math.random() < dt * (this.narrow ? 24 : 40)) {
+        const t = this.narrow ? 0.82 + Math.random() * 0.18 : Math.random();
         this.v.set((Math.random() - 0.5) * 2, 2 + Math.random() * 4, (Math.random() - 0.5) * 2);
         this.p.sparks.spawn(this.w3.set(m.x + (ex - m.x) * t + (Math.random() - 0.5) * 1.2, 0.3, m.z + (-ez - m.z) * t), this.v, this.tia, 0.25, 0.5, { drag: 2, gravity: 4 });
+      }
+      // Smooth dark smoke off the burning far half (the smoke pool: normal blending, soft puffs rising), never added light.
+      const A = AFTER.smoke.tia;
+      if (this.narrow && time - this.smokeAt >= A.every) {
+        this.smokeAt = time;
+        const t = 0.45 + Math.random() * 0.55;
+        this.p.smoke.burst(CELL.puff, m.x + (ex - m.x) * t + (Math.random() - 0.5) * 0.6, 0.7, m.z + (-ez - m.z) * t, A.from, A.to * (0.85 + Math.random() * 0.3), A.life * (0.85 + Math.random() * 0.3), Math.random() < 0.5 ? C.soot : C.smokeBody, A.alpha, (Math.random() - 0.5) * 0.3, A.rise, 0, (Math.random() - 0.5) * 0.6);
       }
     }
   }

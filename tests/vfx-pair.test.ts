@@ -14,11 +14,13 @@ import { BLOW } from "../src/view/theme";
  * ship's smoke (F). View only: the chapter hashes and the trial golden prove
  * the sim never reads them.
  */
-/** The guns' smoke alive at once at their fastest (Scatter Gun's volleys, Star Mortar's launches and bursts, a bay of each; their longest life). */
+/** The guns' smoke alive at once at their fastest (Scatter Gun's volleys, Star Mortar's launches and bursts, Heat Beam's burn, a bay of each; their longest life). */
 function gunSmoke(): number {
   const S = AFTER.smoke;
   const live = (rate: number, spec: { puffs: number; life: number }) => Math.ceil(rate * spec.puffs * spec.life * 1.2);
-  return live(TAN.volleys / TAN.seconds, S.tan) + live(PHAO.shells / PHAO.seconds, S.launch) + live(PHAO.shells / PHAO.seconds, S.burst);
+  // Heat Beam burning: one puff each `every` s (wave 1 fix).
+  const tia = Math.ceil((S.tia.life * 1.2) / S.tia.every);
+  return live(TAN.volleys / TAN.seconds, S.tan) + live(PHAO.shells / PHAO.seconds, S.launch) + live(PHAO.shells / PHAO.seconds, S.burst) + tia;
 }
 
 describe("vfx pair", () => {
