@@ -14,7 +14,6 @@
  */
 import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { FIELD, type Tier } from "../content/rules";
@@ -275,7 +274,7 @@ void main() {
   #include <colorspace_fragment>
 }`;
 
-/** An A/B switch of the page's address (?tone=, ?msaa=, ?bloom=): read only with the scenarios' handle (dev, or ?debug=1), never in a player's build. */
+/** An A/B switch of the page's address (?tone=, ?msaa=, ?bloom=, ?feel=): read only with the scenarios' handle (dev, or ?debug=1), never in a player's build. */
 function abSwitch(name: string): string | null {
   const params = new URLSearchParams(location.search);
   return import.meta.env.DEV || params.get("debug") === "1" ? params.get(name) : null;
@@ -286,7 +285,7 @@ export class Stage {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(FOV, 16 / 9, 1, 2500);
   readonly composer: EffectComposer | null;
-  /** The bloom tiers' second bloom, over the typing feel's marks only (feel-bloom.ts): they bloom as before L1. */
+  /** The bloom tiers' typing feel pass (feel-bloom.ts): its marks bloom and tone map as before L1. */
   readonly feel: FeelBloomPass | null;
   private readonly uniforms = { uTime: { value: 0 }, uThreat: { value: 0 } };
   /** The guns' light pools on the deck (lights.ts writes them). */
@@ -345,13 +344,15 @@ export class Stage {
       target.texture.name = "EffectComposer.rt1";
       this.composer = new EffectComposer(this.renderer, target);
       this.composer.addPass(new RenderPass(this.scene, this.camera));
-      // The typing feel's marks first, on the frame as drawn (their bright pass against the frame without them), then L1's bloom over all.
-      this.feel = new FeelBloomPass(this.camera, BLOOM.feel.strength, BLOOM.feel.radius, BLOOM.threshold);
-      this.composer.addPass(this.feel);
       // L1 (gun-rules BLOOM): only thin HDR cores pass the threshold of 1, a tight bloom over them (was 0.85 / 0.3, FEEL_PASS_S1 §4.1). ?bloom=s,r: A/B in scenarios (debug only).
       const [strength, radius] = (abSwitch("bloom") ?? "").split(",").map(Number);
-      this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(256, 256), Number.isFinite(strength) && strength! > 0 ? strength! : BLOOM.strength, Number.isFinite(radius) ? radius! : BLOOM.radius, BLOOM.threshold));
-      this.composer.addPass(new OutputPass());
+      const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), Number.isFinite(strength) && strength! > 0 ? strength! : BLOOM.strength, Number.isFinite(radius) ? radius! : BLOOM.radius, BLOOM.threshold);
+      // The typing feel's marks drawn alone first: the bloom adds what they give its bright pass as the old bloom did, the output tone maps them as main did (feel-bloom.ts).
+      const feel = (abSwitch("feel") ?? "").split(",").map(Number);
+      this.feel = new FeelBloomPass(this.camera, bloom, BLOOM.old, Number.isFinite(feel[0]) ? feel[0]! : BLOOM.feel.gain, Number.isFinite(feel[1]) ? feel[1]! : BLOOM.feel.blend);
+      this.composer.addPass(this.feel);
+      this.composer.addPass(bloom);
+      this.composer.addPass(this.feel.output);
     } else {
       this.composer = null;
       this.feel = null;

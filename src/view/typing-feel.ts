@@ -84,8 +84,6 @@ export class TypeFeel {
     private readonly hud: Hud,
     private readonly stage: Stage,
     private readonly ship: Ship,
-    /** The fight's billboards (held under the bloom on High and Ultra): the charge at the muzzles, the gun's phase A. */
-    private readonly glows: Glows,
     private readonly sparks: ParticlePool,
     private readonly audio: ThemeAudio,
     /** The word line (the kit's focus strip). */
@@ -99,18 +97,19 @@ export class TypeFeel {
   }
 
   /**
-   * Its own pools (the keys' marks, the core, the stream): a shared system
-   * (bar 9) drawn as before L1, never held under the bloom; on High and Ultra
-   * stage.feel blooms them as the old bloom did (feel-bloom.ts).
+   * Its own pools (the keys' marks, the core, the stream, the charge each key
+   * gathers at Pulse Gun's and Heat Beam's muzzles): a shared system (bar 9)
+   * drawn as before L1, never held under the bloom; on High and Ultra
+   * stage.feel blooms and tone maps them as main did (feel-bloom.ts).
    */
-  private readonly pool = new Glows(48);
+  private readonly pool = new Glows(64);
   private readonly bolts = new Strips(48);
 
   /** Shows or hides its marks and their bloom (the scenarios' control frames: a gun's flash measured alone). */
   show(on: boolean): void {
     this.pool.mesh.visible = on;
     this.bolts.mesh.visible = on;
-    if (this.stage.feel !== null) this.stage.feel.enabled = on;
+    if (this.stage.feel !== null) this.stage.feel.shown = on;
   }
 
   /** The keys' billboards and strips alive now (§6: ≤ 12 at 10 keys a second; the scenarios read it through info()). */
@@ -269,7 +268,7 @@ export class TypeFeel {
     this.pending = 0;
   }
 
-  /** Draws the bolts, the core, the priming spark and the stream into its own pools (the charge into the fight's billboards, between their step() and flush()). */
+  /** Draws the bolts, the core, the priming spark, the stream and the charge into its own pools. */
   draw(w: World, time: number): void {
     const dt = this.lastTime < 0 ? 0 : Math.max(0, time - this.lastTime);
     this.pool.step(dt);
@@ -371,9 +370,9 @@ export class TypeFeel {
     const power = chargePower(p, now - this.hitAt);
     for (let s = 0; s < (gun === GUN.xung ? 2 : 1); s += 1) {
       const m = this.ship.muzzle(this.tip, gun === GUN.xung ? MUZZLE.left + s : MUZZLE.centre);
-      this.glows.stamp(CELL.soft, m.x, m.y, m.z, size, 0, c, power);
-      this.glows.stamp(CELL.core, m.x, m.y, m.z, size * CHARGE.core, 0, c, power * 1.3);
-      if (p >= CHARGE.star) this.glows.stamp(gun === GUN.xung ? CELL.star4 : CELL.star8, m.x, m.y, m.z, size * 1.3, reduced ? 0.4 : time * (3 + 6 * p) + s, c, power * 0.7);
+      this.pool.stamp(CELL.soft, m.x, m.y, m.z, size, 0, c, power);
+      this.pool.stamp(CELL.core, m.x, m.y, m.z, size * CHARGE.core, 0, c, power * 1.3);
+      if (p >= CHARGE.star) this.pool.stamp(gun === GUN.xung ? CELL.star4 : CELL.star8, m.x, m.y, m.z, size * 1.3, reduced ? 0.4 : time * (3 + 6 * p) + s, c, power * 0.7);
     }
   }
 

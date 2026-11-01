@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { VIEW_TIERS } from "../src/view/scene";
+import { bloomWeight } from "../src/view/feel-bloom";
 import { TAN, PHAO } from "../src/content/guns";
 import { AFTER, BLOOM, LIGHT, SMOKE_POOL } from "../src/view/gun-rules";
 import { CHARGE, chargePower, chargeSize } from "../src/view/type-rules";
@@ -96,10 +97,17 @@ describe("vfx pair", () => {
     expect(R.ionEnd).toBeLessThanOrEqual(0.8);
   });
 
-  it("the typing feel (shared, bar 9) blooms as before L1: the old bloom minus L1's, mip for mip, is the feel pass's", () => {
-    // UnrealBloomPass: strength × mix(f, 1.2 − f, radius) for its five mip factors.
-    const weight = (b: { strength: number; radius: number }, f: number) => b.strength * (f + b.radius * (1.2 - 2 * f));
-    for (const f of [1, 0.8, 0.6, 0.4, 0.2]) expect(Math.abs(weight(BLOOM, f) + weight(BLOOM.feel, f) - weight(BLOOM.old, f))).toBeLessThan(0.002);
+  it("the typing feel (shared, bar 9) blooms as before L1: feel-bloom's weights are what UnrealBloomPass adds of each mip", () => {
+    // UnrealBloomPass: composite strength × mix(f, 1.2 − f, radius) per mip, written with alpha strength × Σ mix (= 3), blended by that alpha.
+    const mix = (b: { strength: number; radius: number }, f: number) => (1 - b.radius) * f + b.radius * (1.2 - f);
+    const factors = [1, 0.8, 0.6, 0.4, 0.2];
+    for (const b of [BLOOM, BLOOM.old]) {
+      const alpha = b.strength * factors.reduce((sum, f) => sum + mix(b, f), 0);
+      expect(alpha).toBeCloseTo(3 * b.strength, 6);
+      factors.forEach((f, i) => expect(bloomWeight(b, i)).toBeCloseTo(alpha * b.strength * mix(b, f), 6));
+    }
+    // The old bloom added 1.6–3.0× L1's light of each mip: the marks get the difference.
+    factors.forEach((_, i) => expect(bloomWeight(BLOOM.old, i) - bloomWeight(BLOOM, i)).toBeGreaterThan(0.7));
   });
 
   it("O5: the foes' veins and eyes are the foe faction's purple (the Pack Leaders' gold), their bodies near-black; Pháo Sao's landing ring is our pale orange", () => {

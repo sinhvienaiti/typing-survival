@@ -259,7 +259,7 @@ applyKeyboardLevels(typeFx.sounds, settings);
 let keyboardReady = false;
 hud.strip.attach(typeFx);
 hudRoot.classList.add("is-tfx");
-const typing = (combat.typing = new TypeFeel(hud, stage, ship, combat.glows, combat.sparks, audio, typeFx, (index) => wordOf(index).vi));
+const typing = (combat.typing = new TypeFeel(hud, stage, ship, combat.sparks, audio, typeFx, (index) => wordOf(index).vi));
 
 /** The Settings panel's preview while it is open. */
 let preview: TypeFxPreview | null = null;

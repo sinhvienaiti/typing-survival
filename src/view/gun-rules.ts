@@ -111,12 +111,13 @@ export const BLOOM = {
   flash: { xung: 1.3, ray: 1.3 },
   release: { xung: 0.9, halo: 1.6 },
   /**
-   * The typing feel's marks (a shared system, bar 9) bloom as before L1: the
-   * old bloom `old` minus this one is, mip for mip, 0.24; `feel` adds it over
-   * their pools alone (feel-bloom.ts; radius 0.5 weighs the five mips flat).
+   * The typing feel's marks (a shared system, bar 9) bloom as before L1, as
+   * the old bloom `old` did (it added 1.6–3× this one's light of each mip),
+   * and tone map toward ACES by their share of a pixel's light (feel-bloom.ts;
+   * `feel`: the share of that extra bloom and of that tone, 1 = as on main).
    */
   old: { strength: 0.85, radius: 0.3 },
-  feel: { strength: 0.4, radius: 0.5 },
+  feel: { gain: 1, blend: 1 },
   /**
    * Rail Gun on every tier (wave 1 fix): a thin HDR core `core` m at `power` with a white thread `white`, whole
    * for `hold` s then gone over `fade` s; its body `body` m at `bodyPower` (held); its ionised afterglow, held,
