@@ -16,7 +16,7 @@ export function shipProbe(stage: Stage, ship: Ship): ShipPose & { sx: number; sy
   const r = ship.root.position;
   const cx = round(stage.project(0, -r.z, r.y, at, true).x);
   const p = stage.project(r.x, -r.z, r.y, at, true);
-  const pose = Object.fromEntries(Object.entries(ship.pose).map(([k, v]) => [k, round(v, 10000)])) as ShipPose;
+  const pose = Object.fromEntries(Object.entries(ship.drawn).map(([k, v]) => [k, round(v, 10000)])) as ShipPose;
   return { ...pose, sx: round(p.x), sy: round(p.y), cx };
 }
 

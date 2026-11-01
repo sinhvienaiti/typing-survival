@@ -21,7 +21,7 @@ import { BOLT } from "./bolts";
 import { CELL, Column, FLAT, type Streaks } from "./fx";
 import { AFTER, BLOOM, LIGHT } from "./gun-rules";
 import type { ShotParts } from "./shots";
-import { MUZZLE } from "./ship";
+import { MUZZLE } from "./pilot";
 import { AIM_PRIO } from "./ship-rules";
 import { BLOW as C } from "./theme";
 

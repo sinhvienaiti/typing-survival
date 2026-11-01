@@ -20,7 +20,7 @@ import type { Rect } from "../kit/feedback";
 import { FocusStrip, TypingFxDriver, TypingSounds, type TypingFxKind, type TypingFxPalette, type TypingFxProgress, type TypingFxSettings } from "../kit/feedback/typing-fx";
 import type { ThemeAudio } from "../audio/theme-audio";
 import type { Stage } from "./scene";
-import type { Ship } from "./ship";
+import type { PilotRig } from "./pilot";
 import type { StripHost } from "./strip";
 import { keyboardSink } from "../app/keyboard";
 
@@ -56,7 +56,7 @@ export class TypeFx implements StripHost {
   private readonly v = new THREE.Vector3();
   private readonly pt = { x: 0, y: 0 };
 
-  constructor(root: HTMLElement, private readonly stage: Stage, ship: Ship, audio: ThemeAudio, settings: TypingFxSettings, reduced: boolean) {
+  constructor(root: HTMLElement, private readonly stage: Stage, ship: PilotRig, audio: ThemeAudio, settings: TypingFxSettings, reduced: boolean) {
     const v = this.v;
     this.strip = new FocusStrip({
       root,
