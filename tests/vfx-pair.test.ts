@@ -1,8 +1,11 @@
+import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { VIEW_TIERS } from "../src/view/scene";
 import { TAN, PHAO } from "../src/content/guns";
-import { AFTER, LIGHT, SMOKE_POOL } from "../src/view/gun-rules";
+import { AFTER, BLOOM, LIGHT, SMOKE_POOL } from "../src/view/gun-rules";
 import { CHARGE, chargePower, chargeSize } from "../src/view/type-rules";
+import { FACTION } from "../src/view/crowd";
+import { BLOW } from "../src/view/theme";
 
 /**
  * The first gun pair in five phases (parent docs/games/VFX_STANDARD.md §3.3,
@@ -58,6 +61,36 @@ describe("vfx pair", () => {
       expect(spec.to).toBeGreaterThan(spec.from);
       expect(spec.life).toBeLessThanOrEqual(2);
     }
+  });
+
+  it("L1: on the bloom tiers only thin HDR cores bloom; halos stay under the threshold; a tight bloom", () => {
+    expect(BLOOM.halo).toBeLessThanOrEqual(0.9);
+    expect(BLOOM.halo).toBeLessThan(BLOOM.threshold);
+    expect(BLOOM.strength).toBeGreaterThanOrEqual(0.4);
+    expect(BLOOM.strength).toBeLessThanOrEqual(0.5);
+    expect(BLOOM.radius).toBeGreaterThanOrEqual(0.1);
+    expect(BLOOM.radius).toBeLessThanOrEqual(0.15);
+    expect(BLOOM.tia.power).toBeGreaterThanOrEqual(3);
+    expect(BLOOM.tia.power).toBeLessThanOrEqual(6);
+    expect(BLOOM.tia.core).toBeLessThanOrEqual(0.14);
+    expect(BLOOM.tia.glowPower).toBeLessThanOrEqual(BLOOM.halo);
+    expect(BLOOM.tia.groove).toBeLessThanOrEqual(0.15);
+    expect(["neutral", "agx"]).toContain(BLOOM.tone);
+    for (const k of Object.values(BLOOM.flash)) expect(k).toBeGreaterThanOrEqual(1);
+  });
+
+  it("O5: the foes' veins, hairlines and eyes are the foe faction's purple; Pháo Sao's landing ring is our pale orange", () => {
+    // Faction colours are written as linear numbers (HDR); the ring's is a hex, so read it as sRGB.
+    const hue = (c: THREE.Color, space: THREE.ColorSpace = THREE.LinearSRGBColorSpace) => c.getHSL({ h: 0, s: 0, l: 0 }, space).h * 360;
+    for (const f of FACTION) {
+      for (const c of [f.vein, f.hairline, f.eye]) {
+        // Violet to magenta-purple: far from Heat Beam's orange (≈ 25°), Pulse's blue (≈ 200°) and Pháo Sao's crimson (≈ 345°).
+        expect(hue(c)).toBeGreaterThanOrEqual(250);
+        expect(hue(c)).toBeLessThanOrEqual(305);
+      }
+    }
+    expect(hue(BLOW.mark, THREE.SRGBColorSpace)).toBeGreaterThanOrEqual(20);
+    expect(hue(BLOW.mark, THREE.SRGBColorSpace)).toBeLessThanOrEqual(40);
   });
 
   it("L2: the composer of High and Ultra draws multisampled; Low and Medium draw straight to the canvas", () => {

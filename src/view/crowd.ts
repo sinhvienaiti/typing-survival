@@ -53,9 +53,12 @@ const DEATH_FLASH = 0.045;
 /**
  * "Bầy Hố Đen", the horde's shared material layer (one new faction from the
  * borrowed models): the body goes dark and dull (its own shading and
- * silhouette kept), energy veins run through it and pulse per foe (hot orange
- * in the swarm, electric blue in the elites), a black rim drinks the light
- * with a hot hairline just inside it (light bent round an event horizon),
+ * silhouette kept), energy veins run through it and pulse per foe (the foe
+ * faction's purple, parent VFX_STANDARD §3.5.7 and QUALITY_RESCUE O5: violet
+ * in the swarm, lilac in the elites, magenta-purple in Trâu and Đầu Đàn; never
+ * a gun's colour), the model's own glow (eyes, cracks) recoloured to the same
+ * purple, a black rim drinks the light with a purple hairline just inside it
+ * (light bent round an event horizon),
  * and each foe is pulled out of shape a little, slowly (gravity: a stretch in
  * its instance matrix, free). The vein field is worked out per vertex and
  * interpolated (a crowd of 700 overdraws its pixels several times). The hit
@@ -82,12 +85,14 @@ uniform float uTime;
 uniform vec3 uBody;
 uniform vec3 uVein;
 uniform vec3 uHairline;
+uniform vec3 uEye;
 uniform float uVeinGain;
 `;
 const STATE_COLOR = /* glsl */ `
 #include <emissivemap_fragment>
 // x: hit flash (white hot), y: hurt (elites glow red), z: the Giáp affix (gold veins), w: the foe's own phase.
-totalEmissiveRadiance *= 0.2;
+// The model's own glow (eyes, cracks) in the faction's purple, about as bright as the old 0.2 × its own colour.
+totalEmissiveRadiance = uEye * dot(totalEmissiveRadiance, vec3(0.2126, 0.7152, 0.0722));
 float bhRim = 1.0 - abs(dot(normalize(normal), normalize(vViewPosition)));
 float bhLuma = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
 diffuseColor.rgb = mix(diffuseColor.rgb, uBody * (0.5 + bhLuma), 0.88);
@@ -107,15 +112,19 @@ outgoingLight *= 1.0 - smoothstep(0.55, 0.9, bhRim) * 0.92 * (1.0 - vState.x);
 outgoingLight = mix(outgoingLight, min(outgoingLight, vec3(1.15)), vState.x);
 #include <opaque_fragment>
 `;
-/** Per kind: body tint, vein colour (above 1 blooms), hairline, vein strength. Trâu and Đầu Đàn: deep gold; Khiên: blue. */
-const FACTION = [
-  { body: new THREE.Color(0.075, 0.07, 0.07), vein: new THREE.Color(2.2, 0.48, 0.07), hairline: new THREE.Color(0.75, 0.22, 0.04), gain: 1 },
-  { body: new THREE.Color(0.065, 0.075, 0.09), vein: new THREE.Color(0.3, 0.95, 2.4), hairline: new THREE.Color(0.75, 0.22, 0.04), gain: 1.1 },
-  { body: new THREE.Color(0.08, 0.07, 0.06), vein: new THREE.Color(2.4, 1.2, 0.18), hairline: new THREE.Color(0.8, 0.45, 0.08), gain: 1.15 },
-  { body: new THREE.Color(0.06, 0.07, 0.09), vein: new THREE.Color(0.25, 1.1, 2.6), hairline: new THREE.Color(0.2, 0.5, 0.9), gain: 1.1 },
-  { body: new THREE.Color(0.08, 0.065, 0.06), vein: new THREE.Color(2.4, 0.6, 0.1), hairline: new THREE.Color(0.8, 0.25, 0.05), gain: 1.2 },
-  { body: new THREE.Color(0.08, 0.065, 0.06), vein: new THREE.Color(2.6, 0.7, 0.12), hairline: new THREE.Color(0.8, 0.25, 0.05), gain: 1.3 },
-  { body: new THREE.Color(0.09, 0.075, 0.05), vein: new THREE.Color(2.8, 1.9, 0.35), hairline: new THREE.Color(1.0, 0.75, 0.2), gain: 1.4 },
+/**
+ * Per kind: body tint, vein colour (above 1 blooms), hairline, eye (× the model's glow), vein strength.
+ * The foe faction is purple (O5, 01/11: the farthest from Heat Beam's orange and Pulse's blue): violet
+ * in the swarm, lilac in the elites (scout, Khiên), magenta-purple in Trâu and Đầu Đàn.
+ */
+export const FACTION = [
+  { body: new THREE.Color(0.075, 0.07, 0.08), vein: new THREE.Color(1.15, 0.22, 2.3), hairline: new THREE.Color(0.42, 0.1, 0.78), eye: new THREE.Color(0.35, 0.09, 0.65), gain: 1 },
+  { body: new THREE.Color(0.07, 0.07, 0.09), vein: new THREE.Color(1.2, 0.6, 2.6), hairline: new THREE.Color(0.45, 0.25, 0.85), eye: new THREE.Color(0.38, 0.2, 0.7), gain: 1.1 },
+  { body: new THREE.Color(0.08, 0.065, 0.075), vein: new THREE.Color(1.9, 0.3, 2.1), hairline: new THREE.Color(0.7, 0.15, 0.75), eye: new THREE.Color(0.55, 0.1, 0.6), gain: 1.15 },
+  { body: new THREE.Color(0.07, 0.07, 0.09), vein: new THREE.Color(1.2, 0.6, 2.7), hairline: new THREE.Color(0.45, 0.28, 0.9), eye: new THREE.Color(0.38, 0.21, 0.7), gain: 1.1 },
+  { body: new THREE.Color(0.08, 0.065, 0.08), vein: new THREE.Color(1.25, 0.24, 2.3), hairline: new THREE.Color(0.45, 0.1, 0.78), eye: new THREE.Color(0.38, 0.09, 0.65), gain: 1.2 },
+  { body: new THREE.Color(0.08, 0.065, 0.08), vein: new THREE.Color(1.35, 0.28, 2.4), hairline: new THREE.Color(0.48, 0.12, 0.8), eye: new THREE.Color(0.4, 0.09, 0.66), gain: 1.3 },
+  { body: new THREE.Color(0.09, 0.07, 0.08), vein: new THREE.Color(2.2, 0.55, 2.4), hairline: new THREE.Color(0.85, 0.3, 0.9), eye: new THREE.Color(0.6, 0.2, 0.65), gain: 1.4 },
 ] as const;
 
 /** Stand-in shapes while a model is missing (placeholders, as S0's: no character modelling in code). */
@@ -203,6 +212,7 @@ export class Crowd {
       uBody: { value: faction.body },
       uVein: { value: faction.vein },
       uHairline: { value: faction.hairline },
+      uEye: { value: faction.eye },
       uVeinGain: { value: faction.gain },
     };
     material.onBeforeCompile = (shader) => {
@@ -210,7 +220,7 @@ export class Crowd {
       shader.vertexShader = STATE_HEAD + shader.vertexShader.replace("#include <begin_vertex>", STATE_VERTEX);
       shader.fragmentShader = STATE_FRAGMENT_HEAD + shader.fragmentShader.replace("#include <emissivemap_fragment>", STATE_COLOR).replace("#include <opaque_fragment>", STATE_OUT);
     };
-    material.customProgramCacheKey = () => "last-line-horde-v2";
+    material.customProgramCacheKey = () => "last-line-horde-v3";
     const capacity = CAPACITY[kind]!;
     const mesh = new THREE.InstancedMesh(geometry, material, capacity);
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);

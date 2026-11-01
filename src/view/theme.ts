@@ -51,6 +51,8 @@ export const BLOW = {
   ray: new THREE.Color("#c4d2ff"),
   rayCore: new THREE.Color("#f2f7ff"),
   phao: new THREE.Color("#ff3f6c"),
+  /** Our side's warning on the deck (Pháo Sao's landing ring): pale orange with a white rim; red is the foes' (parent VFX_STANDARD §3.6.3). */
+  mark: new THREE.Color("#ffb070"),
   smoke: new THREE.Color("#58616b"),
   /** A big kill's smoke laid over the deck (normal blending; fx.ts lights its thin edges): lit grey tops, a dark body, a sooty base; its scorch. */
   smokeLit: new THREE.Color("#665e57"),

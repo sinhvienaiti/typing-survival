@@ -19,7 +19,7 @@ import { bayOf, firing } from "../sim/weapons";
 import type { World } from "../sim/world";
 import { BOLT } from "./bolts";
 import { CELL, Column, FLAT, type Streaks } from "./fx";
-import { AFTER, LIGHT } from "./gun-rules";
+import { AFTER, BLOOM, LIGHT } from "./gun-rules";
 import type { ShotParts } from "./shots";
 import { MUZZLE } from "./ship";
 import { AIM_PRIO } from "./ship-rules";
@@ -48,8 +48,13 @@ export class BeamFx {
   private readonly w3 = new THREE.Vector3();
   private readonly end = new Float64Array(2);
 
+  /** A bloom tier (L1): Heat Beam's core is a thin HDR streak, its glow narrower and held under the threshold, its floor column a narrow groove. */
+  private readonly bloom: boolean;
+  private readonly tiaCore = new THREE.Color(BLOOM.tia.color);
+
   constructor(private readonly p: BeamParts, private readonly tia: THREE.Color) {
-    this.column = new Column(tia, TIA.length, 3.6, FIELD.muzzleZ);
+    this.bloom = p.stage.composer !== null;
+    this.column = new Column(tia, TIA.length, 3.6, FIELD.muzzleZ, this.bloom ? BLOOM.halo : 0, this.bloom ? BLOOM.tia.groove : 0.3);
   }
 
   /** EV.rail, beamStart, beamEnd; `now` in ms. */
@@ -73,7 +78,8 @@ export class BeamFx {
       const [sx, sz] = [m.x + dx, m.z - dz];
       g.burst(CELL.star8, sx, m.y, sz, star * 0.6, star, 4 * F, C.ray, 2.8);
       g.burst(CELL.core, sx, m.y, sz, star * 0.2, star * 0.35, 4 * F, C.rayCore, 2.6);
-      g.burst(CELL.soft, sx, m.y, sz, star * 0.45, star * 0.6, 3 * F, C.rayCore, 1.1);
+      const halo = star * (this.bloom ? BLOOM.flash.ray : 1);
+      g.burst(CELL.soft, sx, m.y, sz, halo * 0.45, halo * 0.6, 3 * F, C.rayCore, 1.1);
       const ex = R.x[i]!;
       const ez = -R.z[i]!;
       const length = Math.hypot(ex - r[k + 3]!, ez - r[k + 4]!);
@@ -204,13 +210,21 @@ export class BeamFx {
       const x1 = seg === 0 ? jx : fx;
       const y1 = seg === 0 ? jy : 0.55;
       const z1 = seg === 0 ? jz : fz;
-      // A faint haze 2.4 m (none over the ship), the hot glow 1.1 m (0.55 at 0.7), a core 0.22 m of the gun's own orange with a thread of white (0.7); the light it throws on the deck.
+      // A faint haze 2.4 m (none over the ship), the hot glow 1.1 m (0.55 at 0.7), a core 0.22 m of the gun's own orange with a thread of white (0.7).
       const near = seg === 0 ? 0.7 : 1;
       const T = AFTER.tiaCore;
       if (seg === 1) S.add(x0, y0, z0, x1, y1, z1, 2.4 * thin, this.tia, 0.18 * k, 0);
-      S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 0.55 : 1.1) * thin, this.tia, (seg === 0 ? 0.7 : 1.3) * k, 0);
-      S.add(x0, y0, z0, x1, y1, z1, 0.22 * thin, this.tia, T.core * k * near, T.white * near);
-      S.add(x0, 0.4, z0, x1, 0.4, z1, 1.1 * thin, this.tia, 0.5 * k * near * near, T.floorWhite * k * near);
+      if (this.bloom) {
+        // L1: a glow held under the threshold and a thin HDR core of the gun's hot yellow-orange, the only part that blooms.
+        const B = BLOOM.tia;
+        S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 0.4 : B.glow) * thin, this.tia, B.glowPower * k * near, 0);
+        S.add(x0, y0, z0, x1, y1, z1, B.core * thin, this.tiaCore, B.power * k * near, 0, true);
+      } else {
+        S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 0.55 : 1.1) * thin, this.tia, (seg === 0 ? 0.7 : 1.3) * k, 0);
+        S.add(x0, y0, z0, x1, y1, z1, 0.22 * thin, this.tia, T.core * k * near, T.white * near);
+      }
+      // Its light on the deck (the bloom tiers leave it to the column's groove: stacked under the core it turned it cream).
+      if (!this.bloom) S.add(x0, 0.4, z0, x1, 0.4, z1, 1.1 * thin, this.tia, 0.5 * k * near * near, T.floorWhite * k * near);
     }
     const g = this.p.glows;
     g.stamp(CELL.star8, m.x, m.y, m.z, 1 * k, time * 3, this.tia, 1.2 * k);

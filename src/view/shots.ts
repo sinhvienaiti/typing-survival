@@ -22,7 +22,7 @@ import type { World } from "../sim/world";
 import { BeamFx } from "./beams";
 import { BOLT, type Bolts } from "./bolts";
 import { CELL, FLAT, Streaks, type Glows, type Strips } from "./fx";
-import { AFTER, FEEL, LIGHT, joinWeight, screenMetres } from "./gun-rules";
+import { AFTER, BLOOM, FEEL, LIGHT, joinWeight, screenMetres } from "./gun-rules";
 import type { GunLights } from "./lights";
 import type { Stage } from "./scene";
 import { MUZZLE, PILOT_COLORS, type Pilot, type Ship } from "./ship";
@@ -85,7 +85,11 @@ export class ShotFx {
   private readonly tia: THREE.Color;
   private readonly draconis: boolean;
 
+  /** A bloom tier (L1): Xung's release halo, held under the threshold, a little wider. */
+  private readonly bloom: boolean;
+
   constructor(private readonly p: ShotParts) {
+    this.bloom = p.stage.composer !== null;
     this.draconis = p.pilot === "draconis";
     this.shot = PILOT_COLORS[p.pilot].shot;
     this.shotHi = this.draconis ? new THREE.Color("#ffb15c") : C.elite;
@@ -163,7 +167,9 @@ export class ShotFx {
       // A magazine's first star stands 0.7 m out along the shot, clear of the core's load flash.
       const o = first ? 0.7 : 0;
       g.burst(CELL.star4, m.x + dx * o, m.y, m.z - dz * o, 0.5, first ? 2 : 1.1, 3 * F, crit ? C.crit : this.shot, 3);
-      g.burst(CELL.soft, m.x, m.y, m.z, soft * 0.7, soft, (first ? 4 : 3) * F, this.shot, first ? 2.6 : 2);
+      // L1 (bloom tiers): the halo is held under the threshold, so it is a little wider (its reach was the old bloom's glare).
+      const halo = soft * (this.bloom ? BLOOM.flash.xung : 1);
+      g.burst(CELL.soft, m.x, m.y, m.z, halo * 0.7, halo, (first ? 4 : 3) * F, this.shot, first ? 2.6 : 2);
       g.burst(CELL.core, m.x, m.y, m.z, soft * 0.25, soft * 0.4, (first ? 4 : 3) * F, C.hot, 2.4);
       // Its light 1.2 m out along the shot, off the hull (on the muzzle it lit the ship white, as Tia's and Ray's did: §12).
       this.p.lights.flash(first ? LIGHT.xungFirst : LIGHT.xung, m.x + dx * 1.2, m.y, m.z - dz * 1.2, this.shot);
@@ -447,7 +453,7 @@ export class ShotFx {
     }
   }
 
-  /** Pháo Sao's shells: crimson bolts nose-first along their arcs, a fading trail, the landing ring tightening. */
+  /** Pháo Sao's shells: crimson bolts nose-first along their arcs, a fading trail, the landing ring (pale orange, white rim) tightening. */
   private shells(w: World, time: number, lead: number): void {
     const L = w.shells;
     const S = this.p.strips;
@@ -467,7 +473,10 @@ export class ShotFx {
       const big = Math.max(1, this.size(0.04, this.at.x, -this.at.z));
       if (!this.p.bolts.add(BOLT.phao, this.at.x, this.at.y, this.at.z, this.at.x - this.w3.x, this.at.y - this.w3.y, this.at.z - this.w3.z, time * 8 + k, big)) g.stamp(CELL.core, this.at.x, this.at.y, this.at.z, 0.6 * big, 0, C.hot, 2.4);
       g.stamp(CELL.soft, this.at.x, this.at.y, this.at.z, 1.4 * big, 0, C.phao, 1.6);
-      g.stamp(CELL.ring + FLAT, tx, 0.06, tz, PHAO.radius * (1.2 - 0.4 * t) * 2, time * 2, C.danger, 1.2);
+      // The landing ring: our side's warning, pale orange with a white rim (red is the foes', VFX_STANDARD §3.6.3; O5).
+      const ring = PHAO.radius * (1.2 - 0.4 * t) * 2;
+      g.stamp(CELL.ring + FLAT, tx, 0.06, tz, ring, time * 2, C.mark, 0.9);
+      g.stamp(CELL.ring + FLAT, tx, 0.061, tz, ring * 1.16, time * 2, C.white, 0.45);
     }
   }
 }

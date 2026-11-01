@@ -18,6 +18,7 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { FIELD, type Tier } from "../content/rules";
+import { BLOOM } from "./gun-rules";
 import { DECK_LIGHT_GLSL, deckLightUniforms } from "./lights";
 import { PALETTE } from "./theme";
 
@@ -305,7 +306,9 @@ export class Stage {
     const spec = VIEW_TIERS[tier];
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: spec.aa, powerPreference: "high-performance" });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    // L1: Neutral (Khronos PBR Neutral) keeps a hot core's hue where ACES turned it cream-white; ?tone= for A/B.
+    const tone = new URLSearchParams(location.search).get("tone") ?? BLOOM.tone;
+    this.renderer.toneMapping = tone === "aces" ? THREE.ACESFilmicToneMapping : tone === "agx" ? THREE.AgXToneMapping : THREE.NeutralToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.info.autoReset = false;
     this.scene.background = new THREE.Color(PALETTE.void);
@@ -333,9 +336,9 @@ export class Stage {
       target.texture.name = "EffectComposer.rt1";
       this.composer = new EffectComposer(this.renderer, target);
       this.composer.addPass(new RenderPass(this.scene, this.camera));
-      // FEEL_PASS_S1 §4.1: strength 0.85, the threshold kept at 1 (only HDR light blooms); radius 0.3, not 0.45 (a Ray shot washed a 400 px column of the lane). ?bloom=s,r: A/B in scenarios.
+      // L1 (gun-rules BLOOM): only thin HDR cores pass the threshold of 1, a tight bloom over them (was 0.85 / 0.3, FEEL_PASS_S1 §4.1). ?bloom=s,r: A/B in scenarios.
       const [strength, radius] = (new URLSearchParams(location.search).get("bloom") ?? "").split(",").map(Number);
-      this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(256, 256), Number.isFinite(strength) && strength! > 0 ? strength! : 0.85, Number.isFinite(radius) ? radius! : 0.3, 1.0));
+      this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(256, 256), Number.isFinite(strength) && strength! > 0 ? strength! : BLOOM.strength, Number.isFinite(radius) ? radius! : BLOOM.radius, BLOOM.threshold));
       this.composer.addPass(new OutputPass());
     } else this.composer = null;
   }

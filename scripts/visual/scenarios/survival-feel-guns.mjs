@@ -10,7 +10,9 @@
 //         frame twice: as shown, and with the HUD hidden for the measures.
 //         Grades: its bolts drawn (Xung, Tán, Pháo Sao; Ray's armed bolt
 //         while it waits); the muzzle flash on the shot's frame (the radius of
-//         pixels brighter than 0.8 round the muzzle ≥ 80 % of §4.2's); the
+//         pixels lit ≥ 0.2 over the frame before round the muzzle ≥ 80 % of
+//         §4.2's; since L1, 01/11: was "brighter than 0.8", the old bloom's
+//         white glare, still reported as `white`); the
 //         deck round the muzzle brighter on the shot's frame than the one
 //         before (≥ 0.08); lights lit; damage numbers at the new size.
 //   f6    kills: Pháo Sao into a pack and a Trâu, Ray down a row: 40 frames
@@ -102,6 +104,39 @@ function brightRadius(file, x, y, scale, level = 0.8) {
   return Math.round(reach[8] * 10) / 10;
 }
 
+/**
+ * How far (CSS px) the flash reaches from (x, y): as brightRadius, on pixels whose brightness rose ≥ `level` over the
+ * frame before (`base`) or that are brighter than 0.8 (the muzzle's own hot core may be lit on both frames). Since L1 (parent QUALITY_RESCUE_2026-11-01, VFX_STANDARD §3.5.1) a flash's halo is the
+ * gun's colour held under the bloom's threshold and only its small core is white-hot: "brighter than 0.8" measured
+ * the old bloom's white glare (Medium, without bloom, never reached §4.2's radius on it).
+ */
+function litRadius(file, base, x, y, scale, level = 0.2) {
+  const R = Math.round(160 * scale);
+  const rect = { x: x * scale - R, y: y * scale - R, w: 2 * R, h: 2 * R };
+  const g = gray(file, rect);
+  const b = gray(base, rect);
+  const reach = [];
+  for (let a = 0; a < 16; a += 1) {
+    const ux = Math.cos((a / 16) * Math.PI * 2);
+    const uy = Math.sin((a / 16) * Math.PI * 2);
+    let last = 0;
+    let dark = 0;
+    for (let r = 0; r < R; r += 1) {
+      const px = Math.round(R + ux * r);
+      const py = Math.round(R + uy * r);
+      if (px < 0 || py < 0 || px >= g.w || py >= g.h) break;
+      const i = py * g.w + px;
+      if ((g.data[i] - b.data[i]) / 255 >= level || g.data[i] / 255 > 0.8) {
+        last = r;
+        dark = 0;
+      } else if (++dark > 3 * scale) break;
+    }
+    reach.push(last / scale);
+  }
+  reach.sort((p, q) => p - q);
+  return Math.round(reach[8] * 10) / 10;
+}
+
 /** Mean brightness (0–1) inside a disc of `r` px round (x, y). */
 function discMean(file, x, y, r, scale) {
   const R = Math.round(r * scale);
@@ -166,8 +201,10 @@ async function f5(page, dir) {
     let flash = null;
     let pool = null;
     if (shot !== null) {
-      const radii = spec.muzzle.map((k) => brightRadius(shot.bare, shot.info.muzzles[k][0], shot.info.muzzles[k][1], scale));
-      flash = { radius: Math.max(...radii), radii, target: Math.round(spec.flash * page.height), need: Math.round(spec.flash * page.height * 0.8) };
+      // The flash's reach (lit over the frame before); `white`: how far it is brighter than 0.8 (the old measure, reported).
+      const radii = spec.muzzle.map((k) => (before === null ? 0 : litRadius(shot.bare, before.bare, shot.info.muzzles[k][0], shot.info.muzzles[k][1], scale)));
+      const white = spec.muzzle.map((k) => brightRadius(shot.bare, shot.info.muzzles[k][0], shot.info.muzzles[k][1], scale));
+      flash = { radius: Math.max(...radii), radii, white: Math.max(...white), target: Math.round(spec.flash * page.height), need: Math.round(spec.flash * page.height * 0.8) };
       if (before !== null) {
         // The deck round the muzzle: a disc 1.5 m across at the muzzle's depth (≈ 52 px at 720p).
         const k = spec.muzzle[0];

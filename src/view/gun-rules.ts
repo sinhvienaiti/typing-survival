@@ -79,6 +79,32 @@ export const AFTER = {
   },
 } as const;
 
+/**
+ * Bloom and tone (parent QUALITY_RESCUE_2026-11-01 L1; VFX_STANDARD §3.5.1,
+ * owner's O4 of 01/11). Bloom 0.85 / 0.3 and ACES made every shot 2.5–3.5×
+ * wider and cream-white at High and Ultra (Heat Beam 86–97 px at 11 m,
+ * 1080p). On the bloom tiers only thin HDR cores pass the threshold of 1:
+ * halos (soft, ring, flare and puff billboards, a streak's colour, Heat
+ * Beam's glow, haze and floor column) are held at `halo` per channel; the
+ * bloom is `strength`, `radius`. Tone mapping `tone` (Khronos PBR Neutral:
+ * a hot core keeps its hue where ACES and AgX whitened it) on every tier
+ * (?tone=aces|agx|neutral for A/B). Heat Beam on the bloom tiers: its core a
+ * streak `core` m wide at `power` (HDR 3–6) in `color`, its glow `glow` m at
+ * `glowPower`, its floor column's burning core `groove` of its half-width
+ * (was 0.3: a metre-wide stripe that set the beam's width), no floor strip.
+ * `flash`: Xung's and Ray's release halos this much wider (held under the
+ * threshold they no longer spread into a glare).
+ */
+export const BLOOM = {
+  strength: 0.45,
+  radius: 0.12,
+  threshold: 1,
+  halo: 0.9,
+  tone: "neutral",
+  tia: { core: 0.12, power: 3, color: "#ffa726", glow: 0.5, glowPower: 0.6, groove: 0.1 },
+  flash: { xung: 1.3, ray: 1.3 },
+} as const;
+
 /** Puffs the smoke pool holds (combat.ts): scorches, the hurt ship, four big kills and the guns' smoke (tests/vfx-pair.test.ts). */
 export const SMOKE_POOL = 200;
 
