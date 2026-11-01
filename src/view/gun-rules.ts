@@ -103,6 +103,21 @@ export const BLOOM = {
   tone: "neutral",
   tia: { core: 0.12, power: 3, color: "#ffa726", glow: 0.5, glowPower: 0.6, groove: 0.1 },
   flash: { xung: 1.3, ray: 1.3 },
+  release: { xung: 0.9, halo: 1.6 },
+  /**
+   * The typing feel's marks (a shared system, bar 9) bloom as before L1: the
+   * old bloom `old` minus this one is, mip for mip, 0.24; `feel` adds it over
+   * their pools alone (feel-bloom.ts; radius 0.5 weighs the five mips flat).
+   */
+  old: { strength: 0.85, radius: 0.3 },
+  feel: { strength: 0.4, radius: 0.5 },
+  /**
+   * Rail Gun on every tier (wave 1 fix): a thin HDR core `core` m at `power` with a white thread `white`, whole
+   * for `hold` s then gone over `fade` s; its body `body` m at `bodyPower` (held); its ionised afterglow, held,
+   * widening from `ion[0]` to `ion[1]` m, whole to `ionHold` s and gone by `ionEnd` s, crackling; the muzzle's
+   * tongue core `tongue` m. The impact: a hot core `hit` × its star, a held shock ring, sparks.
+   */
+  ray: { core: 0.07, power: 4, white: 0.35, hold: 0.1, fade: 0.1, body: 0.24, bodyPower: 1.6, ion: [0.6, 1.1], ionHold: 0.22, ionEnd: 0.65, tongue: 0.12, hit: 0.35 },
 } as const;
 
 /** Puffs the smoke pool holds (combat.ts): scorches, the hurt ship, four big kills and the guns' smoke (tests/vfx-pair.test.ts). */

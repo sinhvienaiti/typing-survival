@@ -3,7 +3,7 @@
 // (?stage=&guns=, the page's own way into a fight), type a bay's word with
 // real keys, capture frame sequences on the page's held clock.
 import { DEV_URL, out } from "./common.mjs";
-import { press, sv } from "./survival-s0-lib.mjs";
+import { PAGE_QUERY, press, sv } from "./survival-s0-lib.mjs";
 
 export { press, sv, out };
 
@@ -12,7 +12,7 @@ export const KIND = { mine: 0, scout: 1, brute: 2, shield: 3, splitter: 4, shard
 
 export async function openStage(page, stage, guns, query = "") {
   const base = DEV_URL.replace(/\/$/, "");
-  await page.goto(base + "/index.html?seed=3&autostart=1&stage=" + stage + "&guns=" + guns.join(",") + query, { settle: 300 });
+  await page.goto(base + "/index.html?seed=3&autostart=1&stage=" + stage + "&guns=" + guns.join(",") + query + PAGE_QUERY, { settle: 300 });
   let ready = false;
   for (let wait = 0; wait < 120 && !ready; wait += 1) {
     ready = (await page.eval(sv("return t.ready();"))) === true;

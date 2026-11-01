@@ -18,6 +18,7 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { FIELD, type Tier } from "../content/rules";
+import { FeelBloomPass } from "./feel-bloom";
 import { BLOOM } from "./gun-rules";
 import { DECK_LIGHT_GLSL, deckLightUniforms } from "./lights";
 import { PALETTE } from "./theme";
@@ -274,11 +275,19 @@ void main() {
   #include <colorspace_fragment>
 }`;
 
+/** An A/B switch of the page's address (?tone=, ?msaa=, ?bloom=): read only with the scenarios' handle (dev, or ?debug=1), never in a player's build. */
+function abSwitch(name: string): string | null {
+  const params = new URLSearchParams(location.search);
+  return import.meta.env.DEV || params.get("debug") === "1" ? params.get(name) : null;
+}
+
 export class Stage {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(FOV, 16 / 9, 1, 2500);
   readonly composer: EffectComposer | null;
+  /** The bloom tiers' second bloom, over the typing feel's marks only (feel-bloom.ts): they bloom as before L1. */
+  readonly feel: FeelBloomPass | null;
   private readonly uniforms = { uTime: { value: 0 }, uThreat: { value: 0 } };
   /** The guns' light pools on the deck (lights.ts writes them). */
   readonly deck = deckLightUniforms();
@@ -306,8 +315,8 @@ export class Stage {
     const spec = VIEW_TIERS[tier];
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: spec.aa, powerPreference: "high-performance" });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    // L1: Neutral (Khronos PBR Neutral) keeps a hot core's hue where ACES turned it cream-white; ?tone= for A/B.
-    const tone = new URLSearchParams(location.search).get("tone") ?? BLOOM.tone;
+    // L1: Neutral (Khronos PBR Neutral) keeps a hot core's hue where ACES turned it cream-white; ?tone= for A/B (debug only).
+    const tone = abSwitch("tone") ?? BLOOM.tone;
     this.renderer.toneMapping = tone === "aces" ? THREE.ACESFilmicToneMapping : tone === "agx" ? THREE.AgXToneMapping : THREE.NeutralToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.info.autoReset = false;
@@ -330,17 +339,23 @@ export class Stage {
     this.scene.add(this.sky);
     this.build();
     if (spec.bloom) {
-      // Half float as three's own buffer, multisampled (L2); resize() sizes it. ?msaa=n: A/B in scenarios.
-      const msaa = Number(new URLSearchParams(location.search).get("msaa") ?? NaN);
+      // Half float as three's own buffer, multisampled (L2); resize() sizes it. ?msaa=n: A/B in scenarios (debug only).
+      const msaa = Number(abSwitch("msaa") ?? NaN);
       const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Number.isInteger(msaa) && msaa >= 0 && msaa <= 8 ? msaa : spec.samples });
       target.texture.name = "EffectComposer.rt1";
       this.composer = new EffectComposer(this.renderer, target);
       this.composer.addPass(new RenderPass(this.scene, this.camera));
-      // L1 (gun-rules BLOOM): only thin HDR cores pass the threshold of 1, a tight bloom over them (was 0.85 / 0.3, FEEL_PASS_S1 §4.1). ?bloom=s,r: A/B in scenarios.
-      const [strength, radius] = (new URLSearchParams(location.search).get("bloom") ?? "").split(",").map(Number);
+      // The typing feel's marks first, on the frame as drawn (their bright pass against the frame without them), then L1's bloom over all.
+      this.feel = new FeelBloomPass(this.camera, BLOOM.feel.strength, BLOOM.feel.radius, BLOOM.threshold);
+      this.composer.addPass(this.feel);
+      // L1 (gun-rules BLOOM): only thin HDR cores pass the threshold of 1, a tight bloom over them (was 0.85 / 0.3, FEEL_PASS_S1 §4.1). ?bloom=s,r: A/B in scenarios (debug only).
+      const [strength, radius] = (abSwitch("bloom") ?? "").split(",").map(Number);
       this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(256, 256), Number.isFinite(strength) && strength! > 0 ? strength! : BLOOM.strength, Number.isFinite(radius) ? radius! : BLOOM.radius, BLOOM.threshold));
       this.composer.addPass(new OutputPass());
-    } else this.composer = null;
+    } else {
+      this.composer = null;
+      this.feel = null;
+    }
   }
 
   private build(): void {

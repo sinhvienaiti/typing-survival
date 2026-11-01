@@ -237,6 +237,11 @@ export class Glows {
   get count(): number {
     return this.live;
   }
+
+  /** Billboards drawn this frame (bursts and stamps; after flush()). */
+  get drawn(): number {
+    return this.live + this.stamps;
+  }
 }
 
 const STRIP_VERTEX = /* glsl */ `
@@ -311,6 +316,11 @@ export class Strips {
   end(): void {
     uploadQuads(this.mesh.geometry, this.n);
   }
+
+  /** Streaks drawn this frame. */
+  get drawn(): number {
+    return this.n;
+  }
 }
 
 /** Streaks held a while (muzzle tongues and flashes along a shot): full on their first frame, fading over their life, drawn into Strips each frame. */
@@ -321,25 +331,26 @@ export class Streaks {
   private readonly color = new THREE.Color();
 
   constructor(readonly capacity: number, readonly smoke = false) {
-    this.f = new Float32Array(capacity * 13);
+    this.f = new Float32Array(capacity * 14);
   }
 
-  add(x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, width: number, color: THREE.Color, intensity: number, core: number, life: number): void {
-    const o = (this.n++ % this.capacity) * 13;
+  /** `hdr`: a thin core the bloom tiers' hold leaves alone (Strips.add). */
+  add(x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, width: number, color: THREE.Color, intensity: number, core: number, life: number, hdr = false): void {
+    const o = (this.n++ % this.capacity) * 14;
     const f = this.f;
     f[o] = x0; f[o + 1] = y0; f[o + 2] = z0; f[o + 3] = x1; f[o + 4] = y1; f[o + 5] = z1;
     f[o + 6] = width; f[o + 7] = color.r * intensity; f[o + 8] = color.g * intensity; f[o + 9] = color.b * intensity;
-    f[o + 10] = core; f[o + 11] = life; f[o + 12] = 0;
+    f[o + 10] = core; f[o + 11] = life; f[o + 12] = 0; f[o + 13] = hdr ? 1 : 0;
   }
 
   draw(strips: Strips, dt: number): void {
     const f = this.f;
     for (let q = 0; q < Math.min(this.capacity, this.n); q += 1) {
-      const o = q * 13;
+      const o = q * 14;
       const k = 1 - f[o + 12]! / Math.max(1e-3, f[o + 11]!);
       if (k <= 0) continue;
       f[o + 12] = f[o + 12]! + dt;
-      strips.add(f[o]!, f[o + 1]!, f[o + 2]!, f[o + 3]!, f[o + 4]!, f[o + 5]!, f[o + 6]! * (0.5 + 0.5 * k), this.color.setRGB(f[o + 7]!, f[o + 8]!, f[o + 9]!), k, f[o + 10]! * k);
+      strips.add(f[o]!, f[o + 1]!, f[o + 2]!, f[o + 3]!, f[o + 4]!, f[o + 5]!, f[o + 6]! * (0.5 + 0.5 * k), this.color.setRGB(f[o + 7]!, f[o + 8]!, f[o + 9]!), k, f[o + 10]! * k, f[o + 13] === 1);
     }
   }
 }

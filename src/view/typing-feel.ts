@@ -23,7 +23,7 @@ import type { ParticlePool } from "../kit/three";
 import { GUN } from "../content/guns";
 import { EV, FLAG } from "../sim/events";
 import type { World } from "../sim/world";
-import { CELL, FLAT, type Glows, type Strips } from "./fx";
+import { CELL, FLAT, Glows, Strips } from "./fx";
 import type { Hud } from "./hud";
 import type { Stage } from "./scene";
 import { MUZZLE, type Ship } from "./ship";
@@ -84,15 +84,34 @@ export class TypeFeel {
     private readonly hud: Hud,
     private readonly stage: Stage,
     private readonly ship: Ship,
+    /** The fight's billboards (held under the bloom on High and Ultra): the charge at the muzzles, the gun's phase A. */
     private readonly glows: Glows,
-    private readonly strips: Strips,
     private readonly sparks: ParticlePool,
     private readonly audio: ThemeAudio,
     /** The word line (the kit's focus strip). */
     readonly fx: TypeFx,
     /** A deck word's meaning (shown under it on the line). */
     private readonly meaning: (index: number) => string,
-  ) {}
+  ) {
+    stage.scene.add(this.bolts.mesh, this.pool.mesh);
+    stage.feel?.add(this.bolts.mesh);
+    stage.feel?.add(this.pool.mesh);
+  }
+
+  /**
+   * Its own pools (the keys' marks, the core, the stream): a shared system
+   * (bar 9) drawn as before L1, never held under the bloom; on High and Ultra
+   * stage.feel blooms them as the old bloom did (feel-bloom.ts).
+   */
+  private readonly pool = new Glows(48);
+  private readonly bolts = new Strips(48);
+
+  /** Shows or hides its marks and their bloom (the scenarios' control frames: a gun's flash measured alone). */
+  show(on: boolean): void {
+    this.pool.mesh.visible = on;
+    this.bolts.mesh.visible = on;
+    if (this.stage.feel !== null) this.stage.feel.enabled = on;
+  }
 
   /** The keys' billboards and strips alive now (§6: ≤ 12 at 10 keys a second; the scenarios read it through info()). */
   get live(): number {
@@ -164,7 +183,7 @@ export class TypeFeel {
           this.coreGun = gun;
           if (perfect) {
             this.ship.core(this.core);
-            this.glows.burst(CELL.ring + FLAT, this.core.x, 0.09, this.core.z, 1, 3.5, 0.25, BLOW.perfect, 0.9);
+            this.pool.burst(CELL.ring + FLAT, this.core.x, 0.09, this.core.z, 1, 3.5, 0.25, BLOW.perfect, 0.9);
           }
         } else {
           // The last key's shards fly aside: the full bay takes nothing.
@@ -235,25 +254,34 @@ export class TypeFeel {
       this.mg[m] = this.pGun[p]! + (aside ? 8 : 0);
       this.ms[m] = Math.random() * 100;
       // Its star just under the plate (behind it, it lit the plate's backdrop; the DOM spark marks the letter itself).
-      this.glows.burst(CELL.star4, tip.x, tip.y - 0.4, tip.z, K.star * 0.5, K.star, 4 * F, c, K.power, 0, 0, 0, 0, NaN);
+      this.pool.burst(CELL.star4, tip.x, tip.y - 0.4, tip.z, K.star * 0.5, K.star, 4 * F, c, K.power, 0, 0, 0, 0, NaN);
       if (!reduced) for (let k = 0; k < 3; k += 1) this.sparks.spawn(tip, this.v.set((Math.random() - 0.5) * 3, -1 - Math.random() * 2, (Math.random() - 0.5) * 2), c, 0.2, 0.3, { drag: 3, gravity: 6 });
       if (aside) continue;
       this.hitAt = now;
       this.gather(this.pGun[p]!, c, reduced);
       const wide = (tier >= 1 ? 1.15 : 1) * (reduced ? 0.8 : 1);
-      this.glows.burst(CELL.star8, this.glow.x, this.glow.y, this.glow.z, K.core * 0.5, K.core, 4 * F, c, K.power * 0.85, 0, 0, 0, 0, NaN);
+      this.pool.burst(CELL.star8, this.glow.x, this.glow.y, this.glow.z, K.core * 0.5, K.core, 4 * F, c, K.power * 0.85, 0, 0, 0, 0, NaN);
       const lit = this.lit ? K.lit : 1;
-      this.glows.burst(CELL.soft + FLAT, this.core.x, 0.07, this.core.z, K.pool, K.pool * 1.25, 3 * F, c, 0.35, 0, 0, 0, 0, NaN);
-      this.glows.burst(CELL.ring + FLAT, this.core.x, 0.08, this.core.z, K.ring[0] * wide, K.ring[1] * wide, K.ringLife, c, K.ringPower * lit * (reduced ? 0.6 : 1), 0, 0, 0, 0, NaN);
-      if (tier >= 4) this.glows.burst(CELL.ring + FLAT, this.core.x, 0.085, this.core.z, 1, 2.6, 0.2, TYPING, 0.45);
+      this.pool.burst(CELL.soft + FLAT, this.core.x, 0.07, this.core.z, K.pool, K.pool * 1.25, 3 * F, c, 0.35, 0, 0, 0, 0, NaN);
+      this.pool.burst(CELL.ring + FLAT, this.core.x, 0.08, this.core.z, K.ring[0] * wide, K.ring[1] * wide, K.ringLife, c, K.ringPower * lit * (reduced ? 0.6 : 1), 0, 0, 0, 0, NaN);
+      if (tier >= 4) this.pool.burst(CELL.ring + FLAT, this.core.x, 0.085, this.core.z, 1, 2.6, 0.2, TYPING, 0.45);
     }
     this.pending = 0;
   }
 
-  /** Draws the bolts, the core, the priming spark and the stream (between the combat's strips.begin() and end()). */
+  /** Draws the bolts, the core, the priming spark and the stream into its own pools (the charge into the fight's billboards, between their step() and flush()). */
   draw(w: World, time: number): void {
-    const now = time * 1000;
     const dt = this.lastTime < 0 ? 0 : Math.max(0, time - this.lastTime);
+    this.pool.step(dt);
+    this.bolts.begin();
+    this.paint(w, time, dt);
+    this.bolts.end();
+    this.pool.flush();
+    if (this.stage.feel !== null) this.stage.feel.lit = this.pool.drawn + this.bolts.drawn > 0;
+  }
+
+  private paint(w: World, time: number, dt: number): void {
+    const now = time * 1000;
     this.lastTime = time;
     const T = w.typing;
     this.ship.core(this.core);
@@ -281,9 +309,9 @@ export class TypeFeel {
         const bz = sz + (end.z - sz) * u;
         // Past the first, each joint is drawn from half a segment back: its faded tail lies on the one before (a whole line).
         const back = j === 1 ? 0 : 0.5;
-        this.strips.add(ax - (bx - ax) * back, ay - (by - ay) * back, az - (bz - az) * back, bx, by, bz, width, c, K.power * fade, 0.9 * fade);
+        this.bolts.add(ax - (bx - ax) * back, ay - (by - ay) * back, az - (bz - az) * back, bx, by, bz, width, c, K.power * fade, 0.9 * fade);
         // A fork off the middle joint, out and down toward the deck.
-        if (j === 2) this.strips.add(bx, by, bz, bx + side * K.fork, by - 0.35, bz + (end.z - sz) * 0.15, width * 0.6, c, K.power * fade * 0.8, 0.7 * fade);
+        if (j === 2) this.bolts.add(bx, by, bz, bx + side * K.fork, by - 0.35, bz + (end.z - sz) * 0.15, width * 0.6, c, K.power * fade * 0.8, 0.7 * fade);
         ax = bx; ay = by; az = bz;
       }
     }
@@ -316,12 +344,12 @@ export class TypeFeel {
       intensity = muzzle ? 3 : 4;
     }
     this.shown = intensity;
-    if (intensity > 0.01) this.glows.stamp(CELL.core, this.glow.x, this.glow.y, this.glow.z, radius, 0, color, intensity);
+    if (intensity > 0.01) this.pool.stamp(CELL.core, this.glow.x, this.glow.y, this.glow.z, radius, 0, color, intensity);
     // Pulse Gun's and Heat Beam's muzzles gather the word (A) and let go on the load's frame, where the release takes over (R); the other guns' muzzle flickers from half the word (12 Hz).
     if (locked && (this.coreGun === GUN.xung || this.coreGun === GUN.tia)) this.charge(this.coreL, now, time, reduced);
     else if (locked && this.coreL >= 0.5 && Math.sin(time * Math.PI * 24) > 0) {
       this.ship.muzzle(this.tip);
-      this.glows.stamp(CELL.star4, this.tip.x, this.tip.y, this.tip.z, 0.3, time * 4, color, 2);
+      this.pool.stamp(CELL.star4, this.tip.x, this.tip.y, this.tip.z, 0.3, time * 4, color, 2);
     }
     // A loaded word: a stream of energy runs from the core to the muzzle in 3 frames.
     const flow = now - this.flowAt;
@@ -330,7 +358,7 @@ export class TypeFeel {
       const k = Math.min(1, flow / 50);
       const fade = flow < 50 ? 1 : 1 - (flow - 50) / 35;
       const c = GUN_COLOR[this.flowGun] ?? BLOW.volt;
-      this.strips.add(this.glow.x, this.glow.y, this.glow.z, this.glow.x + (this.tip.x - this.glow.x) * k, this.glow.y + (this.tip.y - this.glow.y) * k, this.glow.z + (this.tip.z - this.glow.z) * k, 0.35, c, 2.4 * fade, 0.8 * fade);
+      this.bolts.add(this.glow.x, this.glow.y, this.glow.z, this.glow.x + (this.tip.x - this.glow.x) * k, this.glow.y + (this.tip.y - this.glow.y) * k, this.glow.z + (this.tip.z - this.glow.z) * k, 0.35, c, 2.4 * fade, 0.8 * fade);
     }
     this.ship.boost = this.streak.tier >= 3 ? 1.3 : 1;
   }

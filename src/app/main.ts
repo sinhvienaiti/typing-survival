@@ -259,7 +259,7 @@ applyKeyboardLevels(typeFx.sounds, settings);
 let keyboardReady = false;
 hud.strip.attach(typeFx);
 hudRoot.classList.add("is-tfx");
-const typing = (combat.typing = new TypeFeel(hud, stage, ship, combat.glows, combat.strips, combat.sparks, audio, typeFx, (index) => wordOf(index).vi));
+const typing = (combat.typing = new TypeFeel(hud, stage, ship, combat.glows, combat.sparks, audio, typeFx, (index) => wordOf(index).vi));
 
 /** The Settings panel's preview while it is open. */
 let preview: TypeFxPreview | null = null;
@@ -975,4 +975,12 @@ if (devHandleWanted(import.meta.env.DEV, location.search)) installDevHandle({
   forceStops: (on: boolean) => {
     combat.forceStops = on;
   },
+  /** Shows or hides the guns' billboards and streaks (with `smoke`, the smoke pool too; the lights, models and the typing feel stay): control frames for a muzzle flash's own reach and Star Mortar's landing ring. */
+  gunFx: (shown: boolean, smoke = false) => {
+    combat.glows.mesh.visible = shown;
+    combat.strips.mesh.visible = shown;
+    if (smoke) combat.smoke.mesh.visible = shown;
+  },
+  /** Shows or hides the typing feel's marks and their bloom (f5 measures a muzzle flash alone, without the last key's mark). */
+  typingFx: (shown: boolean) => typing.show(shown),
 });
