@@ -34,6 +34,19 @@ export async function guard(page) {
   return { firstPage: href, pages: pages.length };
 }
 
+/**
+ * Holds every page's frame clock from its first line (before its first frame):
+ * the handle is held the moment main.ts installs it, so a page gets ready at
+ * clock 0 and every frame after comes from advance() alone, whatever the
+ * machine's speed. What runs on wall time still varies run to run (CSS
+ * transitions, an image still loading, the effects' own Math.random): compare
+ * two builds against a second run of the same build.
+ */
+export async function holdFromStart(page) {
+  const source = "(() => { let handle; Object.defineProperty(window, '__survival', { configurable: true, get() { return handle; }, set(value) { handle = value; try { value.hold(true); } catch {} } }); })();";
+  await page.send("Page.addScriptToEvaluateOnNewDocument", { source });
+}
+
 /** The page's own URL (PAGE_QUERY added). */
 export const url = (query) => DEV_URL.replace(/\/$/, "") + "/index.html?" + query + PAGE_QUERY;
 
