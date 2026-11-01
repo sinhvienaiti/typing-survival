@@ -23,4 +23,14 @@ describe("registries", () => {
     extendDevHandle("testThing", () => 1);
     expect(() => extendDevHandle("testThing", () => 2)).toThrow(/taken/);
   });
+
+  it("loads the alive scenes, one file a package, ids unique", async () => {
+    const registry = new URL("../scripts/visual/scenarios/alive/registry.mjs", import.meta.url).href;
+    const { loadScenes, MODES } = (await import(registry)) as { loadScenes: () => Promise<{ id: string; mode: string; from: string }[]>; MODES: string[] };
+    const scenes = await loadScenes();
+    expect(new Set(scenes.map((scene) => scene.id)).size).toBe(scenes.length);
+    for (const scene of scenes) expect(MODES).toContain(scene.mode);
+    const own = scenes.filter((scene) => scene.from === "al00.mjs");
+    for (const mode of MODES) expect(own.some((scene) => scene.mode === mode)).toBe(true);
+  });
 });
