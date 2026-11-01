@@ -81,16 +81,45 @@ describe("vfx pair", () => {
     for (const k of Object.values(BLOOM.flash)) expect(k).toBeGreaterThanOrEqual(1);
   });
 
-  it("O5: the foes' veins, hairlines and eyes are the foe faction's purple; Pháo Sao's landing ring is our pale orange", () => {
+  it("Rail Gun (wave 1 fix): a saturated cobalt, not the Horde's violet, the foes' red, the Pack Leaders' gold or the Line's cyan-white; a thin HDR core, its afterglow held", () => {
+    const hsl = (c: THREE.Color) => c.getHSL({ h: 0, s: 0, l: 0 }, THREE.SRGBColorSpace);
+    for (const c of [BLOW.ray, BLOW.rayIon]) {
+      expect(hsl(c).h * 360).toBeGreaterThanOrEqual(215);
+      expect(hsl(c).h * 360).toBeLessThanOrEqual(240);
+      expect(hsl(c).s).toBeGreaterThanOrEqual(0.9);
+    }
+    const R = BLOOM.ray;
+    expect(R.power).toBeGreaterThanOrEqual(3);
+    expect(R.power).toBeLessThanOrEqual(6);
+    expect(R.core).toBeLessThanOrEqual(0.1);
+    expect(R.ion[1]).toBeGreaterThan(R.ion[0]);
+    expect(R.ionEnd).toBeLessThanOrEqual(0.8);
+  });
+
+  it("the typing feel (shared, bar 9) blooms as before L1: the old bloom minus L1's, mip for mip, is the feel pass's", () => {
+    // UnrealBloomPass: strength × mix(f, 1.2 − f, radius) for its five mip factors.
+    const weight = (b: { strength: number; radius: number }, f: number) => b.strength * (f + b.radius * (1.2 - 2 * f));
+    for (const f of [1, 0.8, 0.6, 0.4, 0.2]) expect(Math.abs(weight(BLOOM, f) + weight(BLOOM.feel, f) - weight(BLOOM.old, f))).toBeLessThan(0.002);
+  });
+
+  it("O5: the foes' veins and eyes are the foe faction's purple (the Pack Leaders' gold), their bodies near-black; Pháo Sao's landing ring is our pale orange", () => {
     // Faction colours are written as linear numbers (HDR); the ring's is a hex, so read it as sRGB.
     const hue = (c: THREE.Color, space: THREE.ColorSpace = THREE.LinearSRGBColorSpace) => c.getHSL({ h: 0, s: 0, l: 0 }, space).h * 360;
-    for (const f of FACTION) {
-      for (const c of [f.vein, f.hairline, f.eye]) {
-        // Violet to magenta-purple: far from Heat Beam's orange (≈ 25°), Pulse's blue (≈ 200°) and Pháo Sao's crimson (≈ 345°).
+    FACTION.forEach((f, kind) => {
+      for (const c of [f.vein, f.eye]) {
+        if (kind === 6) {
+          // Đầu Đàn: gold, the Pack Leaders' alone.
+          expect(hue(c)).toBeGreaterThanOrEqual(35);
+          expect(hue(c)).toBeLessThanOrEqual(55);
+          continue;
+        }
+        // Violet to magenta-purple: far from Heat Beam's orange (≈ 25°), Pulse's blue (≈ 200°), Rail's cobalt (≈ 226°) and Pháo Sao's crimson (≈ 345°).
         expect(hue(c)).toBeGreaterThanOrEqual(250);
         expect(hue(c)).toBeLessThanOrEqual(305);
       }
-    }
+      // Near-black glass and chitin (the art director's rule: purple only in thin veins and eyes).
+      expect(Math.max(f.body.r, f.body.g, f.body.b)).toBeLessThanOrEqual(0.06);
+    });
     expect(hue(BLOW.mark, THREE.SRGBColorSpace)).toBeGreaterThanOrEqual(20);
     expect(hue(BLOW.mark, THREE.SRGBColorSpace)).toBeLessThanOrEqual(40);
   });
