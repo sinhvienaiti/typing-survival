@@ -113,11 +113,15 @@ export const BLOOM = {
   /**
    * The typing feel's marks (a shared system, bar 9) bloom as before L1, as
    * the old bloom `old` did (it added 1.6–3× this one's light of each mip),
-   * and tone map toward ACES by their share of a pixel's light (feel-bloom.ts;
-   * `feel`: the share of that extra bloom and of that tone, 1 = as on main).
+   * and tone map toward ACES by their share of a pixel's light (feel-bloom.ts).
+   * `feel`: the share of that extra bloom and of that tone. At gain 1 the
+   * marks add main's light, but the field round the ship is darker since L1
+   * (f1f's frame before a key: luma 0.16 against main's 0.21), so the same
+   * light lit 30 % more of it (f1f at 720p: 19,400 px against 14,800–15,900);
+   * at 0.25 a key lights as much of the field as on main (15,000–15,100).
    */
   old: { strength: 0.85, radius: 0.3 },
-  feel: { gain: 1, blend: 1 },
+  feel: { gain: 0.25, blend: 1 },
   /**
    * Rail Gun on every tier (wave 1 fix): a thin HDR core `core` m at `power` with a white thread `white`, whole
    * for `hold` s then gone over `fade` s; its body `body` m at `bodyPower` (held); its ionised afterglow, held,
