@@ -193,7 +193,9 @@ export class ShotFx {
       this.px[bay] = m.x;
       this.py[bay] = m.y - Y;
       this.pz[bay] = m.z + R.z[i]!;
-      // Three tongues of flame along the fan (2.2 m, 4 frames), a white-hot flash 10 % of the view, dark smoke, two casings.
+      // Three tongues of flame along the fan (2.2 m, 4 frames: amber, a white thread down each), a hot glow on the muzzle sized on
+      // 10 % of the view (held under the bloom on High and Ultra, so pale amber-white, not a white-hot glare: much of it sits under
+      // the hull, f5's own reach of the flash is the tongues'), dark smoke, two casings.
       for (const a of [-0.3, 0, 0.3]) {
         const c = Math.cos(a);
         const s = Math.sin(a);
@@ -229,7 +231,8 @@ export class ShotFx {
         this.sy[k] = m.y;
         this.sz[k] = m.z;
       }
-      // An upward streak 2.5 m (5 frames), a white-hot flash 6 % of the view, a dark column of smoke (L3: the smoke pool).
+      // An upward streak 2.5 m (5 frames, crimson with a white thread), a hot glow sized on 6 % of the view (held under the bloom on
+      // High and Ultra: pale, not white-hot), a dark column of smoke (L3: the smoke pool).
       this.streaks.add(m.x, m.y, m.z, m.x, m.y + 2.5, m.z, 0.55, C.phao, 3, 1, 5 * F);
       const soft = this.size(0.06) * 3;
       g.burst(CELL.soft, m.x, m.y + 0.2, m.z, soft * 0.7, soft, 3 * F, C.hot, 3);
@@ -241,7 +244,9 @@ export class ShotFx {
       const x = R.x[i]!;
       const z = R.z[i]!;
       const radius = R.value[i]!;
-      // Sized on the view, not in metres: a white flash a fifth of its height (3 frames), the fireball, a shock ring, dark smoke rising (L3: the smoke pool; soot and the dark body only: a lit top read lighter than the void behind it).
+      // Sized on the view, not in metres: a white glow sized on a fifth of its height (3 frames; held under the bloom on High and Ultra,
+      // so its hot core and star carry the bloom), the fireball, a shock ring, dark smoke rising (L3: the smoke pool; soot and the dark
+      // body only: a lit top read lighter than the void behind it).
       const core = this.size(0.18, x, z) * 2.2;
       g.burst(CELL.soft, x, 1.4, -z, core * 0.8, core * 1.4, 3 * F, C.white, 1.5);
       g.burst(CELL.core, x, 1, -z, core * 0.5, core, 5 * F, C.hot, 2.8);

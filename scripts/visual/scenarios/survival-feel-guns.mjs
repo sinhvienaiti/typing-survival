@@ -10,9 +10,12 @@
 //         frame twice: as shown, and with the HUD hidden for the measures.
 //         Grades: its bolts drawn (Xung, Tán, Pháo Sao; Ray's armed bolt
 //         while it waits); the muzzle flash on the shot's frame (the radius of
-//         pixels lit ≥ 0.2 over the frame before round the muzzle ≥ 80 % of
-//         §4.2's; since L1, 01/11: was "brighter than 0.8", the old bloom's
-//         white glare, still reported as `white`); the
+//         pixels its own billboards and streaks lit ≥ 0.2 round the muzzle,
+//         against a control frame with them hidden, the typing feel's marks
+//         hidden in both, ≥ 80 % of §4.2's: wave 1 fix, 01/11; `shown`: the
+//         same with the last key's mark on; L1's "lit over the frame before"
+//         counted the floor lamp, reported as `lit`, and before it "brighter
+//         than 0.8", the old bloom's white glare, as `white`); the
 //         deck round the muzzle brighter on the shot's frame than the one
 //         before (≥ 0.08); lights lit; damage numbers at the new size.
 //   f6    kills: Pháo Sao into a pack and a Trâu, Ray down a row: 40 frames
@@ -31,6 +34,8 @@
 //   shake chapter stage 1 typed at 40 WPM on the held clock for 60 s: the
 //         camera's offset every frame (p95 ≤ 3 px, max ≤ 8 px at 1080p) and the
 //         pools at their peak (§6).
+//   ring  Star Mortar's landing ring on the deck's paint (wave 1 fix): its line's contrast over what lies
+//         under it (the wall's hazard stripes, the lane dashes, the chevrons, bare steel), see ring().
 //   f9g   real time: each gun's magazine with screenshots as fast as cdp-run
 //         takes them (it has no screencast).
 //   audio the gun sounds built offline in Chrome (OfflineAudioContext): the
@@ -137,6 +142,104 @@ function litRadius(file, base, x, y, scale, level = 0.2) {
   return Math.round(reach[8] * 10) / 10;
 }
 
+/**
+ * The flash's own reach (CSS px) near the muzzle at (x, y), wave 1 fix of 01/11. Its pixels are those the guns'
+ * billboards and streaks lit ≥ `level` on the shot's frame (the frame minus its control, the same held moment with them
+ * hidden: the deck's lamp, the hull, the models are in both and drop out; `alone`: the typing feel's marks hidden in
+ * both) and not on the frame before (an engine's glow, a standing halo). The flash is their blob (8 neighbours) within
+ * 160 px of the muzzle that holds the most light (it may stand off the muzzle: Ray's star 1 m out, the hull over the
+ * muzzle; a round flying off is a smaller blob); its reach is the median over 16 rays walked out from its light's
+ * centre, as litRadius. litRadius, round the muzzle on everything lit over the frame before, measured the floor lamp.
+ */
+function ownRadius(shot, pre, x, y, scale, level = 0.2, alone = false) {
+  const R = Math.round(160 * scale);
+  const rect = { x: x * scale - R, y: y * scale - R, w: 2 * R, h: 2 * R };
+  const files = alone ? [shot.alone, shot.aloneCtrl, pre.alone, pre.aloneCtrl] : [shot.bare, shot.ctrl, pre.bare, pre.ctrl];
+  const [g, c, p, pc] = files.map((file) => gray(file, rect));
+  const rise = new Float32Array(g.w * g.h);
+  for (let i = 0; i < rise.length; i += 1) {
+    const d = (g.data[i] - c.data[i]) / 255;
+    if (d >= level && (p.data[i] - pc.data[i]) / 255 < level) rise[i] = d;
+  }
+  const label = new Int32Array(rise.length).fill(-1);
+  const blobs = [];
+  for (let i = 0; i < rise.length; i += 1) {
+    if (rise[i] === 0 || label[i] >= 0) continue;
+    const blob = { light: 0, n: 0, sx: 0, sy: 0 };
+    const stack = [i];
+    label[i] = blobs.length;
+    while (stack.length > 0) {
+      const k = stack.pop();
+      const kx = k % g.w;
+      const ky = Math.floor(k / g.w);
+      blob.light += rise[k];
+      blob.n += 1;
+      blob.sx += kx * rise[k];
+      blob.sy += ky * rise[k];
+      for (let dy = -1; dy <= 1; dy += 1) for (let dx = -1; dx <= 1; dx += 1) {
+        const nx = kx + dx;
+        const ny = ky + dy;
+        if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
+        const j = ny * g.w + nx;
+        if (rise[j] > 0 && label[j] < 0) {
+          label[j] = blobs.length;
+          stack.push(j);
+        }
+      }
+    }
+    blobs.push(blob);
+  }
+  if (blobs.length === 0) return { reach: 0, px: 0, off: 0 };
+  let best = 0;
+  blobs.forEach((blob, k) => {
+    if (blob.light > blobs[best].light) best = k;
+  });
+  const cx = blobs[best].sx / blobs[best].light;
+  const cy = blobs[best].sy / blobs[best].light;
+  const reach = [];
+  for (let a = 0; a < 16; a += 1) {
+    const ux = Math.cos((a / 16) * Math.PI * 2);
+    const uy = Math.sin((a / 16) * Math.PI * 2);
+    let last = 0;
+    let dark = 0;
+    for (let r = 0; r < 2 * R; r += 1) {
+      const px = Math.round(cx + ux * r);
+      const py = Math.round(cy + uy * r);
+      if (px < 0 || py < 0 || px >= g.w || py >= g.h) break;
+      if (label[py * g.w + px] === best) {
+        last = r;
+        dark = 0;
+      } else if (++dark > 3 * scale) break;
+    }
+    reach.push(last / scale);
+  }
+  reach.sort((q, w) => q - w);
+  return { reach: Math.round(reach[8] * 10) / 10, px: Math.round(blobs[best].n / (scale * scale)), off: Math.round(Math.hypot(cx - R, cy - R) / scale) };
+}
+
+/**
+ * Controls of a frame (HUD hidden), the same held moment: `ctrl` with the guns' billboards and streaks hidden; `alone`
+ * with the typing feel's marks hidden (the last key's mark and the core's load flash sit on the muzzles at f0) and
+ * `aloneCtrl` with both hidden. ownRadius(…, alone) reads the flash by itself; without, as the frame shows it.
+ */
+async function control(page, row) {
+  const name = (tag) => row.bare.replace(/-bare\.png$/, "-" + tag + ".png");
+  const take = async (gun, feel, file) => {
+    await page.eval(sv("t.gunFx(" + gun + "); t.typingFx(" + feel + "); return true;"));
+    await page.sleep(60);
+    await page.shot(file);
+  };
+  [row.ctrl, row.alone, row.aloneCtrl] = [name("ctrl"), name("alone"), name("alonectrl")];
+  await hud(page, false);
+  await take(false, true, row.ctrl);
+  await take(true, false, row.alone);
+  await take(false, false, row.aloneCtrl);
+  await page.eval(sv("t.gunFx(true); t.typingFx(true); return true;"));
+  await hud(page, true);
+  await page.sleep(60);
+  return row;
+}
+
 /** Mean brightness (0–1) inside a disc of `r` px round (x, y). */
 function discMean(file, x, y, r, scale) {
   const R = Math.round(r * scale);
@@ -187,11 +290,13 @@ async function f5(page, dir) {
     // Each key marks the deck under the ship (FEEL_PASS_S1 §12): 300 ms on, the frame before the last key is clear of those marks.
     await advance(page, 300);
     // The frame before the last key, then the last key's frame (its magazine loads; Xung, Tán, Pháo Sao, Tia fire on it), then every 33 ms.
-    const rows = [await frame(page, dir, gun + "-pre", { f: -1, ms: -17 })];
+    // The frames round the shot also get a control (the guns' billboards and streaks hidden) for the flash's own reach.
+    const rows = [await control(page, await frame(page, dir, gun + "-pre", { f: -1, ms: -17 }))];
     await press(page, word.at(-1));
     await advance(page, STEP);
     for (let f = 0; f < spec.frames; f += 1) {
-      rows.push(await frame(page, dir, gun + "-" + String(f).padStart(2, "0"), { f, ms: Math.round(f * 33.3) }));
+      const row = await frame(page, dir, gun + "-" + String(f).padStart(2, "0"), { f, ms: Math.round(f * 33.3) });
+      rows.push(f <= 6 ? await control(page, row) : row);
       await advance(page, 2 * STEP);
     }
     await hold(page, false);
@@ -201,10 +306,18 @@ async function f5(page, dir) {
     let flash = null;
     let pool = null;
     if (shot !== null) {
-      // The flash's reach (lit over the frame before); `white`: how far it is brighter than 0.8 (the old measure, reported).
-      const radii = spec.muzzle.map((k) => (before === null ? 0 : litRadius(shot.bare, before.bare, shot.info.muzzles[k][0], shot.info.muzzles[k][1], scale)));
+      // The flash's own reach (its billboards and streaks against a control frame, see ownRadius); `lit`: the reach of
+      // everything lit over the frame before (the floor lamp included: wave 1's measure), `white`: brighter than 0.8 (the
+      // measure before L1); both reported only.
+      const measured = before !== null && shot.ctrl !== undefined && before.ctrl !== undefined;
+      const none = { reach: 0, px: 0, off: 0 };
+      const ownAt = spec.muzzle.map((k) => (measured ? ownRadius(shot, before, shot.info.muzzles[k][0], shot.info.muzzles[k][1], scale, 0.2, true) : none));
+      const shownAt = spec.muzzle.map((k) => (measured ? ownRadius(shot, before, shot.info.muzzles[k][0], shot.info.muzzles[k][1], scale) : none));
+      const own = ownAt.map((o) => o.reach);
+      const shown = shownAt.map((o) => o.reach);
+      const lit = spec.muzzle.map((k) => (before === null ? 0 : litRadius(shot.bare, before.bare, shot.info.muzzles[k][0], shot.info.muzzles[k][1], scale)));
       const white = spec.muzzle.map((k) => brightRadius(shot.bare, shot.info.muzzles[k][0], shot.info.muzzles[k][1], scale));
-      flash = { radius: Math.max(...radii), radii, white: Math.max(...white), target: Math.round(spec.flash * page.height), need: Math.round(spec.flash * page.height * 0.8) };
+      flash = { radius: Math.max(...own), radii: own, px: ownAt.map((o) => o.px), off: ownAt.map((o) => o.off), shown: Math.max(...shown), lit: Math.max(...lit), white: Math.max(...white), target: Math.round(spec.flash * page.height), need: Math.round(spec.flash * page.height * 0.8) };
       if (before !== null) {
         // The deck round the muzzle: a disc 1.5 m across at the muzzle's depth (≈ 52 px at 720p).
         const k = spec.muzzle[0];
@@ -221,7 +334,7 @@ async function f5(page, dir) {
     const clip = gun === "phao" ? { x: 200 * ui, y: 60 * ui, w: 880 * ui, h: 560 * ui } : { x: 280 * ui, y: 200 * ui, w: 720 * ui, h: 420 * ui };
     const label = (row, i) => gun + " f" + row.f + " " + row.ms + " ms" + (i === fired ? " SHOT" : "") + " b" + (row.info.bolts?.[kind] ?? "-") + " L" + row.info.lights;
     const sheets = [sheet(rows.map((row, i) => ({ file: row.file, label: label(row, i) })), join(dir, "sheet-f5-" + gun + "-" + size + ".jpg"), clip, 6, 360)];
-    save(dir, "meta-f5-" + gun + "-" + size + ".json", { word, bay, fired, flash, pool, rows: rows.map(({ file, bare, ...row }) => ({ file: file.split("/").pop(), ...row })) });
+    save(dir, "meta-f5-" + gun + "-" + size + ".json", { word, bay, fired, flash, pool, rows: rows.map(({ file, bare, ctrl, alone, aloneCtrl, ...row }) => ({ file: file.split("/").pop(), ...row })) });
     out[gun] = {
       ready, word, fired, flash, pool, boltsMax, lightsMax, numbers: numberH.length > 0 ? stats(numberH) : null, sheets,
       checks: {
@@ -702,7 +815,98 @@ async function f6b(page, dir) {
   };
 }
 
-const SCENES = { f5, f6, f6b, shake, f9g, audio };
+/** Relative luminance (WCAG) of an sRGB byte triple. */
+const lum = (r, g, b) => {
+  const lin = (v) => (v / 255 <= 0.04045 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+};
+
+/**
+ * Star Mortar's landing ring on the deck's paint (wave 1 fix: pale orange alone sank into the orange hazard
+ * stripes): a pack of 12 mines placed on each SPOT (the wall's hazard stripes, the lane dashes and the centre
+ * chevrons, bare steel), a Star Mortar magazine typed, the frame 6 frames after the shot as shown (HUD hidden)
+ * and its control with the guns' billboards, streaks and smoke hidden. Within 3 × the pack's reach of its centre:
+ * the ring's line (pixels it lit ≥ 0.15 in luma), its dark band (pixels it darkened ≥ 0.03), and what lies under
+ * the line (the control); stripes: the line's pixels over orange paint. Contrast = WCAG ratio of relative
+ * luminances. Grades: the line ≥ 3:1 over the paint under it, on stripes too.
+ */
+async function ring(page, dir) {
+  const size = page.width + "x" + page.height;
+  const spots = [{ name: "wall", x: -9.6, z: 15 }, { name: "dashes", x: 4, z: 17 }, { name: "chevrons", x: 0, z: 13 }, { name: "steel", x: -6.5, z: 21 }];
+  const out = {};
+  for (const spot of spots) {
+    const ready = await openStage(page, "c1-s1", ["phao", "xung"], "&director=0");
+    await page.key("Shift", { code: "ShiftLeft" });
+    await page.sleep(300);
+    await hold(page, true);
+    for (let i = 0; i < 12; i += 1) await page.eval(sv("t.place(" + KIND.mine + ", " + (spot.x + ((i % 4) - 1.5) * 0.9) + ", " + (spot.z + (Math.floor(i / 4) - 1) * 0.9) + "); return true;"));
+    await advance(page, 50);
+    const { bay } = await bayOf(page, "phao");
+    const word = await typeHeld(page, bay);
+    await advance(page, 300);
+    await press(page, word.at(-1));
+    await advance(page, 7 * STEP);
+    const foes = (await page.eval(sv("return t.foes();"))) ?? [];
+    const base = join(dir, "ring-" + spot.name);
+    await hud(page, false);
+    await page.sleep(60);
+    await page.shot(base + ".png");
+    await page.eval(sv("t.gunFx(false, true); return true;"));
+    await page.sleep(60);
+    await page.shot(base + "-ctrl.png");
+    await page.eval(sv("t.gunFx(true, true); return true;"));
+    await hud(page, true);
+    await hold(page, false);
+    if (foes.length === 0) {
+      out[spot.name] = { ready, foes: 0 };
+      continue;
+    }
+    const cx = foes.reduce((a, f) => a + f[0], 0) / foes.length;
+    const cy = foes.reduce((a, f) => a + f[1], 0) / foes.length;
+    const spread = Math.max(...foes.map((f) => Math.hypot(f[0] - cx, f[1] - cy) + f[2]));
+    const rect = { x: Math.max(0, Math.round(cx - 3 * spread)), y: Math.max(0, Math.round(cy - 3 * spread)), w: 0, h: 0 };
+    rect.w = Math.min(page.width - rect.x, Math.round(6 * spread));
+    rect.h = Math.min(page.height - rect.y, Math.round(6 * spread));
+    const rgbOf = (file) => execFileSync("magick", [file, "-crop", crop(rect), "+repage", "-depth", "8", "rgb:-"], { maxBuffer: 1 << 26 });
+    const [a, c] = [rgbOf(base + ".png"), rgbOf(base + "-ctrl.png")];
+    const line = [];
+    const under = [];
+    const stripe = [];
+    const stripeUnder = [];
+    const dark = [];
+    for (let i = 0; i < a.length / 3; i += 1) {
+      const la = lum(a[i * 3], a[i * 3 + 1], a[i * 3 + 2]);
+      const lc = lum(c[i * 3], c[i * 3 + 1], c[i * 3 + 2]);
+      const ya = (0.2126 * a[i * 3] + 0.7152 * a[i * 3 + 1] + 0.0722 * a[i * 3 + 2]) / 255;
+      const yc = (0.2126 * c[i * 3] + 0.7152 * c[i * 3 + 1] + 0.0722 * c[i * 3 + 2]) / 255;
+      if (ya - yc >= 0.15) {
+        line.push(la);
+        under.push(lc);
+        // Orange paint under it (the stripes, dashes, chevrons): red well over blue.
+        if (c[i * 3] > 90 && c[i * 3] > 1.6 * c[i * 3 + 2] && c[i * 3 + 1] < 0.8 * c[i * 3]) {
+          stripe.push(la);
+          stripeUnder.push(lc);
+        }
+      } else if (yc - ya >= 0.03) dark.push(la);
+    }
+    const med = (list) => {
+      const sorted = [...list].sort((p, q) => p - q);
+      return sorted[Math.floor(sorted.length / 2)] ?? 0;
+    };
+    const ratio = (p, q) => Math.round(((Math.max(p, q) + 0.05) / (Math.min(p, q) + 0.05)) * 100) / 100;
+    const r3 = (v) => Math.round(v * 1000) / 1000;
+    out[spot.name] = {
+      ready, foes: foes.length, rect, linePx: line.length, darkPx: dark.length, stripePx: stripe.length,
+      line: r3(med(line)), under: r3(med(under)), dark: r3(med(dark)), stripeLine: r3(med(stripe)), stripeUnder: r3(med(stripeUnder)),
+      lineOverPaint: ratio(med(line), med(under)), lineOverStripes: stripe.length > 0 ? ratio(med(stripe), med(stripeUnder)) : null, lineOverDark: dark.length > 0 ? ratio(med(line), med(dark)) : null,
+    };
+  }
+  save(dir, "ring-" + size + ".json", out);
+  const all = Object.values(out).filter((r) => r.linePx > 0);
+  return { spots: out, checks: { ringSeen: all.length === Object.keys(out).length, ringOverPaint: all.every((r) => r.lineOverPaint >= 3), ringOverStripes: all.every((r) => r.lineOverStripes === null || r.lineOverStripes >= 3) } };
+}
+
+const SCENES = { f5, f6, f6b, shake, f9g, audio, ring };
 
 export default async function (page) {
   const size = page.width + "x" + page.height;
