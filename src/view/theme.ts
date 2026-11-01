@@ -46,7 +46,8 @@ export const BLOW = {
   repair: new THREE.Color("#7ff5e0"),
   /** A Bọc Thép (armoured) foe's death: gold. */
   armour: new THREE.Color("#ffd27a"),
-  // S1 guns (theme.css's --tan, --ray, --phao): Tán amber, Ray electric cobalt, Pháo Sao vermilion.
+  // S1 guns: Tán amber, Ray electric cobalt, Pháo Sao vermilion. theme.css's --tan and --phao are these colours; its --ray is
+  // `ray`'s hue lifted to lightness 76 % (#85a2ff, so the card's text holds 7 : 1) and --ray-glow is `ray` itself.
   tan: new THREE.Color("#ffc53d"),
   /**
    * Rail Gun (wave 1 fix, 01/11): a saturated electric cobalt (its icon's blue), not the Horde's violet, the

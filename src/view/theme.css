@@ -41,18 +41,20 @@
   --urgent: #ffb020;
   --typing: #7ff5e0;
 
-  /* Guns (each its own hue): Xung electric blue, Tia heat, Tán amber, Ray white-blue, Pháo Sao vermilion. */
+  /* Guns (each its own hue): Xung electric blue, Tia heat, Tán amber, Ray electric cobalt, Pháo Sao vermilion. */
   --xung: var(--volt);
   --xung-glow: var(--volt-glow);
   --tia: var(--hot);
   --tia-glow: var(--hot-glow);
   --tan: #ffc53d;
   --tan-glow: rgba(255, 197, 61, 0.4);
-  --ray: #c4d2ff;
-  --ray-glow: rgba(196, 210, 255, 0.45);
+  /* Ray: the 3D shot's cobalt (theme.ts BLOW.ray #3d6bff, hue 226°), lifted to lightness 76 % so the card's gun name
+     holds 7 : 1 on the card (measured 7.7 : 1 on its glass; #3d6bff itself 4.2 : 1); the glow is the shot's cobalt itself. */
+  --ray: #85a2ff;
+  --ray-glow: rgba(61, 107, 255, 0.55);
   --phao: #ff3f6c;
   --phao-glow: rgba(255, 63, 108, 0.42);
-  /* Ray's ink for typed letters: its white-blue sat beside the untyped cream at 1.33 : 1 (test pass 27/10); a periwinkle reads as typed. */
+  /* Ray's ink for typed letters: its old white-blue (#c4d2ff) sat beside the untyped cream at 1.33 : 1 (test pass 27/10); a periwinkle reads as typed. */
   --ray-ink: #8fa3ff;
   /* A bay's gun colour: survival.css sets it per gun class (.sv-xung … .sv-phao); --gun-ink colours typed letters. */
   --gun: var(--xung);
