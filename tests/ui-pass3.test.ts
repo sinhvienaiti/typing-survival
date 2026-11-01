@@ -121,7 +121,7 @@ describe("sealed bays, the results card and its stars", () => {
     expect(css).toMatch(/@keyframes sv-star-in \{\s*0% \{ opacity: 0; transform: scale\(0\.35\)/);
     expect(css).toContain('[data-motion="reduced"] .sv-star-row li.is-on .sv-art-star { animation: none; }');
     // Two lines of four words make the room (the card holds 720p without scrolling).
-    expect(readFileSync("src/view/screens.ts", "utf8")).toContain("const END_WORDS = 8;");
+    expect(readFileSync("src/view/screen-end.ts", "utf8")).toContain("const END_WORDS = 8;");
   });
 });
 

@@ -258,8 +258,8 @@ describe("HUD icon hookups (tickets 149–153, hud.ts and strip.ts)", () => {
   });
 });
 
-// main.ts boots the page on import: its screen data is read from the source.
-const main = ts.createSourceFile("src/app/main.ts", readFileSync("src/app/main.ts", "utf8"), ts.ScriptTarget.Latest, true);
+// The screens' data (items(), view()) moved from main.ts to screen-items.ts (ALIVE_PLAN AL-00); it is read from the source as before.
+const main = ts.createSourceFile("src/app/screen-items.ts", readFileSync("src/app/screen-items.ts", "utf8"), ts.ScriptTarget.Latest, true);
 
 function all(node: ts.Node): ts.Node[] {
   const found: ts.Node[] = [];
@@ -302,7 +302,7 @@ function menuIcons(label: string): Record<string, string | undefined> {
   return out;
 }
 
-describe("menu icons (tickets 150–152, main.ts items())", () => {
+describe("menu icons (tickets 150–152, screen-items.ts items())", () => {
   it("gives every title item its menu icon (LL-09)", () => {
     expect(menuIcons("title")).toEqual({ journey: "icon-menu-journey", start: "icon-clock", continue: "icon-menu-play", mode: "icon-menu-mode", profile: "icon-menu-profile", settings: "icon-menu-settings", armory: "icon-menu-armory" });
   });
@@ -332,7 +332,7 @@ describe("menu icons (tickets 150–152, main.ts items())", () => {
   it("marks the words finished for the first time ever for the results' new badge (LL-52)", () => {
     const code = readFileSync("src/app/main.ts", "utf8");
     expect(code).toMatch(/const before = history\.finished\(text\);\s*if \(before === "new"\) firstTime\.add\(index\);\s*tallyWord\(tally, before,/);
-    expect(code).toContain("words: runWords(world, wordOf, (index) => firstTime.has(index)),");
+    expect(readFileSync("src/app/screen-items.ts", "utf8")).toContain("words: runWords(world, wordOf, (index) => firstTime.has(index)),");
   });
 });
 
