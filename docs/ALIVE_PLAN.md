@@ -50,7 +50,8 @@
   5. **Quái:** quái chỉ có clip idle, không ra đòn, và chết thành khối xám làm bằng mã.
   6. **Thế giới:** dựng bằng mã và không phản ứng với sự kiện nào (surge, thắng, thua đều như lúc nghỉ).
 - **Heroine và drone:** mọi gói từ đợt 1 gọi giao diện `Pilot`, không gọi `Ship`; AL-15 chỉ thay phần cài đặt. Đường lùi khi model trễ ở §4.3.
-- **Quyết định cần chủ dự án:** 7 câu ngắn (§5), cộng hai việc tay đang chờ.
+- **Quyết định cần chủ dự án:** 8 câu ngắn (§5; Q1–Q7 đã chốt 01/11, Q8 thêm 02/11 về ducking súng khi đọc), cộng hai việc tay đang chờ.
+- **Âm chiến đấu (02/11):** hướng mới thay họ âm hướng B, theo skill `game-art-pipeline` `references/audio.md` §5 (§1.4, AL-02, AL-03).
 
 ## 1. Lời chủ dự án và mức nhận
 
@@ -113,7 +114,7 @@ Các cổng dưới đây biến lời "không gì đơ ra" thành số. AL-00 d
 - **Mâu thuẫn giữa các bản soát, đã chốt:**
   - **Mảnh vỡ:** bản soát trận muốn mảnh mờ sau 2–3 s; đặc tả juice muốn mảnh nằm lại. Chốt: mảnh nhỏ mờ sau 2–3 s; mảnh lớn, vết xém và vết mực nằm 6–8 s (vết xém trên sàn 30 s ở AL-10); tối đa 40 mảnh trên làn.
   - **Rung:** giữ trần của FEEL §6 (p95 ≤ 3 px, tối đa ≤ 8 px ở 1080p). Nâng mức cộng theo Eiserloh để sự kiện lớn thật sự rung, nhưng vẫn dưới trần.
-  - **Hướng âm:** `AUDIO_PIPELINE.md` §8.3 còn tả âm "thép hành lang" của hướng A. Hướng B (Lightbearer: vòng glyph, tinh thể, kính) thắng, vì chủ dự án chọn B ngày 29/10. AL-03 sửa §8.3.
+  - **Hướng âm:** ngày 02/11 chủ dự án chê âm chiến đấu "nhỏ nhẹ, thiếu sự mạnh mẽ, bùng nổ, âm thanh vang vọng". Hướng chiến đấu mới thay họ âm hướng B (Lightbearer: vòng glyph, tinh thể, kính) cho mọi âm chiến đấu: ghép lớp, bậc độ to, đuôi nướng sẵn cộng send vang, ưu tiên và ducking (skill `game-art-pipeline`, `references/audio.md` §5). Vòng glyph và tinh thể chỉ còn là lớp chữ ký nhỏ ở phía gõ chữ (`key.*`, `word.*`). `AUDIO_PIPELINE.md` §8.3 đã trỏ sang skill (02/11).
   - **Đích concept:** tranh try2 lệch bảng giá trị của chính concept. Tài liệu thắng, và vẽ lại try3 (M129).
 
 ### 1.5 Gộp và "đạt"
@@ -357,10 +358,10 @@ Dòng gộp nhiều bản soát lấy mức nặng nhất trong các nguồn.
 | # | Phần tử / sự kiện | Nguồn | Art | V N H T R | VFX | SFX | Hiện tại (khung dưới `E:`) | Đích | Sev | Gói |
 |---|---|---|---|---|---|---|---|---|---|---|
 | M136 | Đường phát file âm | A41, C4, H07, W25 | — | — | — | mã (96,5 % số tiếng bắt đầu là mã) | `ThemeAudio` dựng `SceneAudio` với bảng âm rỗng; 0 file của game. `sound/sound-mix-timeline-campaign.png` | Bảng và manifest ở `public/assets/typing-survival/audio/<id>.ogg`, có biến thể; mỗi id giữ âm mã cho tới khi file decode xong | P0 | AL-02 |
-| M137 | Họ âm (hướng B) | A42 | — | — | — | mã (hướng A, thép) | Âm mã kể chuyện "hành lang thép" của hướng A; danh sách hướng B (37 hàng, 66 take) chưa có take nào | Tạo danh sách B theo thứ tự ưu tiên qua Audio Lab: cổng critic, chủ dự án nghe mù, rồi mới gắn | P0 | AL-03 |
+| M137 | Họ âm chiến đấu (hướng 02/11, thay hướng B) | A42 | — | — | — | mã (hướng A, thép) | Âm mã kể chuyện "hành lang thép" của hướng A; danh sách hướng B (37 hàng, 66 take) chưa có take nào, và prompt chiến đấu của nó xin âm "small, quiet, faint" | Viết lại các hàng chiến đấu theo skill `game-art-pipeline` `references/audio.md` §5 (mỗi lớp một prompt), ghép lớp offline, bậc độ to; qua Audio Lab: cổng critic, chủ dự án nghe mù trong mix thật, rồi mới gắn | P0 | AL-03 |
 | M138 | Nhạc trận | A3 | — | — | — | mã (dải động 1,3–1,9 LU) | Một vòng tổng hợp cho mọi stage; surge không to hơn. `sound/sound-mix-timeline-campaign.png` | Stems theo chương (calm, pressure, surge, peak), 96 BPM, La thứ, đổi đúng ô nhịp; riser 1,5 s vào surge; lớp đỉnh có brass hay choir; nhạc hạ 3 dB quanh big kill | P0 | AL-04 |
 | M139 | Cân dải trên loa nhỏ | A39 | — | — | — | — | ~93 % năng lượng của mix dưới 250 Hz; nhạc mất 12 dB qua lọc 200 Hz. `sound/mix-campaign-1280x720.json` | Nâng dải giữa của nhạc và va chạm; mọi lô kiểm ở chế độ "loa nhỏ" | P0 | AL-02 |
-| M140 | Bus tổng, limiter, snapshot | A40 | — | — | — | — | Không limiter tổng, không send vang, không snapshot; ở Effects 100 %, đỉnh lên ~0 dBFS | Limiter −1 dBTP, send vang không gian lớn, snapshot cho menu, trận, surge, pause, kết; nhạc nhường sự kiện lớn | P2 | AL-02 |
+| M140 | Bus tổng, limiter, snapshot | A40 | — | — | — | — | Không limiter tổng, không send vang, không snapshot; ở Effects 100 %, đỉnh lên ~0 dBFS. Mọi bus qua glue nhanh (attack 2 ms, ratio 8, makeup tự động), ép 12 dB khoảng vào còn 3,8 dB | Glue attack chậm có bù makeup trên bus chiến đấu, limiter an toàn −1 dBTP ở bus tổng, send vang không gian lớn, ưu tiên và số tiếng, snapshot cho menu, trận, surge, pause, kết; nhạc và trận thường nhường sự kiện lớn | P2 | AL-02 |
 | M141 | Nền âm (ambience) | A37, W25 | — | — | — | mã (gió nằm trong nhạc) | Nhạc về 0 thì không còn gì | Bus riêng: rumble hố đen, gió mặt trời, hum trạm; không phụ thuộc âm lượng nhạc | P1 | AL-02 |
 | M142 | Các âm không nghe được | A (mục thắng 4) | — | — | — | mã | Rail charge −45, cảnh báo Scout −41, tick menu −41, drain −39, word.full −31, beam end −35 dBFS. `sound/offline-renders.json` | Đưa cảnh báo và gồng lên −20…−26 dBFS ngay ở âm mã, rồi file thay | P1 | AL-02 |
 
@@ -603,7 +604,7 @@ Soát ngày 01/11 trên `main` `1679ea6`. `src/view/coverage/` (AL-00) dựng t�
 ### AL-02 · Âm: đường file và cấu trúc mix (P0, đợt 1)
 
 - **Dòng:** M051, M136, M139–M142 (P0 2, P1 3, P2 1).
-- **Skill:** `game-art-pipeline` (`references/audio.md`); `docs/games/AUDIO_PIPELINE.md` §6.
+- **Skill:** `game-art-pipeline` (`references/audio.md`, nhất là §5.4 bậc, ưu tiên và ducking, §5.8 vang và chuỗi mix); `docs/games/AUDIO_PIPELINE.md` §6.
 - **Tệp:**
   - `src/audio/**`; ở `music.ts` chỉ phần định tuyến bus;
   - mới: `src/audio/voice.ts` (`voice.say(text)`: chờ 150 ms sau đầu tiếng `word.load` gần nhất, hạ bus phím trong lúc đọc, gọi `speakEnglish` của kit hay file giọng theo Q5);
@@ -617,23 +618,37 @@ Soát ngày 01/11 trên `main` `1679ea6`. `src/view/coverage/` (AL-00) dựng t�
      - decode theo ưu tiên: id P0 của trận decode xong trước khi trận bắt đầu;
      - id chưa có file thì dùng âm mã của id đó.
   2. **Độ trễ:** `AudioContext({ latencyHint: "interactive" })`, ghi lại `baseLatency`. Âm bắt đầu ngay trong handler của sự kiện.
-  3. **Bus:** keys, ui, alerts, shots, hits, kills, music, ambience, voice.
-     - Limiter tổng −1 dBTP.
-     - Send vang không gian lớn: IR CC0, ghi `THIRD_PARTY`.
-     - Snapshot: menu, fight, surge, pause, end (`audio.snapshot(name)`).
-     - Ducking:
-       - phím −8 dB khi đọc;
-       - nhạc −4 dB khi đọc (theo tài liệu game);
+  3. **Bus:** keys, ui, alerts, shots, hits, kills, big (sự kiện P0), tails (đuôi nướng sẵn), space (vang trả về), music, ambience, voice.
+     - **Bỏ glue nhanh trên bus chiến đấu.** Hôm nay mọi bus qua `DynamicsCompressorNode` threshold −12, ratio 8, attack 2 ms (`theme-audio.ts:153`). Đo trong Chromium: WebAudio tự cộng khoảng +5 dB makeup cho âm nhỏ, 12 dB khoảng vào chỉ còn 3,8 dB ra, cú nổ 30 ms không còn đầu tiếng nổi lên.
+       - shots, hits, kills, big, tails: glue attack chậm (threshold −18, knee 6, ratio 3, attack 25 ms, release 150 ms [H]), theo sau là một `GainNode` trừ makeup tự động (khoảng −7,2 dB; đo bằng `OfflineAudioContext`, không tính tay);
+       - keys, ui, voice không qua compressor chiến đấu.
+     - **Bus tổng:** một limiter an toàn hiếm khi làm việc (`DynamicsCompressorNode` threshold −3, knee 0, ratio 20, attack 1 ms, release 80 ms [H]), rồi trim để bản thu trận ≤ −1 dBTP.
+     - **Mức bus:** shots không còn nằm dưới keys (hôm nay 0,42 so với 0,5). File chiến đấu mang sẵn bậc độ to (skill §5.4, T2–T6, do AL-03 làm), nên mức bus và `gain` của catalog để gần 1.
+     - **Send vang trong game:** một `ConvolverNode` dùng chung cho cả trận, là không gian causeway thép bên hố đen. Chuỗi: send → trễ trước 25 ms → lọc cao 180 Hz → convolver → lọc thấp 6,5 kHz → bus space.
+       - Mức send [H]: Pulse Gun 0,08–0,12; Scatter Gun 0,2; Rail Gun 0,3; nổ Star Mortar 0,35; big kill, surge và boss 0,45; `hit.*` 0,05; `kill.swarm` 0,1; phím, UI và giọng 0.
+       - IR: IR tự tạo (skill §5.7 bước 4) hoặc IR CC0 (ví dụ parking garage hay tunnel của Tim_Verberne trên Freesound); ghi `THIRD_PARTY`.
+       - Send này đi cùng đuôi nướng sẵn của từng súng (`<id>.tail` của AL-03), không thay nó: đuôi nướng cho chất "vang vọng" riêng của súng, send gắn mọi âm vào cùng một chỗ.
+       - Bậc đồ họa thấp: nướng vang lúc tải bằng `OfflineAudioContext`, không chạy convolver trong trận.
+     - **Ưu tiên và số tiếng** [H]: Pulse Gun 6, Scatter Gun 3, Rail Gun 2, Star Mortar 3, Heat Beam 1, hit 6, kill 3, big 1; trần chung 24. Đầy thì cướp tiếng cũ nhất cùng nhóm, rồi tiếng có ưu tiên thấp nhất. Phím và giọng có ngăn riêng, không bao giờ bị trận cướp. Giữ cách gom trúng ~38 ms và tối đa 4 kill burst mỗi 120 ms.
+     - **Snapshot:** menu, fight, surge, pause, end (`audio.snapshot(name)`).
+     - **Ducking** (bằng automation trên `GainNode`, vì WebAudio không có sidechain):
+       - sự kiện P0 (nổ Star Mortar, big kill, surge, boss): shots, hits, kills thường xuống ~0,6 trong 8–12 ms, giữ 120–250 ms, hồi ~300 ms; nhạc −4…−6 dB; ambience −6 dB; phím tối đa −2 dB;
+       - Star Mortar hạ nhạc trước lúc rơi 60–100 ms (sim biết trước giờ rơi);
+       - khi đọc từ: phím −8 dB; nhạc −4 dB (theo tài liệu game); tails và space −6 dB [H]; tiếng súng và tiếng trúng khô hạ tối đa −3 dB. Hôm nay súng hạ −6 dB (`BUSES.guns.duck` 0,5) và `SURVIVAL_MODE_PLAN.md` §6.5 ghi súng, va chạm −6 dB: đổi chờ chủ dự án duyệt (Q8), tới lúc đó giữ −6 dB;
        - nhạc −3 dB trong 200–400 ms quanh big kill;
        - `word.load` chuyển sang bus hạ sâu hơn.
      - Giọng chờ 150 ms sau đầu tiếng `word.load` (AUDIO_PIPELINE §6.2, Q7).
   4. **Nâng ngay các âm mã không nghe được** (M142) lên −20…−26 dBFS ở mức mặc định. Thêm shelf cho dải giữa ở âm mã và nhạc mã trong lúc chờ file (M139).
   5. **Bus ambience** độc lập với âm lượng nhạc (M141); nội dung đến từ AL-03 lô 4.
-- **Media:** IR vang CC0 (file vào Drive bằng `pnpm media:push`, không vào Git).
+- **Media:** IR vang tự tạo hoặc CC0 (file vào Drive bằng `pnpm media:push`, không vào Git).
 - **Nghiệm thu:**
   - Các bài AUDIO_PIPELINE §6.1.
   - `git check-ignore` vẫn bỏ qua mọi file âm dưới `public/assets/typing-survival/audio/`, chỉ manifest được theo dõi.
   - Đỉnh ≤ −1 dBTP ở Effects 100 %.
+  - Glue mới, đo bằng `OfflineAudioContext`: 5 ms đầu của một cú nổ 30 ms ra cao hơn phần còn lại ≥ 3 dB (glue cũ: −0,2 dB); âm vào −30 dBFS ra lệch ≤ 1 dB (không còn makeup tự động).
+  - Bản thu 2–5 phút ở tốc độ gõ cao nhất, có đợt lớn, Rail Gun cộng kill, Star Mortar cộng kill: −18 ±2 LUFS-I, ≤ −1 dBTP, LRA 10–18 LU; sự kiện T5 cao hơn mức tích hợp 6–10 LU trong cửa sổ ngắn; đỉnh trận rõ trên tiếng phím.
+  - Vang có thật: sau một phát Rail Gun, năng lượng ở +500 ms không dưới −30 dB so với đỉnh.
+  - Ducking đo được đúng độ sâu và thời gian ở trên; tiếng súng khô không hạ sâu hơn mức Q8 chốt; bài C (giọng đọc) vẫn đạt.
   - Cảnh báo và gồng ở −20…−26 dBFS.
   - Phím thấp hơn 8 dB khi đọc, đo được; giọng bắt đầu ≥ 150 ms sau đầu tiếng `word.load`.
   - Tap âm cho thấy âm bắt đầu cùng khung với sự kiện.
@@ -646,15 +661,15 @@ Soát ngày 01/11 trên `main` `1679ea6`. `src/view/coverage/` (AL-00) dựng t�
 ### AL-03 · Âm: nội dung theo lô (làn media, chạy suốt các đợt)
 
 - **Dòng:** M023, M052, M091, M108, M112, M137 (P0 4, P1 2), cộng phần SFX của mọi dòng khác ở §2.
-- **Skill:** `game-art-pipeline` (`references/audio.md`, judging); `AUDIO_PIPELINE.md` §4–§5 (critic L1–L6, vòng tạo, luật dừng), §6.4 (vai trò tần số).
+- **Skill:** `game-art-pipeline` (`references/audio.md` §5 cho mọi âm chiến đấu, §1–§4 và judging cho mọi âm); `AUDIO_PIPELINE.md` §4–§5 (critic L1–L6, vòng tạo, luật dừng), §6.2 và §6.4 (phím và âm xong từ).
 - **Tệp:**
   - `public/assets/typing-survival/audio/manifest.json`: chỉ làn này sửa, từ khi AL-02 (đợt 1) đã gộp bản đầu có schema; trước đó take đạt nằm ở `~/AudioLab/work/typing-survival/` kèm danh sách chờ ingest; mỗi lần ingest một commit (chỉ JSON, file âm lên Drive bằng `pnpm media:push`);
   - `docs/audio/THEME_SOUND_LIST.md`;
-  - `docs/games/audio/firefly/typing-survival.md` (thêm hàng mới);
-  - `AUDIO_PIPELINE.md` §8.3 (sửa sang hướng B).
+  - `docs/games/audio/firefly/typing-survival.md` (viết lại các hàng chiến đấu, thêm hàng mới);
+  - `AUDIO_PIPELINE.md` §8.3 đã trỏ sang skill (02/11); làn này chỉ sửa tiếp khi chủ dự án nghe xong bộ mẫu.
 - **Tên id:** id đã có trong mã và `THEME_SOUND_LIST.md` giữ tên cũ, để âm mã và file thay nhau trên cùng id: `ui.move` (hover), `alarm.surge` (siren của surge), `foe.split`, `key.ok` (Relay), `music.calm`, `music.surge`. `star.get` được thay bằng `star.1/2/3` (M039) và bỏ khi AL-13 gộp. Chỉ âm mới có tên mới.
 - **Lô theo thứ tự cần:**
-  - **Lô 1** (bắt đầu đợt 0, cần cho đợt 1–2): `word.load`, `word.perfect`, `word.full`, `word.whoosh`, `key.glyph`, `key.bad` (glass crack), `key.stray`, `key.back`, `key.reveal`, `bay.release`, `streak.up`, `streak.break`, `bay.lock`, `gun.xung`, `gun.xung.tail`, `gun.tia.start/loop/end/pulse`, `gun.tan.fire`, `gun.ray.armed/charge/fire`, `gun.phao.launch/whistle/burst`, `hit.t1/t2/t4/armour/sub/tail`, `kill.swarm`, `kill.chime`, `kill.elite`, `kill.big`. Bản ứng viên 1c đã có ở `~/AudioLab/work/typing-survival/{hit.t1,hit.t2,hit.t4,hit.sub,hit.tail}`.
+  - **Lô 1** (bắt đầu đợt 0, cần cho đợt 1–2): `word.load`, `word.perfect`, `word.full`, `word.whoosh`, `key.glyph`, `key.bad` (glass crack), `key.stray`, `key.back`, `key.reveal`, `bay.release`, `streak.up`, `streak.break`, `bay.lock`, `gun.xung`, `gun.xung.tail`, `gun.tia.start/loop/end/pulse`, `gun.tan.fire`, `gun.tan.tail`, `gun.ray.armed/charge/fire`, `gun.ray.tail`, `gun.phao.launch/whistle/burst`, `gun.phao.tail`, `hit.t1/t2/t4/armour/sub/tail`, `kill.swarm`, `kill.chime`, `kill.elite`, `kill.big`, `kill.big.tail`. Các id `.tail` mới là đuôi nướng sẵn, file riêng để mã giới hạn số đuôi và hạ đuôi tách khỏi tiếng khô. Bản ứng viên 1c ở `~/AudioLab/work/typing-survival/{hit.t1,hit.t2,hit.t4,hit.sub,hit.tail}` làm trước hướng 02/11: soát lại theo §5 của skill (lớp, bậc, đuôi) trước khi dùng.
   - **Lô 3, UI** (bắt đầu đợt 0, cần cho AL-01 ở đợt 1): `ui.move` (hover, 6 biến thể), `ui.select`, `ui.back`, `ui.deny`, `ui.value`, `ui.toggle`, `ui.mute`, `notice.warn`, `screen.whoosh`, `panel.open/close`, `title.sting`, `launch.riser`, `deploy.sting`, `countdown.tick/go`, `star.1/2/3`, `star.miss`, `stat.tick`, `stamp.newbest`, `stage.unlock`, `loadout.equip`, `bay.latch`, `pause.in/out`.
   - **Lô 2, quái và đòn** (đợt 2, cần cho đợt 3): `foe.spawn`, `horde.bed`, `brute.step`, `foe.windup`, `line.zap`, `leader.horn`, `leader.beacon`, `leader.down`, `foe.shot`, `foe.shot.down`, `shield.hit/break`, `foe.split`, `rift.warn/tick/open`, `hurt.hull/breach/drain`, `lowhull.loop`, `support.repair`, `objective.tick`, `newfoe.sting`, `clock.tick`, `banner.swish`, `combo.tier`.
   - **Lô 4, thế giới** (đợt 2, cần cho đợt 2–4): `amb.abyss`, `amb.blackhole`, `amb.station`, `lamp.relay`, `gate.machine`, `falls.roar`, `shuttle.pass`, `line.hum`, `alarm.surge`, `surge.horn`, `surge.riser`, `surge.end`, `end.win`, `end.lose`, `allclear.chime`, `rift.groan`, `rift.tear`.
@@ -662,17 +677,28 @@ Soát ngày 01/11 trên `main` `1679ea6`. `src/view/coverage/` (AL-00) dựng t�
   - **Tiếng phím** (Q4): bộ mặc định đạt 9; Relay (`key.ok`) thành file, cũng ở mức 9 vì là tiếng phím.
 - **Cách làm:**
   - Công cụ theo Q3: Firefly, hoặc Stable Audio 3 (chủ dự án đã cho phép).
-  - Cổng critic L1–L6, rồi chủ dự án nghe mù trên Listening Board. Sau 2 vòng không lên thì đổi cách: thư viện CC0; không đưa Sonniss vào AI đám mây.
-  - **Họ âm hướng B:** vòng glyph, tinh thể, kính, súng sentinel.
+  - **Hướng âm chiến đấu (02/11, thay họ "hướng B": vòng glyph, tinh thể, kính, súng sentinel):** theo skill `game-art-pipeline` `references/audio.md` §5. Súng năng lượng sci-fi nặng, mạnh, bùng nổ, vang trong không gian causeway thép rộng bên hố đen: crack sáng, thân plasma dày có bão hòa, sub, đuôi vang cuộn và slapback từ tường xa. Quái vỡ như kính đen và chitin nặng, có cú thịch trầm, không leng keng. Vòng glyph và tinh thể chỉ còn là lớp chữ ký nhỏ ở phía gõ chữ (`key.*`, `word.*`).
+  - **Mỗi âm chiến đấu ghép từ nguyên liệu** (skill §5.3): mỗi lớp một prompt (HEAD, BODY, LOW hay SUB, MECH, CHARGE, TAIL), xếp và xử lý offline bằng chuỗi ffmpeg đã thử (skill §5.7). Súng nặng và nổ có đuôi nướng sẵn thành file riêng `<id>.tail`. Theo súng ([H]):
+    - **Pulse Gun** (`gun.xung`, khoảng 5 phát/s): HEAD 15–40 ms, BODY 80–150 ms, LOW 60–80 Hz; `gun.xung.tail` dùng chung, tối đa 2 tiếng, một đuôi dài hơn khi ngừng bắn. Bậc T2.
+    - **Heat Beam** (`gun.tia.*`): IGNITE, LOOP 3–5 s, BED trầm, CRACKLE, STOP có đuôi. Mồi T4, vòng lặp dưới T2.
+    - **Scatter Gun** (`gun.tan.fire`): HEAD, BODY 100–180 ms, LOW 100–160 ms, slapback 150–350 ms và đuôi. T4.
+    - **Rail Gun** (`gun.ray.*`): CHARGE 0,5–1 s (chủ dự án có thể ghi giọng hướng dẫn "mmmm-KRAK"), DISCHARGE 25–80 ms, LOW 120–220 ms, đuôi cuộn 1,5–2,5 s. T4–T5.
+    - **Star Mortar** (`gun.phao.*`): LAUNCH, tiếng rít bay, IMPACT HEAD và BODY 250–600 ms, sub 30–50 Hz, mảnh văng, đuôi 1–2 s; nhạc hạ trước lúc rơi (AL-02). T5.
+    - **Trúng** (`hit.*`): tick sáng có cao độ 25–90 ms cộng thân chắc; bậc cao thêm lớp (`hit.sub`, `hit.tail`), không chỉ thêm gain; gần như cố định để người chơi học. T3.
+    - **Chết:** `kill.swarm` T3; `kill.elite` T4; `kill.big`, surge và boss T5–T6 có đuôi dài.
+  - **Prompt Firefly** (skill §5.6): ngắn, các nét ngăn bằng dấu phẩy, mỗi prompt một lớp, có từ chỉ cường độ ("very loud, massive, punchy, sharp attack, cinematic, echoing"). Bỏ hẳn "small, quiet, faint, soft, gentle, restrained, compact", số tần số, "followed by" và mẫu "An edited sequence of …". Viết lại các hàng chiến đấu của `docs/games/audio/firefly/typing-survival.md` theo luật này trước khi tạo.
+  - **Độ to theo bậc** (skill §5.4): file chiến đấu chuẩn hóa về momentary max của bậc (T2–T6), không về −20 chung; T5–T6 cắt mềm trước limiter; mọi file ≤ −1 dBTP.
   - **Luật dải tần:**
-    - sub chỉ dưới 120 Hz;
-    - dải 1–4 kHz chỉ ở đầu tiếng, tắt trong ≤ 30 ms;
-    - đuôi nằm dưới 1 kHz hoặc trên 4 kHz.
-  - **Âm lặp nhiều** có 4–8 biến thể.
-  - Mỗi âm ghép đầu tiếng, thân và đuôi. Giới hạn số đuôi chồng nhau theo họ súng.
+    - `key.*` giữ luật riêng của tiếng phím: sub chỉ dưới 120 Hz; dải 1–4 kHz chỉ ở đầu tiếng, tắt trong ≤ 30 ms; đuôi nằm dưới 1 kHz hoặc trên 4 kHz. `word.*` theo luật thời điểm với giọng đọc (AUDIO_PIPELINE §6.2).
+    - Âm chiến đấu theo skill §5.5: thân súng và thân tiếng trúng được nằm ở 1–4 kHz trong 80–250 ms; đuôi lọc cao 150–250 Hz và thấp 6–7 kHz, hạ 2–4 dB ở 1–4 kHz, và nhường giọng đọc qua ducking của AL-02; sub 30–80 Hz cho súng nặng, nổ, big kill.
+  - **Biến thể:** âm lặp nhiều có 4–8 biến thể; đầu và thân súng 3–5 biến thể (±cent); `hit.*` và `kill.*` gần cố định.
+  - **Bộ mẫu trước:** Pulse Gun, Rail Gun, `hit.t1`, `kill.swarm` và một IR làm trước; chủ dự án nghe mù trong bản mix thật (sau AL-02) rồi mới làm các súng khác.
+  - **Chấm và luật dừng:** cổng critic L1–L6, rồi chủ dự án nghe mù trên Listening Board. Luật dừng tính theo từng lớp: tối đa 3 vòng prompt; sau đó đổi nguồn theo thứ tự lớp CC0 (Kenney Sci-fi và Impact, The Free Firearm Sound Library, Lentikula Sci-Fi Weapon Shots), xử lý của ta, tự ghi. Thư viện CC0 chỉ là lớp thô, không bao giờ là cả âm. Không đưa Sonniss vào AI đám mây.
+  - Giới hạn số đuôi chồng nhau theo họ súng (bảng số tiếng của AL-02).
 - **Nghiệm thu:**
-  - Qua cổng critic. Chủ dự án nghe mù ≥ 8,5 cho từng lô; tiếng phím ≥ 9.
-  - Trong game: gõ ≥ 90 WPM trong 5 phút không mỏi tai (chủ dự án nghe).
+  - Qua cổng critic, gồm các cờ chiến đấu ở skill §5.10: đỉnh, bậc, crest, năng lượng dưới 150 Hz, đuôi còn ở +500 ms.
+  - Chủ dự án nghe mù ≥ 8,5 cho từng lô, chấm cả độ mạnh, độ bùng nổ và độ vang trong bản mix thật; tiếng phím ≥ 9.
+  - Trong game: gõ ≥ 90 WPM trong 5 phút không mỏi tai, và trận vẫn nghe mạnh (chủ dự án nghe).
   - Có dòng `THIRD_PARTY` và id trong `THEME_SOUND_LIST.md`.
 - **Kịch bản chụp:** Listening Board; `survival-audio-mix.mjs` sau mỗi lần ingest.
 - **Phụ thuộc:** Q3, Q4, Q5; AL-02 để gắn (file làm trước được). **Công:** theo lô, mỗi lô khoảng 1–2 ngày tạo và một buổi nghe.
@@ -1262,6 +1288,7 @@ Hôm nay trận lái tàu Vanguard. Heroine và drone (M012, M080, M109–M111) 
 | Q5 | Giọng: dùng file giọng neural có giấy phép thương mại (ví dụ ElevenLabs Starter, anh tự chạy) cho khoảng 20 câu người dẫn và tiếng heroine, từ vựng làm sau; hay giữ giọng của trình duyệt | Làm người dẫn trước; giọng trình duyệt giữ làm dự phòng |
 | Q6 | Cổng khung ở High khi dựng thế giới mới. Hôm nay High chỉ còn khoảng 0,7 ms dưới cổng 6 ms không vsync | Cổng chính là cái người chơi thấy: khoảng khung p95 ≤ 16,8 ms, lỡ nhịp ≤ 1 % ở 1920×1080 trên máy anh. Nới cổng không vsync từ 6 lên 8 ms. Vượt nữa thì cắt theo thứ tự của `MODEL_QUALITY.md` |
 | Q7 | Luật thời điểm giữa âm và giọng (AUDIO_PIPELINE §6.2) cho Last Line: giọng chờ 150 ms sau đầu tiếng `word.load`, phím hạ 8 dB khi đọc | Duyệt |
+| Q8 | (02/11) Khi đọc từ, tiếng súng và tiếng trúng khô chỉ hạ tối đa −3 dB (hôm nay −6 dB, `SURVIVAL_MODE_PLAN.md` §6.5); thay vào đó nhạc −4 dB, đuôi và vang −6 dB. Súng giữ lực, giọng vẫn nghe rõ nhờ thời điểm (Q7) và ducking nhạc, đuôi | Duyệt, nếu bài C (giọng đọc trong trận) vẫn đạt; trượt thì quay lại −6 dB cho phần thân, giữ đầu tiếng |
 
 **Chủ dự án đã chốt (01/11, khoảng 23:00):**
 - Q1: (a), tia chữ bay vào lõi như một viên đạn sáng.
