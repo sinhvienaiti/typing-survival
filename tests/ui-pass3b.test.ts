@@ -5,6 +5,7 @@ import { COUNTERS, COUNTER_ROWS, GUN_KEYS, GUN_SPECS } from "../src/content/guns
 import { renderJourney } from "../src/view/screens-journey";
 import { BOX, resetArtWarnings } from "../src/view/ui-art";
 import { journey206 } from "./ui-art-fixtures";
+import { survivalCss, themeCss, hudSource } from "./survival/css";
 
 /**
  * Last Line UI pass 3, part B (31/10), from the second in-game scoring (both
@@ -15,8 +16,8 @@ import { journey206 } from "./ui-art-fixtures";
  * word plate; a rift's warning is one painted chip inside the corridor. The
  * browser scenario survival-ui-art.mjs measures each on the page.
  */
-const css = readFileSync("src/view/survival.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-const theme = readFileSync("src/view/theme.css", "utf8");
+const css = survivalCss().replace(/\/\*[\s\S]*?\*\//g, "");
+const theme = themeCss();
 const cardsOf = (html: string): string[] => html.split('<section class="sv-gun-card').slice(1).map((part) => part.slice(0, part.indexOf("</section>")));
 const decode = (text: string): string => text.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"');
 
@@ -97,7 +98,7 @@ describe("the rift's warning", () => {
     expect(css).toMatch(/:root\[data-art~="frame-word"\] \.sv-strip-warn\.is-on \{ animation: sv-rift-glow /);
     // UI pass 3 fixes: reduced motion keeps the glow, standing still at its middle strength.
     expect(css).toMatch(/:root\[data-motion="reduced"\]\[data-art~="frame-word"\] \.sv-strip-warn\.is-on \{ animation: none; filter: /);
-    const hud = readFileSync("src/view/hud.ts", "utf8");
+    const hud = hudSource();
     // Between the word line and the bays, inside the corridor's walls and off the bays' gun tabs.
     expect(hud).toContain("const y = (this.placed.line + this.placed.glow) / 2;");
     expect(hud).toMatch(/stage\.project\(-inner, z, 0, this\.at, true\)\.x \+ RIFT_CHIP\.wall \* ui/);

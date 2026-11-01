@@ -1,0 +1,7 @@
+/* Theme tokens only the journey (journey.css) uses (ALIVE_PLAN AL-00 split of theme.css; shared tokens stay in theme.css). */
+:root {
+  /* The loadout's foe chips (UI pass 3): Strong in green over the word plate, Weak in the warning tint; the Weak heading's red. */
+  --good-tint: grayscale(1) sepia(1) saturate(6) hue-rotate(95deg) brightness(1.05) contrast(1.2);
+  --chip-tint-alpha: 0.8;
+  --weak: #ff6b6b;
+}

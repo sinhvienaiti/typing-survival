@@ -1,0 +1,4 @@
+/* Theme tokens only the HUD frame and top row (hud.css) uses (ALIVE_PLAN AL-00 split of theme.css; shared tokens stay in theme.css). */
+:root {
+  --banner-band: rgba(10, 11, 13, 0.92);
+}

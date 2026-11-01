@@ -1,0 +1,11 @@
+/* Theme tokens only the bays (bays.css) uses (ALIVE_PLAN AL-00 split of theme.css; shared tokens stay in theme.css). */
+:root {
+  /* Ray's ink for typed letters: its old white-blue (#c4d2ff) sat beside the untyped cream at 1.33 : 1 (test pass 27/10); a periwinkle reads as typed. */
+  --ray-ink: #8fa3ff;
+  /* The bays over the deck (FEEL_PASS_S1 §2.3): solid enough for 7 : 1 over the brightest 1 % of the view behind (0.64, not 0.6: bay 2 meets the wall's stripes, p99 0.70; the word line's is --strip). */
+  --bay-glass: rgba(7, 9, 11, 0.64);
+  /* A loaded magazine's flash inside the plate, a flawless word's. */
+  --flash-load: rgba(255, 236, 214, 0.3);
+  --flash-perfect: rgba(127, 245, 224, 0.42);
+  --hazard-gun: repeating-linear-gradient(-45deg, var(--gun) 0 7px, var(--ink) 7px 14px);
+}

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BOX, gunRole, resetArtWarnings } from "../src/view/ui-art";
 import { screens206 } from "./ui-art-fixtures";
+import { survivalCss } from "./survival/css";
 
 /**
  * 206 browser check (30/10) at 1280×720 and 1920×1080:
@@ -12,7 +13,7 @@ import { screens206 } from "./ui-art-fixtures";
  * The browser scenario (survival-ui-art.mjs, noOverflow and cardsFit) measures
  * the result; these checks hold the CSS and markup that make it fit.
  */
-const css = readFileSync("src/view/survival.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+const css = survivalCss().replace(/\/\*[\s\S]*?\*\//g, "");
 const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selectors, body]) => ({ selectors: selectors!.split(/,(?![^(]*\))/).map((s) => s.trim()), body: body! }));
 /** The value the cascade gives `property` for exactly this selector (the last rule that names it). */
 function decl(selector: string, property: string): string | undefined {

@@ -1,0 +1,10 @@
+/* Theme tokens only the word line (strip.css) uses (ALIVE_PLAN AL-00 split of theme.css; shared tokens stay in theme.css). */
+:root {
+  /* The word line over the deck (FEEL_PASS_S1 §2.3): solid enough for 7 : 1 over the brightest 1 % of the view behind (the bays' is --bay-glass). */
+  --strip: rgba(7, 9, 11, 0.72);
+  /* A hazard about to strike (the rift's chip): the plate laid again over itself in amber; its glow pulses between these, never fainter than the low one. */
+  --hazard-tint: grayscale(1) sepia(1) saturate(8) hue-rotate(4deg) brightness(1.3) contrast(1.2);
+  --rift-glow-lo: rgba(255, 140, 40, 0.55);
+  --rift-glow-mid: rgba(255, 140, 40, 0.72);
+  --rift-glow-hi: rgba(255, 150, 50, 0.9);
+}

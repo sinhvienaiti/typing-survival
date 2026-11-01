@@ -16,6 +16,7 @@ import config, { UI_ART_RECORD, uiArtRecordStaysHome } from "../vite.config";
 // @ts-expect-error Node-only build tool has no declaration file.
 import { BASE as ART_BASE, OUT as ART_OUT, RECORD as ART_RECORD } from "../scripts/ui-art/prepare.mjs";
 import { sharedDeck } from "./survival/typist-bot";
+import { survivalCss } from "./survival/css";
 
 /**
  * Recheck 230-F1 to 230-F3: the UI art is wired where the player sees it.
@@ -138,7 +139,7 @@ describe("HUD art hookups (230-F1, hud.ts)", () => {
     foes.alive[0] = 1;
     foes.z[0] = 30;
     foes.top = Math.max(foes.top, 1);
-    (hud as unknown as { updateFresh(w: World, now: number): void }).updateFresh(world, 1000);
+    (hud as unknown as { banners: { fresh(w: World, now: number): void } }).banners.fresh(world, 1000);
     const card = root.find("sv-fresh")[0]!;
     expect(card.classList.contains("is-on")).toBe(true);
     expect(card.nodes).toHaveLength(3);
@@ -173,7 +174,7 @@ describe("HUD icon hookups (tickets 149–153, hud.ts and strip.ts)", () => {
     const { hud, root, world } = hudOn("c1-s2");
     world.objective.need = 3;
     world.objective.retreat = -1;
-    (hud as unknown as { updateGoal(w: World): void }).updateGoal(world);
+    (hud as unknown as { panels: { objective(w: World, retreat: () => void): void } }).panels.objective(world, () => {});
     const goal = root.find("sv-goal")[0]!;
     expect(goal.hidden).toBe(false);
     expect(roles(goal)).toEqual(["icon-objective", "foe-pack-leader-small"]);
@@ -432,7 +433,7 @@ function unguarded(css: string): string[] {
 }
 
 describe("failed art takes no space (230-F2, survival.css)", () => {
-  const css = readFileSync("src/view/survival.css", "utf8");
+  const css = survivalCss();
 
   it("keeps every display, position and :has() rule of an art image behind :not([hidden])", () => {
     expect(unguarded(css)).toEqual([]);

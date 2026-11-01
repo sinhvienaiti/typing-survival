@@ -9,6 +9,7 @@ import { quickIcons } from "../src/view/ui-art";
 import { previewFit } from "../src/view/type-fx-preview";
 import table from "../src/view/ui-art.json";
 import selection from "../scripts/ui-art/selection.json";
+import { survivalCss, themeCss } from "./survival/css";
 
 /**
  * Last Line UI pass 3 (31/10), from the second in-game scoring: the ticket 242
@@ -19,8 +20,8 @@ import selection from "../scripts/ui-art/selection.json";
  * a Stamp's flight inside its box. The browser scenario survival-ui-art.mjs
  * measures each on the page.
  */
-const css = readFileSync("src/view/survival.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-const theme = readFileSync("src/view/theme.css", "utf8");
+const css = survivalCss().replace(/\/\*[\s\S]*?\*\//g, "");
+const theme = themeCss();
 const roleOf = (html: string): string[] => [...html.matchAll(/\/([\w-]+)\.\d+\.webp/g)].map(([, role]) => role!);
 
 describe("ticket 242 (accepted 31/10 17:05, graded at real size)", () => {

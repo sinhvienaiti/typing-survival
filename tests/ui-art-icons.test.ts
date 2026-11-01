@@ -10,6 +10,7 @@ import table from "../src/view/ui-art.json";
 import selection from "../scripts/ui-art/selection.json";
 import { ICONS, WIRED } from "./ui-art-roles";
 import { journey206 } from "./ui-art-fixtures";
+import { survivalCss } from "./survival/css";
 
 /**
  * The icons and parts of tickets 149–153 (retries 237–240) and the sliders
@@ -207,7 +208,7 @@ describe("results and the profile (LL-14, LL-50 to LL-52)", () => {
 });
 
 describe("CSS for the parts (survival.css)", () => {
-  const css = readFileSync("src/view/survival.css", "utf8");
+  const css = survivalCss();
   it("draws keys on the key cap, a picked card's on the lit one, and no CSS key box", () => {
     expect(css).toMatch(/\.sv-hints kbd, \.sv-cards \.sv-gun-card kbd \{[^}]*border-image: var\(--art-keycap, linear-gradient\(var\(--steel-800\), var\(--steel-800\)\)\) 39\.94% 24\.8% 41\.89% 24\.8% fill/);
     expect(css).toContain(".sv-cards .sv-gun-card.is-picked kbd { border-image-source: var(--art-keycap-on, linear-gradient(var(--steel-600), var(--steel-600))); }");
@@ -297,7 +298,7 @@ describe("UI pass 2: frames, quick panel icons and lit grooves (31/10)", () => {
   });
 
   it("draws the panels, rows, cards, HUD plates, chips, banner and quick panels on the frames only while their token is set", () => {
-    const css = readFileSync("src/view/survival.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    const css = survivalCss().replace(/\/\*[\s\S]*?\*\//g, "");
     for (const [, selectors, body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
       const frame = /var\(--art-(frame-[\w-]+?)(?:-slice)?\)/.exec(body!);
       if (!frame) continue;

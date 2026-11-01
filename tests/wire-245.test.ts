@@ -6,6 +6,7 @@ import { artAttrs, artHtml, artUrl, BOX, foeArt, foeRole, resetArtWarnings, rowR
 import table from "../src/view/ui-art.json";
 import selection from "../scripts/ui-art/selection.json";
 import { SILHOUETTES, WIRED_245 } from "./ui-art-roles";
+import { survivalCss, themeCss } from "./survival/css";
 
 /**
  * Ticket 245 wired (accepted 31/10 23:55, graded at real size): the quick
@@ -78,8 +79,8 @@ describe("the quick panels' Close", () => {
 
 /** Judges after the 245 wiring (01/11): Close shows hover and press; the chosen keyboard row reads at a glance. */
 describe("the judges' items after 245", () => {
-  const css = readFileSync("src/view/survival.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-  const theme = readFileSync("src/view/theme.css", "utf8");
+  const css = survivalCss().replace(/\/\*[\s\S]*?\*\//g, "");
+  const theme = themeCss();
   const CLOSE = ".sv-hud .kit-qs.kit-qs--skin-close .kit-qs__head .kit-qs__close--icon";
   const CHOSEN = '.sv-hud .kit-qs.kit-qs--skin-list .kit-keyboards button.kit-keyboards__option[aria-selected="true"]:not(:disabled)';
 

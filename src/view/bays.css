@@ -1,0 +1,91 @@
+/*
+ * The bays (hud-bays.ts; ALIVE_PLAN AL-00 split of survival.css): gun cards
+ * beside the corridor, their gun colours, top stripe, magazine cells, word
+ * and meaning, sealed chips, load flashes.
+ */
+/* The bays: cards beside the corridor, outside its walls, at the horde's height (parent QUALITY_RESCUE_2026-11-01 L4, variant A): bays 1 and 3 on the left, 2 and 4 on the right. hud.ts (placeBays) sets each card's top, its side's offset and, where the view is too narrow, its own smaller --ui. */
+.sv-bottom { position: absolute; inset: 0; }
+.sv-bottom > [data-bay] { position: absolute; }
+/* Each bay's gun colour: --gun and --gun-glow. */
+/* --gun-ink is set with each gun: a var() inherits as the value it took where it was declared, so a :root default would give every gun Xung's ink. */
+.sv-xung { --gun: var(--xung); --gun-glow: var(--xung-glow); --gun-ink: var(--xung); }
+.sv-tia { --gun: var(--tia); --gun-glow: var(--tia-glow); --gun-ink: var(--tia); }
+.sv-tan { --gun: var(--tan); --gun-glow: var(--tan-glow); --gun-ink: var(--tan); }
+.sv-ray { --gun: var(--ray); --gun-glow: var(--ray-glow); --gun-ink: var(--ray-ink); }
+.sv-phao { --gun: var(--phao); --gun-glow: var(--phao-glow); --gun-ink: var(--phao); }
+.sv-slot { --load: 0; position: relative; min-width: 0; width: calc(230px * var(--ui)); height: calc(100px * var(--ui)); padding: calc(11px * var(--ui)) calc(14px * var(--ui)) calc(7px * var(--ui)); display: flex; flex-direction: column; gap: calc(2px * var(--ui)); background-color: var(--bay-glass); transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; }
+/* The top stripe: dim, and lit from the left as the word is typed (full for a moment when it loads). */
+.sv-slot::before, .sv-slot::after { content: ""; position: absolute; left: 0; top: 0; height: calc(5px * var(--ui)); background: var(--hazard-gun); }
+.sv-slot::before { right: 0; opacity: 0.35; }
+.sv-slot::after { width: calc(var(--load) * 100%); }
+.sv-slot.is-charged::after { width: 100%; }
+.sv-slot header { display: flex; align-items: center; gap: calc(6px * var(--ui)); min-width: 0; }
+.sv-gun { font: 700 calc(12px * var(--ui)) var(--font-title); letter-spacing: 0.12em; white-space: nowrap; color: var(--gun); }
+.sv-slot .sv-typed { color: var(--gun-ink); text-decoration: underline calc(2px * var(--ui)) var(--gun-ink); text-underline-offset: calc(4px * var(--ui)); }
+.sv-head { display: inline-block; transform-origin: 50% 85%; }
+.sv-mags { margin: calc(-8px * var(--ui)) 0 calc(-8px * var(--ui)) auto; display: flex; gap: calc(3px * var(--ui)); color: var(--gun); }
+/*
+ * Magazine cells (part-mag-empty / part-mag-full, tickets 153, 240): the empty cell, and the full one over it cut down from the top as the magazine empties.
+ * Each cell fills 25 % × 72 % of its square canvas: a 40 px canvas gives a cell 10 × 29 px (UI pass 2, 31/10: 6 × 17 read as ticks; ui-art.ts artVars; the header stays low through the negative margins above).
+ * The full cell's glass takes the gun's colour (--tint): a flat layer over the glass only (62 % × 76 % of the cell), blended `color`, so the art keeps its light and the frame stays steel.
+ * Without the art (variables unset, ui-art.ts applyArtVars) the cells are flat: track, then the tint.
+ */
+.sv-mags i { --fill: 0; --cell: calc(40px * var(--ui)); --tint: var(--gun); position: relative; width: calc(var(--cell) * 0.25); height: calc(var(--cell) * 0.71875); background: var(--art-mag-empty, linear-gradient(var(--track), var(--track))) center / var(--cell) var(--cell) no-repeat; }
+.sv-mags i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(var(--tint), var(--tint)) center / 62% 76% no-repeat, var(--art-mag-full, linear-gradient(var(--tint), var(--tint))) center / var(--cell) var(--cell) no-repeat; background-blend-mode: color, normal; clip-path: inset(calc((1 - var(--fill)) * 100%) 0 0 0); }
+/* A word into a full bay: the magazine cells blink urgent, glass and glow (hud.ts times it on the frame clock). */
+.sv-slot.is-overfull .sv-mags { color: var(--urgent); filter: drop-shadow(0 0 calc(6px * var(--ui)) var(--urgent)); }
+.sv-slot.is-overfull .sv-mags i { --tint: var(--urgent); filter: brightness(1.35); }
+.sv-word { --fit: 1; font: 800 calc(32px * var(--ui) * var(--fit)) var(--font-battle); letter-spacing: 0.02em; line-height: 1.15; white-space: nowrap; color: var(--text); }
+.sv-mean { --mfit: 1; font: 600 calc(15px * var(--ui) * var(--mfit)) var(--font-battle); color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sv-ipa { font: 600 calc(14px * var(--ui)) var(--font-ipa); letter-spacing: 0; color: var(--soft); }
+.sv-ipa:not(:empty) { margin-left: calc(8px * var(--ui)); }
+/* The bay being typed: its word small with the IPA (the line above the ship shows it big), the meaning on up to two lines. */
+.sv-slot.is-active .sv-word { font-size: calc(22px * var(--ui)); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; }
+.sv-slot.is-active .sv-mean { font-size: calc(14px * var(--ui)); line-height: 1.25; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.sv-slot.is-active { border-color: var(--gun); box-shadow: inset 0 1px 0 var(--bevel-hi), 0 0 0 2px var(--gun), 0 0 26px var(--gun-glow); }
+/* A bay without a gun: a small dark chip, its lock beside "LOCKED" (bay 3 opens at the Mốc, bay 4 later; L4: a full plate beside the corridor would only hide the field). */
+.sv-bay-lock { width: calc(132px * var(--ui)); height: calc(34px * var(--ui)); padding: 0 calc(12px * var(--ui)); display: flex; flex-direction: row; align-items: center; justify-content: center; gap: calc(6px * var(--ui)); background-color: var(--bay-glass); font: 700 calc(11px * var(--ui)) var(--font-title); letter-spacing: 0.2em; color: var(--steel-300); opacity: 0.85; }
+.sv-bay-lock > .sv-art-lock { width: calc(22px * var(--ui)); height: calc(22px * var(--ui)); }
+.sv-slot.is-active .sv-word { color: var(--text); }
+/* The other bay steps back: its words dim, the plate stays solid. */
+.sv-slot.is-dim > * { opacity: 0.72; }
+.sv-slot.is-full .sv-mags { filter: drop-shadow(0 0 6px currentColor); }
+.sv-slot.is-loaded { animation: sv-load 0.35s ease-out; }
+.sv-slot.is-loaded.is-perfect { animation: sv-perfect 0.5s ease-out; }
+/* A loaded magazine flashes the plate from inside. */
+@keyframes sv-load { 0% { box-shadow: inset 0 0 0 300px var(--flash-load); } 100% { box-shadow: inset 0 0 0 300px transparent; } }
+@keyframes sv-perfect { 0% { box-shadow: inset 0 0 0 300px var(--flash-perfect); } 100% { box-shadow: inset 0 0 0 300px transparent; } }
+
+.sv-art-bay:not([hidden]) { position: absolute; top: calc(2px * var(--ui)); transform: translateY(-100%); left: calc(12px * var(--ui)); padding: calc(5px * var(--ui)); background-color: var(--bay-glass); border: 1px solid var(--line); border-bottom: 0; }
+.sv-slot[data-bay="2"] > .sv-art-bay, .sv-slot[data-bay="4"] > .sv-art-bay { left: auto; right: calc(12px * var(--ui)); }
+
+/* A bay's full mark shows only while the bay is full (it keeps its place, so nothing moves); 28 px beside the cells, the header kept low by its negative margins as the cells' are. */
+.sv-slot > header > .sv-art-icon { margin: calc(-8px * var(--ui)) 0 calc(-8px * var(--ui)) auto; }
+.sv-slot:not(.is-full) > header > .sv-art-icon { visibility: hidden; }
+.sv-slot > header > .sv-art-icon:not([hidden]) + .sv-mags { margin-left: calc(3px * var(--ui)); }
+
+/* The bay's gun tab: a small plate on the bay's top edge. */
+:root[data-art~="frame-plate"] .sv-art-bay:not([hidden]) { background: none; border: 0 solid transparent; border-image: var(--art-frame-plate) var(--art-frame-plate-slice) / calc(6px * var(--ui)) calc(8px * var(--ui)) stretch; }
+/* Bays: the gun card frame; a sealed bay is the same plate, dimmed, smaller, its lock centred over "LOCKED". The plate is opaque (UI pass 3: at 0.85 the corridor's amber wall light showed through as a stray chip). */
+:root[data-art~="frame-card"] .sv-slot, :root[data-art~="frame-card"] .sv-bay-lock { background: none; border-color: transparent; border-image: var(--art-frame-card) var(--art-frame-card-slice) / calc(12px * var(--ui)) calc(21px * var(--ui)) stretch; }
+:root[data-art~="frame-card"] .sv-bay-lock { filter: saturate(0.35) brightness(0.8); opacity: 1; }
+/* The chip is a third of a card's height: the frame's edges at a third too. */
+:root[data-art~="frame-card"] .sv-bottom > .sv-bay-lock { border-image-width: calc(6px * var(--ui)) calc(11px * var(--ui)); }
+/* The top stripe and its load sit just inside the frame's top edge. */
+:root[data-art~="frame-card"] .sv-slot::before, :root[data-art~="frame-card"] .sv-slot::after { top: calc(4px * var(--ui)); left: calc(14px * var(--ui)); height: calc(4px * var(--ui)); }
+:root[data-art~="frame-card"] .sv-slot::before { right: calc(14px * var(--ui)); }
+:root[data-art~="frame-card"] .sv-slot::after { width: calc(var(--load) * (100% - 28px * var(--ui))); }
+:root[data-art~="frame-card"] .sv-slot.is-charged::after { width: calc(100% - 28px * var(--ui)); }
+/* The frame's glass covers the plate's inner flash: a load lights the whole bay instead. */
+:root[data-art~="frame-card"] .sv-slot.is-loaded { animation: sv-load-lit 0.35s ease-out; }
+:root[data-art~="frame-card"] .sv-slot.is-loaded.is-perfect { animation: sv-perfect-lit 0.5s ease-out; }
+@keyframes sv-load-lit { 0% { filter: brightness(1.7); } 100% { filter: none; } }
+@keyframes sv-perfect-lit { 0% { filter: brightness(1.6); box-shadow: 0 0 calc(30px * var(--ui)) var(--flash-perfect); } 100% { filter: none; } }
+[data-motion="reduced"] .sv-slot.is-loaded { animation: none !important; }
+
+/* Magazine cells: an empty one steps back, a loaded one glows in its gun's colour, a word into a full bay pulses them urgent. hud.ts marks each cell. */
+.sv-mags i.is-empty { opacity: 0.5; }
+.sv-mags i:not(.is-empty) { filter: drop-shadow(0 0 calc(4px * var(--ui)) var(--tint)); }
+.sv-slot.is-overfull .sv-mags i { opacity: 1; filter: brightness(1.35) drop-shadow(0 0 calc(6px * var(--ui)) var(--urgent)); animation: sv-mag-urgent 0.24s steps(2, jump-none) infinite; }
+@keyframes sv-mag-urgent { 0% { transform: scale(1.12); } 100% { transform: scale(1); } }
+[data-motion="reduced"] .sv-slot.is-overfull .sv-mags i { animation: none; }
