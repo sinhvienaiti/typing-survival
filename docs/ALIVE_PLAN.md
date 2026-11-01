@@ -1263,6 +1263,12 @@ Hôm nay trận lái tàu Vanguard. Heroine và drone (M012, M080, M109–M111) 
 | Q6 | Cổng khung ở High khi dựng thế giới mới. Hôm nay High chỉ còn khoảng 0,7 ms dưới cổng 6 ms không vsync | Cổng chính là cái người chơi thấy: khoảng khung p95 ≤ 16,8 ms, lỡ nhịp ≤ 1 % ở 1920×1080 trên máy anh. Nới cổng không vsync từ 6 lên 8 ms. Vượt nữa thì cắt theo thứ tự của `MODEL_QUALITY.md` |
 | Q7 | Luật thời điểm giữa âm và giọng (AUDIO_PIPELINE §6.2) cho Last Line: giọng chờ 150 ms sau đầu tiếng `word.load`, phím hạ 8 dB khi đọc | Duyệt |
 
+**Chủ dự án đã chốt (01/11, khoảng 23:00):**
+- Q1: (a), tia chữ bay vào lõi như một viên đạn sáng.
+- Q3: Claude chạy Firefly âm trong tab của chủ dự án (Stable Audio 3 cho nhạc); chủ dự án chỉ nghe mù từng lô.
+- Q5: giữ giọng trình duyệt (không dùng giọng neural trả phí lúc này).
+- Q2, Q4, Q6, Q7: theo đề xuất.
+
 **Việc tay đang chờ:**
 
 - Anh đính kèm ảnh nền map 1 vào chat ChatGPT để vẽ try3 (chờ từ 01/11).
