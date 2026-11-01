@@ -23,7 +23,7 @@ import { Bolts } from "./bolts";
 import { Chunks } from "./chunks";
 import type { Crowd } from "./crowd";
 import { CELL, FLAT, Glows, Strips } from "./fx";
-import { CHUNK_CAP, EDGE, FEEL, KILL_NUMBER, LIGHTS, THROW, numberFont } from "./gun-rules";
+import { BLOOM, CHUNK_CAP, EDGE, FEEL, KILL_NUMBER, LIGHTS, SMOKE_POOL, THROW, numberFont } from "./gun-rules";
 import { GunFx } from "./gunfx";
 import { RiftCracks, ShieldWalls } from "./hazard-fx";
 import { GunLights } from "./lights";
@@ -53,7 +53,7 @@ export type CombatHooks = {
 
 export class Combat {
   readonly glows: Glows;
-  readonly smoke = new Glows(160, true); // a big kill's smoke and scorch laid over the scene: one draw call
+  readonly smoke = new Glows(SMOKE_POOL, true); // smoke and scorches laid over the scene (big kills, guns, the hurt ship): one draw call
   readonly strips: Strips;
   readonly sparks: ParticlePool;
   readonly debris: Debris;
@@ -95,8 +95,9 @@ export class Combat {
   constructor(private readonly stage: Stage, private readonly crowd: Crowd, private readonly ship: Ship, pilot: Pilot, tierName: Tier, guns: readonly GunId[], audio: ThemeAudio, private readonly hooks: CombatHooks) {
     const spec = VIEW_TIERS[tierName];
     this.beam = pilot === "draconis" ? PILOT_COLORS.draconis.beam : C.swarm;
-    this.glows = new Glows(spec.bursts);
-    this.strips = new Strips(2100);
+    // L1: on the bloom tiers the halos stay under its threshold; only thin cores bloom.
+    this.glows = new Glows(spec.bursts, false, spec.bloom ? BLOOM.halo : 0);
+    this.strips = new Strips(2100, false, spec.bloom ? BLOOM.halo : 0);
     this.sparks = new ParticlePool(spec.particles, textures().spark);
     this.sparks.points.renderOrder = 8; // over a big kill's smoke (embers drift out of it)
     this.debris = new Debris(spec.debris, { profile: FEEL });

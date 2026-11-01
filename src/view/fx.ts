@@ -117,6 +117,14 @@ void main() {
 #endif
 }`;
 
+/** A billboard cell (flat or not) that is a halo, not a core: soft, ring, flare, puff (L1: held under the bloom's threshold). */
+const haloCell = (cell: number): boolean => {
+  const base = cell >= FLAT ? cell - FLAT : cell;
+  return base === CELL.soft || base === CELL.ring || base === CELL.flare || base === CELL.puff;
+};
+/** `intensity` held so that no channel of `color` × it passes `cap` (0: no cap). */
+const held = (color: THREE.Color, intensity: number, cap: number): number => (cap > 0 ? Math.min(intensity, cap / Math.max(1e-3, color.r, color.g, color.b)) : intensity);
+
 function writeGlow(pos: Float32Array, color: Float32Array, sizes: Float32Array, i: number, x: number, y: number, z: number, cell: number, r: number, g: number, bl: number, a: number, size: number, rot: number): void {
   const p = i * 4;
   pos[p] = x; pos[p + 1] = y; pos[p + 2] = z; pos[p + 3] = cell;
@@ -140,7 +148,8 @@ export class Glows {
   private live = 0;
   private stamps = 0;
 
-  constructor(readonly capacity: number, readonly smoke = false) {
+  /** `cap`: the halo cells' most per channel on a bloom tier (L1; 0: none). */
+  constructor(readonly capacity: number, readonly smoke = false, readonly cap = 0) {
     this.limit = capacity;
     const total = capacity * 2;
     this.pos = new Float32Array(total * 4);
@@ -169,7 +178,7 @@ export class Glows {
     b[o] = x; b[o + 1] = y; b[o + 2] = z; b[o + 3] = vx; b[o + 4] = vy; b[o + 5] = vz;
     // A set angle (a flash along a shot), else a random one.
     b[o + 6] = from; b[o + 7] = to; b[o + 8] = angle === angle ? angle : Math.random() * 6.283; b[o + 9] = spin;
-    const k = this.smoke ? 1 : intensity;
+    const k = this.smoke ? 1 : haloCell(cell) ? held(color, intensity, this.cap) : intensity;
     b[o + 10] = color.r * k; b[o + 11] = color.g * k; b[o + 12] = color.b * k;
     b[o + 13] = 0; b[o + 14] = life; b[o + 15] = cell; b[o + 16] = intensity; b[o + 17] = 1;
     this.live += 1;
@@ -178,7 +187,8 @@ export class Glows {
   /** A one-frame billboard (call every frame it should show, after step()). */
   stamp(cell: number, x: number, y: number, z: number, size: number, rot: number, color: THREE.Color, intensity: number): void {
     if (this.stamps >= this.capacity) return;
-    writeGlow(this.stampPos, this.stampColor, this.stampSize, this.stamps, x, y, z, cell, color.r * intensity, color.g * intensity, color.b * intensity, 1, size, rot);
+    const k = haloCell(cell) ? held(color, intensity, this.cap) : intensity;
+    writeGlow(this.stampPos, this.stampColor, this.stampSize, this.stamps, x, y, z, cell, color.r * k, color.g * k, color.b * k, 1, size, rot);
     this.stamps += 1;
   }
 
@@ -227,6 +237,11 @@ export class Glows {
   get count(): number {
     return this.live;
   }
+
+  /** Billboards drawn this frame (bursts and stamps; after flush()). */
+  get drawn(): number {
+    return this.live + this.stamps;
+  }
 }
 
 const STRIP_VERTEX = /* glsl */ `
@@ -251,7 +266,8 @@ uniform float uTime;
 varying vec2 vUv;
 varying vec4 vColor;
 void main() {
-  float across = abs(vUv.x - 0.5) * 2.0;
+  // Clamped: a multisampled buffer (High, Ultra) shades edge pixels with uv past 0 … 1, and pow() of a negative is NaN, which the bloom spreads into black blocks.
+  float across = min(abs(vUv.x - 0.5) * 2.0, 1.0);
   float core = smoothstep(0.42, 0.0, across);
   float glow = pow(1.0 - across, 2.2);
   // Tail fades (rounds fade toward their tail, the column toward its far end).
@@ -269,7 +285,8 @@ export class Strips {
   private readonly width: Float32Array;
   private n = 0;
 
-  constructor(readonly capacity: number, readonly smoke = false) {
+  /** `cap`: a streak's colour most per channel on a bloom tier (L1; 0: none); a `hdr` streak (a thin core) passes it. */
+  constructor(readonly capacity: number, readonly smoke = false, readonly cap = 0) {
     this.from = new Float32Array(capacity * 3);
     this.to = new Float32Array(capacity * 3);
     this.color = new Float32Array(capacity * 4);
@@ -284,9 +301,10 @@ export class Strips {
     this.n = 0;
   }
 
-  /** A streak from (x0, y0, z0) to (x1, y1, z1) (the head), `width` m, colour × intensity, white core `core` (0 … 1). */
-  add(x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, width: number, color: THREE.Color, intensity: number, core: number): void {
+  /** A streak from (x0, y0, z0) to (x1, y1, z1) (the head), `width` m, colour × intensity, white core `core` (0 … 1); `hdr`: a thin core the halo cap leaves alone. */
+  add(x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, width: number, color: THREE.Color, intensity: number, core: number, hdr = false): void {
     if (this.n >= this.capacity) return;
+    if (!hdr) intensity = held(color, intensity, this.cap);
     const i = this.n;
     this.from[i * 3] = x0; this.from[i * 3 + 1] = y0; this.from[i * 3 + 2] = z0;
     this.to[i * 3] = x1; this.to[i * 3 + 1] = y1; this.to[i * 3 + 2] = z1;
@@ -298,6 +316,11 @@ export class Strips {
   end(): void {
     uploadQuads(this.mesh.geometry, this.n);
   }
+
+  /** Streaks drawn this frame. */
+  get drawn(): number {
+    return this.n;
+  }
 }
 
 /** Streaks held a while (muzzle tongues and flashes along a shot): full on their first frame, fading over their life, drawn into Strips each frame. */
@@ -308,25 +331,26 @@ export class Streaks {
   private readonly color = new THREE.Color();
 
   constructor(readonly capacity: number, readonly smoke = false) {
-    this.f = new Float32Array(capacity * 13);
+    this.f = new Float32Array(capacity * 14);
   }
 
-  add(x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, width: number, color: THREE.Color, intensity: number, core: number, life: number): void {
-    const o = (this.n++ % this.capacity) * 13;
+  /** `hdr`: a thin core the bloom tiers' hold leaves alone (Strips.add). */
+  add(x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, width: number, color: THREE.Color, intensity: number, core: number, life: number, hdr = false): void {
+    const o = (this.n++ % this.capacity) * 14;
     const f = this.f;
     f[o] = x0; f[o + 1] = y0; f[o + 2] = z0; f[o + 3] = x1; f[o + 4] = y1; f[o + 5] = z1;
     f[o + 6] = width; f[o + 7] = color.r * intensity; f[o + 8] = color.g * intensity; f[o + 9] = color.b * intensity;
-    f[o + 10] = core; f[o + 11] = life; f[o + 12] = 0;
+    f[o + 10] = core; f[o + 11] = life; f[o + 12] = 0; f[o + 13] = hdr ? 1 : 0;
   }
 
   draw(strips: Strips, dt: number): void {
     const f = this.f;
     for (let q = 0; q < Math.min(this.capacity, this.n); q += 1) {
-      const o = q * 13;
+      const o = q * 14;
       const k = 1 - f[o + 12]! / Math.max(1e-3, f[o + 11]!);
       if (k <= 0) continue;
       f[o + 12] = f[o + 12]! + dt;
-      strips.add(f[o]!, f[o + 1]!, f[o + 2]!, f[o + 3]!, f[o + 4]!, f[o + 5]!, f[o + 6]! * (0.5 + 0.5 * k), this.color.setRGB(f[o + 7]!, f[o + 8]!, f[o + 9]!), k, f[o + 10]! * k);
+      strips.add(f[o]!, f[o + 1]!, f[o + 2]!, f[o + 3]!, f[o + 4]!, f[o + 5]!, f[o + 6]! * (0.5 + 0.5 * k), this.color.setRGB(f[o + 7]!, f[o + 8]!, f[o + 9]!), k, f[o + 10]! * k, f[o + 13] === 1);
     }
   }
 }
@@ -338,13 +362,18 @@ uniform vec3 uColor;
 varying vec2 vUv;
 float hash(float n) { return fract(sin(n) * 43758.5453); }
 void main() {
-  float across = abs(vUv.x - 0.5) * 2.0;
+  float across = min(abs(vUv.x - 0.5) * 2.0, 1.0);
   float flow = 0.65 + 0.35 * sin(vUv.y * 60.0 - uTime * 38.0) * sin(vUv.y * 13.0 + uTime * 9.0);
-  float core = smoothstep(0.3, 0.0, across) * flow;
+  // L1 (bloom tiers): a narrow burning groove, not a metre-wide stripe (it set the beam's width at 11 m).
+  float core = smoothstep(CORE_W, 0.0, across) * flow;
   float glow = pow(1.0 - across, 3.0);
   // It rises over its first fifth (2.4 m): no orange sheet on the deck round the ship (§12). Its core is the gun's orange, a fifth hot (TS-M1-05: not white).
   float far = smoothstep(1.0, 0.82, vUv.y) * smoothstep(0.0, 0.2, vUv.y);
   vec3 color = (uColor * glow * 0.5 + mix(uColor, vec3(1.0, 0.85, 0.6), 0.2) * core) * far * uPower;
+#ifdef HALO
+  // L1: the floor column stays under the bloom's threshold.
+  color = min(color, vec3(HALO));
+#endif
   gl_FragColor = vec4(color, 1.0);
 }`;
 
@@ -353,11 +382,12 @@ export class Column {
   readonly mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
   private readonly uniforms = { uTime: { value: 0 }, uPower: { value: 0 }, uColor: { value: new THREE.Color() } };
 
-  constructor(color: THREE.Color, readonly length: number, width: number, readonly start: number) {
+  /** `cap`: its most per channel on a bloom tier (L1; 0: none); `core`: its burning core's half-width, a share of its own (0.3 off the bloom tiers). */
+  constructor(color: THREE.Color, readonly length: number, width: number, readonly start: number, cap = 0, core = 0.3) {
     const geometry = new THREE.PlaneGeometry(width, length).rotateX(-Math.PI / 2);
     geometry.translate(0, 0.06, -length / 2);
     this.uniforms.uColor.value.copy(color);
-    this.mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader: "varying vec2 vUv; void main() { vUv = vec2(uv.x, 1.0 - uv.y); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }", fragmentShader: COLUMN_FRAGMENT, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    this.mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader: "varying vec2 vUv; void main() { vUv = vec2(uv.x, 1.0 - uv.y); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }", fragmentShader: COLUMN_FRAGMENT, defines: cap > 0 ? { HALO: cap.toFixed(3), CORE_W: core.toFixed(3) } : { CORE_W: core.toFixed(3) }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 4;
     this.mesh.visible = false;

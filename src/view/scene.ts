@@ -14,19 +14,29 @@
  */
 import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { FIELD, type Tier } from "../content/rules";
+import { FeelBloomPass } from "./feel-bloom";
+import { BLOOM } from "./gun-rules";
 import { DECK_LIGHT_GLSL, deckLightUniforms } from "./lights";
 import { PALETTE } from "./theme";
 
-/** Per tier: pixel ratio cap, antialias, bloom, and effect budgets (SURVIVAL_MODE_PLAN.md 8.1). */
-export const VIEW_TIERS: Record<Tier, { dpr: number; aa: boolean; bloom: boolean; particles: number; numbers: number; debris: number; bursts: number }> = {
-  low: { dpr: 1, aa: false, bloom: false, particles: 600, numbers: 50, debris: 150, bursts: 120 },
-  medium: { dpr: 1, aa: true, bloom: false, particles: 1500, numbers: 100, debris: 400, bursts: 240 },
-  high: { dpr: 1.5, aa: true, bloom: true, particles: 3000, numbers: 160, debris: 900, bursts: 400 },
-  ultra: { dpr: 2, aa: true, bloom: true, particles: 4500, numbers: 200, debris: 1400, bursts: 600 },
+/**
+ * Per tier: pixel ratio cap, antialias, bloom, the composer's multisampling
+ * (its buffer is not the canvas, so the canvas's own antialias never reached
+ * a scene drawn through the bloom: parent QUALITY_RESCUE_2026-11-01 L2), and
+ * effect budgets (SURVIVAL_MODE_PLAN.md 8.1). Ultra keeps 4×; High draws
+ * without: survival-s1-perf (1280×720 dpr 2, M4, no vsync) breaks its gates at
+ * 4× (peak mean 10.5–10.7 ms, flood p95 23 ms) and at 2× (7.0–8.2 ms, 15–18 ms)
+ * against ≤ 6 and ≤ 14; without, 5.0–5.3 and 12.0–13.1 (changelog
+ * 2026-11-01-wave1-fix §12).
+ */
+export const VIEW_TIERS: Record<Tier, { dpr: number; aa: boolean; bloom: boolean; samples: number; particles: number; numbers: number; debris: number; bursts: number }> = {
+  low: { dpr: 1, aa: false, bloom: false, samples: 0, particles: 600, numbers: 50, debris: 150, bursts: 120 },
+  medium: { dpr: 1, aa: true, bloom: false, samples: 0, particles: 1500, numbers: 100, debris: 400, bursts: 240 },
+  high: { dpr: 1.5, aa: true, bloom: true, samples: 0, particles: 3000, numbers: 160, debris: 900, bursts: 400 },
+  ultra: { dpr: 2, aa: true, bloom: true, samples: 4, particles: 4500, numbers: 200, debris: 1400, bursts: 600 },
 };
 
 /**
@@ -268,11 +278,19 @@ void main() {
   #include <colorspace_fragment>
 }`;
 
+/** An A/B switch of the page's address (?tone=, ?msaa=, ?bloom=, ?feel=): read only with the scenarios' handle (dev, or ?debug=1), never in a player's build. */
+function abSwitch(name: string): string | null {
+  const params = new URLSearchParams(location.search);
+  return import.meta.env.DEV || params.get("debug") === "1" ? params.get(name) : null;
+}
+
 export class Stage {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(FOV, 16 / 9, 1, 2500);
   readonly composer: EffectComposer | null;
+  /** The bloom tiers' typing feel pass (feel-bloom.ts): its marks bloom and tone map as before L1. */
+  readonly feel: FeelBloomPass | null;
   private readonly uniforms = { uTime: { value: 0 }, uThreat: { value: 0 } };
   /** The guns' light pools on the deck (lights.ts writes them). */
   readonly deck = deckLightUniforms();
@@ -300,7 +318,9 @@ export class Stage {
     const spec = VIEW_TIERS[tier];
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: spec.aa, powerPreference: "high-performance" });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    // L1: Neutral (Khronos PBR Neutral) keeps a hot core's hue where ACES turned it cream-white; ?tone= for A/B (debug only).
+    const tone = abSwitch("tone") ?? BLOOM.tone;
+    this.renderer.toneMapping = tone === "aces" ? THREE.ACESFilmicToneMapping : tone === "agx" ? THREE.AgXToneMapping : THREE.NeutralToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.info.autoReset = false;
     this.scene.background = new THREE.Color(PALETTE.void);
@@ -322,13 +342,26 @@ export class Stage {
     this.scene.add(this.sky);
     this.build();
     if (spec.bloom) {
-      this.composer = new EffectComposer(this.renderer);
+      // Half float as three's own buffer, multisampled by tier (L2: Ultra 4×, High none); resize() sizes it. ?msaa=n: A/B in scenarios (debug only).
+      const msaa = Number(abSwitch("msaa") ?? NaN);
+      const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Number.isInteger(msaa) && msaa >= 0 && msaa <= 8 ? msaa : spec.samples });
+      target.texture.name = "EffectComposer.rt1";
+      this.composer = new EffectComposer(this.renderer, target);
       this.composer.addPass(new RenderPass(this.scene, this.camera));
-      // FEEL_PASS_S1 §4.1: strength 0.85, the threshold kept at 1 (only HDR light blooms); radius 0.3, not 0.45 (a Ray shot washed a 400 px column of the lane). ?bloom=s,r: A/B in scenarios.
-      const [strength, radius] = (new URLSearchParams(location.search).get("bloom") ?? "").split(",").map(Number);
-      this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(256, 256), Number.isFinite(strength) && strength! > 0 ? strength! : 0.85, Number.isFinite(radius) ? radius! : 0.3, 1.0));
-      this.composer.addPass(new OutputPass());
-    } else this.composer = null;
+      // L1 (gun-rules BLOOM): only thin HDR cores pass the threshold of 1, a tight bloom over them (was 0.85 / 0.3, FEEL_PASS_S1 §4.1). ?bloom=s,r: A/B in scenarios (debug only).
+      const [strength, radius] = (abSwitch("bloom") ?? "").split(",").map(Number);
+      const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), Number.isFinite(strength) && strength! > 0 ? strength! : BLOOM.strength, Number.isFinite(radius) ? radius! : BLOOM.radius, BLOOM.threshold);
+      // The typing feel's marks drawn alone first: the bloom adds what they give its bright pass as the old bloom did, the output tone maps them as main did (feel-bloom.ts).
+      // ?feel=gain,blend: A/B in scenarios (debug only); a part left out or empty keeps BLOOM.feel's.
+      const feel = (abSwitch("feel") ?? "").split(",").map((part) => (part.trim() === "" ? NaN : Number(part)));
+      this.feel = new FeelBloomPass(this.camera, bloom, BLOOM.old, Number.isFinite(feel[0]) ? feel[0]! : BLOOM.feel.gain, Number.isFinite(feel[1]) ? feel[1]! : BLOOM.feel.blend);
+      this.composer.addPass(this.feel);
+      this.composer.addPass(bloom);
+      this.composer.addPass(this.feel.output);
+    } else {
+      this.composer = null;
+      this.feel = null;
+    }
   }
 
   private build(): void {

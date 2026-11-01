@@ -19,16 +19,13 @@ import { bayOf, firing } from "../sim/weapons";
 import type { World } from "../sim/world";
 import { BOLT } from "./bolts";
 import { CELL, Column, FLAT, type Streaks } from "./fx";
-import { AFTER, LIGHT } from "./gun-rules";
+import { AFTER, BLOOM, LIGHT } from "./gun-rules";
 import type { ShotParts } from "./shots";
 import { MUZZLE } from "./ship";
 import { AIM_PRIO } from "./ship-rules";
 import { BLOW as C } from "./theme";
 
 const RAILS = 8;
-/** Ray's line: held, then fading (s). */
-const RAIL_HOLD = 0.35;
-const RAIL_FADE = 0.15;
 const F = 1 / 60;
 const Y = 0.95;
 
@@ -48,8 +45,18 @@ export class BeamFx {
   private readonly w3 = new THREE.Vector3();
   private readonly end = new Float64Array(2);
 
+  /** A bloom tier (L1): Heat Beam's glow and floor column held under the threshold. */
+  private readonly bloom: boolean;
+  /** Medium, High, Ultra (L1, Medium since the wave 1 fix): Heat Beam's core a thin HDR streak, its glow narrower, its floor column a narrow groove, no haze; Low keeps the old wide beam. */
+  private readonly narrow: boolean;
+  private readonly tiaCore = new THREE.Color(BLOOM.tia.color);
+  /** The last puff of smoke off the burning end (s). */
+  private smokeAt = -1e9;
+
   constructor(private readonly p: BeamParts, private readonly tia: THREE.Color) {
-    this.column = new Column(tia, TIA.length, 3.6, FIELD.muzzleZ);
+    this.bloom = p.stage.composer !== null;
+    this.narrow = p.stage.tier !== "low";
+    this.column = new Column(tia, TIA.length, 3.6, FIELD.muzzleZ, this.bloom ? BLOOM.halo : 0, this.narrow ? BLOOM.tia.groove : 0.3);
   }
 
   /** EV.rail, beamStart, beamEnd; `now` in ms. */
@@ -65,21 +72,26 @@ export class BeamFx {
       r[k] = m.x; r[k + 1] = m.y; r[k + 2] = m.z;
       r[k + 3] = dx * 3; r[k + 4] = -(FIELD.muzzleZ + dz * 3);
       r[k + 5] = R.x[i]!; r[k + 6] = -R.z[i]!; r[k + 7] = 0;
-      // A muzzle streak 3.4 m (5 frames), a star 12 % of the view (4 frames), ion rings along the line; the soft white round it
-      // smaller and dimmer than build 2's (it washed the ship and the bays' edges white each shot, test pass 27/10).
-      this.p.streaks.add(m.x, m.y, m.z, m.x + dx * 3.4, m.y, m.z - dz * 3.4, 0.5, C.rayCore, 3.4, 1, 5 * F);
-      // The star and its white sit 1 m out along the shot: on the muzzle they whitened the ship's front (§12).
+      // A muzzle tongue 3.4 m (5 frames): its cobalt body held, a thin HDR core; a star 12 % of the view (4 frames), its hot
+      // core, ion rings along the line; the soft halo round it held under the bloom (build 2's white washed the ship, 27/10).
+      const B = BLOOM.ray;
+      this.p.streaks.add(m.x, m.y, m.z, m.x + dx * 3.4, m.y, m.z - dz * 3.4, 0.5, C.ray, 1.6, 0, 5 * F);
+      this.p.streaks.add(m.x, m.y, m.z, m.x + dx * 3.4, m.y, m.z - dz * 3.4, B.tongue, C.rayCore, B.power, B.white, 5 * F, true);
+      // The star and its core sit 1 m out along the shot: on the muzzle they whitened the ship's front (§12). Whole on the
+      // shot's frame (VFX_STANDARD §3.5.5: it grew from 0.6 and read small on its one bright frame); a pale halo held under
+      // the bloom round them, wide enough to light §4.2's radius by itself (f5's own reach, wave 1 fix).
       const star = this.p.size(0.12) * 2.8;
       const [sx, sz] = [m.x + dx, m.z - dz];
-      g.burst(CELL.star8, sx, m.y, sz, star * 0.6, star, 4 * F, C.ray, 2.8);
-      g.burst(CELL.core, sx, m.y, sz, star * 0.2, star * 0.35, 4 * F, C.rayCore, 2.6);
-      g.burst(CELL.soft, sx, m.y, sz, star * 0.45, star * 0.6, 3 * F, C.rayCore, 1.1);
+      g.burst(CELL.star8, sx, m.y, sz, star * 0.9, star, 4 * F, C.ray, 3.2);
+      g.burst(CELL.core, sx, m.y, sz, star * 0.22, star * 0.3, 4 * F, C.rayCore, 3.6);
+      const halo = star * (this.bloom ? BLOOM.flash.ray : 1);
+      g.burst(CELL.soft, sx, m.y, sz, halo * 0.8, halo * 0.9, 3 * F, C.rayCore, 1.1);
       const ex = R.x[i]!;
       const ez = -R.z[i]!;
       const length = Math.hypot(ex - r[k + 3]!, ez - r[k + 4]!);
       for (let d = 2.5; d < length; d += 3.2) {
         const t = d / length;
-        g.burst(CELL.ring, r[k + 3]! + (ex - r[k + 3]!) * t, Y, r[k + 4]! + (ez - r[k + 4]!) * t, 0.3, 1.4, 0.3, C.ray, 1.6);
+        g.burst(CELL.ring, r[k + 3]! + (ex - r[k + 3]!) * t, Y, r[k + 4]! + (ez - r[k + 4]!) * t, 0.3, 1.4, 0.3, C.rayIon, 1.6);
       }
       this.p.lights.flash(LIGHT.ray, m.x + dx * 1.5, m.y, m.z - dz * 1.5, C.ray);
       this.p.ship.kick("ray");
@@ -110,16 +122,25 @@ export class BeamFx {
     this.beam(w, time, dt);
   }
 
-  /** Ray: its lines (real muzzle → the sim's line 3 m out → the far end), the frost bolt armed over the muzzle, the charge. */
+  /**
+   * Ray: its lines (real muzzle → the sim's line 3 m out → the far end): a thin HDR core with a white thread, gone in
+   * 0.2 s, over a cobalt body; then the ionised afterglow, wider and held under the bloom, crackling as it widens and
+   * fades by 0.6 s; a band of light on the deck. The frost bolt armed over the muzzle, the charge.
+   */
   private ray(w: World, dt: number, time: number): void {
     const S = this.p.strips;
     const g = this.p.glows;
     const r = this.rails;
+    const B = BLOOM.ray;
     for (let q = 0; q < Math.min(RAILS, this.railCount); q += 1) {
       const k = q * 8;
       const age = (r[k + 7] = r[k + 7]! + dt);
-      if (age >= RAIL_HOLD + RAIL_FADE) continue;
-      const f = age < RAIL_HOLD ? 1 : 1 - (age - RAIL_HOLD) / RAIL_FADE;
+      if (age >= B.ionEnd) continue;
+      // The core and body, then the afterglow (1 → 0 by ionEnd), widening as it goes.
+      const fc = age < B.hold ? 1 : Math.max(0, 1 - (age - B.hold) / B.fade);
+      const fi = age < B.ionHold ? 1 : 1 - (age - B.ionHold) / (B.ionEnd - B.ionHold);
+      const crackle = 0.8 + 0.2 * Math.sin(time * 90 + q * 2.1) * Math.sin(time * 37 + q);
+      const ion = B.ion[0] + (B.ion[1] - B.ion[0]) * (1 - fi);
       for (let seg = 0; seg < 2; seg += 1) {
         const ax = seg === 0 ? r[k]! : r[k + 3]!;
         const ay = seg === 0 ? r[k + 1]! : Y;
@@ -127,8 +148,11 @@ export class BeamFx {
         const bx = seg === 0 ? r[k + 3]! : r[k + 5]!;
         const bz = seg === 0 ? r[k + 4]! : r[k + 6]!;
         const near = seg === 0 ? 0.6 : 1; // over the ship (its first 3 m): a key's mark shows through
-        S.add(ax, ay, az, bx, Y, bz, 0.5 * f, C.ray, 1.8 * f * near, 0);
-        S.add(ax, ay, az, bx, Y, bz, 0.12 + 0.06 * f, C.rayCore, 2.4 * f * near, f * near);
+        S.add(ax, ay, az, bx, Y, bz, ion, C.rayIon, 1.2 * fi * crackle * near, 0);
+        if (fc > 0) {
+          S.add(ax, ay, az, bx, Y, bz, B.body * (0.6 + 0.4 * fc), C.ray, B.bodyPower * fc * near, 0);
+          S.add(ax, ay, az, bx, Y, bz, B.core * (0.7 + 0.3 * fc), C.rayCore, B.power * fc * near, B.white * fc * near, true);
+        }
         // A flat band of light along the line on the deck for 0.3 s.
         if (age < 0.3) S.add(ax, 0.05, az, bx, 0.05, bz, 1.2, C.ray, 0.7 * (1 - age / 0.3), 0.15);
       }
@@ -204,24 +228,46 @@ export class BeamFx {
       const x1 = seg === 0 ? jx : fx;
       const y1 = seg === 0 ? jy : 0.55;
       const z1 = seg === 0 ? jz : fz;
-      // A faint haze 2.4 m (none over the ship), the hot glow 1.1 m (0.55 at 0.7), a core 0.22 m of the gun's own orange with a thread of white (0.7); the light it throws on the deck.
+      // A faint haze 2.4 m (none over the ship), the hot glow 1.1 m (0.55 at 0.7), a core 0.22 m of the gun's own orange with a thread of white (0.7).
       const near = seg === 0 ? 0.7 : 1;
       const T = AFTER.tiaCore;
-      if (seg === 1) S.add(x0, y0, z0, x1, y1, z1, 2.4 * thin, this.tia, 0.18 * k, 0);
-      S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 0.55 : 1.1) * thin, this.tia, (seg === 0 ? 0.7 : 1.3) * k, 0);
-      S.add(x0, y0, z0, x1, y1, z1, 0.22 * thin, this.tia, T.core * k * near, T.white * near);
-      S.add(x0, 0.4, z0, x1, 0.4, z1, 1.1 * thin, this.tia, 0.5 * k * near * near, T.floorWhite * k * near);
+      // The haze only on Low: held under the bloom it read as a dirty orange fog round the narrow beam (wave 1 fix).
+      if (seg === 1 && !this.narrow) S.add(x0, y0, z0, x1, y1, z1, 2.4 * thin, this.tia, 0.18 * k, 0);
+      if (this.narrow) {
+        // L1: a glow held under the threshold and a thin HDR core of the gun's hot yellow-orange, the only part that blooms.
+        const B = BLOOM.tia;
+        S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 0.4 : B.glow) * thin, this.tia, B.glowPower * k * near, 0);
+        S.add(x0, y0, z0, x1, y1, z1, B.core * thin, this.tiaCore, B.power * k * near, 0, true);
+      } else {
+        S.add(x0, y0, z0, x1, y1, z1, (seg === 0 ? 0.55 : 1.1) * thin, this.tia, (seg === 0 ? 0.7 : 1.3) * k, 0);
+        S.add(x0, y0, z0, x1, y1, z1, 0.22 * thin, this.tia, T.core * k * near, T.white * near);
+      }
+      // Its light on the deck (the narrow beam leaves it to the column's groove: stacked under the core it turned it cream).
+      if (!this.narrow) S.add(x0, 0.4, z0, x1, 0.4, z1, 1.1 * thin, this.tia, 0.5 * k * near * near, T.floorWhite * k * near);
     }
     const g = this.p.glows;
     g.stamp(CELL.star8, m.x, m.y, m.z, 1 * k, time * 3, this.tia, 1.2 * k);
-    g.stamp(CELL.soft, fx, 0.6, fz, 2.4 * k, 0, this.tia, 1.5 * k);
+    if (this.narrow) {
+      // The burning end: a small held glow and a flickering hot core (was a 2.4 m soft disc, held into an orange blob).
+      const flicker = 0.85 + 0.15 * Math.sin(time * 47) * Math.sin(time * 23);
+      g.stamp(CELL.soft, fx, 0.6, fz, 1.2 * k, 0, this.tia, 0.9 * k);
+      g.stamp(CELL.core, fx, 0.65, fz, 0.42 * k * flicker, 0, this.tiaCore, 3 * k * flicker);
+    } else g.stamp(CELL.soft, fx, 0.6, fz, 2.4 * k, 0, this.tia, 1.5 * k);
     if (on) {
       this.p.lights.hold(1, LIGHT.tia, m.x + ux * 1.5, m.y, m.z - uz * 1.5, this.tia);
       this.p.lights.hold(2, LIGHT.tiaSlide, m.x + (ex - m.x) * 0.6, 0.9, m.z + (-ez - m.z) * 0.6, this.tia);
-      if (Math.random() < dt * 40) {
-        const t = Math.random();
+      // Sparks off the burn (the narrow beam: off its far end only; along the whole beam they speckled the air round it).
+      if (Math.random() < dt * (this.narrow ? 24 : 40)) {
+        const t = this.narrow ? 0.82 + Math.random() * 0.18 : Math.random();
         this.v.set((Math.random() - 0.5) * 2, 2 + Math.random() * 4, (Math.random() - 0.5) * 2);
         this.p.sparks.spawn(this.w3.set(m.x + (ex - m.x) * t + (Math.random() - 0.5) * 1.2, 0.3, m.z + (-ez - m.z) * t), this.v, this.tia, 0.25, 0.5, { drag: 2, gravity: 4 });
+      }
+      // Smooth dark smoke off the burning far half (the smoke pool: normal blending, soft puffs rising), never added light.
+      const A = AFTER.smoke.tia;
+      if (this.narrow && time - this.smokeAt >= A.every) {
+        this.smokeAt = time;
+        const t = 0.45 + Math.random() * 0.55;
+        this.p.smoke.burst(CELL.puff, m.x + (ex - m.x) * t + (Math.random() - 0.5) * 0.6, 0.7, m.z + (-ez - m.z) * t, A.from, A.to * (0.85 + Math.random() * 0.3), A.life * (0.85 + Math.random() * 0.3), Math.random() < 0.5 ? C.soot : C.smokeBody, A.alpha, (Math.random() - 0.5) * 0.3, A.rise, 0, (Math.random() - 0.5) * 0.6);
       }
     }
   }

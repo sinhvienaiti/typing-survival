@@ -188,7 +188,8 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   (loops `gun.tia.loop`, `gun.ray.armed`, heard only while the fight runs:
   `audio.live`, set each frame in `main.ts`; `gun.xung.tail`; a foe in
   Pháo Sao's ring plays no `hit.*`). Bloom 0.85 with radius 0.3, not the spec's
-  0.45 (a Ray shot washed the lane). Frame sequences:
+  0.45 (a Ray shot washed the lane; since L1 of 01/11, 0.45 / 0.12 over thin
+  HDR cores only, see the wave 1 entry). Frame sequences:
   `scripts/visual/scenarios/survival-feel-guns.mjs`
   (`SCENES=f5,f6,shake,f9g,audio`, `GUNS=` to pick, ~15 min a size). The
   backdrop under the word line is at its limit (p50 +0.020 over build 1,
@@ -322,5 +323,44 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   (`docs/changelog/2026-10-31-wire-245.md`): Close is the round art button
   (`quick-close` through `QuickSkin.close`), and a foe drawn at 40 px or less
   is its silhouette (`<role>-small`, `foeArt` in `src/view/ui-art.ts`).
+- Quality rescue wave 1 (01/11, parent `docs/games/QUALITY_RESCUE_2026-11-01.md`
+  L2–L4; `docs/changelog/2026-11-01-wave1.md`): the bays are cards beside the
+  corridor (`hud.ts` `placeBays`: bays 1–2 from 30 % of the height, 3–4 from
+  47 %, 2.5 % in from the screen's edges, off the wall; at 4:3 a card shrinks to
+  stay off the lane, over the wall's posts; a sealed bay is a chip); the
+  composer of Ultra draws 4× MSAA (`VIEW_TIERS.samples`, `?msaa=n`); High draws
+  none since the wave 1 fix (4× and 2× broke `survival-s1-perf`'s gates at 720p dpr 2).
+  Under MSAA an edge pixel is shaded with varyings past the triangle: a
+  shader that can go NaN there (`pow()` of a negative) spreads black blocks
+  through the bloom, so clamp before `pow`. Scatter Gun's and Star Mortar's
+  smoke is dark puffs in the smoke pool (`AFTER.smoke`, pool 200), never added
+  grey light. `survival-layout.mjs` grades the gap between the cards' words and
+  the horde, the lanes, the protected rectangles, the rift chip and the damage
+  numbers; `SCENES=chapter` plays chapter 1's four stages. L1 (bloom and
+  tone, owner's O4: VFX_STANDARD §3.5.1) and O5 (same changelog): on High and
+  Ultra only thin HDR cores bloom (`BLOOM` in `gun-rules.ts`: strength 0.45,
+  radius 0.12, threshold 1); `Glows` and `Strips` hold every halo cell (soft,
+  ring, flare, puff) and every streak's colour at 0.9 a channel (`hdr` streaks
+  pass: Heat Beam's 0.12 m core at 3), the Heat Beam column too, with a narrow
+  burning groove; tone mapping is Khronos PBR Neutral on every tier
+  (`?tone=aces|agx|neutral`, `?bloom=s,r` for A/B; every A/B switch reads
+  only with `debug=1`). The foes' veins, hairlines and model glow (eyes) are
+  the foe faction's purple (`FACTION` in `crowd.ts`, never a gun's colour).
+  Wave 1 fix (01/11, `docs/changelog/2026-11-01-wave1-fix.md`): the typing
+  feel (a shared system, bar 9) has its own pools (`TypeFeel` pool and bolts:
+  marks, core, stream and the charge at the muzzles, never held) and blooms
+  and tone maps as on main (`feel-bloom.ts`: L1's one bloom chain carries the
+  marks' share in alpha; three's UnrealBloomPass blends its composite by an
+  alpha of 3 × strength, so a mip adds 3 × strength² × its factor; the output
+  pass tone maps toward ACES by the marks' share; `?feel=gain,blend`). Foes
+  are near-black glass and chitin with thin purple veins and eyes, a warm and a
+  navy hairline (Pack Leaders gold). Rail Gun is electric cobalt with a white
+  thread and an ionised afterglow (`BLOOM.ray`). Star Mortar's landing ring
+  is a white line in a pale orange band between dark bands, pulsing
+  (`BLOW.mark`; red is the foes'). `f5` grades a muzzle flash by its own
+  reach: the frame against a control frame with the guns' billboards and
+  streaks hidden (`gunFx`/`typingFx` hooks), so the floor lamp and hull drop
+  out. At 4:3 and 5:4 a gun card climbs toward the gate or shrinks to clear
+  the wall.
 - The design docs live in `docs/`; the parent repo's
   `docs/games/SPLIT_PLAN.md` explains the split and the theme.

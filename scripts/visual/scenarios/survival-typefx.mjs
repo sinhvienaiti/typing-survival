@@ -22,7 +22,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { DEV_URL, OUT_DIR } from "./common.mjs";
-import { open, press, sv } from "./survival-s0-lib.mjs";
+import { open, PAGE_QUERY, press, sv } from "./survival-s0-lib.mjs";
 import { openStage } from "./survival-s1-lib.mjs";
 
 const STEP = 1000 / 60;
@@ -233,7 +233,7 @@ export default async function (page) {
 
   if (want("title")) {
     const base = DEV_URL.replace(/\/$/, "");
-    await page.goto(base + "/index.html?seed=1", { settle: 300 });
+    await page.goto(base + "/index.html?seed=1" + PAGE_QUERY, { settle: 300 });
     for (let wait = 0; wait < 120 && (await page.eval(sv("return t.ready();"))) !== true; wait += 1) await page.sleep(250);
     await page.sleep(800);
     const title = await shot("title");

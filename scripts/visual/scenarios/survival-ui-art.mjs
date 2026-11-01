@@ -511,11 +511,10 @@ export default async function (page) {
     // Every groove the same length; each lit to its value (the kit's --kit-qs-v, 0–1), so 50 and 100 differ.
     sliderFill: by("quick-sound").quick.ranges.length >= 5 && Math.max(...by("quick-sound").quick.ranges) - Math.min(...by("quick-sound").quick.ranges) <= 1 && by("quick-sound").quick.lit.every(([value, v]) => Math.abs(value - v) < 0.6),
     // UI pass 3: one rift chip (no wall mark of its own) with the arrow, the Rift icon and the countdown; inside the corridor (the limits
-    // hud.ts measured, well clear of the screen's edges), its bottom over the bays' top and within a tenth of the height of it, off the gun tabs.
+    // hud.ts measured, well clear of the screen's edges), off every bay and gun tab (L4, 01/11: the bays stand beside the corridor now, not under the chip).
     oneRiftChip: (({ rift }) => !!rift && /^Rift · \d+\.\d s$/.test(rift.text) && rift.chips === 1 && rift.roles.includes("icon-rift") && rift.roles.includes("part-arrow")
       && rift.spot.length === 2 && rift.spot[0] > 0.15 * page.width && rift.spot[1] < 0.85 * page.width && rift.box[0] >= rift.spot[0] - 1 && rift.box[2] <= rift.spot[1] + 1
-      && rift.bays.length > 0 && rift.box[3] <= Math.min(...rift.bays.map((b) => b[1])) + 1 && rift.box[1] >= Math.min(...rift.bays.map((b) => b[1])) - 0.1 * page.height
-      && rift.tabs.every((t) => t[2] <= rift.box[0] || t[0] >= rift.box[2] || t[3] <= rift.box[1] || t[1] >= rift.box[3]))(by("fight-rift")),
+      && rift.bays.length > 0 && [...rift.bays, ...rift.tabs].every((t) => t[2] <= rift.box[0] || t[0] >= rift.box[2] || t[3] <= rift.box[1] || t[1] >= rift.box[3]))(by("fight-rift")),
     // UI pass 3: the loadout cards. Gun art 96 px × --ui; every chip on the word plate, tinted (green Strong, red Weak), with its row's label as tooltip;
     // the names shown on the focused card only; the stats on one line; no CSS ring on any card; under every card's content at most a fifth empty.
     // UI pass 3 fixes: the names on every card, one colour a card, the focused card's brighter than the others'.

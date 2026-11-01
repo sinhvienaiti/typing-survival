@@ -66,8 +66,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-fresh { position: absolute; top: calc(70px * var(--ui)); left: 50%; transform: translateX(-50%); padding: calc(4px * var(--ui)) calc(14px * var(--ui)); font: 700 calc(13px * var(--ui)) var(--font-title); letter-spacing: 0.12em; color: var(--text); background: var(--banner-band); border: 1px solid var(--urgent); opacity: 0; transition: opacity 0.2s; }
 .sv-fresh.is-on { opacity: 1; }
 
-/* Bottom: the bays on the floor beside the ship, [bay 3][bay 1] ship [bay 2][bay 4] (FEEL_PASS_S1 §2.1); hud.ts places the row under the bottom line and sets its columns. */
-.sv-bottom { position: absolute; left: 50%; top: 508px; transform: translateX(-50%); display: grid; grid-template-columns: 208px 230px 324px 230px 208px; column-gap: calc(12px * var(--ui)); align-items: start; }
+/* The bays: cards beside the corridor, outside its walls, at the horde's height (parent QUALITY_RESCUE_2026-11-01 L4, variant A): bays 1 and 3 on the left, 2 and 4 on the right. hud.ts (placeBays) sets each card's top, its side's offset and, where the view is too narrow, its own smaller --ui. */
+.sv-bottom { position: absolute; inset: 0; }
+.sv-bottom > [data-bay] { position: absolute; }
 /* Each bay's gun colour: --gun and --gun-glow. */
 /* --gun-ink is set with each gun: a var() inherits as the value it took where it was declared, so a :root default would give every gun Xung's ink. */
 .sv-xung { --gun: var(--xung); --gun-glow: var(--xung-glow); --gun-ink: var(--xung); }
@@ -75,7 +76,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-tan { --gun: var(--tan); --gun-glow: var(--tan-glow); --gun-ink: var(--tan); }
 .sv-ray { --gun: var(--ray); --gun-glow: var(--ray-glow); --gun-ink: var(--ray-ink); }
 .sv-phao { --gun: var(--phao); --gun-glow: var(--phao-glow); --gun-ink: var(--phao); }
-.sv-slot { --load: 0; position: relative; min-width: 0; height: calc(100px * var(--ui)); padding: calc(11px * var(--ui)) calc(14px * var(--ui)) calc(7px * var(--ui)); display: flex; flex-direction: column; gap: calc(2px * var(--ui)); background-color: var(--bay-glass); transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; }
+.sv-slot { --load: 0; position: relative; min-width: 0; width: calc(230px * var(--ui)); height: calc(100px * var(--ui)); padding: calc(11px * var(--ui)) calc(14px * var(--ui)) calc(7px * var(--ui)); display: flex; flex-direction: column; gap: calc(2px * var(--ui)); background-color: var(--bay-glass); transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; }
 /* The top stripe: dim, and lit from the left as the word is typed (full for a moment when it loads). */
 .sv-slot::before, .sv-slot::after { content: ""; position: absolute; left: 0; top: 0; height: calc(5px * var(--ui)); background: var(--hazard-gun); }
 .sv-slot::before { right: 0; opacity: 0.35; }
@@ -105,8 +106,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 .sv-slot.is-active .sv-word { font-size: calc(22px * var(--ui)); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; }
 .sv-slot.is-active .sv-mean { font-size: calc(14px * var(--ui)); line-height: 1.25; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
 .sv-slot.is-active { border-color: var(--gun); box-shadow: inset 0 1px 0 var(--bevel-hi), 0 0 0 2px var(--gun), 0 0 26px var(--gun-glow); }
-/* A bay without a gun: a dark steel plate (bay 3 opens at the Mốc, bay 4 later). */
-.sv-bay-lock { justify-self: center; width: 78%; height: calc(76px * var(--ui)); margin-top: calc(12px * var(--ui)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(2px * var(--ui)); background-color: var(--bay-glass); font: 700 calc(11px * var(--ui)) var(--font-title); letter-spacing: 0.2em; color: var(--steel-300); opacity: 0.85; }
+/* A bay without a gun: a small dark chip, its lock beside "LOCKED" (bay 3 opens at the Mốc, bay 4 later; L4: a full plate beside the corridor would only hide the field). */
+.sv-bay-lock { width: calc(132px * var(--ui)); height: calc(34px * var(--ui)); padding: 0 calc(12px * var(--ui)); display: flex; flex-direction: row; align-items: center; justify-content: center; gap: calc(6px * var(--ui)); background-color: var(--bay-glass); font: 700 calc(11px * var(--ui)) var(--font-title); letter-spacing: 0.2em; color: var(--steel-300); opacity: 0.85; }
+.sv-bay-lock > .sv-art-lock { width: calc(22px * var(--ui)); height: calc(22px * var(--ui)); }
 .sv-slot.is-active .sv-word { color: var(--text); }
 /* The other bay steps back: its words dim, the plate stays solid. */
 .sv-slot.is-dim > * { opacity: 0.72; }
@@ -506,6 +508,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--page);
 /* Bays: the gun card frame; a sealed bay is the same plate, dimmed, smaller, its lock centred over "LOCKED". The plate is opaque (UI pass 3: at 0.85 the corridor's amber wall light showed through as a stray chip). */
 :root[data-art~="frame-card"] .sv-slot, :root[data-art~="frame-card"] .sv-bay-lock { background: none; border-color: transparent; border-image: var(--art-frame-card) var(--art-frame-card-slice) / calc(12px * var(--ui)) calc(21px * var(--ui)) stretch; }
 :root[data-art~="frame-card"] .sv-bay-lock { filter: saturate(0.35) brightness(0.8); opacity: 1; }
+/* The chip is a third of a card's height: the frame's edges at a third too. */
+:root[data-art~="frame-card"] .sv-bottom > .sv-bay-lock { border-image-width: calc(6px * var(--ui)) calc(11px * var(--ui)); }
 /* The top stripe and its load sit just inside the frame's top edge. */
 :root[data-art~="frame-card"] .sv-slot::before, :root[data-art~="frame-card"] .sv-slot::after { top: calc(4px * var(--ui)); left: calc(14px * var(--ui)); height: calc(4px * var(--ui)); }
 :root[data-art~="frame-card"] .sv-slot::before { right: calc(14px * var(--ui)); }

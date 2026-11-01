@@ -46,11 +46,21 @@ export const BLOW = {
   repair: new THREE.Color("#7ff5e0"),
   /** A Bọc Thép (armoured) foe's death: gold. */
   armour: new THREE.Color("#ffd27a"),
-  // S1 guns (theme.css's --tan, --ray, --phao): Tán amber, Ray white-blue, Pháo Sao vermilion.
+  // S1 guns: Tán amber, Ray electric cobalt, Pháo Sao vermilion. theme.css's --tan and --phao are these colours; its --ray is
+  // `ray`'s hue lifted to lightness 76 % (#85a2ff, so the card's text holds 7 : 1) and --ray-glow is `ray` itself.
   tan: new THREE.Color("#ffc53d"),
-  ray: new THREE.Color("#c4d2ff"),
-  rayCore: new THREE.Color("#f2f7ff"),
+  /**
+   * Rail Gun (wave 1 fix, 01/11): a saturated electric cobalt (its icon's blue), not the Horde's violet, the
+   * foes' red, the Pack Leaders' gold or the Line's cyan-white (was a pale #c4d2ff, saturation 0.23). `ray`: its
+   * body, star, rings and light; `rayCore`: the thin HDR core (× 3–6 it reads white-blue at its centre);
+   * `rayIon`: the ionised afterglow, held under the bloom.
+   */
+  ray: new THREE.Color("#3d6bff"),
+  rayCore: new THREE.Color("#b3c7ff"),
+  rayIon: new THREE.Color("#4f7dff"),
   phao: new THREE.Color("#ff3f6c"),
+  /** Our side's warning on the deck (Pháo Sao's landing ring): pale orange with a white rim; red is the foes' (parent VFX_STANDARD §3.6.3). */
+  mark: new THREE.Color("#ffb070"),
   smoke: new THREE.Color("#58616b"),
   /** A big kill's smoke laid over the deck (normal blending; fx.ts lights its thin edges): lit grey tops, a dark body, a sooty base; its scorch. */
   smokeLit: new THREE.Color("#665e57"),

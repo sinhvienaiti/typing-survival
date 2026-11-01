@@ -22,7 +22,7 @@ import type { World } from "../sim/world";
 import { BeamFx } from "./beams";
 import { BOLT, type Bolts } from "./bolts";
 import { CELL, FLAT, Streaks, type Glows, type Strips } from "./fx";
-import { AFTER, FEEL, LIGHT, joinWeight, screenMetres } from "./gun-rules";
+import { AFTER, BLOOM, FEEL, LIGHT, joinWeight, screenMetres } from "./gun-rules";
 import type { GunLights } from "./lights";
 import type { Stage } from "./scene";
 import { MUZZLE, PILOT_COLORS, type Pilot, type Ship } from "./ship";
@@ -85,7 +85,11 @@ export class ShotFx {
   private readonly tia: THREE.Color;
   private readonly draconis: boolean;
 
+  /** A bloom tier (L1): Xung's release halo, held under the threshold, a little wider. */
+  private readonly bloom: boolean;
+
   constructor(private readonly p: ShotParts) {
+    this.bloom = p.stage.composer !== null;
     this.draconis = p.pilot === "draconis";
     this.shot = PILOT_COLORS[p.pilot].shot;
     this.shotHi = this.draconis ? new THREE.Color("#ffb15c") : C.elite;
@@ -162,14 +166,25 @@ export class ShotFx {
       const soft = this.size(first ? 0.08 : 0.04) * 2.2;
       // A magazine's first star stands 0.7 m out along the shot, clear of the core's load flash.
       const o = first ? 0.7 : 0;
-      g.burst(CELL.star4, m.x + dx * o, m.y, m.z - dz * o, 0.5, first ? 2 : 1.1, 3 * F, crit ? C.crit : this.shot, 3);
-      g.burst(CELL.soft, m.x, m.y, m.z, soft * 0.7, soft, (first ? 4 : 3) * F, this.shot, first ? 2.6 : 2);
-      g.burst(CELL.core, m.x, m.y, m.z, soft * 0.25, soft * 0.4, (first ? 4 : 3) * F, C.hot, 2.4);
+      // Whole on the shot's frame for a magazine's first (VFX_STANDARD §3.5.5: from 0.5 m it read small on its one bright frame).
+      g.burst(CELL.star4, m.x + dx * o, m.y, m.z - dz * o, first ? 1.5 : 0.5, first ? 2 : 1.1, 3 * F, crit ? C.crit : this.shot, 3);
+      // L1 (bloom tiers): the halo is held under the threshold, so it is a little wider (its reach was the old bloom's glare).
+      const halo = soft * (this.bloom ? BLOOM.flash.xung : 1);
+      g.burst(CELL.soft, m.x, m.y, m.z, halo * 0.7, halo, (first ? 4 : 3) * F, this.shot, first ? 2.6 : 2);
+      // A white-hot core (HDR; the magazine's first a third bigger and hotter: the release's energy is its thin core, not a wide glare).
+      g.burst(CELL.core, m.x, m.y, m.z, soft * (first ? 0.32 : 0.25), soft * (first ? 0.5 : 0.4), (first ? 4 : 3) * F, C.hot, first ? 3.6 : 2.4);
       // Its light 1.2 m out along the shot, off the hull (on the muzzle it lit the ship white, as Tia's and Ray's did: §12).
       this.p.lights.flash(first ? LIGHT.xungFirst : LIGHT.xung, m.x + dx * 1.2, m.y, m.z - dz * 1.2, this.shot);
       if (first) {
-        // The magazine's release reads off the core's load flash: a tongue of the gun's colour 1.6 m along the shot (4 frames).
+        // The magazine's release reads off the core's load flash: a tongue of the gun's colour 1.6 m along the shot (4 frames), held,
+        // with a thin white-blue HDR core down its middle; off the hull (the muzzle sits mid-ship: there the hull hid it), a pale halo
+        // held under the bloom, its white-hot core and a star, whole on the shot's frame (wave 1 fix: held alone it read as a dull blue disc).
         this.streaks.add(m.x, m.y, m.z, m.x + dx * 1.6, m.y, m.z - dz * 1.6, 0.45, this.shot, 3, 0.25, 4 * F);
+        this.streaks.add(m.x, m.y, m.z, m.x + dx * 1.9, m.y, m.z - dz * 1.9, 0.11, this.shotHi, 4, 0.5, 4 * F, true);
+        const [rx, rz] = [m.x + dx * BLOOM.release.xung, m.z - dz * BLOOM.release.xung];
+        g.burst(CELL.soft, rx, m.y, rz, halo * BLOOM.release.halo * 0.9, halo * BLOOM.release.halo, 3 * F, this.shotHi, 1.1);
+        g.burst(CELL.core, rx, m.y, rz, soft * 0.18, soft * 0.26, 3 * F, C.hot, 3.6);
+        g.burst(CELL.star8, rx, m.y, rz, 1.1, 1.4, 3 * F, this.shotHi, 3.4, 0, 0, 0, 0, Math.atan2(dz, dx));
         this.spark(m.x, m.y, m.z, dx, 0.4, -dz, 6, 7, this.shotHi, 0.22, 0.35, 1.6);
         this.p.trauma.kick(-dx, dz, 1.5);
       }
@@ -187,7 +202,9 @@ export class ShotFx {
       this.px[bay] = m.x;
       this.py[bay] = m.y - Y;
       this.pz[bay] = m.z + R.z[i]!;
-      // Three tongues of flame along the fan (2.2 m, 4 frames), a white-hot flash 10 % of the view, smoke, two casings.
+      // Three tongues of flame along the fan (2.2 m, 4 frames: amber, a white thread down each), a hot glow on the muzzle sized on
+      // 10 % of the view (held under the bloom on High and Ultra, so pale amber-white, not a white-hot glare: much of it sits under
+      // the hull, f5's own reach of the flash is the tongues'), dark smoke, two casings.
       for (const a of [-0.3, 0, 0.3]) {
         const c = Math.cos(a);
         const s = Math.sin(a);
@@ -199,7 +216,15 @@ export class ShotFx {
       for (let d = 1; d <= 3; d += 1) g.burst(CELL.soft + FLAT, dx * d, 0.06, -(FIELD.muzzleZ + dz * d), 1.2 + 0.5 * d, 1.6 + 0.6 * d, 3 * F, C.tan, 1.5 - 0.25 * d);
       const soft = this.size(0.1) * 2.2;
       g.burst(CELL.soft, m.x, m.y, m.z, soft * 0.7, soft, 4 * F, C.hot, 2.2);
-      g.burst(CELL.soft, m.x, m.y + 0.3, m.z, 1, 2.4, 0.5, C.smoke, 0.7, 0, 3, 0);
+      // L3: smoke off the flame tongues' tips (the ship stands over smoke in depth: off its nose it would hide), drifting on along the fan in the smoke pool (dark, under the flashes), a sooty puff in the middle.
+      const T = AFTER.smoke.tan;
+      for (let k = 0; k < T.puffs; k += 1) {
+        const a = (k - (T.puffs - 1) / 2) * 0.3;
+        const ex = dx * Math.cos(a) - dz * Math.sin(a);
+        const ez = dz * Math.cos(a) + dx * Math.sin(a);
+        const d = T.out + Math.random() * 0.6;
+        this.p.smoke.burst(CELL.puff, m.x + ex * d, m.y + 0.35, m.z - ez * d, T.from, T.to * (0.85 + Math.random() * 0.3), T.life * (0.85 + Math.random() * 0.3), k === 1 ? C.soot : C.smokeBody, T.alpha, ex * 1.2, T.rise, -ez * 1.2, (Math.random() - 0.5) * 1.2);
+      }
       this.spark(m.x, m.y, m.z, dz, 0.8, dx, 1, 4, C.hot, 0.2, 0.5, 0.4);
       this.spark(m.x, m.y, m.z, -dz, 0.8, -dx, 1, 4, C.hot, 0.2, 0.5, 0.4);
       this.p.lights.flash(LIGHT.tan, m.x + dx, m.y, m.z - dz, C.tan);
@@ -215,25 +240,34 @@ export class ShotFx {
         this.sy[k] = m.y;
         this.sz[k] = m.z;
       }
-      // An upward streak 2.5 m (5 frames), a white-hot flash 6 % of the view, a column of smoke.
+      // An upward streak 2.5 m (5 frames, crimson with a white thread), a hot glow sized on 6 % of the view (held under the bloom on
+      // High and Ultra: pale, not white-hot), a dark column of smoke (L3: the smoke pool).
       this.streaks.add(m.x, m.y, m.z, m.x, m.y + 2.5, m.z, 0.55, C.phao, 3, 1, 5 * F);
       const soft = this.size(0.06) * 3;
       g.burst(CELL.soft, m.x, m.y + 0.2, m.z, soft * 0.7, soft, 3 * F, C.hot, 3);
-      g.burst(CELL.soft, m.x, m.y + 0.3, m.z, 1, 3, 0.7, C.smoke, 0.9, 0, 1.6, 0);
+      const P = AFTER.smoke.launch;
+      for (let k = 0; k < P.puffs; k += 1) this.p.smoke.burst(CELL.puff, m.x + (Math.random() - 0.5) * 0.5, m.y + 0.3 + k * 0.45, m.z + 0.2, P.from, P.to * (0.85 + Math.random() * 0.3), P.life * (0.8 + k * 0.15), k === 0 ? C.soot : C.smokeBody, P.alpha, (Math.random() - 0.5) * 0.4, P.rise, 0.3, (Math.random() - 0.5) * 0.8);
       ship.kick("phao");
       ship.cue(AIM_PRIO.phao, R.x[i]!, R.z[i]!);
     } else if (kind === EV.burst) {
       const x = R.x[i]!;
       const z = R.z[i]!;
       const radius = R.value[i]!;
-      // Sized on the view, not in metres: a white flash a fifth of its height (3 frames), the fireball, a shock ring, smoke rising.
+      // Sized on the view, not in metres: a white glow sized on a fifth of its height (3 frames; held under the bloom on High and Ultra,
+      // so its hot core and star carry the bloom), the fireball, a shock ring, dark smoke rising (L3: the smoke pool; soot and the dark
+      // body only: a lit top read lighter than the void behind it).
       const core = this.size(0.18, x, z) * 2.2;
       g.burst(CELL.soft, x, 1.4, -z, core * 0.8, core * 1.4, 3 * F, C.white, 1.5);
       g.burst(CELL.core, x, 1, -z, core * 0.5, core, 5 * F, C.hot, 2.8);
       g.burst(CELL.star8, x, 1.2, -z, 1.2, core * 0.9, 0.2, C.phao, 2.4);
       g.burst(CELL.ring + FLAT, x, 0.08, -z, 0.4, Math.max(radius * 2.6, core * 0.8), 0.45, C.phao, 2.4);
       g.burst(CELL.soft + FLAT, x, 0.07, -z, radius * 1.4, radius * 1.8, 1.2, C.ember, 0.45);
-      g.burst(CELL.soft, x, 1.2, -z, core * 0.35, core * 0.7, 1.4, C.smoke, 0.8, 0, 1.4, 0);
+      const B = AFTER.smoke.burst;
+      for (let k = 0; k < B.puffs; k += 1) {
+        const a = Math.random() * 6.283;
+        const d = Math.random() * radius * 0.4;
+        this.p.smoke.burst(CELL.puff, x + Math.cos(a) * d, 0.9 + k * 0.35, -z + Math.sin(a) * d * 0.4, core * B.from, core * B.to * (0.85 + Math.random() * 0.3), B.life * (0.8 + Math.random() * 0.4), k % 2 === 0 ? C.soot : C.smokeBody, B.alpha, Math.cos(a) * 0.3, B.rise, 0, (Math.random() - 0.5) * 0.6);
+      }
       this.spark(x, 0.8, -z, 0, 1.4, 0, 32, 9, C.hot, 0.3, 0.7, 2.4);
       this.p.lights.flash(LIGHT.phao, x, 1.5, -z, C.phao);
       this.p.trauma.add(0.05);
@@ -295,8 +329,12 @@ export class ShotFx {
     const g = this.p.glows;
     if ((flags & FLAG.phao) !== 0) return;
     if ((flags & FLAG.ray) !== 0) {
-      g.burst(CELL.star8, x, 1, -z, 0.6 * k, 2 * k, 4 * F, C.ray, 2.6);
-      this.spark(x, 1, -z, dx, 0.3, -dz, 6, 10, C.rayCore, 0.24, 0.35, 0.8);
+      // A punch where the line goes through: a hot core and a cobalt star (HDR, 3–4 frames), a shock ring held under the bloom, sparks thrown on along the line.
+      g.burst(CELL.core, x, 1, -z, BLOOM.ray.hit * k, BLOOM.ray.hit * 2 * k, 3 * F, C.rayCore, 3.6);
+      g.burst(CELL.star8, x, 1, -z, 0.6 * k, 2.2 * k, 4 * F, C.ray, 3);
+      g.burst(CELL.ring, x, 1, -z, 0.3 * k, 2.6 * k, 0.16, C.rayIon, 1.6);
+      this.spark(x, 1, -z, dx, 0.3, -dz, 8, 12, C.rayCore, 0.24, 0.35, 0.8);
+      this.spark(x, 1, -z, dx, 0.5, -dz, 4, 7, C.ray, 0.28, 0.3, 1.6);
       return;
     }
     if (armour) return;
@@ -433,7 +471,7 @@ export class ShotFx {
     }
   }
 
-  /** Pháo Sao's shells: crimson bolts nose-first along their arcs, a fading trail, the landing ring tightening. */
+  /** Pháo Sao's shells: crimson bolts nose-first along their arcs, a fading trail, the landing ring (pale orange, white rim) tightening. */
   private shells(w: World, time: number, lead: number): void {
     const L = w.shells;
     const S = this.p.strips;
@@ -453,7 +491,18 @@ export class ShotFx {
       const big = Math.max(1, this.size(0.04, this.at.x, -this.at.z));
       if (!this.p.bolts.add(BOLT.phao, this.at.x, this.at.y, this.at.z, this.at.x - this.w3.x, this.at.y - this.w3.y, this.at.z - this.w3.z, time * 8 + k, big)) g.stamp(CELL.core, this.at.x, this.at.y, this.at.z, 0.6 * big, 0, C.hot, 2.4);
       g.stamp(CELL.soft, this.at.x, this.at.y, this.at.z, 1.4 * big, 0, C.phao, 1.6);
-      g.stamp(CELL.ring + FLAT, tx, 0.06, tz, PHAO.radius * (1.2 - 0.4 * t) * 2, time * 2, C.danger, 1.2);
+      // The landing ring: our side's warning (red is the foes', VFX_STANDARD §3.6.3; O5). Wave 1 fix: pale orange alone sank into the
+      // orange hazard stripes, so a white core line in a pale orange band, framed inside and out by a dark band laid over the deck
+      // (the smoke pool: it reads on stripes and bare steel alike), pulsing slowly (1.5 Hz) as it tightens.
+      const ring = PHAO.radius * (1.2 - 0.4 * t) * 2;
+      const pulse = 0.8 + 0.2 * Math.sin(time * 9.42 + k);
+      const M = AFTER.mark;
+      this.p.smoke.stamp(CELL.ring + FLAT, tx, 0.058, tz, ring * M.outer, time * 2, C.soot, 1);
+      this.p.smoke.stamp(CELL.ring + FLAT, tx, 0.058, tz, ring * M.inner, time * 2, C.soot, 1);
+      g.stamp(CELL.ring + FLAT, tx, 0.06, tz, ring * M.band, time * 2, C.mark, 0.9 * pulse);
+      // The line: two white rings on one radius (a thin core: together they pass the bloom's threshold).
+      g.stamp(CELL.ring + FLAT, tx, 0.061, tz, ring, time * 2, C.white, 0.9 * pulse);
+      g.stamp(CELL.ring + FLAT, tx, 0.062, tz, ring * M.line, time * 2, C.white, 0.6 * pulse);
     }
   }
 }

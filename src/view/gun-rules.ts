@@ -63,7 +63,76 @@ export const AFTER = {
   scorch: { every: 0.1, size: 1.5, life: 2.4, alpha: 0.9, glow: 0.6, embers: 2 },
   tiaCore: { core: 0.55, white: 0.06, floorWhite: 0.1 },
   hurt: { smoke: 1.6, puff: 0.08, alpha: 1.5, sparks: 1, rate: 14 },
+  /** Star Mortar's landing ring (wave 1 fix), × the ring's size: its white line's second ring, the pale orange band just outside it, the dark bands outside and inside. */
+  mark: { line: 0.985, band: 1.05, outer: 1.16, inner: 0.86 },
+  /**
+   * Gun smoke (parent QUALITY_RESCUE_2026-11-01 L3): Scatter Gun's volley and
+   * Star Mortar's launch and burst lay dark puffs over the deck through the
+   * smoke pool (normal blending, under the flashes), never grey added light
+   * (it lit the deck into a milky haze). Per source: puffs, life (s), alpha
+   * (≤ 1: the half-float buffer of High and Ultra does not clamp it), width
+   * from / to (m; a burst's × its flash core), rise (m/s); Scatter Gun's start
+   * `out` m along the fan (its flame tongues reach 2.2 m).
+   */
+  smoke: {
+    tan: { puffs: 3, life: 0.8, alpha: 0.9, from: 1, to: 2.6, rise: 1.4, out: 1.6 },
+    launch: { puffs: 3, life: 0.9, alpha: 0.75, from: 0.8, to: 2.4, rise: 1.6 },
+    burst: { puffs: 5, life: 1.5, alpha: 0.85, from: 0.3, to: 0.75, rise: 1.2 },
+    /** Heat Beam burning (wave 1 fix): one soft dark puff each `every` s off its far half, in place of the held orange haze. */
+    tia: { every: 0.1, life: 1.1, alpha: 0.4, from: 0.8, to: 2.2, rise: 0.9 },
+  },
 } as const;
+
+/**
+ * Bloom and tone (parent QUALITY_RESCUE_2026-11-01 L1; VFX_STANDARD §3.5.1,
+ * owner's O4 of 01/11). Bloom 0.85 / 0.3 and ACES made every shot 2.5–3.5×
+ * wider and cream-white at High and Ultra (Heat Beam 86–97 px at 11 m,
+ * 1080p). On the bloom tiers only thin HDR cores pass the threshold of 1:
+ * halos (soft, ring, flare and puff billboards, a streak's colour, Heat
+ * Beam's glow, haze and floor column) are held at `halo` per channel; the
+ * bloom is `strength`, `radius`. Tone mapping `tone` (Khronos PBR Neutral:
+ * a hot core keeps its hue where ACES and AgX whitened it) on every tier
+ * (?tone=aces|agx|neutral for A/B). Heat Beam on the bloom tiers: its core a
+ * streak `core` m wide at `power` (HDR 3–6) in `color`, its glow `glow` m at
+ * `glowPower`, its floor column's burning core `groove` of its half-width
+ * (was 0.3: a metre-wide stripe that set the beam's width), no floor strip.
+ * `flash`: Xung's and Ray's release halos this much wider (held under the
+ * threshold they no longer spread into a glare); `release`: m along the shot
+ * where Xung's first release stands, off the hull, and its pale halo × the
+ * held one (wave 1 fix: f5's own reach, §4.2's radius by the flash alone).
+ */
+export const BLOOM = {
+  strength: 0.45,
+  radius: 0.12,
+  threshold: 1,
+  halo: 0.9,
+  tone: "neutral",
+  tia: { core: 0.12, power: 3, color: "#ffa726", glow: 0.5, glowPower: 0.6, groove: 0.1 },
+  flash: { xung: 1.3, ray: 1.3 },
+  release: { xung: 0.9, halo: 1.6 },
+  /**
+   * The typing feel's marks (a shared system, bar 9) bloom as before L1, as
+   * the old bloom `old` did (it added 1.6–3× this one's light of each mip),
+   * and tone map toward ACES by their share of a pixel's light (feel-bloom.ts).
+   * `feel`: the share of that extra bloom and of that tone. At gain 1 the
+   * marks add main's light, but the field round the ship is darker since L1
+   * (f1f's frame before a key: luma 0.16 against main's 0.21), so the same
+   * light lit 30 % more of it (f1f at 720p: 19,400 px against 14,800–15,900);
+   * at 0.25 a key lights as much of the field as on main (15,000–15,100).
+   */
+  old: { strength: 0.85, radius: 0.3 },
+  feel: { gain: 0.25, blend: 1 },
+  /**
+   * Rail Gun on every tier (wave 1 fix): a thin HDR core `core` m at `power` with a white thread `white`, whole
+   * for `hold` s then gone over `fade` s; its body `body` m at `bodyPower` (held); its ionised afterglow, held,
+   * widening from `ion[0]` to `ion[1]` m, whole to `ionHold` s and gone by `ionEnd` s, crackling; the muzzle's
+   * tongue core `tongue` m. The impact: a hot core `hit` × its star, a held shock ring, sparks.
+   */
+  ray: { core: 0.07, power: 4, white: 0.35, hold: 0.1, fade: 0.1, body: 0.24, bodyPower: 1.6, ion: [0.6, 1.1], ionHold: 0.22, ionEnd: 0.65, tongue: 0.12, hit: 0.35 },
+} as const;
+
+/** Puffs the smoke pool holds (combat.ts): scorches, the hurt ship, four big kills and the guns' smoke (tests/vfx-pair.test.ts). */
+export const SMOKE_POOL = 200;
 
 /** The slot a new light takes: the first dark one, else the one with the least priority × light left. */
 export function pickLight(prio: ArrayLike<number>, left: ArrayLike<number>, count: number): number {
