@@ -132,8 +132,8 @@ describe("vfx pair", () => {
     expect(hue(BLOW.mark, THREE.SRGBColorSpace)).toBeLessThanOrEqual(40);
   });
 
-  it("L2: the composer of High and Ultra draws multisampled; Low and Medium draw straight to the canvas", () => {
-    expect(VIEW_TIERS.high.samples).toBe(4);
+  it("L2: the composer of Ultra draws 4× multisampled, High without (its frame gates, 01/11); Low and Medium draw straight to the canvas", () => {
+    expect(VIEW_TIERS.high.samples).toBe(0);
     expect(VIEW_TIERS.ultra.samples).toBe(4);
     expect(VIEW_TIERS.low.bloom || VIEW_TIERS.medium.bloom).toBe(false);
   });

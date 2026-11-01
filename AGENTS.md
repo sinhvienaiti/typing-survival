@@ -328,7 +328,8 @@ guns that hold a corridor against a horde. It was split out of Space Typing
   corridor (`hud.ts` `placeBays`: bays 1–2 from 30 % of the height, 3–4 from
   47 %, 2.5 % in from the screen's edges, off the wall; at 4:3 a card shrinks to
   stay off the lane, over the wall's posts; a sealed bay is a chip); the
-  composer of High and Ultra draws 4× MSAA (`VIEW_TIERS.samples`, `?msaa=n`).
+  composer of Ultra draws 4× MSAA (`VIEW_TIERS.samples`, `?msaa=n`); High draws
+  none since the wave 1 fix (4× and 2× broke `survival-s1-perf`'s gates at 720p dpr 2).
   Under MSAA an edge pixel is shaded with varyings past the triangle: a
   shader that can go NaN there (`pow()` of a negative) spreads black blocks
   through the bloom, so clamp before `pow`. Scatter Gun's and Star Mortar's

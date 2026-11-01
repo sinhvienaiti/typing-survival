@@ -26,12 +26,16 @@ import { PALETTE } from "./theme";
  * Per tier: pixel ratio cap, antialias, bloom, the composer's multisampling
  * (its buffer is not the canvas, so the canvas's own antialias never reached
  * a scene drawn through the bloom: parent QUALITY_RESCUE_2026-11-01 L2), and
- * effect budgets (SURVIVAL_MODE_PLAN.md 8.1).
+ * effect budgets (SURVIVAL_MODE_PLAN.md 8.1). Ultra keeps 4×; High draws
+ * without: survival-s1-perf (1280×720 dpr 2, M4, no vsync) breaks its gates at
+ * 4× (peak mean 10.5–10.7 ms, flood p95 23 ms) and at 2× (7.0–8.2 ms, 15–18 ms)
+ * against ≤ 6 and ≤ 14; without, 5.0–5.3 and 12.0–13.1 (changelog
+ * 2026-11-01-wave1-fix §12).
  */
 export const VIEW_TIERS: Record<Tier, { dpr: number; aa: boolean; bloom: boolean; samples: number; particles: number; numbers: number; debris: number; bursts: number }> = {
   low: { dpr: 1, aa: false, bloom: false, samples: 0, particles: 600, numbers: 50, debris: 150, bursts: 120 },
   medium: { dpr: 1, aa: true, bloom: false, samples: 0, particles: 1500, numbers: 100, debris: 400, bursts: 240 },
-  high: { dpr: 1.5, aa: true, bloom: true, samples: 4, particles: 3000, numbers: 160, debris: 900, bursts: 400 },
+  high: { dpr: 1.5, aa: true, bloom: true, samples: 0, particles: 3000, numbers: 160, debris: 900, bursts: 400 },
   ultra: { dpr: 2, aa: true, bloom: true, samples: 4, particles: 4500, numbers: 200, debris: 1400, bursts: 600 },
 };
 
@@ -338,7 +342,7 @@ export class Stage {
     this.scene.add(this.sky);
     this.build();
     if (spec.bloom) {
-      // Half float as three's own buffer, multisampled (L2); resize() sizes it. ?msaa=n: A/B in scenarios (debug only).
+      // Half float as three's own buffer, multisampled by tier (L2: Ultra 4×, High none); resize() sizes it. ?msaa=n: A/B in scenarios (debug only).
       const msaa = Number(abSwitch("msaa") ?? NaN);
       const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Number.isInteger(msaa) && msaa >= 0 && msaa <= 8 ? msaa : spec.samples });
       target.texture.name = "EffectComposer.rt1";
