@@ -16,7 +16,28 @@ export function devHandleWanted(dev: boolean, search: string): boolean {
   return dev || new URLSearchParams(search).get("debug") === "1";
 }
 
+/**
+ * A registry (ALIVE_PLAN AL-00): a package adds its handle's methods from its
+ * own module (extendDevHandle) instead of editing main.ts's handle; they join
+ * the handle when it is installed, or at once if it already is. A name the
+ * handle already has is refused.
+ */
+const extensions = new Map<string, unknown>();
+let installed: Record<string, unknown> | null = null;
+
+export function extendDevHandle(name: string, value: unknown): void {
+  if (extensions.has(name) || (installed !== null && name in installed)) throw new Error("dev handle: " + name + " is taken");
+  extensions.set(name, value);
+  if (installed !== null) installed[name] = value;
+}
+
 export function installDevHandle(handle: object): void {
+  const target = handle as Record<string, unknown>;
+  for (const [name, value] of extensions) {
+    if (name in target) throw new Error("dev handle: " + name + " is taken");
+    target[name] = value;
+  }
+  installed = target;
   (window as unknown as { __survival?: object }).__survival = handle;
 }
 

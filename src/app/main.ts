@@ -44,7 +44,7 @@ import { Stage } from "../view/scene";
 import { renderScreen } from "../view/screens";
 import { renderJourney } from "../view/screens-journey";
 import { Ship, type Pilot } from "../view/ship";
-import { foesOnScreen, shipProbe } from "../view/probes";
+import { foesOnScreen, probeNames, readProbe, shipProbe } from "../view/probes";
 import { TypeFeel } from "../view/typing-feel";
 import { GUN_ACCENT, TypeFx } from "../view/type-fx";
 import { TypeFxPreview, type PreviewWord } from "../view/type-fx-preview";
@@ -878,7 +878,7 @@ if (devHandleWanted(import.meta.env.DEV, location.search)) installDevHandle({
   /** Typing Feel's keyboard sounds: the keys base (null: off), the catalogue, the chosen and the saved id, whether the save owns it, Relay's stand-in, the set playing, the gate's times. */
   keyboard: () => ({ base: keyboardFeed.base, ...keyboardProbe, id: settings.typingFx.soundProfile, saved: savedKeyboard, owned: keyboardOwned, standIn: keyboardStandIn, profile: typeFx.sounds.profile?.id ?? null, stats: { ...typeFx.sounds.stats }, ready: keyboardReady, live }),
   /** Sounds started so far by id (docs/audio/THEME_SOUND_LIST.md), and whether audio runs. */
-  sounds: () => ({ ready: audio.ready, played: Object.fromEntries(audio.played) }),
+  sounds: () => ({ ready: audio.ready, played: Object.fromEntries(audio.played), cued: Object.fromEntries(audio.cued), silent: [...audio.silent] }),
   screen: () => screen,
   /** The quick panels: which is open, whether keys are held back, whether the fight is frozen. */
   quick: () => ({ panel: quick.panel, blocking: quick.blocking, frozen }),
@@ -889,6 +889,9 @@ if (devHandleWanted(import.meta.env.DEV, location.search)) installDevHandle({
   /** The ship's pose (cheap enough for every frame); live foes on screen with their body radius (CSS px; the balance pass's wash-out). */
   ship: () => shipProbe(stage, ship),
   foes: () => foesOnScreen(stage, world),
+  /** A package's own probe (probes.ts registry): by name, with its arguments; probes() lists them. */
+  probe: (name: string, ...args: unknown[]) => readProbe(name, ...args),
+  probes: () => probeNames(),
   rects: () => hud.protectedRects(),
   /** Where the HUD's layout put the word line and the bays (each card's top, scale, and the wall's and lane's edges at its lowest row; CSS px). */
   layout: () => ({ ...hud.placed, bays: hud.placed.bays.map((bay) => ({ ...bay })) }),

@@ -97,6 +97,33 @@ const DRAIN_GAP_MS = 420;
 
 export type ThemeAudioOptions = { sfx: number; music: number };
 
+/** A cue's options (ALIVE_PLAN AL-00): its pan (−1 … 1), rate (× its pitch: AL-05's pitched ticks), gain (× its level). */
+export type CueOptions = { pan?: number; rate?: number; gain?: number };
+
+/** The menus' relay tick (move), heavy switch (select), lower one (back). */
+function uiSound(v: Voice, kind: "move" | "select" | "back"): void {
+  if (kind === "move") {
+    noise(v, 0, 0.01, 0.12, "bandpass", 3600, 3);
+    tone(v, 0, 0.012, 0.02, 1650, 1600, { type: "square", filter: "lowpass", cutoff: 4000 });
+    return;
+  }
+  const low = kind === "back" ? 0.75 : 1;
+  tone(v, 0, 0.09, 0.26, 190 * low, 70 * low);
+  noise(v, 0, 0.045, 0.14, "lowpass", 1600 * low);
+  steel(v, 0.006, 0.07, 0.045, 900 * low, STEEL.plate);
+}
+
+/**
+ * The ids a cue plays today, in code, until AL-02 plays files by id: the
+ * menus' three. Every other id is silent and listed as debt (src/view/coverage).
+ * No new sound is made in code (AGENTS.md: sound is real files).
+ */
+const CUE_SYNTH: Readonly<Record<string, { bus: Bus; play(v: Voice, rate: number): void }>> = {
+  "ui.move": { bus: "ui", play: (v) => uiSound(v, "move") },
+  "ui.select": { bus: "ui", play: (v) => uiSound(v, "select") },
+  "ui.back": { bus: "ui", play: (v) => uiSound(v, "back") },
+};
+
 /**
  * The player's sound levels (0 … 1; the quick Sound panel): master over
  * everything, effects (guns, impacts, kills, alerts), music, the interface;
@@ -125,6 +152,10 @@ export class ThemeAudio {
   private drainAt = -1e9;
   /** Sounds started since the page opened, by id (the scenarios read it). */
   readonly played = new Map<SoundId, number>();
+  /** Cues asked for since the page opened, by id, sounded or not (cue()). */
+  readonly cued = new Map<string, number>();
+  /** Ids cued that have no sound yet: silent until their file passes (debt, src/view/coverage). */
+  readonly silent = new Set<string>();
   private readonly lastGun = new Map<GunSoundId, number>();
   private readonly loops = new Map<LoopSoundId, () => void>();
   /** Loops the view asks for (their pan), and whether the fight runs: a loop sounds only when both hold. */
@@ -208,19 +239,39 @@ export class ThemeAudio {
     return this.sfx;
   }
 
-  /** A voice on `bus`, panned; null before resume(). */
-  private voice(bus: Bus, pan: number, id: SoundId): Voice | null {
+  /** A voice on `bus`, panned (and × `gain` when given); null before resume(). */
+  private voice(bus: Bus, pan: number, id: SoundId, gain?: number): Voice | null {
     const ctx = this.ctx;
     const input = this.inserts.get(bus);
     if (!this.started || ctx === null || input === undefined || this.buffer === null || !this.scene.enabled) return null;
     const panner = new StereoPannerNode(ctx, { pan: Math.max(-0.8, Math.min(0.8, pan)) });
-    panner.connect(input);
+    if (gain === undefined) panner.connect(input);
+    else panner.connect(new GainNode(ctx, { gain: Math.max(0, gain) })).connect(input);
     this.count(id);
     return { ctx, out: panner, at: ctx.currentTime, noise: this.buffer };
   }
 
   private count(id: SoundId): void {
     this.played.set(id, (this.played.get(id) ?? 0) + 1);
+  }
+
+  /**
+   * The one door for every new sound (ALIVE_PLAN AL-00 §3.0): `id` as in
+   * docs/audio/THEME_SOUND_LIST.md, played in the event's own handler. An id
+   * with no sound yet stays silent and is noted (`silent`); true when it
+   * sounded. AL-02 plays the files behind the same ids.
+   */
+  cue(id: string, opts: CueOptions = {}): boolean {
+    this.cued.set(id, (this.cued.get(id) ?? 0) + 1);
+    const sound = CUE_SYNTH[id];
+    if (sound === undefined) {
+      this.silent.add(id);
+      return false;
+    }
+    const v = this.voice(sound.bus, opts.pan ?? 0, id as SoundId, opts.gain);
+    if (v === null) return false;
+    sound.play(v, opts.rate ?? 1);
+    return true;
   }
 
   /** An S1 sound (gun-audio.ts) at `pan`; `now` in ms keeps its gap; `pitch` × its tones. */
@@ -464,16 +515,7 @@ export class ThemeAudio {
   /** The menus: a relay tick (move), a heavy switch (select), a lower one (back). */
   ui(kind: "move" | "select" | "back"): void {
     const v = this.voice("ui", 0, ("ui." + kind) as SoundId);
-    if (v === null) return;
-    if (kind === "move") {
-      noise(v, 0, 0.01, 0.12, "bandpass", 3600, 3);
-      tone(v, 0, 0.012, 0.02, 1650, 1600, { type: "square", filter: "lowpass", cutoff: 4000 });
-      return;
-    }
-    const low = kind === "back" ? 0.75 : 1;
-    tone(v, 0, 0.09, 0.26, 190 * low, 70 * low);
-    noise(v, 0, 0.045, 0.14, "lowpass", 1600 * low);
-    steel(v, 0.006, 0.07, 0.045, 900 * low, STEEL.plate);
+    if (v !== null) uiSound(v, kind);
   }
 
   /** The music follows the horde (0 … 1) and the screen (fight 1, paused or a menu over a fight lower). */

@@ -1,6 +1,9 @@
 /**
  * Scenario probes (window.__survival, main.ts): the ship's pose on screen
  * (survival-feel-ship), the live foes and their size (survival-feel f8).
+ * A registry (ALIVE_PLAN AL-00): a package adds the probes its scenes read
+ * from its own module (registerProbe); the dev handle's probe(name, …args)
+ * reads them, probes() lists them.
  */
 import * as THREE from "three";
 import { FOES } from "../content/foes";
@@ -31,4 +34,24 @@ export function foesOnScreen(stage: Stage, w: World): number[][] {
     out.push([Math.round(x), Math.round(y), round(Math.abs(stage.project(F.x[s]! + r, F.z[s]!, r, at).x - x)), round(F.z[s]!), F.kind[s]!, F.id[s]!]);
   }
   return out;
+}
+
+/** A registered probe: reads the page for a scenario; never changes a run. */
+export type Probe = (...args: never[]) => unknown;
+const probes = new Map<string, (...args: unknown[]) => unknown>();
+
+/** Adds `probe` under `name` (its package and what it reads, e.g. "al09.foeAnim"); one per name. */
+export function registerProbe(name: string, probe: Probe): void {
+  if (probes.has(name)) throw new Error("probes: " + name + " is registered twice");
+  probes.set(name, probe as (...args: unknown[]) => unknown);
+}
+
+/** The probe `name` read now (undefined: no such probe). */
+export function readProbe(name: string, ...args: unknown[]): unknown {
+  return probes.get(name)?.(...args);
+}
+
+/** Every registered probe's name. */
+export function probeNames(): string[] {
+  return [...probes.keys()];
 }
