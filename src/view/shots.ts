@@ -491,10 +491,18 @@ export class ShotFx {
       const big = Math.max(1, this.size(0.04, this.at.x, -this.at.z));
       if (!this.p.bolts.add(BOLT.phao, this.at.x, this.at.y, this.at.z, this.at.x - this.w3.x, this.at.y - this.w3.y, this.at.z - this.w3.z, time * 8 + k, big)) g.stamp(CELL.core, this.at.x, this.at.y, this.at.z, 0.6 * big, 0, C.hot, 2.4);
       g.stamp(CELL.soft, this.at.x, this.at.y, this.at.z, 1.4 * big, 0, C.phao, 1.6);
-      // The landing ring: our side's warning, pale orange with a white rim (red is the foes', VFX_STANDARD §3.6.3; O5).
+      // The landing ring: our side's warning (red is the foes', VFX_STANDARD §3.6.3; O5). Wave 1 fix: pale orange alone sank into the
+      // orange hazard stripes, so a white core line in a pale orange band, framed inside and out by a dark band laid over the deck
+      // (the smoke pool: it reads on stripes and bare steel alike), pulsing slowly (1.5 Hz) as it tightens.
       const ring = PHAO.radius * (1.2 - 0.4 * t) * 2;
-      g.stamp(CELL.ring + FLAT, tx, 0.06, tz, ring, time * 2, C.mark, 0.9);
-      g.stamp(CELL.ring + FLAT, tx, 0.061, tz, ring * 1.16, time * 2, C.white, 0.45);
+      const pulse = 0.8 + 0.2 * Math.sin(time * 9.42 + k);
+      const M = AFTER.mark;
+      this.p.smoke.stamp(CELL.ring + FLAT, tx, 0.058, tz, ring * M.outer, time * 2, C.soot, 1);
+      this.p.smoke.stamp(CELL.ring + FLAT, tx, 0.058, tz, ring * M.inner, time * 2, C.soot, 1);
+      g.stamp(CELL.ring + FLAT, tx, 0.06, tz, ring * M.band, time * 2, C.mark, 0.9 * pulse);
+      // The line: two white rings on one radius (a thin core: together they pass the bloom's threshold).
+      g.stamp(CELL.ring + FLAT, tx, 0.061, tz, ring, time * 2, C.white, 0.9 * pulse);
+      g.stamp(CELL.ring + FLAT, tx, 0.062, tz, ring * M.line, time * 2, C.white, 0.6 * pulse);
     }
   }
 }

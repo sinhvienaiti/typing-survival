@@ -63,6 +63,8 @@ export const AFTER = {
   scorch: { every: 0.1, size: 1.5, life: 2.4, alpha: 0.9, glow: 0.6, embers: 2 },
   tiaCore: { core: 0.55, white: 0.06, floorWhite: 0.1 },
   hurt: { smoke: 1.6, puff: 0.08, alpha: 1.5, sparks: 1, rate: 14 },
+  /** Star Mortar's landing ring (wave 1 fix), × the ring's size: its white line's second ring, the pale orange band just outside it, the dark bands outside and inside. */
+  mark: { line: 0.985, band: 1.05, outer: 1.16, inner: 0.86 },
   /**
    * Gun smoke (parent QUALITY_RESCUE_2026-11-01 L3): Scatter Gun's volley and
    * Star Mortar's launch and burst lay dark puffs over the deck through the
