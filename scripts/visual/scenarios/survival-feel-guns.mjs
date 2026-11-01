@@ -898,10 +898,12 @@ async function ring(page, dir) {
     out[spot.name] = {
       ready, foes: foes.length, rect, linePx: line.length, darkPx: dark.length, stripePx: stripe.length,
       line: r3(med(line)), under: r3(med(under)), dark: r3(med(dark)), stripeLine: r3(med(stripe)), stripeUnder: r3(med(stripeUnder)),
-      lineOverPaint: ratio(med(line), med(under)), lineOverStripes: stripe.length > 0 ? ratio(med(stripe), med(stripeUnder)) : null, lineOverDark: dark.length > 0 ? ratio(med(line), med(dark)) : null,
+      lineOverPaint: ratio(med(line), med(under)), lineOverStripes: stripe.length >= 0.01 * line.length ? ratio(med(stripe), med(stripeUnder)) : null, lineOverDark: dark.length > 0 ? ratio(med(line), med(dark)) : null,
     };
   }
   save(dir, "ring-" + size + ".json", out);
+  // Over the stripes where the ring lies on them: a spot with stripe pixels under 1 % of the line's (10–100 stray orange
+  // pixels at the chevrons and on bare steel) reports null, not a ratio of a handful of pixels.
   const all = Object.values(out).filter((r) => r.linePx > 0);
   return { spots: out, checks: { ringSeen: all.length === Object.keys(out).length, ringOverPaint: all.every((r) => r.lineOverPaint >= 3), ringOverStripes: all.every((r) => r.lineOverStripes === null || r.lineOverStripes >= 3) } };
 }
