@@ -1296,6 +1296,20 @@ Hôm nay trận lái tàu Vanguard. Heroine và drone (M012, M080, M109–M111) 
 - Q5: giữ giọng trình duyệt (không dùng giọng neural trả phí lúc này).
 - Q2, Q4, Q6, Q7: theo đề xuất.
 
+**Chủ dự án chốt và ghi chú (02/11, khoảng 09:00, sau khi chơi bản build):**
+- **Phong cách: "Chốt 3D thật".** Giữ 3D vật liệu thật (PBR). Hướng truyện tranh nét mực (bài thử 01/11: 3D truyện tranh 7,3; hiện tại 6,4; sơn dầu 5,6) bỏ.
+  - Điểm thấp của kiểu hiện tại nằm ở cảnh, không ở quái: sàn bóng như nhựa, sọc cam đen, cọc lan can khối vuông, khiên phẳng, đĩa sáng phẳng, hố đen là vòng xoáy. Các chỗ này thuộc AL-10 (M114–M129); giữ nguyên các dòng đó.
+  - Chỉ lấy từ bài thử: viền mảnh quanh heroine và quái tinh anh để đọc rõ ở 68–100 px, và kỷ luật độ sáng (quái tối nhất có viền, sàn tối vừa, heroine và đạn sáng nhất).
+  - Mọi tranh 2D (heroine, súng, UI) vẽ kiểu render cao cấp, không nét mực.
+- **Tranh súng:** "mấy cái hình súng này sao chưa sửa vậy, nhìn nó quá xấu". Phiếu 249 (31/10) chưa từng chạy, và kế hoạch này chỉ ghi chuyển động cho thẻ súng.
+  - Nợ mới **AL-G**: năm tranh súng vẽ lại thành một họ cùng heroine (vỏ gốm ngà trên graphite, viền bạch kim, màu súng chỉ ở lõi sáng). Chấm ở cỡ thật: Loadout 96, Armory 64, thẻ bay 44 (720p).
+  - Đang chạy cùng thiết kế heroine v9 (workflow `last-line-hero-guns-design`).
+- **Đạn:** "đạn cũng phải sửa lại". Thuộc AL-08 (M081–M090). Kéo AL-08 lên chạy ngay khi đợt 1 xong, không chờ cả đợt 2.
+- **Bố cục:** "2 ô hiển thị ở 2 bên… vẫn quá xa, nên cho nó lại gần đường… ô typing ở giữa… khó nhìn quái, nên hạ thấp nó xuống dưới nhân vật cho tôi đánh giá thêm".
+  - Bản thử bố cục ở nhánh `ts-layout-test` (dựng trên `ts-al-05`): thẻ bay sát lan can; tấm chữ dưới nhân vật, camera chỉnh lại nếu cần.
+  - Chủ dự án chơi rồi chốt. Khi chốt, M044, M048 (AL-05) và `placeBays` (AL-06) theo bố cục mới.
+- **Heroine:** "sao vẫn là hình máy bay chứ có phải hình nữ nhân vật đâu". Chuỗi: thiết kế v9 đạt 8,5, chủ dự án duyệt, bốn góc, Tripo, rig và clip, rồi AL-15. Báo tiến độ chuỗi này ở mỗi lần báo cáo.
+
 **Việc tay đang chờ:**
 
 - Anh đính kèm ảnh nền map 1 vào chat ChatGPT để vẽ try3 (chờ từ 01/11).
